@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>합의된 알고리즘 — 비유로 이해하기</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --fg: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --card: #18181c;
+    --card-2: #1f1f26;
+    --border: #2a2a30;
+    --accent-1: #8b5cf6; /* 보라 - profiler */
+    --accent-2: #3b82f6; /* 파랑 - K-race */
+    --accent-3: #f59e0b; /* 주황 - NFP */
+    --accent-4: #10b981; /* 초록 - solver race */
+    --accent-5: #ef4444; /* 빨강 - safety net */
+    --accent-6: #ec4899; /* 핑크 - cooldown */
+    --accent-7: #06b6d4; /* 시안 - d-1 defense */
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .wrapper { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* HERO */
+  .hero {
+    position: relative;
+    padding: 80px 0 60px;
+    text-align: center;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(139,92,246,0.15) 0%, transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(59,130,246,0.15) 0%, transparent 40%),
+      radial-gradient(circle at 50% 80%, rgba(16,185,129,0.12) 0%, transparent 40%);
+  }
+  .hero .badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(139,92,246,0.15);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent-1);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero .lead {
+    font-size: 18px;
+    color: var(--muted);
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .hero .lead strong { color: var(--fg); }
+  .one-liner {
+    margin: 40px auto 0;
+    max-width: 800px;
+    padding: 24px 28px;
+    background: var(--card);
+    border-left: 3px solid var(--accent-1);
+    border-radius: 8px;
+    text-align: left;
+    font-size: 15px;
+  }
+  .one-liner .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-1);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  /* SECTION */
+  section { padding: 60px 0; }
+  .section-title {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .section-h2 {
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .section-desc {
+    color: var(--muted);
+    margin-bottom: 32px;
+    max-width: 700px;
+  }
+
+  /* FLOW DIAGRAM */
+  .flow-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-width: 900px;
+  }
+  .flow-step {
+    flex: 1;
+    position: relative;
+    padding: 16px 14px;
+    border-radius: 10px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    margin: 0 6px;
+    text-align: center;
+    transition: transform 0.2s;
+  }
+  .flow-step:hover { transform: translateY(-3px); }
+  .flow-step .num {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
+  }
+  .flow-step .title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .flow-step .time { font-size: 11px; color: var(--dim); }
+  .flow-step.s1 { border-color: var(--accent-1); }
+  .flow-step.s1 .num { background: var(--accent-1); }
+  .flow-step.s2 { border-color: var(--accent-2); }
+  .flow-step.s2 .num { background: var(--accent-2); }
+  .flow-step.s3 { border-color: var(--accent-3); }
+  .flow-step.s3 .num { background: var(--accent-3); }
+  .flow-step.s4 { border-color: var(--accent-4); }
+  .flow-step.s4 .num { background: var(--accent-4); }
+  .flow-step.s5 { border-color: var(--accent-5); }
+  .flow-step.s5 .num { background: var(--accent-5); }
+  .flow-arrow {
+    align-self: center;
+    color: var(--dim);
+    font-size: 18px;
+  }
+
+  /* TIME BAR */
+  .time-bar-wrap {
+    margin-top: 32px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .time-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--dim);
+    margin-bottom: 8px;
+  }
+  .time-bar {
+    display: flex;
+    height: 36px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .time-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0 8px;
+    position: relative;
+  }
+  .time-seg::after {
+    content: attr(data-time);
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--dim);
+    font-size: 10px;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  .time-seg-1 { background: var(--accent-1); flex: 5; }
+  .time-seg-2 { background: var(--accent-2); flex: 25; }
+  .time-seg-3 { background: var(--accent-3); flex: 50; }
+  .time-seg-4 { background: var(--accent-4); flex: 15; }
+  .time-seg-5 { background: var(--accent-5); flex: 5; }
+  .time-bar-spacer { height: 28px; }
+
+  /* RULE CARDS */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .rule-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .rule-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+  }
+  .rule-card.r1::before { background: var(--accent-5); }
+  .rule-card.r2::before { background: var(--accent-1); }
+  .rule-card.r3::before { background: var(--accent-2); }
+  .rule-card.r4::before { background: var(--accent-3); }
+  .rule-card.r5::before { background: var(--accent-4); }
+  .rule-card.r6::before { background: var(--accent-6); }
+  .rule-card.r7::before { background: var(--accent-7); }
+  .rule-num {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .rule-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .rule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .rule-grid { grid-template-columns: 1fr; gap: 20px; }
+  }
+  .analogy {
+    background: var(--card-2);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .analogy-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+  .analogy-label {
+    font-size: 11px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .analogy-text {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--fg);
+  }
+  .analogy-text em {
+    color: var(--accent-1);
+    font-style: normal;
+  }
+  .rule-card.r1 .analogy-text em { color: var(--accent-5); }
+  .rule-card.r2 .analogy-text em { color: var(--accent-1); }
+  .rule-card.r3 .analogy-text em { color: var(--accent-2); }
+  .rule-card.r4 .analogy-text em { color: var(--accent-3); }
+  .rule-card.r5 .analogy-text em { color: var(--accent-4); }
+  .rule-card.r6 .analogy-text em { color: var(--accent-6); }
+  .rule-card.r7 .analogy-text em { color: var(--accent-7); }
+  .tech {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .tech-label {
+    font-size: 11px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .tech ul { padding-left: 18px; }
+  .tech li { margin: 6px 0; }
+  .tech code {
+    background: var(--card-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 0.88em;
+    color: var(--accent-1);
+  }
+
+  /* VISUALS */
+  .visual {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--card-2);
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+  }
+  .visual-label {
+    font-size: 10px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+  }
+  svg { display: block; width: 100%; height: auto; }
+
+  /* 4-CLASS TREE */
+  .tree-svg { max-width: 100%; }
+
+  /* K-RACE */
+  .race-lanes { display: flex; flex-direction: column; gap: 12px; padding: 8px; }
+  .race-lane {
+    display: grid;
+    grid-template-columns: 140px 1fr 60px;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .race-name { color: var(--muted); font-weight: 500; }
+  .race-track {
+    height: 22px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .race-progress {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .race-progress.greedy { background: var(--accent-5); width: 100%; }
+  .race-progress.mip { background: var(--accent-2); width: 65%; }
+  .race-progress.anti { background: var(--accent-3); width: 80%; }
+  .race-score { text-align: right; color: var(--accent-4); font-weight: 600; font-size: 12px; }
+
+  /* SAFETY NET ASCII-style */
+  .safety-net-svg { max-width: 400px; margin: 0 auto; }
+
+  /* SCORE COMPARISON */
+  .score-compare {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+  @media (max-width: 600px) { .score-compare { grid-template-columns: 1fr; } }
+  .score-card {
+    padding: 16px 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .score-card.win { border-color: var(--accent-4); }
+  .score-card.lose { border-color: var(--accent-5); }
+  .score-card.mid { border-color: var(--dim); }
+  .score-label { font-size: 11px; color: var(--dim); margin-bottom: 4px; }
+  .score-value { font-size: 28px; font-weight: 700; margin: 4px 0; }
+  .score-card.win .score-value { color: var(--accent-4); }
+  .score-card.lose .score-value { color: var(--accent-5); }
+  .score-detail { font-size: 11px; color: var(--muted); }
+
+  /* PROFILER QUADRANT */
+  .quadrant {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+  .quad {
+    padding: 14px 16px;
+    background: var(--card-2);
+    font-size: 12px;
+  }
+  .quad-label {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .quad.tight .quad-label { color: var(--accent-5); }
+  .quad.loose .quad-label { color: var(--accent-4); }
+  .quad.tard .quad-label { color: var(--accent-3); }
+  .quad.pref .quad-label { color: var(--accent-1); }
+  .quad-desc { color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+  /* SOLVER RACE */
+  .solver-svg { max-width: 100%; }
+
+  /* COOLDOWN signal */
+  .cooldown-signal {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .cd-bit {
+    flex: 1;
+    min-width: 28px;
+    padding: 8px 4px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .cd-bit.ok { background: rgba(16,185,129,0.15); color: var(--accent-4); border: 1px solid rgba(16,185,129,0.3); }
+  .cd-bit.warn { background: rgba(239,68,68,0.15); color: var(--accent-5); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* D-1 checklist */
+  .checklist {
+    margin-top: 12px;
+    display: grid;
+    gap: 6px;
+  }
+  .check-row {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  .check-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: var(--accent-7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* FINAL */
+  .closing {
+    margin-top: 40px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(16,185,129,0.1) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-align: center;
+  }
+  .closing h3 { font-size: 22px; margin-bottom: 12px; }
+  .closing p { color: var(--muted); max-width: 600px; margin: 0 auto; }
+  .footer {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--dim);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+  .footer a { color: var(--accent-2); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrapper">
+    <span class="badge">OGC 2026 · 합의된 알고리즘</span>
+    <h1>3명의 토론 끝에 남은 7가지 원칙</h1>
+    <p class="lead">
+      이론가 · 실용주의자 · 반대자가 3 라운드 토론하며 양보·진화·합의한
+      <strong>알고리즘의 뼈대</strong>. 각 원칙을 일상의 비유로 풀고 시각화한다.
+    </p>
+    <div class="one-liner">
+      <div class="label">한 줄 요약</div>
+      "<strong>30분 안에 어떤 인스턴스도 −1 안 받게, 다른 팀이 못 가는 점에 도달한다.</strong>
+      그러려면 (1) 시작 5초에 인스턴스를 진단하고, (2) 서로 다른 길의 풀이 3개를 동시에 달리며,
+      (3) 마지막에 가장 안전+좋은 해를 반환하고, (4) 어떤 일이 있어도 그물 (force-place) 이 받아준다."
+    </div>
+  </div>
+</div>
+
+<!-- ALGORITHM FLOW -->
+<section>
+  <div class="wrapper">
+    <div class="section-title">알고리즘 전체 흐름</div>
+    <h2 class="section-h2">한 인스턴스를 푸는 30분의 여정</h2>
+    <p class="section-desc">
+      <code>algorithm(prob_info, timelimit)</code> 가 호출되면 다음 5단계로 진행한다.
+      각 단계의 색이 아래 7가지 원칙과 연결된다.
+    </p>
+
+    <div class="flow-wrap">
+      <div class="flow">
+        <div class="flow-step s1">
+          <span class="num">1</span>
+          <div class="title">프로파일링</div>
+          <div class="time">5초 (~3%)</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step s2">
+          <span class="num">2</span>
+          <div class="title">K=3 출발</div>
+          <div class="time">8분까지</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step s3">
+          <span class="num">3</span>
+          <div class="title">중간 투표</div>
+          <div class="time">8~12분</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step s4">
+          <span class="num">4</span>
+          <div class="title">개선·정제</div>
+          <div class="time">~25분</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step s5">
+          <span class="num">5</span>
+          <div class="title">안전망 + 반환</div>
+          <div class="time">마지막 5%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="time-bar-wrap">
+      <div class="time-bar-label">
+        <span>0분</span>
+        <span style="color:var(--fg)">30분 timelimit 가정</span>
+        <span>30분</span>
+      </div>
+      <div class="time-bar">
+        <div class="time-seg time-seg-1" data-time="~1분">진단</div>
+        <div class="time-seg time-seg-2" data-time="~8분">3 트랙 출발</div>
+        <div class="time-seg time-seg-3" data-time="~15분">개선·재배치</div>
+        <div class="time-seg time-seg-4" data-time="~5분">후보 비교</div>
+        <div class="time-seg time-seg-5" data-time="~1.5분">검증·반환</div>
+      </div>
+      <div class="time-bar-spacer"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 RULES -->
+<section>
+  <div class="wrapper">
+    <div class="section-title">합의된 7가지 원칙</div>
+    <h2 class="section-h2">각 원칙을 비유로</h2>
+    <p class="section-desc">
+      세 토론자가 모두 동의한 결정. 왼쪽은 일상의 비유, 오른쪽은 실제 알고리즘 디테일.
+    </p>
+
+    <div class="rules-grid">
+
+      <!-- RULE 1: SAFETY NET -->
+      <div class="rule-card r1">
+        <div class="rule-num">원칙 01 · −1 절대 회피</div>
+        <div class="rule-title">서커스 그물 — 어떤 일이 있어도 떨어져 죽지 않는다</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">🎪</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                공중곡예사가 묘기를 부리든 떨어지든, <em>아래에는 항상 그물이 있다</em>.
+                그물 없는 묘기는 *멋있어 보여도* 한 번 실패하면 끝이다.<br><br>
+                점수공식 <code>R−nb</code> 에서 한 인스턴스 −1 은 *평균 R/2 점* 손실.
+                다른 인스턴스에서 1등 해도 본전. <em>그물이 1순위, 묘기는 2순위.</em>
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">시각화 — 추락 시 그물 작동</div>
+              <svg viewBox="0 0 320 160" class="safety-net-svg">
+                <defs>
+                  <linearGradient id="net-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#ef4444" stop-opacity="0.6"/>
+                    <stop offset="1" stop-color="#ef4444" stop-opacity="0.2"/>
+                  </linearGradient>
+                </defs>
+                <!-- 곡예사 (떨어지는 공) -->
+                <circle cx="80" cy="40" r="8" fill="#a5b4fc"/>
+                <text x="80" y="28" font-size="9" fill="#a1a1aa" text-anchor="middle">알고리즘</text>
+                <!-- 떨어지는 트레일 -->
+                <line x1="80" y1="48" x2="80" y2="110" stroke="#71717a" stroke-dasharray="3,3" stroke-width="1"/>
+                <!-- 다른 시나리오 (성공) -->
+                <circle cx="240" cy="40" r="8" fill="#10b981"/>
+                <text x="240" y="28" font-size="9" fill="#a1a1aa" text-anchor="middle">최선의 해</text>
+                <line x1="240" y1="48" x2="240" y2="110" stroke="#10b981" stroke-width="1" stroke-dasharray="2,2"/>
+                <!-- 그물 -->
+                <path d="M 20 120 L 300 120" stroke="url(#net-grad)" stroke-width="3"/>
+                <path d="M 20 120 L 60 140 L 100 120 L 140 140 L 180 120 L 220 140 L 260 120 L 300 140 L 300 120 Z"
+                      fill="url(#net-grad)" stroke="#ef4444" stroke-width="1.5"/>
+                <text x="160" y="155" font-size="10" fill="#ef4444" text-anchor="middle" font-weight="600">force_place — 항상 작동하는 안전망</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">실제 구현</div>
+            <ul>
+              <li>마지막 5% 시간에 <code>force_place</code> 강제 실행 (베이별 빈 윈도우에 순차 배치)</li>
+              <li>모든 솔루션 후보는 <code>utils.check_feasibility</code> 5단계 통과 검증 후에만 채택</li>
+              <li>새 솔루션이 feasibility 잃으면 <em>즉시</em> 직전 best feasible 로 롤백</li>
+              <li><code>last_known_good.zip</code> 보존 — 본선 D-1 새 빌드 깨지면 1초 안에 복귀</li>
+            </ul>
+            <div class="visual" style="margin-top:16px;">
+              <div class="visual-label">점수 영향</div>
+              <div class="score-compare">
+                <div class="score-card lose">
+                  <div class="score-label">−1 받으면</div>
+                  <div class="score-value">−1</div>
+                  <div class="score-detail">평균 R/2 손실</div>
+                </div>
+                <div class="score-card mid">
+                  <div class="score-label">중위 안정</div>
+                  <div class="score-value">~R/2</div>
+                  <div class="score-detail">클러스터 가운데</div>
+                </div>
+                <div class="score-card win">
+                  <div class="score-label">상위 진입</div>
+                  <div class="score-value">~R−2</div>
+                  <div class="score-detail">−1 없을 때만</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 2: PROFILER -->
+      <div class="rule-card r2">
+        <div class="rule-num">원칙 02 · 인스턴스 프로파일링</div>
+        <div class="rule-title">의사의 진찰 — 5초 안에 환자 상태를 판단한다</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">🩺</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                응급실 의사는 환자가 들어오자마자 <em>5초 안에 청진기·체온·혈압</em> 만 보고
+                "이건 응급실? 일반외래? 중환자실?" 을 결정한다.
+                정밀 검사는 그 뒤에 시작한다.<br><br>
+                우리도 마찬가지. <em>"이 인스턴스는 어느 제약이 가장 빡빡한가"</em> 를 5초 안에 진단해서
+                그 다음 25분의 자원 배분을 결정한다.
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">진단 결과 = 4가지 분기</div>
+              <div class="quadrant">
+                <div class="quad tight">
+                  <div class="quad-label">🔴 TIGHT</div>
+                  <div class="quad-desc">ρ_j 최대 &gt; 0.85 — 공간이 너무 빡빡. <em>의도적 포기</em> 검토.</div>
+                </div>
+                <div class="quad loose">
+                  <div class="quad-label">🟢 LOOSE</div>
+                  <div class="quad-desc">ρ_j 최대 &lt; 0.5 — 여유 있음. MIP 적극 시도.</div>
+                </div>
+                <div class="quad tard">
+                  <div class="quad-label">🟠 TARDINESS-DOM</div>
+                  <div class="quad-desc">w1 · Z1 추정값이 압도. EDD 강화.</div>
+                </div>
+                <div class="quad pref">
+                  <div class="quad-label">🟣 PREFERENCE-DOM</div>
+                  <div class="quad-desc">H_i &gt; 50 블록 다수. 강한 선호 블록 변수 고정.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">측정하는 5가지 지표</div>
+            <ul>
+              <li><code>ρ_j</code> — 베이별 시공간 빡빡함: <code>Σ(A_i · P_i) / (W_j · H_j · T)</code></li>
+              <li><code>H_i = S_max − S_2nd</code> — 블록당 preference concentration</li>
+              <li><code>DAG width</code> — 시간축 sampling 으로 동시 활성 블록 수 분포</li>
+              <li><code>w1/w2/w3 비율</code> — Z1/Z2/Z3 중 dominant 식별</li>
+              <li>블록 크기 + polygon 정점 분포 → NFP/grid 자동 스위칭 임계</li>
+            </ul>
+            <div class="visual" style="margin-top:16px;">
+              <div class="visual-label">왜 *수천 비트* 인가</div>
+              <p style="font-size:13px; color:var(--muted); line-height:1.7;">
+                Theorist 의 통찰: 제출 1회로 받는 정보는 <code>점수·license·-1 여부 ≈ 60비트</code>.
+                반면 인스턴스 자체에서 뽑는 통계는 <em>인스턴스당 수천 비트</em> — 학습 신호 풍부.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 3: K=3 RACE -->
+      <div class="rule-card r3">
+        <div class="rule-num">원칙 03 · 매니폴드 직교 K=3 race</div>
+        <div class="rule-title">세 명의 요리사 — 같은 손님을 위해 다른 요리법으로 동시에</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">👨‍🍳👩‍🍳🧑‍🍳</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                같은 식재료, 같은 시간. 세 요리사가 <em>완전히 다른 요리법</em> 으로 동시 시작.
+                일식·이탈리안·중식. 시간 끝나면 <em>가장 맛있는 것</em> 만 서빙.<br><br>
+                Theorist 의 통찰: <em>"같은 요리법으로 시드만 다른 세 그릇"은 무의미</em>.
+                seed 다양화 ≠ 알고리즘 다양성. <em>다른 매니폴드</em> 위에 있어야 진짜 다양성.
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">3 트랙 동시 진행 (예시 결과)</div>
+              <div class="race-lanes">
+                <div class="race-lane">
+                  <div class="race-name">EDD-Greedy++</div>
+                  <div class="race-track"><div class="race-progress greedy">완료 ✓</div></div>
+                  <div class="race-score">1055</div>
+                </div>
+                <div class="race-lane">
+                  <div class="race-name">MIP/LP 기반</div>
+                  <div class="race-track"><div class="race-progress mip">진행중...</div></div>
+                  <div class="race-score">876</div>
+                </div>
+                <div class="race-lane">
+                  <div class="race-name">Anti-EDD slack</div>
+                  <div class="race-track"><div class="race-progress anti">완료 ✓</div></div>
+                  <div class="race-score">912</div>
+                </div>
+              </div>
+              <p style="font-size:11px; color:var(--accent-4); text-align:center; margin-top:12px;">
+                ↓ 12분 시점 objective-vote ↓<br>
+                <span style="color:var(--accent-4); font-weight:600; font-size:14px;">최저값 = MIP/LP (876) 채택</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">3 매니폴드 라인업</div>
+            <ul>
+              <li><strong style="color:var(--accent-5)">EDD-Greedy++</strong> — 베이스라인 진화. 안전망 역할 (모든 클래스에서 활성).</li>
+              <li><strong style="color:var(--accent-2)">MIP/LP 기반</strong> — Theorist Aggregate LP-MIP 또는 Contrarian Topology-MIP. LOOSE 인스턴스에서 강력.</li>
+              <li><strong style="color:var(--accent-3)">Anti-EDD slack-aware</strong> — 워크로드 균형 우선. Z2 dominant 인스턴스 대비.</li>
+            </ul>
+            <div class="visual" style="margin-top:16px;">
+              <div class="visual-label">왜 직교성이 점수공식에 유리</div>
+              <p style="font-size:13px; color:var(--muted); line-height:1.7;">
+                R−nb 모델에서 5팀이 <em>같은 LNS mode</em> 에 수렴하면 모두 동점.
+                살짝 결정론적으로 빗나간 한 팀이 <code>nb=1</code> 가져감.<br>
+                <em>다른 매니폴드</em> 위에 있으면 random walk 의 표본분포에 안 속한 점에 도달 — <em>그 인스턴스에서 우리만 그 점</em>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 4: NFP LAZY -->
+      <div class="rule-card r4">
+        <div class="rule-num">원칙 04 · NFP candidate 는 lazy + LRU</div>
+        <div class="rule-title">호텔 객실 청소 — 손님이 *오면* 그제야 청소한다</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">🏨</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                500개 객실을 <em>미리 전부 청소</em>해두면 인력·시간·물자 모두 낭비.
+                실제 손님이 묵을 객실은 30개뿐.<br><br>
+                NFP (No-Fit Polygon) 도 마찬가지. 80블록 × 5층 × 정점 30 = 12,000 polygon 을 미리 만들면 <em>3~5GB</em>.
+                16GB 환경에서 OOM kill → −1.
+                <em>실제 충돌 검사할 쌍에만</em> 그때그때 계산하고, 자주 쓰는 것만 LRU 캐시.
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">메모리 비교</div>
+              <svg viewBox="0 0 320 120">
+                <!-- 사전계산 -->
+                <text x="160" y="14" font-size="10" fill="#a1a1aa" text-anchor="middle">전체 메모리 16GB</text>
+                <rect x="20" y="22" width="280" height="14" fill="#1f1f26" stroke="#2a2a30"/>
+                <text x="10" y="33" font-size="9" fill="#a1a1aa" text-anchor="end">사전</text>
+                <rect x="20" y="22" width="20" height="14" fill="#3b82f6"/><title>Python 1.5GB</title>
+                <rect x="40" y="22" width="50" height="14" fill="#10b981"/><title>Gurobi 3GB</title>
+                <rect x="90" y="22" width="90" height="14" fill="#ef4444"/><title>NFP 5GB</title>
+                <rect x="180" y="22" width="40" height="14" fill="#f59e0b"/><title>기타 2GB</title>
+                <text x="225" y="33" font-size="9" fill="#ef4444">⚠ OOM 위험</text>
+
+                <!-- Lazy LRU -->
+                <rect x="20" y="50" width="280" height="14" fill="#1f1f26" stroke="#2a2a30"/>
+                <text x="10" y="61" font-size="9" fill="#a1a1aa" text-anchor="end">lazy</text>
+                <rect x="20" y="50" width="20" height="14" fill="#3b82f6"/>
+                <rect x="40" y="50" width="50" height="14" fill="#10b981"/>
+                <rect x="90" y="50" width="15" height="14" fill="#f59e0b"/><title>NFP LRU 800MB</title>
+                <text x="115" y="61" font-size="9" fill="#10b981">✓ 충분한 여유</text>
+
+                <!-- 범례 -->
+                <g transform="translate(20,82)">
+                  <rect x="0" y="0" width="10" height="10" fill="#3b82f6"/>
+                  <text x="14" y="9" font-size="9" fill="#a1a1aa">Python</text>
+                  <rect x="60" y="0" width="10" height="10" fill="#10b981"/>
+                  <text x="74" y="9" font-size="9" fill="#a1a1aa">Gurobi</text>
+                  <rect x="120" y="0" width="10" height="10" fill="#ef4444"/>
+                  <text x="134" y="9" font-size="9" fill="#a1a1aa">NFP 전계산</text>
+                  <rect x="200" y="0" width="10" height="10" fill="#f59e0b"/>
+                  <text x="214" y="9" font-size="9" fill="#a1a1aa">NFP lazy</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">구현 디테일</div>
+            <ul>
+              <li>AABB (axis-aligned bbox) 가 <em>겹치는 쌍에 대해서만</em> 질의 시점에 Minkowski sum 계산</li>
+              <li><code>LRU(maxsize=2048)</code> 로 자주 쓰는 NFP 만 캐싱</li>
+              <li>NFP 자체가 아니라 <em>경계 polyline 만</em> 저장 (정점 ≤ 30)</li>
+              <li>평균 메모리 &lt; 1GB — 동시점유 그래프가 sparse 한 점 활용</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 5: SOLVER RACE -->
+      <div class="rule-card r5">
+        <div class="rule-num">원칙 05 · 솔버 race + objective-vote</div>
+        <div class="rule-title">F1 그랑프리 — 두 머신을 동시에 트랙에 보내고 빠른 쪽을 채택</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">🏎️</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                F1 팀이 두 머신을 같은 트랙에 동시에 보낸다.
+                <em>먼저 끝나는 쪽이 우승</em>. 한 쪽이 고장나도 다른 쪽이 들어온다.<br><br>
+                평균 답변은 "Gurobi 먼저 시도, 실패하면 LNS" — 직렬 fallback.
+                우리는 Gurobi 와 LNS 를 <em>동시에 출발</em>시키고 12분 시점에 objective 비교.
+                "MIP optimal 이 답" 이라는 암묵적 prior 를 깬다.
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">직렬 fallback vs race</div>
+              <svg viewBox="0 0 320 130">
+                <!-- 직렬 -->
+                <text x="10" y="16" font-size="10" fill="#a1a1aa">평균 클로드: 직렬 fallback</text>
+                <rect x="10" y="22" width="120" height="16" fill="#3b82f6" rx="2"/>
+                <text x="70" y="34" font-size="10" fill="white" text-anchor="middle">Gurobi</text>
+                <rect x="130" y="22" width="80" height="16" fill="#10b981" rx="2"/>
+                <text x="170" y="34" font-size="10" fill="white" text-anchor="middle">LNS (실패 후)</text>
+                <text x="220" y="34" font-size="10" fill="#ef4444">총 시간 ↑</text>
+
+                <!-- race -->
+                <text x="10" y="64" font-size="10" fill="#a1a1aa">우리: race + objective-vote</text>
+                <rect x="10" y="70" width="120" height="16" fill="#3b82f6" rx="2"/>
+                <text x="70" y="82" font-size="10" fill="white" text-anchor="middle">Gurobi</text>
+                <rect x="10" y="90" width="120" height="16" fill="#10b981" rx="2"/>
+                <text x="70" y="102" font-size="10" fill="white" text-anchor="middle">LNS 동시</text>
+                <line x1="130" y1="68" x2="130" y2="110" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3"/>
+                <text x="135" y="82" font-size="10" fill="#f59e0b">12분</text>
+                <text x="135" y="100" font-size="10" fill="#f59e0b">vote!</text>
+                <rect x="180" y="80" width="60" height="16" fill="#10b981" rx="2"/>
+                <text x="210" y="92" font-size="10" fill="white" text-anchor="middle">우승자만 continue</text>
+              </svg>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">구현 디테일</div>
+            <ul>
+              <li>Gurobi 는 <em>warm-start</em> 로 휴리스틱 incumbent 를 받아 시작</li>
+              <li>동시에 LNS destroy/repair 가 별도 worker 에서 회전</li>
+              <li>8~12분 시점에 두 worker 의 best incumbent objective 비교</li>
+              <li>좋은 쪽 채택, 진 쪽 worker 는 중단</li>
+              <li>R1 sanity 제출 때 <code>license_status</code> 로그 박아 Gurobi 가용성 검증</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 6: COOLDOWN -->
+      <div class="rule-card r6">
+        <div class="rule-num">원칙 06 · 84회 제출 = 회귀 차단 (학습 X)</div>
+        <div class="rule-title">사진관 백업 룰 — 어제 잘 나온 사진을 항상 들고 다닌다</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">📸</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                결혼식 사진관: 매일 새 카메라 세팅으로 더 좋은 사진을 시도.
+                하지만 <em>어제 잘 나온 사진</em> 은 항상 백업.
+                오늘 새 세팅이 망하면 1초 안에 어제 사진을 인화.<br><br>
+                평균 답변: "제출 결과로 학습해서 알고리즘 개선".
+                Theorist 통찰: 제출 1회 = <em>60비트 정보</em>, 84회 곱해도 5KB.
+                알고리즘 공간이 거대해서 <em>학습은 불가능</em>.
+                대신 <em>회귀 차단 1비트</em> 만 정확히 본다.
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">제출 신호 = 1비트 (−1 인스턴스 수 증가 여부)</div>
+              <div class="cooldown-signal">
+                <div class="cd-bit ok">R0<br>✓</div>
+                <div class="cd-bit ok">R1<br>✓</div>
+                <div class="cd-bit ok">R2<br>✓</div>
+                <div class="cd-bit ok">R3<br>✓</div>
+                <div class="cd-bit warn">R4<br>✗</div>
+                <div class="cd-bit ok">R5<br>↺</div>
+                <div class="cd-bit ok">R6<br>✓</div>
+                <div class="cd-bit ok">R7<br>✓</div>
+              </div>
+              <p style="font-size:11px; color:var(--muted); margin-top:8px;">
+                R4 에서 −1 인스턴스 +1 발생 → R5 는 즉시 <em>last_known_good</em> 으로 롤백 (↺)
+              </p>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">제출 일정</div>
+            <ul>
+              <li><strong>R0</strong> (W1 day1) — 인프라 sanity (베이스라인 그대로)</li>
+              <li><strong>R1</strong> (W1 day2) — Gurobi 가용성 확인 (<code>license_status</code> 로그)</li>
+              <li><strong>R2</strong> (W1 day4) — safety net 추가, −1 율 측정</li>
+              <li><strong>R3+</strong> (W2~) — 알고리즘 개선. 매 제출 <code>[DIAG]</code> 로그 강제</li>
+              <li>새 빌드는 <em>로컬 6개 인스턴스</em> 모두 feasible 통과해야 zip 생성</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- RULE 7: D-1 DEFENSE -->
+      <div class="rule-card r7">
+        <div class="rule-num">원칙 07 · 본선 D-1 방어</div>
+        <div class="rule-title">비행기 점검 — 이륙 직전 체크리스트와 비상 백업</div>
+        <div class="rule-grid">
+          <div>
+            <div class="analogy">
+              <div class="analogy-icon">✈️</div>
+              <div class="analogy-label">비유</div>
+              <p class="analogy-text">
+                여객기가 이륙하기 전, 조종사는 <em>매번</em> 체크리스트를 외운다.
+                기온·연료·엔진·랜딩기어·비상통신.
+                동시에 비상시 사용할 백업 시스템도 항상 작동 대기.<br><br>
+                본선 D-1 에 새 빌드가 깨지면 7천만 원이 날아간다.
+                매 제출에 <em>진단 로그</em> 박고, <em>last_known_good zip</em> 을 항상 들고,
+                <em>무거운 import</em> 는 try/except 로 격리.
+              </p>
+            </div>
+
+            <div class="visual">
+              <div class="visual-label">매 제출 체크리스트</div>
+              <div class="checklist">
+                <div class="check-row">
+                  <div class="check-box">✓</div>
+                  <span><code>[DIAG]</code> 한 줄 로그 (gurobi_ok, mem_peak, elapsed)</span>
+                </div>
+                <div class="check-row">
+                  <div class="check-box">✓</div>
+                  <span><code>submissions/&lt;tag&gt;/</code> 에 zip + git diff 보존</span>
+                </div>
+                <div class="check-row">
+                  <div class="check-box">✓</div>
+                  <span>로컬 6개 인스턴스 smoke 통과 (<code>--strict</code>)</span>
+                </div>
+                <div class="check-row">
+                  <div class="check-box">✓</div>
+                  <span>직전 zip 과 체크섬 비교 → 같으면 빌드 거부</span>
+                </div>
+                <div class="check-row">
+                  <div class="check-box">✓</div>
+                  <span><code>last_known_good.zip</code> 심볼릭링크 갱신</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tech">
+            <div class="tech-label">방어 매트릭스 — 깨질 수 있는 시나리오</div>
+            <ul>
+              <li><strong>큰 인스턴스 (n=300+)</strong> → 합성 스트레스 테스트 사전 실시</li>
+              <li><strong>짧은 timelimit (30s)</strong> → safety net 3초 안에 완료 보장</li>
+              <li><strong>Polygon 정점 50+</strong> → AABB 사전필터 + intersection 캐시</li>
+              <li><strong>w 극단 비율</strong> → 베이 ballast 강제 로직 사전 준비</li>
+              <li><strong>평가서버 env 충돌</strong> → 무거운 import (torch/tf/keras) 지연 + try/except</li>
+              <li><strong>Gurobi 라이선스 종료</strong> → 솔버 race 의 다른 쪽 (LNS) 으로 자동 폴백</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SCORE MODEL -->
+<section>
+  <div class="wrapper">
+    <div class="section-title">왜 이 7개가 *점수공식* 에 정합하는가</div>
+    <h2 class="section-h2">R−nb 라는 비대칭 게임</h2>
+    <p class="section-desc">
+      점수공식 <code>score = R − nb</code> (R = 참가팀, nb = 엄밀히 더 잘한 팀 수).
+      Pragmatist 가 Round 3 에서 산술 오류를 정정한 결정적 발견.
+    </p>
+
+    <div class="visual" style="background:var(--card);">
+      <div class="visual-label">R=30 가정 — 한 인스턴스의 기댓값</div>
+      <div class="score-compare" style="margin-top:8px;">
+        <div class="score-card mid">
+          <div class="score-label">중위 안정 (분산 최소)</div>
+          <div class="score-value">18</div>
+          <div class="score-detail">가운데 클러스터에 머문다</div>
+        </div>
+        <div class="score-card lose">
+          <div class="score-label">공격 + 큰 분산 (50% −1 위험)</div>
+          <div class="score-value">13.5</div>
+          <div class="score-detail">infeasibility 같이 따라옴 → 패배</div>
+        </div>
+        <div class="score-card win">
+          <div class="score-label">공격 + 작은 분산 (0% −1)</div>
+          <div class="score-value">23.6</div>
+          <div class="score-detail">우리가 노리는 영역</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; padding:20px; background:var(--card); border:1px solid var(--border); border-radius:12px;">
+      <p style="color:var(--muted); line-height:1.7; font-size:14px;">
+        <strong style="color:var(--fg)">결정적 통찰</strong>:
+        −1 만 회피하면 공격이 <em style="color:var(--accent-4)">항상 우월</em>.
+        <em style="color:var(--accent-5)">하지만 infeasibility 가 같이 따라오면 안정보다 나쁘다</em>.
+        그래서 7개 원칙 중 <strong>원칙 01 (안전망)</strong> 이 모든 것의 floor 고,
+        <strong>원칙 02~05 (진단·K=3·NFP·솔버 race)</strong> 가 ceiling 을 끌어올린다.
+        <strong>원칙 06~07</strong> 은 그 사이를 본선까지 유지.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section>
+  <div class="wrapper">
+    <div class="closing">
+      <h3>이제 코드로 옮긴다</h3>
+      <p>
+        7가지 합의 원칙을 <code>src/profiler.py</code>, <code>src/safety_net.py</code>, <code>src/k_manifolds.py</code> 로
+        구현하고, <code>tools/build_submission.py</code> 를 보강한 다음, 6월 2주차에 분기 실험을 시작한다.
+        본선 등록 (2026-06-07) 까지 10일 — 충분하다.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <div class="wrapper">
+    토론 원본 — <a href="strategy-debate.html">strategy-debate.html</a> ·
+    텍스트 정리본 — <a href="strategy-debate.md">strategy-debate.md</a> ·
+    문제 분석 — <a href="../docs/problem-analysis.md">problem-analysis.md</a>
+  </div>
+</div>
+
+</body>
+</html>

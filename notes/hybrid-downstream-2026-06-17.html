@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>린 레거시 뒤 — 하이브리드 다운스트림 분해 (OGC2026, 2026-06-17)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430; --border:#2d3340;
+    --txt:#e6edf3; --dim:#9aa7b4; --good:#3fb950; --bad:#f85149; --warn:#d29922;
+    --cp:#58a6ff; --cp2:#1f6feb; --acc:#bc8cff; --heu:#e3a857;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.58;font-size:15px}
+  .wrap{max-width:1140px;margin:0 auto;padding:28px 22px 90px}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:21px;margin:42px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  h3{font-size:17px;margin:0 0 4px}
+  .sub{color:var(--dim);font-size:13.5px;margin-bottom:24px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:20px 22px;margin:16px 0}
+  .note{border-left:4px solid var(--cp);background:#0e1726}
+  .ok{border-left:4px solid var(--good);background:#0f1a12}
+  .warnbox{border-left:4px solid var(--warn);background:#1a1408}
+  .badbox{border-left:4px solid var(--bad);background:#1d1113}
+  code{background:#0b0f14;padding:1px 6px;border-radius:4px;font-family:'Consolas',monospace;font-size:12.5px;color:#ffa657}
+  .loc{font-family:'Consolas',monospace;font-size:11.5px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13.5px}
+  th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'Consolas',monospace}
+  .tag{display:inline-block;padding:1px 9px;border-radius:20px;font-size:11.5px;font-weight:700;margin-right:4px;vertical-align:middle}
+  .t-cp{background:#132a47;color:var(--cp)} .t-heu{background:#3a2a12;color:var(--heu)}
+  .t-on{background:#0f2a16;color:var(--good)} .t-off{background:#2a1416;color:var(--bad)}
+  ul{margin:6px 0;padding-left:20px} li{margin:4px 0}
+  .small{font-size:12.5px;color:var(--dim)}
+  .flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin:18px 0}
+  .step{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:10px 13px;min-width:120px}
+  .step .t{font-weight:700;font-size:13.5px}
+  .step .e{font-size:10.5px;color:var(--dim);font-family:'Consolas',monospace}
+  .arrow{padding:0 8px;color:var(--cp);font-size:20px;font-weight:700}
+  .formula{font-family:'Consolas',monospace;font-size:12.5px;color:#ffd9a0;background:#15100a;padding:2px 8px;border-radius:5px;display:inline-block;margin:2px 0}
+  .pill{font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px}
+  .p-good{background:#0f2a16;color:var(--good)} .p-bad{background:#2a1416;color:var(--bad)}
+  hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+  .big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>린 레거시 "뒤" — 하이브리드 다운스트림 분해</h1>
+<div class="sub">OGC2026 · <code>algorithm(prob_info, timelimit)</code> 엔트리 (<span class="loc">myalgorithm.py:7575-7835</span>) · 2026-06-17 · code-analyzer 정밀분석</div>
+
+<!-- 한 줄 요약 -->
+<div class="card note">
+<b>한 줄 요약:</b> 레거시(린이든 풀이든)는 <b>후보 하나</b>일 뿐. 그 뒤 <code>algorithm()</code>은 <b>순수 additive best-of 오케스트레이터</b> —
+box·gassign·perbay 후보를 얹고 <b>전부 공식 채점기 obj로 비교</b>해 strict-better일 때만 교체.
+<b class="good">수학적으로 regression-free + never−1</b>(레거시가 항상 살아남음).
+</div>
+
+<!-- ★ 결정적 발견 -->
+<div class="card badbox">
+<h2 style="margin-top:0;border:none">★ 결정적 발견 — 예산은 사전 고정 슬라이스다</h2>
+<p>제가 이전에 "린 레거시가 48s에 끝나면 남는 ~82s가 box/gassign로 흘러간다"고 했는데 — <b>순차 경로에선 그런 산식이 없습니다.</b></p>
+<ul>
+<li><b>box·gassign 예산은 timelimit에서 미리 떼어둔 고정 슬라이스</b>(<code>reserve</code>, <code>_gassign_budget</code>). 레거시가 빨리 끝나도 <b>안 커진다.</b></li>
+<li>남는 wall(leftover)을 먹는 건 <b>perbay 하나뿐</b>(작은 polish, −4.6%급).</li>
+<li>즉 <b>린 레거시로 floor를 적출해도 그 시간은 box/gassign 품질로 전환되지 않는다</b> — perbay로만 가거나 낭비.</li>
+</ul>
+<p style="margin-bottom:0"><b>함의:</b> 린의 freed time을 쓰려면 둘 중 하나 — <b>(A) 동적 예산 재배분</b>(레거시 조기 종료 → box/gassign 슬라이스 확대, 미구현 아키텍처 레버) 또는 <b>(B) 병렬</b>(코어 분할로 <span class="lose">FALSIFIED</span>). 그래서 린-as-legacy의 가치는 "속도 전환"이 아니라 <b>그 자체가 z3-탁월 후보</b>라는 점에 한정된다.</p>
+</div>
+
+<!-- 흐름도 -->
+<h2>1. 전체 흐름</h2>
+<div class="flow">
+  <div class="step"><div class="t">예산 분배</div><div class="e">:7587-7697</div></div>
+  <div class="arrow">→</div>
+  <div class="step"><div class="t">① legacy</div><div class="e">_leg_budget</div></div>
+  <div class="arrow">→</div>
+  <div class="step"><div class="t">② box | gassign</div><div class="e">순차 (또는 ∥병렬)</div></div>
+  <div class="arrow">→</div>
+  <div class="step"><div class="t">③ perbay</div><div class="e">leftover wall</div></div>
+  <div class="arrow">→</div>
+  <div class="step"><div class="t">flush + return</div><div class="e">:7812-7835</div></div>
+</div>
+<p class="small">기본(순차): <code>legacy → box → gassign → perbay → return</code>. 병렬(<code>OGC_PARALLEL_CANDS=1</code>): <code>legacy → [box ∥ gassign] → perbay → return</code>(순차 box/gassign 스킵).</p>
+
+<!-- 예산 -->
+<h2>2. 예산 분배 산식 <span class="loc">:7587-7697</span></h2>
+<div class="card">
+<ul style="margin-top:0">
+<li><code>T = max(1, timelimit)</code></li>
+<li><b>box reserve</b> = <span class="formula">min(80, 0.30·T)</span> if (hybrid AND T ≥ <code>OGC_HYBRID_MIN_T</code>=100) else 0</li>
+<li><b>gassign</b> = <span class="formula">0.27·T</span> if (<code>OGC_GASSIGN</code> ON AND T ≥ <code>OGC_GASSIGN_MIN_T</code>=200) else <b class="bad">0</b></li>
+<li><b>perbay</b> = <code>OGC_PERBAY_S</code>=0 → legacy 시간 안 깎고 <b>leftover만</b> 먹음</li>
+<li><b>legacy</b> = <span class="formula">T − reserve − gassign − perbay_res</span>, 바닥 <code>(0.35 if gassign else 0.5)·T</code></li>
+<li><b>wall-safety 클램프</b>: <code>margin=min(10,0.05T)</code>; 합 &gt; T−margin이면 <b>gassign 먼저, 그다음 box</b> 줄임. legacy는 바닥 아래로 안 깎음 = <b>−1 방지 핵심.</b></li>
+</ul>
+<table>
+<tr><th>timelimit</th><th class="num">legacy</th><th class="num">box(reserve)</th><th class="num">gassign</th><th>비고</th></tr>
+<tr><td><b>T=120 (평가서버 운영값)</b></td><td class="num">84s</td><td class="num">36s</td><td class="num bad">0 (OFF)</td><td>T&lt;200 → <b>gassign 미실행</b></td></tr>
+<tr><td>T=300</td><td class="num">139s</td><td class="num">80s</td><td class="num">71s</td><td>합 290 = T−margin</td></tr>
+</table>
+<div class="warnbox card" style="margin:8px 0 0">
+<b>⚠ 운영 TL=120에선 gassign이 아예 안 돈다</b>(<code>OGC_GASSIGN_MIN_T=200</code>). → depgroup·gassign 튜닝은 <b>T≥200에서만</b> 효과. 실제 제출(T=120)은 <b>legacy(84) + box(36) + perbay(leftover)</b>만.
+</div>
+</div>
+
+<!-- best-of -->
+<h2>3. ★ best-of 선택 — 전부 진짜 obj, regression-free</h2>
+<div class="card ok">
+<p style="margin-top:0">세 채택 게이트 모두 <b><code>check_feasibility(prob_info, sol)["objective"]</code></b>(공식 채점기)로 비교. <b>surrogate(<code>_obj_of_results</code>) 미사용.</b> 따라서 채택은 <b>절대 레거시보다 나빠질 수 없다.</b></p>
+<table>
+<tr><th>후보</th><th>위치</th><th>채택 조건</th><th>예산</th></tr>
+<tr><td><b>box</b> (순차)</td><td class="loc">:7742</td><td><code>reserve≥20 ∧ ¬parallel_done</code>; feasible ∧ (현재 inf 이거나 box&lt;cur−ε)</td><td>reserve (36/80s)</td></tr>
+<tr><td><b>gassign</b> (순차)</td><td class="loc">:7765</td><td><code>gassign_active ∧ ¬parallel_done</code>; feasible ∧ (현재 inf 이거나 g&lt;cur−ε)</td><td>0.27·T (T≥200만)</td></tr>
+<tr><td><b>perbay</b></td><td class="loc">:7785</td><td>feasible ∧ perbay&lt;cur−ε</td><td>leftover wall</td></tr>
+</table>
+<p style="margin-bottom:0" class="small">매번 <b>직전 채택 sol을 재검사</b>해 누적 incumbent와 비교. 동점은 strict(−1e-9)라 교체 안 함 → 더 이른 후보(legacy) 유지. gassign엔 안전분기: 현재 sol이 어쩌다 infeasible이면 obj 무관하게 feasible gassign 채택(feasible 유지). <b>한 후보(legacy)는 항상 살아남음 → never−1.</b></p>
+</div>
+
+<!-- 후보들 -->
+<h2>4. 후보별 디테일</h2>
+<div class="card">
+<h3>② box candidate <span class="tag t-cp">CP-SAT</span> <span class="tag t-on">기본 ON (T≥100)</span></h3>
+<p style="margin:4px 0"><b>역할:</b> box-decomp 전결정 CP-SAT 해. 패킹-heavy 주력 승자. <b>모듈:</b> <code>boxsolver.algorithm</code> <span class="loc">:7748</span>. 실행 전 <code>OGC_BOXDECOMP=1, OGC_FEASSPILL=0</code> 세팅.</p>
+<hr>
+<h3>② gassign candidate <span class="tag t-cp">CP-SAT</span><span class="tag t-cp">LBBD</span> <span class="tag t-off">T≥200에서만</span></h3>
+<p style="margin:4px 0"><b>역할:</b> z1-aware 배정 마스터 + per-bay 디코드 + no-good 컷(depgroup 기본 ON). <b>모듈:</b> <code>gassign.algorithm</code> <span class="loc">:7767</span>. <b>운영 TL=120에선 비활성.</b></p>
+<hr>
+<h3>③ perbay candidate <span class="tag t-cp">CP-SAT</span> <span class="tag t-on">기본 ON</span></h3>
+<p style="margin:4px 0"><b>역할:</b> best 후보 채택 <b>후</b> per-bay placement polish(joint). <b>모듈:</b> <code>perbay.improve</code> <span class="loc">:7801</span>. <b>예산</b> = <code>T − elapsed − min(8,0.06T)</code> = <b>순수 leftover wall</b>(≥4s). 개선 없으면 동일 객체 반환→스킵. additive·deadline-bound·strict-improve → −1 위험 0.</p>
+</div>
+
+<!-- 병렬 -->
+<h2>5. 병렬 블록 <span class="loc">:7710-7737</span> <span class="tag t-off">OGC_PARALLEL_CANDS 기본 OFF · FALSIFIED</span></h2>
+<div class="card">
+<ul style="margin-top:0">
+<li>게이트: <code>OGC_PARALLEL_CANDS ∧ reserve≥20</code>. 후보 <code>["box"]</code>(+gassign on이면 추가).</li>
+<li><b>par_budget</b> = <span class="formula">T − elapsed − pb_keep − par_overhead</span> (<code>pb_keep=min(22,0.08T)</code>, <code>par_overhead=min(12,0.05T)+6</code>) → box·gassign이 <b>leftover wall 전체를 동시에</b> 받음(병렬).</li>
+<li>워커: <code>parcand.run_parallel_candidates(..., OGC_PARALLEL_WORKERS=2)</code> — spawn 프로세스, 각 CP-SAT 2워커(4코어 비-oversub). par obj도 워커 내부 <code>check_feasibility</code> 진짜 obj.</li>
+<li>성공 시 <code>_parallel_done=True</code> → 순차 box·gassign 스킵. 실패/timeout/크래시 → <code>[]</code> 반환 → legacy 유지(never−1).</li>
+</ul>
+<div class="badbox card" style="margin:8px 0 0">
+<b>FALSIFIED (2026-06-17):</b> 대표 4문제 재측정 결과 banked best-of 대비 <b>3/4 퇴화</b>(prob_38 +29M, prob_39 +5.6M, prob_27 +3.5M; prob_29만 −1.35M). 원인 = 병렬이 코어를 나눠 box·gassign 각자 <b>2워커로 굶음</b>. <b>→ KILL.</b> 고정 풀-코어 standalone best-of(290M)가 더 낫다.
+</div>
+</div>
+
+<!-- 계측 + return -->
+<h2>6. 계측 · return <span class="loc">:7812-7835</span></h2>
+<div class="card">
+<p style="margin-top:0"><b>계측</b>(<code>OGC_STAGE_TIMING</code> ON): <code>_stage_timer</code>(후보별 wall) + <code>_stage_obj</code>(채택 순간 before/after/delta) → stderr <code>[HYBRID_TIMING]</code>/<code>[HYBRID_OBJ]</code> JSON flush. 레거시 내부는 별도 <code>[STAGE_TIMING]</code>로 flush.</p>
+<p style="margin-bottom:0"><b>return</b> <span class="loc">:7835</span>: <code>return sol</code> — 최신 incumbent. 명시적 마지막 가드는 없으나 모든 교체가 feasible-gated라 항상 feasible. (진단 경로 <code>OGC_BOX_ONLY</code>는 별도 early-return.)</p>
+</div>
+
+<!-- 함의 -->
+<h2>7. 이 분해가 주는 함의</h2>
+<div class="card ok">
+<ol style="margin:0">
+<li><b>best-of는 안전판이다</b> — 공식 채점기 obj 기반 strict-better라 어떤 후보를 추가해도 regression 0, never−1. <b>새 후보/레버를 마음껏 additive로 붙일 수 있다.</b></li>
+<li><b>운영 TL=120 현실</b>: gassign OFF → 실제 제출은 legacy+box+perbay. <b>gassign/depgroup/z3-spill 컷은 T≥200 (set2 서버 TL)에서만 의미.</b> set1(T=120)에선 legacy+box가 전부.</li>
+<li><b>"floor 적출 → box에 시간" 은 거짓</b>(고정 슬라이스). 린의 freed time은 perbay로만 흐름. <b>린-as-legacy의 진짜 가치 = z3-탁월 후보 자체</b>(best-of로 흡수), 속도 전환 아님.</li>
+<li><b>벤더스 컷 환류 레버는 여전히 유효</b> — 그건 다운스트림(예산)이 아니라 <b>후보 내부(③→① 루프)</b> 문제라, 예산 구조와 무관하게 후보 품질을 올림.</li>
+</ol>
+</div>
+
+<div class="card note">
+<h3>다음 레버 후보 (다운스트림 관점 추가)</h3>
+<ul style="margin-bottom:0">
+<li><b>동적 예산 재배분</b>: 레거시 조기 종료분을 box/gassign 슬라이스로 환류(현재 perbay만 먹음). 단 box는 standalone 풀-코어라 시간↑가 품질↑로 직결되는지 검증 필요.</li>
+<li><b>gassign 활성화 임계 낮추기 검토</b>: <code>OGC_GASSIGN_MIN_T</code> 200→? (단 T=120서 gassign이 box를 이기는지 먼저 A/B — 아니면 시간 낭비).</li>
+<li><b>벤더스 ③→① 컷</b>(후보 내부, 예산 무관): 린/gassign의 z1-blind 결함을 닫음. <b>최우선 추천 유지.</b></li>
+</ul>
+</div>
+
+<p class="small" style="margin-top:30px">생성 2026-06-17 · 출처: code-analyzer(agentId a861da45) · <code>src/myalgorithm.py:7575-7835</code>, <code>src/parcand.py</code> · 짝 문서: <code>notes/lean-legacy-sequences-2026-06-17.html</code>(린 내부) · 모든 변경 default-OFF 게이트</p>
+
+</div>
+</body>
+</html>

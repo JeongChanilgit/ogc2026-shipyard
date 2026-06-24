@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>OGC2026 알고리즘 현황 — v2+v3 어디까지 왔나 (2026-06-23)</title>
+<style>
+  :root{--bg:#0e1014;--card:#181b22;--card2:#1f232c;--ink:#e8ebf1;--mut:#969eae;--cy:#5ad1c7;--bad:#ff6b6b;--good:#7ee787;--warn:#f0c674;--blue:#6cb6ff;--line:#272c37}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1200px;margin:0 auto;padding:30px 22px 90px}
+  h1{font-size:27px;margin:0 0 4px}
+  .sub{color:var(--mut);margin-bottom:22px}
+  h2{font-size:19px;margin:36px 0 12px;border-left:3px solid var(--cy);padding-left:11px}
+  h3{font-size:15px;margin:18px 0 8px;color:var(--cy)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:13px 0}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600}
+  td.l,th.l{text-align:left}
+  .bad{color:var(--bad)} .good{color:var(--good)} .warn{color:var(--warn)} .blue{color:var(--blue)} .mut{color:var(--mut)}
+  .big{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .kpis{display:flex;gap:13px;flex-wrap:wrap;margin:10px 0}
+  .kpi{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .kpi .lab{color:var(--mut);font-size:12px}
+  code{background:#0a0c10;padding:1px 6px;border-radius:5px;color:#bfe3ff;font-size:12px}
+  .flow{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;margin:10px 0}
+  .box{flex:1;min-width:200px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .box b{color:var(--cy)}
+  .arrow{display:flex;align-items:center;color:var(--mut);font-size:20px;padding:0 2px}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:10px;border:1px solid var(--line);color:var(--mut);margin-left:5px}
+  .tag.on{border-color:#2f6b4a;color:var(--good);background:#13261c}
+  .tag.exp{border-color:#6b5a2f;color:var(--warn);background:#262013}
+  .bar{height:22px;border-radius:5px;background:#2a2f3a;overflow:hidden;display:flex;font-size:11px;line-height:22px}
+  .bar i{display:block;height:100%;text-align:center;color:#0a0c10;font-weight:700;white-space:nowrap;overflow:hidden}
+  ul{margin:6px 0;padding-left:20px} li{margin:3px 0}
+  .note{color:var(--mut);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OGC2026 알고리즘 현황 — v2+v3 어디까지 왔나</h1>
+  <div class="sub">2026-06-23 · 측정 = 4-core affinity, TL=300s, 공식 check_feasibility · set1=prob_1‥20, set2=prob_21‥40</div>
+
+  <!-- ============ 1. 알고리즘 구성 ============ -->
+  <h2>1. 현재 알고리즘 구성 (best-of 3-엔진)</h2>
+  <div class="card">
+    <p>제출 <code>algorithm(prob_info, timelimit)</code> = <b>best-of(v1, v2)</b> 후 <b>v3 후처리</b>. 각 후보를 공식 obj로 평가해 더 나은 것 채택(never-worse).</p>
+    <div class="flow">
+      <div class="box"><b>v1 · solver_orig</b> (8156줄)<br>
+        <span class="mut">decoupled:</span> 크레인-인지 BL 배치(fastfloor, 위치 고정) → <b>per-bay CP-SAT 타이밍 오라클</b>(1-D disjunctive tardiness).<br>
+        <span class="good">set1 강함</span>(z1=0 19/20, ~1.39M) · <span class="bad">set2 쓰레기</span>(108M, 타임아웃 위험)</div>
+      <div class="arrow">+</div>
+      <div class="box"><b>v2 · unified_greedy</b> (574줄)<br>
+        <span class="mut">global Pass B:</span> 각 블록을 모든 fit 베이에 품질배치 → marginal(w1·tardy+w2·Δz2+w3·선호) 최소 베이에 commit. 배정 emergent. <b>v1과 동일 타이밍 오라클</b> 사용.<br>
+        <span class="good">set2 엔진</span> · <span class="warn">set1 약함</span>(z3 과지불)</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>v3 · postproc</b> (crane_repack)<br>
+        deserialize → 라운드 루프: <b>C1</b> x/y/o 크레인-인지 위치 재패킹(tardy 베이) · <b>C2</b> 선호베이 cross-bay move/swap · <b>C3</b> 전-베이 z1 이동. <b>전부 never-worse 게이트(공식 obj)</b>.<br>
+        <span class="cy">= 국소 조밀 재패커</span></div>
+    </div>
+    <p class="note" style="margin-top:10px"><b>v3는 "조밀하게 푼다"가 맞다</b> — crane_repack은 CP-SAT로 위치+타이밍을 재최적화해 더 조밀한 zero-tardy 배치를 찾음(예: prob_6 z1 2→0, obj −59K). 단 한계: ① 배정을 못 바꿈(베이에 과-배정되면 못 풂) ② 이산 후보라 연속 NFP nesting은 아님.</p>
+  </div>
+
+  <!-- ============ 2. 이번 세션 진전 요약 ============ -->
+  <h2>2. 이번 세션(2026-06-22~23) 진전 요약</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="lab">v2-alone set1 z1=0</div><div class="big">12 → <span class="good">18</span> / 20</div></div>
+    <div class="kpi"><div class="lab">v2-alone set1 총 obj</div><div class="big">2.69M → <span class="good">1.90M</span></div><div class="note">−29% (best-of 선호강제)</div></div>
+    <div class="kpi"><div class="lab">set2 총 obj</div><div class="big">171.9M → <span class="good">167.7M</span></div><div class="note">−2.4% (MOVEALL)</div></div>
+  </div>
+
+  <!-- ============ 3. set1 변화 ============ -->
+  <h2>3. set1 변화 — v2-alone 사다리 (핵심 = z3가 갭의 95%)</h2>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr><th class="l">config (v2-alone, v1 제외)</th><th>set1 총 obj</th><th>z1=0 개수</th><th class="l">무엇이 바뀌나</th></tr></thead>
+    <tbody>
+      <tr><td class="l">H0 (Pass B + 오라클만)</td><td>2,690,959</td><td>12/20</td><td class="l">제출본의 v2 = z1 머신러리 OFF였음</td></tr>
+      <tr><td class="l">+ arsenal (TOSS+FIXOPT)<span class="tag exp">실험</span></td><td>2,556,817</td><td>15/20</td><td class="l">베이간 z1 재배정 켜기</td></tr>
+      <tr><td class="l">+ strongX (free-all X-repack)<span class="tag exp">실험</span></td><td>2,464,964</td><td class="good">18/20</td><td class="l">layout-bound z1 청소(prob_6/14/15)</td></tr>
+      <tr><td class="l">+ M1 (z3 디스카운트) = <b>triple</b><span class="tag exp">실험</span></td><td>2,184,873</td><td>18/20</td><td class="l">선호베이 유지 → z3↓ (prob_4 194K→81K)</td></tr>
+      <tr style="background:#15241e"><td class="l good"><b>best-of 선호강제 (ceil12 ∪ triple)</b><span class="tag exp">실험</span></td><td class="good"><b>1,897,806</b></td><td>—</td><td class="l">저혼잡 z3≈0 회수 (prob_1 58K→5.8K)</td></tr>
+      <tr><td class="l mut">v1 (현 제출이 set1서 쓰는 엔진)</td><td class="mut">~1,390,000</td><td class="mut">19/20</td><td class="l mut">best-of가 set1선 v1 채택</td></tr>
+      <tr><td class="l blue">경쟁자 (목표)</td><td class="blue">931,465</td><td class="blue">20/20</td><td class="l blue">z3≈0 AND z1=0 (조밀 패킹)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card">
+    <h3>set1 갭의 정체 = z3 (선호도), z1 아님</h3>
+    <div class="bar">
+      <i class="bad" style="width:95%;background:var(--bad)">z3 ~95%</i>
+      <i style="width:5%;background:var(--warn)">z1·z2</i>
+    </div>
+    <p style="margin-top:8px">우리(2.56M) vs 경쟁자(931K) 갭 1.63M의 ~95%가 z3. 우리 z3가 경쟁자(z3=2~515)의 <b>3~10배</b>. 원인 = ① marginal이 거대 w1(16~29K≫w3 125~200)으로 블록을 선호베이서 추방 ② 선호베이 조밀패킹 실패. <b>z1=0은 필요조건이지 점수 레버 아님</b>(전체 갭의 &lt;8%).</p>
+  </div>
+
+  <!-- ============ 4. set2 변화 ============ -->
+  <h2>4. set2 변화 (점수의 ~67%, z1이 obj의 92%)</h2>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr><th class="l">set2 config</th><th>총 obj</th><th>vs baseline</th><th class="l">메모</th></tr></thead>
+    <tbody>
+      <tr><td class="l">baseline (v2+postproc, arsenal off) = 현 제출</td><td>171,852,444</td><td>—</td><td class="l">feasible 20/20, never−1</td></tr>
+      <tr><td class="l bad">arsenal + 높은 V2_CAP</td><td class="bad">176,791,397</td><td class="bad">+2.9%</td><td class="l">v2가 예산 먹어 postproc 굶음 → 나쁨</td></tr>
+      <tr style="background:#15241e"><td class="l good"><b>+ MOVEALL (C3)</b><span class="tag exp">실험</span></td><td class="good"><b>167,740,679</b></td><td class="good"><b>−2.4%</b></td><td class="l">C2가 놓친 전-베이 z1 이동. never-worse·cheap·never−1</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card">
+    <p><b>set2 핵심:</b> set2 z1 감소의 주역은 v2 내부가 아니라 <b>v3 postproc crane_repack</b>. 그래서 V2_CAP을 낮춰 postproc에 예산을 몰아주고, <b>MOVEALL</b>로 전-베이 z1 이동까지 잡으면 −2.4%. <b>arsenal/높은 V2_CAP은 postproc를 굶겨 오히려 해롭다</b>. set2는 z1 지배라 never−1(feasible 유지)이 1순위 — 모든 실험에서 20/20 feasible 유지 확인.</p>
+  </div>
+
+  <!-- ============ 5. 만든 레버 ============ -->
+  <h2>5. 이번에 만든 레버 (전부 env-gated, 기본 OFF — 실제 제출 myalgorithm.py 무영향)</h2>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr><th class="l">env 노브</th><th class="l">무엇</th><th class="l">효과 / 적용범위</th></tr></thead>
+    <tbody>
+      <tr><td class="l"><code>OGC_PP_MOVEALL</code></td><td class="l">C3: tardy 블록 전-베이 crane_repack 이동</td><td class="l good">범용 채택감 (set2 −2.4%, never-worse, cheap)</td></tr>
+      <tr><td class="l"><code>OGC_PP_KX</code>·<code>OGC_PP_FREEALL</code></td><td class="l">strongX: free-all X축 조밀 재패킹</td><td class="l">set1 z1=0 (set2는 precompute 폭발→size-gate 필요)</td></tr>
+      <tr><td class="l"><code>OGC_PLACE_W1_SCALE</code></td><td class="l">M1: placement w1·tardy 디스카운트</td><td class="l">set1 z3↓ (set2 z1 위험→adaptive)</td></tr>
+      <tr><td class="l"><code>OGC_TOSS</code>·<code>OGC_FIXOPT</code></td><td class="l">arsenal: 베이간 z1 재배정</td><td class="l">set1 도움 / set2 중립~해</td></tr>
+      <tr><td class="l"><code>OGC_FORCE_PREF</code>·<code>OGC_PLACE_CEIL</code></td><td class="l">선호 강제 / 혼잡-적응 강제(M3)</td><td class="l">진단용 — best-of로 회수, 단일패스 M3는 실패</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <!-- ============ 6. 남은 벽 ============ -->
+  <h2>6. 남은 벽 = 이형 폴리곤 조밀 패킹 밀도</h2>
+  <div class="card">
+    <p>1.90M(v2 best-of) ↔ v1 1.39M ↔ 경쟁자 931K. 이 갭의 본질 = <b>고혼잡 인스턴스(prob_12/14/20)의 z3</b>. 선호 강제하면 z1 폭발(우리 패커가 동시공존 블록을 다 못 욱여넣음). <b>v1도 동일하게 막힌 벽</b> — 경쟁자가 우리를 이기는 단 하나의 이유 = 패킹 밀도(~95% vs ~80%).</p>
+    <p><b>왜 v3로 안 되나:</b> v3 crane_repack은 조밀하지만 <b>per-bay</b>라 과-배정을 못 풂. 베이에 블록이 너무 많이 배정되면 어떤 재패킹도 zero-tardy 불가.</p>
+    <p class="good"><b>→ 다음 실험(방향 1, 진행 중): global 용량-인지 배정.</b> CP-SAT로 max-preference s.t. per-bay 동시공존/면적 용량 제약 → 과-배정을 *처음부터* 방지. 그러면 v3 조밀 재패킹이 "적정 크기" 베이에서 성공. forced-pref/marginal의 myopic 그리디 한계(미래 혼잡 못 봄)를 비-myopic 전역최적으로 대체.</p>
+  </div>
+
+  <div class="card" style="border-color:#2f4a6b;background:#111822">
+    <h3 class="blue">한 줄 요약</h3>
+    <p>v2+v3는 이번 세션에 <b>set1 z1=0 18/20·총 −29%(1.90M)</b>, <b>set2 −2.4%(167.7M)</b>로 개선됐다(전부 never−1, 실험 게이트). 하지만 경쟁자(set1 931K)와의 갭은 <b>이형 폴리곤 조밀 패킹 밀도 벽</b>이며 v1·v2 공통. 지금 그 벽을 <b>global 용량-인지 배정(방향 1)</b>으로 공략 중.</p>
+  </div>
+</div>
+</body>
+</html>

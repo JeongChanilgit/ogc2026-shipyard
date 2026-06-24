@@ -1,0 +1,4 @@
+H11 test  FS_TL=200.0  (_solve_reassign direct, ACCZ1 off vs on)
+prob_13: hybrid obj=113500.0 z3=805.0 | comp obj=71822.94 z2=2873.39 z3=432.0
+  reassign  : obj=3040484 z1=161 z2=4813 z3=158 wall=12.9 feas=True
+  feasspill : obj=1355379 z1=70 z2=3477 z3=268 wall=166.9 feas=True

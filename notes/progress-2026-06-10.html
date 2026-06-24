@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 진행 상황 — 2026-06-10</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#171b22; --panel2:#1d222b; --line:#2b313c;
+    --ink:#e6edf3; --mut:#9aa6b2; --dim:#6b7682;
+    --good:#3fb950; --good-bg:#11331c; --bad:#f85149; --bad-bg:#3a1416;
+    --warn:#d29922; --warn-bg:#3a2d0e; --acc:#58a6ff; --acc2:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.55 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif;}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 22px 80px;}
+  h1{font-size:25px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:18px;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 .n{font-size:12px;font-weight:700;color:#0e1116;background:var(--acc);
+    border-radius:6px;padding:2px 8px}
+  .sub{color:var(--mut);margin:0 0 18px;font-size:13px}
+  .lead{background:linear-gradient(135deg,#172132,#171b22);border:1px solid var(--line);
+    border-radius:14px;padding:18px 20px;margin:18px 0 6px}
+  .lead b{color:var(--acc)}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card .lab{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .card .big{font-size:22px;font-weight:700;margin-top:3px}
+  .card .note{color:var(--mut);font-size:12px;margin-top:4px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;
+    padding:2px 10px;vertical-align:middle}
+  .p-done{background:var(--good-bg);color:var(--good);border:1px solid #1d5b2e}
+  .p-now{background:var(--warn-bg);color:var(--warn);border:1px solid #5e4a14}
+  .p-next{background:#1b2433;color:var(--acc);border:1px solid #21364e}
+  table{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:12.5px}
+  th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  td:first-child,th:first-child{text-align:left}
+  tbody tr:hover{background:#10141a}
+  .win{color:var(--good);font-weight:700}
+  .loss{color:var(--bad);font-weight:700}
+  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .tag{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px}
+  .t-win{background:var(--good-bg);color:var(--good)}
+  .t-loss{background:var(--bad-bg);color:var(--bad)}
+  .t-z1{background:var(--warn-bg);color:var(--warn)}
+  .bar{height:8px;background:#222a35;border-radius:5px;overflow:hidden;min-width:60px;display:inline-block;width:90px;vertical-align:middle}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,#bc8cff,#58a6ff)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 16px 12px;margin-top:8px}
+  .kv{color:var(--mut);font-size:12.5px}
+  .kv b{color:var(--ink)}
+  ul.tight{margin:8px 0 4px;padding-left:18px}
+  ul.tight li{margin:4px 0;color:var(--mut)}
+  ul.tight li b{color:var(--ink)}
+  .foot{color:var(--dim);font-size:11.5px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+  .arrow{color:var(--good);font-weight:700}
+  .small{font-size:11px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>OGC 2026 — 작업 진행 상황</h1>
+  <p class="sub">2026-06-10 · 최신 핸드오프(adaptive-raster) 이어받아 진행 · 작업파일 <span class="mono">src/myalgorithm.py</span></p>
+
+  <div class="lead">
+    <b>한 줄 요약.</b> 짧은-tl 안전망(<b>adaptive raster floor 게이트</b>)을 배선·검증·아카이브 완료(Task A).
+    이어서 채점 본류인 <b>긴-tl z3(선호도) 최적화</b>(Task B)에 착수 — 긴 tl에선 z1이 거의 해결되고(15/20=0)
+    목적함수를 <b>z3가 지배</b>(obj의 84~99%). 방금 핵심 발견: <b>Front B를 강화하면 z3가 공짜로 더 내려간다</b>
+    (prob_4 obj −31%). 막힌 줄 알았던 레버가 살아있음.
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="lab">Task A · adaptive raster</div>
+      <div class="big">완료 <span class="pill p-done">SHIPPED</span></div>
+      <div class="note">tl=100 catastrophe 4개 회피 · tl=300 무회귀(inert)</div></div>
+    <div class="card"><div class="lab">Task B.1 · 긴-tl baseline</div>
+      <div class="big">완료 <span class="pill p-done">MAPPED</span></div>
+      <div class="note">z3가 obj 지배 · headroom 11개 식별</div></div>
+    <div class="card"><div class="lab">Task B.2 · z3 레버 탐색</div>
+      <div class="big">발견 <span class="pill p-now">LEVER FOUND</span></div>
+      <div class="note">Front B 강화 = 공짜 z3 감소</div></div>
+  </div>
+
+  <!-- ============ TASK A ============ -->
+  <h2><span class="n">A</span> Adaptive raster floor 게이트 <span class="pill p-done">완료·검증·아카이브</span></h2>
+  <p class="sub">fast-floor(짧은 tl·큰 인스턴스) 발동 시에만 raster floor + pos_k=3 default ON. kill-switch 유지, 비-fast 경로 무수정.</p>
+
+  <div class="panel">
+    <div class="kv"><b>A/B 검증</b> — tl=100, prob_9~20, conc 2. adaptive(신규 default) vs default(<span class="mono">OGC_FLOOR_RASTER=0</span>=구 shipped). <b>9승 3패, 전부 feasible(−1 없음).</b></div>
+  </div>
+
+  <table>
+    <thead><tr><th>인스턴스</th><th>adaptive z1</th><th>adaptive obj</th><th>default z1</th><th>default obj</th><th>판정</th></tr></thead>
+    <tbody class="mono">
+      <tr><td>prob_9</td><td class="win">0</td><td>208,510</td><td>482</td><td>6,552,581</td><td><span class="tag t-win">catastrophe 회피</span></td></tr>
+      <tr><td>prob_10</td><td>0</td><td>99,491</td><td>0</td><td>100,478</td><td><span class="tag t-win">tie+</span></td></tr>
+      <tr><td>prob_11</td><td>1</td><td class="loss">206,376</td><td>1</td><td>133,030</td><td><span class="tag t-loss">obj +55%</span></td></tr>
+      <tr><td>prob_12</td><td class="win">0</td><td>214,998</td><td>13</td><td>483,888</td><td><span class="tag t-win">win</span></td></tr>
+      <tr><td>prob_13</td><td>1</td><td class="loss">245,705</td><td>4</td><td>226,382</td><td><span class="tag t-loss">obj +9%</span></td></tr>
+      <tr><td>prob_14</td><td class="win">4</td><td>314,332</td><td>1271</td><td>22,730,146</td><td><span class="tag t-win">catastrophe 회피</span></td></tr>
+      <tr><td>prob_15</td><td>0</td><td class="loss">137,484</td><td>0</td><td>133,284</td><td><span class="tag t-loss">obj +3%</span></td></tr>
+      <tr><td>prob_16</td><td>0</td><td>147,209</td><td>1</td><td>212,208</td><td><span class="tag t-win">win</span></td></tr>
+      <tr><td>prob_17</td><td>1</td><td>213,946</td><td>8</td><td>293,105</td><td><span class="tag t-win">win</span></td></tr>
+      <tr><td>prob_18</td><td class="win">4</td><td>284,640</td><td>952</td><td>12,899,202</td><td><span class="tag t-win">catastrophe 회피</span></td></tr>
+      <tr><td>prob_19</td><td>0</td><td>97,595</td><td>0</td><td>126,101</td><td><span class="tag t-win">win</span></td></tr>
+      <tr><td>prob_20</td><td class="win">5</td><td>668,584</td><td>1728</td><td>46,435,390</td><td><span class="tag t-win">catastrophe 회피</span></td></tr>
+    </tbody>
+  </table>
+  <ul class="tight">
+    <li><b>비대칭이 압도적</b>: catastrophe 4개(obj 6.5M~46M → 208K~669K, 95~99%↓)를 잡고, 대가는 modest 3패(raster densify→z3↑).</li>
+    <li><b>tl=300 무회귀 확정</b>: 최대 est=108 &lt; 임계 120 → 어떤 인스턴스도 발동 안 함 → bit-identical(prob_17 obj 동일, prob_20 z1=10=default). <b>평가서버의 긴 tl(수분~30분)에선 게이트가 잠잠 = 순수 보험.</b></li>
+    <li><b>3패는 구조적 불가피</b>: size 게이트는 "raster 필요" 정밀탐지가 아님(prob_9·11 둘 다 n=200인데 정반대). raster면 pos_k=3가 전축 최선이고 k2는 strictly dominated로 확인.</li>
+    <li>아카이브 <span class="mono">archive/2026-06-09-adaptive-raster/</span> (src+README+증거).</li>
+  </ul>
+
+  <!-- ============ TASK B.1 ============ -->
+  <h2><span class="n">B.1</span> 긴-tl 채점 baseline — z3가 목적함수의 숨은 지배자 <span class="pill p-done">완료</span></h2>
+  <p class="sub">default config @tl=300 full-20 (<span class="mono">results/capture/v7</span>, 게이트 inert이므로 현 baseline으로 유효). obj = w1·z1 + w2·z2 + w3·z3.</p>
+  <div class="cards">
+    <div class="card"><div class="lab">z1 상태 (tl=300)</div><div class="big">15/20 = 0</div><div class="note">z1&gt;0은 prob_11/13/17/20뿐 — z1은 거의 해결</div></div>
+    <div class="card"><div class="lab">총 obj (20 인스턴스)</div><div class="big">2,225,579</div><div class="note">대부분이 w3·z3 (선호도 페널티)</div></div>
+    <div class="card"><div class="lab">pure z3-headroom</div><div class="big">11개</div><div class="note">z1=0 인데 z3가 obj의 84~99%</div></div>
+  </div>
+
+  <table>
+    <thead><tr><th>인스턴스</th><th>z1</th><th>z2</th><th>z3</th><th>w3·z3</th><th>obj</th><th>z3가 obj의…</th></tr></thead>
+    <tbody class="mono">
+      <tr><td>prob_14 <span class="small">n250</span></td><td>0</td><td>333</td><td>880</td><td>117,040</td><td>118,705</td><td><span class="bar"><i style="width:99%"></i></span> 99%</td></tr>
+      <tr><td>prob_4 <span class="small">n100</span></td><td>0</td><td>996</td><td>516</td><td>103,200</td><td>110,172</td><td><span class="bar"><i style="width:94%"></i></span> 94%</td></tr>
+      <tr><td>prob_18 <span class="small">n300</span></td><td>0</td><td>1295</td><td>772</td><td>102,676</td><td>107,856</td><td><span class="bar"><i style="width:95%"></i></span> 95%</td></tr>
+      <tr><td>prob_12 <span class="small">n200</span></td><td>0</td><td>2325</td><td>769</td><td>102,277</td><td>118,552</td><td><span class="bar"><i style="width:86%"></i></span> 86%</td></tr>
+      <tr><td>prob_7 <span class="small">n150</span></td><td>0</td><td>2072</td><td>674</td><td>101,100</td><td>115,604</td><td><span class="bar"><i style="width:87%"></i></span> 87%</td></tr>
+      <tr><td>prob_5 <span class="small">n150</span></td><td>0</td><td>996</td><td>599</td><td>89,850</td><td>96,822</td><td><span class="bar"><i style="width:93%"></i></span> 93%</td></tr>
+      <tr><td>prob_6 <span class="small">n150</span></td><td>0</td><td>637</td><td>561</td><td>84,150</td><td>88,609</td><td><span class="bar"><i style="width:95%"></i></span> 95%</td></tr>
+      <tr><td>prob_16 <span class="small">n250</span></td><td>0</td><td>2905</td><td>614</td><td>81,662</td><td>96,187</td><td><span class="bar"><i style="width:85%"></i></span> 85%</td></tr>
+      <tr><td>prob_9 <span class="small">n200</span></td><td>0</td><td>1535</td><td>483</td><td>72,450</td><td>80,125</td><td><span class="bar"><i style="width:90%"></i></span> 90%</td></tr>
+      <tr><td>prob_10 <span class="small">n200</span></td><td>0</td><td>1424</td><td>527</td><td>70,091</td><td>80,059</td><td><span class="bar"><i style="width:88%"></i></span> 88%</td></tr>
+      <tr><td>prob_19 <span class="small">n300</span></td><td>0</td><td>3156</td><td>512</td><td>68,096</td><td>80,720</td><td><span class="bar"><i style="width:84%"></i></span> 84%</td></tr>
+      <tr style="opacity:.6"><td>prob_17 <span class="small">z1&gt;0</span></td><td>1</td><td>5825</td><td>1122</td><td>149,226</td><td>182,223</td><td><span class="bar"><i style="width:82%"></i></span> 82%</td></tr>
+      <tr style="opacity:.6"><td>prob_13 <span class="small">z1&gt;0</span></td><td>7</td><td>1886</td><td>1051</td><td>139,783</td><td>279,448</td><td><span class="bar"><i style="width:50%"></i></span> 50%</td></tr>
+      <tr style="opacity:.6"><td>prob_20 <span class="small">z1&gt;0</span></td><td>10</td><td>1089</td><td>1309</td><td>163,625</td><td>436,829</td><td><span class="bar"><i style="width:37%"></i></span> 37%</td></tr>
+    </tbody>
+  </table>
+  <p class="small">z3는 <b>bay 배정만의 함수</b>(위치·시간 무관, <span class="mono">_assignment_proxy</span>) → 레버 = 더 나은 bay 재배정.</p>
+
+  <!-- ============ TASK B.2 ============ -->
+  <h2><span class="n">B.2</span> Front B 강화 = 공짜 z3 레버 <span class="pill p-now">방금 발견</span></h2>
+  <p class="sub">Front B = z1=0서 bay 재배정으로 z3 줄이는 능동 local search(relocate+swap, full-obj 게이트). 3개 config 비교 @tl=300.</p>
+
+  <table>
+    <thead><tr><th>인스턴스</th><th>config</th><th>z3</th><th>obj</th><th>vs default</th><th>FB adopt / ins_none</th></tr></thead>
+    <tbody class="mono">
+      <tr><td rowspan="3">prob_4</td><td>Front B 끔</td><td>620</td><td>132,302</td><td class="small">기준선</td><td>—</td></tr>
+      <tr><td>default Front B</td><td>516</td><td>110,172</td><td class="small">현 shipped</td><td>3 / 0</td></tr>
+      <tr><td><b>강화 Front B</b></td><td class="win">344</td><td class="win">76,290</td><td class="win">obj −31%</td><td>6 (swap 2) / 0</td></tr>
+      <tr><td rowspan="3">prob_14</td><td>Front B 끔</td><td>922</td><td>125,246</td><td class="small">기준선</td><td>—</td></tr>
+      <tr><td>default Front B</td><td>868</td><td>116,499</td><td class="small">현 shipped</td><td>4 / 0</td></tr>
+      <tr><td><b>강화 Front B</b></td><td class="win">798</td><td class="win">108,199</td><td class="win">obj −7%</td><td>6 / 0</td></tr>
+      <tr><td rowspan="3">prob_12</td><td>Front B 끔</td><td>1102</td><td>160,650</td><td class="small">기준선</td><td>—</td></tr>
+      <tr><td>default Front B</td><td>756</td><td>138,839</td><td class="small">현 shipped</td><td>12 / 0</td></tr>
+      <tr><td>강화 Front B</td><td>772</td><td>141,450</td><td class="small">noise(z1=1, ±변동)</td><td>11 / 0</td></tr>
+    </tbody>
+  </table>
+  <ul class="tight">
+    <li><b>강화(TRIES 24→200, SWAP_TOP 40→120, STALL 2→6)가 z3를 더 깎는다</b> — prob_4 obj −31%(110K→76K!), prob_14 −7%.</li>
+    <li><b><span class="mono">ins_none=0</span> 전부</b> → "dense floor서 Front B가 굶는다"는 가설은 <b>거짓</b>(이 slack 인스턴스들에선). default Front B가 너무 일찍 멈출 뿐(STALL=2).</li>
+    <li>prob_12는 z1=1 + CP-SAT 변동으로 noise — ×2~3 반복으로 확인 필요.</li>
+    <li><span class="arrow">결론 →</span> 무거운 CP-SAT 재배정 빌드 전에, <b>Front B 파라미터 튜닝이 즉시 가능한 값싼 레버</b>.</li>
+  </ul>
+
+  <!-- ============ NEXT ============ -->
+  <h2><span class="n">▶</span> 다음 단계</h2>
+  <ul class="tight">
+    <li><span class="pill p-next">1</span> &nbsp;Front B 파라미터 sweep + full-20 @tl=300 무회귀 검증(변동 ×2~3) → 스윗스팟 default 채택 → ship.</li>
+    <li><span class="pill p-next">2</span> &nbsp;3-cycle relocate(단일 chain) 추가 — 페어 swap 너머의 z3 풀기.</li>
+    <li><span class="pill p-next">3</span> &nbsp;여전히 headroom 남으면 <b>CP-SAT bay-assignment 재최적화</b>(평가서버 Gurobi 풀라이선스) — confidence-gate 후 착수.</li>
+    <li class="small">불변 제약: 모든 변경 default 무회귀 + feasible 보장(−1 절대 회피) + <span class="mono">utils.py</span>/<span class="mono">baseline/</span> 무수정.</li>
+  </ul>
+
+  <div class="foot">
+    데이터: <span class="mono">results/capture/{adaptive100,default100,raster_k2_100,adaptive300,v7}</span> ·
+    드라이버: <span class="mono">notes/_capture20.py</span>, <span class="mono">notes/_z3probe.py</span> ·
+    핸드오프: <span class="mono">notes/SESSION-HANDOFF-2026-06-09-z3-mainline.md</span> ·
+    측정: conc≤2, eval=인스턴스당 4코어·16GB·인터넷차단·tl 수분~30분.
+  </div>
+
+</div>
+</body>
+</html>

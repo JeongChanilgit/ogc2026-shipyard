@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v2로 set1 잡기 — 방향 A(압축 후처리) · B(재배정 commit) 방법론</title>
+<style>
+  :root{--bg:#0e1016;--card:#171a24;--card2:#1e2230;--ink:#e8eaf0;--mut:#98a1b6;--line:#2b3146;
+        --A:#3cc98b;--B:#c77dff;--pref:#5b8cff;--wrong:#e2245a;--gap:#2a3047;--ok:#3cb371;--warn:#f5a623;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.62 -apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif;padding:0 0 90px}
+  header{padding:34px 6vw 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#14171f,#0e1016)}
+  h1{margin:0 0 6px;font-size:24px;letter-spacing:-.4px}
+  .sub{color:var(--mut);font-size:13.5px}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 6vw}
+  h2{font-size:21px;margin:34px 0 6px;padding-top:10px;display:flex;align-items:center;gap:10px}
+  h2 .tag{font-size:12px;font-weight:800;padding:3px 11px;border-radius:6px}
+  .tA{background:rgba(60,201,139,.16);color:#67d9a6;border:1px solid #2c7a55}
+  .tB{background:rgba(199,125,255,.16);color:#d4a6f0;border:1px solid #6d4a8f}
+  h3{font-size:15.5px;color:#cdd4e8;margin:20px 0 8px}
+  .lead{color:var(--mut);margin:4px 0 14px;max-width:940px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:15px 18px;margin:14px 0}
+  .cardA{border-left:5px solid var(--A)} .cardB{border-left:5px solid var(--B)}
+  code{background:#0c0e14;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:12.5px ui-monospace,Consolas,monospace;color:#bcd0ff}
+  ul{margin:8px 0;padding-left:20px}li{margin:6px 0}
+  .mut{color:var(--mut)}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}
+  th,td{padding:8px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  thead th{color:var(--mut);font-weight:600;border-bottom:2px solid var(--line)}
+  /* flow */
+  .flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:14px 0}
+  .fb{flex:1;min-width:130px;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+  .fb .n{font-size:11px;color:var(--mut);font-weight:800}
+  .fb b{display:block;font-size:13.5px;margin:2px 0 3px}
+  .fb small{color:var(--mut);font-size:12px;line-height:1.45}
+  .arrow{align-self:center;color:var(--mut);font-size:20px}
+  /* bay viz */
+  .stage-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin:14px 0}
+  .vbox{text-align:center}
+  .vcap{font-size:12px;color:var(--mut);margin-bottom:6px;font-weight:700}
+  .bay{width:230px;height:96px;background:#0b0d13;border:2px solid #3a4straight;border:2px solid #39415c;border-radius:8px;position:relative;padding:6px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px;overflow:hidden}
+  .blk{height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0b0d13}
+  .pref{background:var(--pref)} .wrong{background:var(--wrong);color:#fff} .other{background:#7f8aa3}
+  .ghost{background:repeating-linear-gradient(45deg,#1a1f30,#1a1f30 5px,#222842 5px,#222842 10px);border:1px dashed #3a4straight;border:1px dashed #44507a;color:#6b768f}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0 0;font-size:12px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .bigarrow{align-self:center;color:var(--warn);font-size:26px;font-weight:800}
+  .callout{border-left:4px solid var(--warn);background:#1b1c22;padding:11px 15px;margin:13px 0;border-radius:0 8px 8px 0}
+  .pro{color:#67d9a6}.con{color:#ff8aa0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:840px){.two{grid-template-columns:1fr}}
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:5px;background:#0c0e14;border:1px solid var(--line);color:#9db8ff;margin:2px 4px 2px 0;font-family:ui-monospace,Consolas,monospace}
+  .foot{color:var(--mut);font-size:12px;border-top:1px solid var(--line);margin-top:40px;padding-top:16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>v2로 set1 잡기 — 두 방향 방법론</h1>
+    <div class="sub">A: v2 뒤 per-bay 압축 후처리 · B: v2 Pass B를 재배정 가능하게 (look-ahead/eviction) · 2026-06-22</div>
+  </div>
+</header>
+<div class="wrap">
+
+<!-- 문제 복습 -->
+<section>
+  <h2>0. 문제 — v2가 set1에서 지는 이유 (복습)</h2>
+  <p class="lead">v1·v2는 <b>타이밍 오라클이 동일</b>(<code>_cpsat_bay_timing_verified</code>). 그러니 set1 격차는 타이밍이 아니라
+  <b>배정+패킹 밀도</b>. v2 Pass B는 블록을 order-blend 순으로 꺼내 <b>한 번 놓으면 영구 commit</b>(재배정·재압축 없음, <code>unified_greedy.py:235</code>).
+  set1처럼 선호 베이가 빡빡하면:</p>
+  <div class="stage-row">
+    <div class="vbox"><div class="vcap">선호 베이 (v2 Pass B 결과)</div>
+      <div class="bay">
+        <div class="blk pref" style="width:60px">B1</div><div class="blk pref" style="width:52px">B2</div>
+        <div class="blk pref" style="width:44px">B3</div>
+        <div class="blk ghost" style="width:64px">gap</div>
+        <div class="blk other" style="width:50px">x</div><div class="blk ghost" style="width:40px">gap</div>
+      </div>
+      <div class="mut" style="font-size:11.5px;margin-top:5px">먼저 온 블록이 좋은 자리 선점 + 틈(gap) 남김 = <b>밀도 낮음</b></div></div>
+    <div class="bigarrow">⟶</div>
+    <div class="vbox"><div class="vcap">밀려난 블록 B4 (이 베이를 선호하지만…)</div>
+      <div class="bay" style="border-color:#5a2030">
+        <div class="blk wrong" style="width:70px">B4</div>
+        <div class="mut" style="align-self:center;font-size:11.5px;padding-left:8px">선호 베이 꽉 차서<br>다른 베이로 추방</div>
+      </div>
+      <div class="mut" style="font-size:11.5px;margin-top:5px"><span style="color:var(--wrong)">z3↑</span> (선호 못 맞춤) + 늦게 들어가면 <span style="color:var(--warn)">z1↑</span></div></div>
+  </div>
+  <div class="legend">
+    <span><i class="sw pref"></i>이 베이 선호 블록</span>
+    <span><i class="sw wrong"></i>여기 선호하나 추방됨(wrong-bay)</span>
+    <span><i class="sw other"></i>다른 블록</span>
+    <span><i class="sw" style="background:#222842;border:1px dashed #44507a"></i>빈틈(gap)</span>
+  </div>
+  <p class="lead" style="margin-top:12px">핵심: v2는 <b>밀도가 낮아 선호 베이에 다 못 담고</b>, 한 번 놓으면 <b>고치지 않는다</b>.
+  → 두 가지 공략: <b class="pro">A</b> 사후에 압축해서 자리 만들어 되돌리기 · <b style="color:var(--B)">B</b> 놓는 순간부터 재배정 가능하게.</p>
+</section>
+
+<!-- 방향 A -->
+<section>
+  <h2><span class="tag tA">A</span> v2 뒤 per-bay 압축 후처리 (postproc, never-worse)</h2>
+  <p class="lead">v2 출력을 받아 <b>각 베이를 더 조밀하게 재배치(압축)</b>해 빈틈을 모으고, 그렇게 <b>생긴 공간으로 추방됐던 선호 블록을 cross-bay로 되돌린다</b>.
+  전부 <b>공식 obj never-worse 게이트</b> — 절대 나빠지지 않음. v2 코어는 안 건드림(추가 단계).</p>
+
+  <h3>단계 흐름</h3>
+  <div class="flow">
+    <div class="fb"><div class="n">IN</div><b>v2 해</b><small>per-bay placed (느슨)</small></div>
+    <span class="arrow">→</span>
+    <div class="fb"><div class="n">A-1</div><b>베이별 압축</b><small>blocks 재배치로 빈틈 제거 → 자유 공간 확보</small></div>
+    <span class="arrow">→</span>
+    <div class="fb"><div class="n">A-2</div><b>cross-bay 복귀</b><small>wrong-bay 블록을 넓어진 선호 베이로 이동</small></div>
+    <span class="arrow">→</span>
+    <div class="fb"><div class="n">A-3</div><b>타이밍 오라클</b><small>재배치 위에 entry/exit 재최적</small></div>
+    <span class="arrow">→</span>
+    <div class="fb" style="border-color:var(--A)"><div class="n">GATE</div><b>never-worse</b><small>obj 개선시만 채택</small></div>
+  </div>
+
+  <h3>시각 — 무슨 일이 일어나나</h3>
+  <div class="stage-row">
+    <div class="vbox"><div class="vcap">① 압축 전</div>
+      <div class="bay">
+        <div class="blk pref" style="width:60px">B1</div><div class="blk ghost" style="width:30px">gap</div>
+        <div class="blk pref" style="width:52px">B2</div><div class="blk ghost" style="width:34px">gap</div>
+        <div class="blk pref" style="width:44px">B3</div>
+      </div></div>
+    <div class="bigarrow">⟶</div>
+    <div class="vbox"><div class="vcap">② A-1 압축 (틈 모음)</div>
+      <div class="bay">
+        <div class="blk pref" style="width:60px">B1</div><div class="blk pref" style="width:52px">B2</div><div class="blk pref" style="width:44px">B3</div>
+        <div class="blk ghost" style="width:60px">자유공간</div>
+      </div></div>
+    <div class="bigarrow">⟶</div>
+    <div class="vbox"><div class="vcap">③ A-2 B4 복귀</div>
+      <div class="bay" style="border-color:#2c7a55">
+        <div class="blk pref" style="width:60px">B1</div><div class="blk pref" style="width:52px">B2</div><div class="blk pref" style="width:44px">B3</div>
+        <div class="blk pref" style="width:56px">B4↩</div>
+      </div>
+      <div class="mut" style="font-size:11.5px;margin-top:5px"><span class="pro">z3↓</span> B4가 선호 베이 복귀</div></div>
+  </div>
+
+  <h3>세부 메커니즘 — 두 변형</h3>
+  <div class="two">
+    <div class="card cardA"><b>A1. crane_repack 확장 (기존 v3 재사용)</b>
+      <ul>
+        <li><b>z1-게이트 제거</b>: <code>postproc.py:176</code>의 <code>if best_z1≤0: skip</code> 삭제 → z1=0인 set1도 후처리 받음.</li>
+        <li><b>전 베이 적용</b>: <code>postproc.py:85</code>의 "tardy 베이만" → 모든 베이 순회.</li>
+        <li><b>cross-bay 타겟 확장</b>: <code>bpass.py:324</code> "tardy AND wrong" → <b>"wrong"만</b>(z1=0이어도 선호≠현재면 후보). set1의 추방 블록이 비로소 이동 대상이 됨.</li>
+        <li>crane_repack_bay가 위치 이산후보로 재배치(candidate0=현재라 never-worse) → 부수적으로 공간 정리.</li>
+      </ul>
+      <div class="mut" style="font-size:12px"><b>주의</b>: crane_repack 목적은 z1뿐 → set1(z1=0)엔 위치 자체는 무효. <b>set1 레버는 A-2 cross-bay 복귀</b>(z3). A-1은 그 공간을 만드는 역할.</div>
+    </div>
+    <div class="card cardA"><b>A2. 진짜 압축 패스 추가 (밀도 목적)</b>
+      <ul>
+        <li>crane_repack은 z1 최소지 <b>밀도 최대가 아님</b>. set1서 선호 베이를 실제로 비우려면 <b>density-목적 재패킹</b>이 필요.</li>
+        <li><b>방법</b>: 베이 블록을 면적 큰 순으로 bottom-left 재배치(v1식 best-of-N 순서) → 같은 블록을 더 조밀하게 → 상단/우측에 연속 자유공간.</li>
+        <li>또는 left/down 컴팩션(블록을 벽쪽으로 밀어 붙임, 크레인 j≥k 유지).</li>
+        <li>압축으로 생긴 연속 공간 → A-2 cross-bay move의 성공률↑.</li>
+      </ul>
+      <div class="mut" style="font-size:12px">v1이 가진 per-bay best-of/descent 압축(<code>solver_orig</code> S4+S6)을 v2 출력에 1패스 이식하는 것.</div>
+    </div>
+  </div>
+
+  <h3>코드 변경점 (구체)</h3>
+  <p><span class="chip">postproc.py:176</span> z1-gate 삭제 &nbsp; <span class="chip">postproc.py:85</span> 전 베이 순회 &nbsp;
+  <span class="chip">bpass.py:324</span> 타겟 wrong-only &nbsp; <span class="chip">+compaction</span> A2면 density 재패킹 신규 &nbsp;
+  <span class="chip">myalgorithm:176</span> 호출부 z1-gate 제거</p>
+
+  <div class="callout">
+    <b>기대효과</b>: set1의 z3(추방 페널티) 회수 → v1 수준 근접. <b>never-worse</b>라 절대 손해 없음(악화 시 원본 반환).<br>
+    <b>위험/한계</b>: <span class="con">cross-bay 복귀가 z1 폭발</span>시킬 수 있음(z3_realize 실험서 set2는 폭발) — 단 set1은 저압력이라 공간 여유 있고, never-worse 게이트가 차단. 압축 자체 천장도 존재(z1-localization). <span class="pro">싸고 안전, 먼저 시도.</span>
+  </div>
+</section>
+
+<!-- 방향 B -->
+<section>
+  <h2><span class="tag tB">B</span> v2 Pass B를 재배정 가능하게 — look-ahead / eviction</h2>
+  <p class="lead">근본 원인(<b>한 번 놓으면 영구 commit · myopic</b>)을 <b>구성 단계에서</b> 고친다. 선호 베이 경쟁이 생기면
+  이미 놓인 낮은-우선 블록을 <b>밀어내고(evict) 재배치</b>하거나, 애초에 <b>미래 수요를 내다보고(look-ahead)</b> 좋은 자리를 아껴둔다.
+  v2 코어(<code>unified_greedy.py:207-246</code>) 수정.</p>
+
+  <h3>단계 흐름</h3>
+  <div class="flow">
+    <div class="fb"><div class="n">B-loop</div><b>블록 i 도착</b><small>order-blend 순</small></div>
+    <span class="arrow">→</span>
+    <div class="fb"><div class="n">평가</div><b>선호 베이 j 시도</b><small>look-ahead marginal로 채점</small></div>
+    <span class="arrow">→</span>
+    <div class="fb"><div class="n">분기</div><b>자리 있나?</b><small>있으면 commit</small></div>
+    <span class="arrow">→</span>
+    <div class="fb" style="border-color:var(--B)"><div class="n">없으면</div><b>eviction 시도</b><small>낮은-우선 c 빼고 i 넣고 c 재배치</small></div>
+    <span class="arrow">→</span>
+    <div class="fb"><div class="n">게이트</div><b>net marginal&lt;0?</b><small>이득일 때만 교체</small></div>
+  </div>
+
+  <h3>시각 — eviction (밀어내기)</h3>
+  <div class="stage-row">
+    <div class="vbox"><div class="vcap">① B4(고선호) 도착, 선호 베이 full</div>
+      <div class="bay">
+        <div class="blk pref" style="width:58px">B1</div><div class="blk pref" style="width:50px">B2</div>
+        <div class="blk other" style="width:46px">c<br>저선호</div><div class="blk pref" style="width:42px">B3</div>
+      </div>
+      <div class="mut" style="font-size:11.5px;margin-top:5px">B4가 들어갈 틈 없음. c는 이 베이 선호 아님(낮은 z3 손실)</div></div>
+    <div class="bigarrow">⟶</div>
+    <div class="vbox"><div class="vcap">② c 추방 → B4 삽입 → c 재배치</div>
+      <div class="bay" style="border-color:#6d4a8f">
+        <div class="blk pref" style="width:58px">B1</div><div class="blk pref" style="width:50px">B2</div>
+        <div class="blk pref" style="width:56px">B4</div><div class="blk pref" style="width:42px">B3</div>
+      </div>
+      <div class="mut" style="font-size:11.5px;margin-top:5px">c는 다른 베이로(작은 z3 손실) ↔ B4 선호 충족(큰 z3 이득) = <span class="pro">net 이득</span></div></div>
+  </div>
+
+  <h3>세부 메커니즘 — 세 변형</h3>
+  <div class="card cardB"><b>B1. Eviction 기반 삽입</b> (가장 직접적)
+    <ul>
+      <li>블록 i의 선호 베이 j가 full이면 포기(→wrong) 대신: j의 블록 중 <b>z3-우선 가장 낮은 c</b>(여기 선호 아닌, footprint 비슷한)를 후보로.</li>
+      <li>비용 계산: <code>Δ = [i를 j에 넣는 이득(z3↓)] − [c를 빼서 재배치하는 손실(z3↑+z1)]</code>. <b>Δ&lt;0이면 교체</b>.</li>
+      <li>c는 다른 fit 베이에 재배치(연쇄 가능 → <b>깊이 1~2로 제한</b>해 cascade 방지).</li>
+      <li>구현: Pass B 루프(<code>:221</code>)에서 "fit 베이 없음/높은 marginal" 분기에 eviction 시도 추가. 상태는 <code>state[j].placed</code> 리스트에서 c 제거+i 추가+c 재삽입.</li>
+    </ul>
+  </div>
+  <div class="card cardB"><b>B2. Look-ahead marginal (선점 비용 부과)</b>
+    <ul>
+      <li>블록 i를 베이 j에 놓을 때, 지금 상태만 보지 말고 <b>미래에 j를 선호하는 블록 수요</b>를 본다.</li>
+      <li>사전계산: 각 베이 j에 대해 "아직 안 놓인 블록 중 j를 강하게 선호하는 수" = <code>demand[j]</code>.</li>
+      <li>marginal에 <b>shadow price</b> 추가: i가 j의 희소 공간을 소비하면 <code>+λ·demand[j]</code> 페널티 → 고선호-수요 베이의 자리를 함부로 안 씀(미래 블록 위해 아낌).</li>
+      <li>구현: <code>place_one</code> 채점(<code>:211-231</code>)의 <code>sc</code>에 항 추가. 가벼움(상태 변경 없음).</li>
+    </ul>
+  </div>
+  <div class="card cardB"><b>B3. 우선순위 배치 + 예약</b>
+    <ul>
+      <li>order-blend(R+0.5P) 대신/병행: <b>선호 강도(z3 잠재손실) 높은 블록 먼저</b> 배치 → 고선호 블록이 선호 베이를 먼저 확보.</li>
+      <li>또는 베이별 용량의 일부를 고선호 블록용으로 <b>예약</b>(reservation)해 뒤늦게 와도 자리 보장.</li>
+      <li>위험: 순서를 바꾸면 z1(시간축 정리)이 나빠질 수 있음(order-blend는 z1용) → z3·z1 트레이드.</li>
+    </ul>
+  </div>
+
+  <h3>코드 변경점 (구체)</h3>
+  <p><span class="chip">unified_greedy.py:207-246</span> Pass B commit 루프 &nbsp; <span class="chip">:211-231</span> place_one 채점에 look-ahead 항 &nbsp;
+  <span class="chip">:235</span> 영구 append → eviction 가능 구조 &nbsp; <span class="chip">:154-157</span> order(B3)</p>
+
+  <div class="callout">
+    <b>기대효과</b>: 근본 원인 해결 → set1 z3·z1 동시 회수, 잠재 이득 A보다 큼.<br>
+    <b>위험/한계</b>: <span class="con">코어 수정(고위험)</span> · never-worse 보장 없음(구성 자체를 바꿈) · eviction cascade · look-ahead는 휴리스틱 추정. set2에도 영향(현 주력 엔진) → 회귀 위험. <span class="con">검증 부담 큼.</span>
+  </div>
+</section>
+
+<!-- 비교 -->
+<section>
+  <h2>A vs B — 비교 & 권장 순서</h2>
+  <table>
+    <thead><tr><th></th><th>A. 압축 후처리</th><th>B. 재배정 commit</th></tr></thead>
+    <tbody>
+      <tr><td>위치</td><td>v2 <b>뒤</b> (추가 단계, postproc)</td><td>v2 <b>안</b> (Pass B 코어 수정)</td></tr>
+      <tr><td>건드리는 것</td><td>postproc.py · bpass.py (격리)</td><td>unified_greedy.py 핵심 루프</td></tr>
+      <tr><td>안전성</td><td class="pro">never-worse 게이트 (절대 손해 X)</td><td class="con">보장 없음 (구성 변경)</td></tr>
+      <tr><td>set2 영향</td><td class="pro">독립 (postproc는 이미 set2서 +17.9M 입증)</td><td class="con">주력 엔진 변경 → 회귀 위험</td></tr>
+      <tr><td>잠재 이득</td><td>중 (압축 천장 존재)</td><td>대 (근본 원인 해결)</td></tr>
+      <tr><td>구현 난도</td><td class="pro">낮음 (게이트 제거 + 타겟 확장)</td><td class="con">높음 (eviction/cascade/look-ahead)</td></tr>
+      <tr><td>검증</td><td>set1 paired, never-worse라 빠름</td><td>set1+set2 전체 회귀 확인 필요</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">
+    <b>권장: A 먼저 → 측정 → 부족하면 B.</b><br>
+    ① <b>A</b>는 싸고 안전(never-worse)하며, 현재 돌고 있는 fix 런이 이미 "postproc full-obj가 강하다"(set2 +17.9M)를 입증했다.
+    A의 set1 버전(z1-gate 제거 + wrong-bay 타겟 + 압축)을 paired로 측정 → set1 z3가 실제로 깎이는지 즉시 확인.<br>
+    ② A로 v1 수준에 <b>못 미치면</b> B로 — 근본(myopic commit)을 고친다. 단 B는 set2 회귀를 막으며 점진 적용(B2 look-ahead가 가장 가벼워 먼저).<br>
+    ③ 현실 옵션: set1=v1·set2=v2 <b>best-of 라우팅</b>이 이미 안전한 하한 — A/B는 "v2 단독으로도 set1"을 위한 상향.
+  </div>
+</section>
+
+<div class="foot">
+  근거: 제출 zip 코드 분석(<code>ALGORITHMS-v1-v2-v3.html</code>). 핵심: v1=v2 타이밍 오라클 동일 → set1 격차는 배정+밀도.
+  A=postproc 밀도/복귀(never-worse), B=Pass B 재배정(근본). 다음: A의 set1 버전 측정.
+</div>
+</div>
+</body>
+</html>

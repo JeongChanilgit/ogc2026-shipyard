@@ -1,0 +1,1802 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGC2026 — Z1(Tardiness)→0 문헌·인사이트</title>
+<style>
+:root{--bg:#0f1419;--panel:#171d26;--panel2:#1d2530;--ink:#e6edf3;--mut:#8b98a8;--line:#2a3441;--acc:#4ea1ff;--acc2:#ffb454;--good:#3fb950;--warn:#d29922;--bad:#f85149}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+header.top{padding:48px 0 26px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#131a24,transparent)}
+header.top h1{margin:0 0 8px;font-size:30px;letter-spacing:-.3px}
+header.top .sub{color:var(--mut);font-size:16px}
+header.top .meta{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+.pill{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:13px;color:var(--mut)}
+.pill b{color:var(--ink)}
+nav.toc{position:sticky;top:0;z-index:20;background:rgba(15,20,25,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:8px}
+nav.toc .wrap{display:flex;gap:8px;flex-wrap:wrap}
+nav.toc a{font-size:13px;color:var(--mut);padding:4px 10px;border-radius:7px}
+nav.toc a:hover{background:var(--panel2);color:var(--ink);text-decoration:none}
+h2{font-size:23px;margin:42px 0 14px;padding-top:10px;letter-spacing:-.2px}
+h3{font-size:18px;margin:26px 0 12px}
+.lead{color:#c4cfdb;font-size:15.5px}
+.callout{border-radius:12px;padding:16px 18px;margin:18px 0;border:1px solid var(--line);background:var(--panel)}
+.callout.warn{border-color:#7a5a12;background:#211b0d}
+.callout ol{margin:8px 0 0;padding-left:20px}
+.ins{background:var(--panel);border:1px solid var(--line);border-radius:13px;margin:16px 0;overflow:hidden}
+.ins-h{padding:15px 18px;font-size:16.5px;font-weight:700;background:var(--panel2);border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px}
+.rank{display:inline-flex;min-width:30px;height:30px;align-items:center;justify-content:center;background:var(--acc);color:#06101d;border-radius:8px;font-weight:800;flex:none}
+.ins-b{padding:6px 18px 14px}
+.ins-b p{margin:11px 0}
+.ins-b b{color:#fff}
+.tag{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px!important}
+.t{font-size:12.5px;padding:3px 10px;border-radius:7px;border:1px solid var(--line)}
+.t.imp{background:#0f2a18;border-color:#1c5132;color:#5fd07e}
+.t.eff{background:#26210d;border-color:#5a4a12;color:#e8c45a}
+.t.risk{background:#241620;border-color:#5a2440;color:#e58fb0}
+code{background:#0b0f15;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:13px/1.4 "SF Mono",Consolas,monospace;color:#ffcf8a}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+.road th,.road td,.map th,.map td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+.road th,.map th{background:var(--panel2);color:#cdd8e4;font-weight:600}
+.road tr:nth-child(even),.map tr:nth-child(even){background:#141a23}
+table.papers{font-size:14px}
+.catsec{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:6px 18px 14px;margin:16px 0}
+.catsec h3{display:flex;align-items:baseline;gap:10px}
+.cnt{font-size:12.5px;color:var(--mut);font-weight:500;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+table.papers td{border-bottom:1px solid var(--line);padding:11px 8px;vertical-align:top}
+table.papers tr:last-child td{border-bottom:none}
+td.num{color:var(--acc2);font-weight:700;width:34px;font-variant-numeric:tabular-nums}
+td.yr{color:var(--mut);width:48px;font-variant-numeric:tabular-nums}
+.ptitle{font-weight:600;font-size:14.5px;color:#eef3f8}
+.pmeta{color:var(--mut);font-size:12.5px;margin:2px 0 6px}
+.pm,.pr{font-size:13.5px;margin:3px 0;color:#c2cdda}
+.lbl{display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);min-width:96px}
+.pr .lbl{color:var(--good)}
+.note{color:var(--mut);font-size:13.5px}
+footer{border-top:1px solid var(--line);margin-top:50px;padding:24px 0 60px;color:var(--mut);font-size:13px}
+.toc-cats{columns:2;gap:24px;margin:10px 0}
+.toc-cats li{margin:3px 0}
+@media(max-width:760px){.toc-cats{columns:1}nav.toc{position:static}}
+</style></head>
+<body>
+<header class="top"><div class="wrap">
+<h1>OGC 2026 — Z1(Tardiness) → 0 을 위한 문헌 리뷰 &amp; 적용 인사이트</h1>
+<div class="sub">조선소 블록 배치·스케줄링의 크레인(j≥k) 직렬화 tardiness를 줄이는 방법 — 147편 정밀 서치 + 우리 코드 매핑</div>
+<div class="meta">
+<span class="pill"><b>147</b> 고유 논문</span>
+<span class="pill"><b>18</b> 주제군</span>
+<span class="pill">서치: <b>haiku</b> ×18 병렬</span>
+<span class="pill">합성: <b>opus</b></span>
+<span class="pill">2026-06-06</span>
+</div>
+</div></header>
+
+<nav class="toc"><div class="wrap">
+<a href="#diagnosis">진단</a>
+<a href="#insights">적용 인사이트 ①–⑧</a>
+<a href="#roadmap">로드맵</a>
+<a href="#mapping">Method→코드</a>
+<a href="#papers">논문 147편</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="diagnosis">
+<h2>핵심 진단 — OGC의 Z1은 "패킹 문제"가 아니라 "Blocking Job-Shop + Block-Relocation" 문제다</h2>
+<p class="lead">147편을 가로지르는 단 하나의 수렴 결론: 크레인 수직접근 규칙(<b>j ≥ k</b>, "내 위/위층이 비어야 들고 난다")은
+문헌에서 두 개의 잘 정의된 제약과 <b>구조적으로 동일</b>하다 —
+(1) <b>Blocking / zero-buffer 제약</b>(Mascis &amp; Pacciarelli 2002, <a href="#p132">#132</a>: alternative-graph 모델),
+(2) <b>Container Block-Relocation / Pre-Marshalling의 clear-above 제약</b>(<a href="#p26">#26</a>–<a href="#p35">#35</a>).
+즉 우리 코드 분석에서 나온 결론 — "재배정·cut·튜닝·packing 전부 무효, tardy 블록은 베이가 75~94% 빈 채로 대기, 레버는 crane 직렬화" — 은
+문헌이 정확히 예측하는 현상이다. <b>공간은 남아돈다. 부족한 자원은 "크레인 접근 시점"이다.</b></p>
+
+<div class="callout warn">
+<b>Z1 = 0 이 가능한가? (정직한 프레이밍)</b><br>
+Block-Relocation 하한(Tanaka <a href="#p29">#29</a>, <a href="#p30">#30</a>, <a href="#p35">#35</a>)과 blocking-job-shop 이론상,
+혼잡 인스턴스(예: prob_14)에는 <b>구조적 tardiness 하한 L* &gt; 0</b> 이 존재할 수 있다 — 어떤 배치·순서로도 모든 블록을 마감 내 뺄 수 없는 경우.
+따라서 현실적·점수최적 목표는 <b>"Z1 = 0"이 아니라</b>:
+<ol>
+<li><b>per-bay 하한 L*를 계산</b>하고, <b>L* = 0 인 베이는 반드시 Z1 = 0 을 달성</b>(여기서 새는 tardiness가 "버그성 손실"),</li>
+<li><b>L* &gt; 0 인 베이는 L*까지 gap을 닫는다</b>(달성 가능한 최선).</li>
+</ol>
+점수공식이 <code>R − nb</code>(−1 회피 1순위·동점 OK)이므로, "한 인스턴스 압도"보다 "모든 베이에서 달성가능 하한까지 닫기"가 정확히 옳은 방향이다.
+</div>
+</section>
+
+<section id="insights">
+<h2>적용 인사이트 — 우리 알고리즘에 어떻게 꽂을 것인가 (영향·노력순)</h2>
+<p class="lead">각 인사이트에 <b>근거 논문</b>, <b>우리 코드의 정확한 진입점(file:line)</b>, <b>예상 영향</b>, <b>노력/리스크</b>를 명시했다.
+코드 매핑은 <code>src/myalgorithm.py</code> / <code>src/parallel_decode.py</code> 정독(code-analyzer) 결과 기준.</p>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">①</span> SEQUENCE 와 TIMING 을 분리하라 — 고정 순서에 대한 <b>최적 타이밍 DP</b> (최대 레버, 저비용)</div>
+<div class="ins-b">
+<p><b>문헌:</b> 고정 시퀀스의 최적 시작시각은 <b>O(n²) DP로 정확히</b> 풀린다 — Hendel &amp; Sourd "optimal timing of a sequence"(<a href="#p106">#106</a>),
+single-machine earliness–tardiness 빠른 이웃탐색(<a href="#p108">#108</a>), affine idleness 타이밍 DP(<a href="#p107">#107</a>).
+JIT 스케줄링의 정설: <b>"무엇을 어떤 순서로"(NP-hard)와 "그 순서에 언제"(다항시간)를 쪼갠다.</b></p>
+<p><b>우리 코드의 문제:</b> <code>_decode_bay</code>(myalgorithm.py:735)는 배치+타이밍을 한 번에 그리디로 묶고, 슬롯이 없으면
+<code>_force_in_bay</code>(:811)로 빈 윈도우에 직렬화하며 EXIT=entry+proc(:738,:817)를 즉석 확정한다.
+사후 보정 <code>_shift_tardy_intervals_verified</code>(:2016)는 18블록 × 14틱 국소탐색에 불과 — <b>이게 바로 정확 타이밍 DP의 불완전한 대용품</b>이라 prob_14에서 no-op이었다.</p>
+<p><b>적용:</b> 베이별로 (현재 layout + 현재 크레인 순서)를 고정한 뒤, ENTRY/EXIT를 <b>정확 타이밍 DP</b>로 재계산해
+<code>EXIT − ENTRY ≥ P</code>·<code>ENTRY ≥ R</code>·크레인 선후행을 만족하는 한에서 Σ tardiness를 최소화. layout/배정을 전혀 안 바꾸므로 <b>objective-safe</b>(Z2/Z3 불변, Z1만 ↓).
+<code>_shift_tardy_intervals_verified</code>를 이 DP로 교체.</p>
+<p class="tag"><span class="t imp">영향: 높음</span><span class="t eff">노력: 중</span><span class="t risk">리스크: 낮음 (geometry 불변)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">②</span> per-bay <b>tardiness 하한 L*</b> 를 계산해 탐색을 집중하고 종료를 판단하라</div>
+<div class="ins-b">
+<p><b>문헌:</b> Block-Relocation의 다항시간 하한 — Tanaka &amp; Takii exact + lower bounds(<a href="#p29">#29</a>), IDBB 신규 하한(<a href="#p30">#30</a>),
+LB taxonomy(<a href="#p35">#35</a>), beam-search 하한(<a href="#p31">#31</a>). 병렬머신 tardiness 하한(<a href="#p47">#47</a>), arc-time-indexed 하한(<a href="#p48">#48</a>).</p>
+<p><b>우리 코드의 문제:</b> 어디에도 "이 베이에서 피할 수 없는 tardiness가 얼마인가"를 모른다. 그래서 <code>_tardy_redecode_moves_verified</code>(:2088, 10블록/3채택)와
+<code>_shift_*</code>가 <b>이미 L*에 도달한(더 못 줄이는) 베이에 시간을 낭비</b>하고, 정작 gap이 큰 베이를 얕게 판다(병목 #3·#4).</p>
+<p><b>적용:</b> 각 베이에 <b>release/due 기반 single-machine tardiness LB</b> + <b>relocation LB</b>를 싸게 계산 →
+(a) <code>L* = 0</code> 인데 현재 Z1 &gt; 0 인 베이를 <b>최우선</b>으로 재최적화(여기 손실은 100% 회수 가능), (b) <code>현재 Z1 == L*</code> 베이는 <b>건너뛰어</b> 176/180s 예산을 절약(병목 #4 직접 해소).</p>
+<p class="tag"><span class="t imp">영향: 높음 (탐색 효율·예산)</span><span class="t eff">노력: 중</span><span class="t risk">리스크: 낮음 (읽기 전용 진단)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">③</span> <b>마감-인지 레이어/통로 배치</b> — tight-due 블록을 "위가 안 막히는" 셀에 선점 배치 (anticipatory placement)</div>
+<div class="ins-b">
+<p><b>문헌:</b> 미래 blocking을 줄이는 선제 배치가 핵심 레버임을 직접 보인 연구들 —
+yard-crane anticipatory storage(<a href="#p14">#14</a>), 핸드셰이크/중립 레이어(<a href="#p21">#21</a>),
+DRL이 "재배치 56% 감소"를 학습(<a href="#p9">#9</a>, <a href="#p11">#11</a>), RCI 혼잡-우선 dispatch(<a href="#p7">#7</a>).</p>
+<p><b>우리 코드의 문제:</b> <code>_candidate_positions</code>는 top-edge 패킹만 보고, <code>_candidate_crane_pressure(_bbox)</code>(:510/:542)는 사후 <i>프록시</i>로만 쓰인다(병목 #2).
+즉 "마감이 급한 블록 위에 다른 블록이 쌓여 j≥k가 막히는" 구조를 <b>배치 단계에서 예방하지 못한다.</b></p>
+<p><b>적용:</b> 블록을 slack(=due−release−proc)로 정렬 → <b>tight-slack 블록을 "그 위 레이어가 비게 될/안 쌓일" 셀(접근 통로)에 먼저 배치</b>,
+slack 큰 블록을 깊은/하부 셀로. <code>_decode_bay</code> 선택키(:783)에 <i>"이 배치가 다른 tight 블록의 j≥k 통로를 막는가"</i> 항을 추가(프록시 → 1급 결정요소로 승격).
+pre-marshalling 정신: <b>배치 = 미래 retrieval 순서를 위한 사전정렬.</b></p>
+<p class="tag"><span class="t imp">영향: 높음</span><span class="t eff">노력: 중~높음</span><span class="t risk">리스크: 중 (배치 변경 → feasibility 재검 필요)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">④</span> <b>Logic-Based Benders 2단계</b>로 배정 재최적화 깊이를 키워라 (master=배정+Z1 스케줄, sub=크레인-safe 패킹 feasibility + cut)</div>
+<div class="ins-b">
+<p><b>문헌:</b> 우리 문제의 <b>가장 가까운 출판된 아키텍처</b>는 Additive-Manufacturing의 nesting+scheduling 분해다 —
+LBBD로 packing feasibility를 분리(<a href="#p145">#145</a>), combinatorial Benders로 batch-assign↔2D-pack 분해(<a href="#p115">#115</a>, <a href="#p146">#146</a>),
+p-batch packing+sched LBBD 가속(<a href="#p116">#116</a>). 이론·레시피: Hooker LBBD(<a href="#p113">#113</a>, <a href="#p114">#114</a>), branch-and-check 서베이(<a href="#p121">#121</a>),
+combinatorial Benders로 single-machine+2D packing(<a href="#p115">#115</a>).</p>
+<p><b>우리 코드의 문제:</b> <code>_tardy_redecode_moves_verified</code>(:2088)는 효과가 있는 <b>유일한</b> 재배정 연산자지만 max 10블록/3채택으로 탐색이 얕다(병목 #3). 무작위 move일 뿐 구조적 컷이 없다.</p>
+<p><b>적용:</b> <b>master</b>(MIP/CP-SAT): 베이배정 + 크레인순서로 Z1 최소화(정확 geometry는 완화). <b>sub</b>: 그 배정이 크레인-safe 패킹으로 실현가능한지 검사
+— 우리는 이미 <code>run_parallel_bay_decode</code>(parallel_decode.py:288)라는 <b>per-bay 크레인-safe 디코더</b>를 가지고 있다(이게 곧 sub-problem feasibility oracle).
+실패 시 <b>no-good cut</b>("이 블록집합을 이 베이들에 동시 배정 금지")을 master에 추가. branch-and-check로 master 재해결 비용 절감.</p>
+<p class="tag"><span class="t imp">영향: 매우 높음 (구조적)</span><span class="t eff">노력: 높음</span><span class="t risk">리스크: 중~높음 (예산·복잡도)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">⑤</span> 작은/중간 베이는 <b>CP-SAT 정확모델</b>로 풀어라 (no_overlap_2d + cumulative + j≥k precedence) — 4-core·no-GPU 서버의 최적 무기</div>
+<div class="ins-b">
+<p><b>문헌:</b> "Packing by Scheduling"이 2D 배치를 interval 쌍 + <code>no_overlap_2d</code>(diffn)로 인코딩(<a href="#p92">#92</a>),
+CP-SAT-LP 하이브리드 + LNS 포트폴리오 워커(<a href="#p87">#87</a>), 산업규모 job-shop CP-SAT 벤치(<a href="#p93">#93</a>), PyJobShop 즉용 모델(<a href="#p94">#94</a>),
+실제 조선소 CP(버퍼+마감)(<a href="#p95">#95</a>). 전파엔진: time-table edge-finding(<a href="#p90">#90</a>), O(kn log n) edge-finding(<a href="#p91">#91</a>).</p>
+<p><b>왜 우리 서버에 최적:</b> 평가서버는 4 CPU·GPU 없음·인터넷 차단. <b>CP-SAT(OR-Tools)는 순수 CPU에서 자체 멀티워커 LNS를 돌리는</b> 바로 그 도구다.</p>
+<p><b>적용:</b> 블록 ≤ ~20 인 베이마다 CP-SAT 모델: ENTRY/EXIT = interval var, 공간 = <code>add_no_overlap_2d</code>, 크레인 j≥k = 조건부 precedence(위 셀 점유 블록의 lift 선후행), 목적 = Σ tardiness.
+작은 베이를 <b>정확히 0(또는 L*)까지</b> 풀어 우리 그리디 디코드 결과를 대체/warm-start. 큰 베이는 ①②③에 맡김. 최종은 기존 official-checker 게이트(:3219/:3259)가 보증.</p>
+<p class="tag"><span class="t imp">영향: 매우 높음 (작은 베이 Z1→0)</span><span class="t eff">노력: 높음</span><span class="t risk">리스크: 중 (시간상한·모델링)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">⑥</span> <b>tardiness-타겟 ALNS</b> destroy 연산자 + <b>증분 Z1 평가</b>로 같은 예산에 더 깊이 탐색</div>
+<div class="ins-b">
+<p><b>문헌:</b> ET-ALNS의 remove-tardy + 빠른 증분 목적함수 재평가(<a href="#p86">#86</a>),
+unrelated parallel-batch + 2D packing ALNS(11 removal/7 insertion)(<a href="#p147">#147</a>),
+Ropke–Pisinger ALNS 표준(<a href="#p80">#80</a>), berth+crane ALNS(<a href="#p84">#84</a>, <a href="#p104">#104</a>), ruin-and-recreate(<a href="#p79">#79</a>), adaptiveness 메타분석(<a href="#p85">#85</a>).</p>
+<p><b>우리 코드의 문제:</b> <code>_local_search</code>(:1320)의 ALNS는 존재하나 연산자가 Z1을 직접 겨냥하지 않고, 후보 평가가 full re-decode라 반복수가 적다(병목 #3).</p>
+<p><b>적용:</b> destroy를 <b>"worst-tardy removal"</b>(Z1 기여 최대 블록 + 그 블록의 크레인-blocker들을 함께 제거) / <b>"crane-cluster removal"</b>(한 수직 스택 통째)로,
+repair를 <b>regret-k(마감 tight 우선 재삽입)</b>로. 핵심은 <b>증분 Z1 캐시</b> — 건드린 베이만 재평가해 반복수를 10× 늘림.</p>
+<p class="tag"><span class="t imp">영향: 중~높음</span><span class="t eff">노력: 중</span><span class="t risk">리스크: 낮음 (기존 ALNS 확장)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">⑦</span> <b>탐색 수용</b>과 <b>최종 게이트</b>를 분리하라 — 내부는 accept-worse(SA), 반환은 안전 게이트 유지 (병목 #5 해소)</div>
+<div class="ins-b">
+<p><b>문헌:</b> berth SA가 (position,entry,exit)에서 accept-worse로 tardiness 탈출(<a href="#p97">#97</a>),
+ship-block SA accept-worse(<a href="#p122">#122</a>), threshold-accepting/SA 비교(<a href="#p40">#40</a>), record-to-record(<a href="#p79">#79</a>).</p>
+<p><b>우리 코드의 문제:</b> 최종 게이트가 <code>better_obj</code> <b>또는</b> <code>same_obj_lower_z1</code>(:3259-3264)만 채택 — 이건 <b>반환 안전장치로는 옳다</b>.
+문제는 <b>내부 탐색까지 똑같이 탐욕적</b>이면, Z1을 잠깐 손해 보고 Z2를 풀어야 도달하는 더 낮은-Z1 분지에 절대 못 간다.</p>
+<p><b>적용:</b> 내부 ALNS/redecode 수용을 <b>SA/threshold(일시적 목적 악화 허용)</b>로 바꾸되, <b>반환 직전 official-checker 게이트는 그대로</b> 둔다 —
+"중간엔 언덕을 내려가도, 최종 제출은 floor보다 나쁘면 절대 반환 안 함". 이러면 objective-safe를 깨지 않고 더 좋은 Z1 분지에 도달.</p>
+<p class="tag"><span class="t imp">영향: 중 (탈출 능력)</span><span class="t eff">노력: 낮음</span><span class="t risk">리스크: 낮음 (최종 게이트 불변)</span></p>
+</div></div>
+
+<div class="ins big">
+<div class="ins-h"><span class="rank">⑧</span> 순서 시드를 <b>Emmons dominance + ATC dispatch</b>로 — 거의 공짜의 즉효</div>
+<div class="ins-b">
+<p><b>문헌:</b> Emmons 쌍대지배규칙(<a href="#p36">#36</a>, <a href="#p112">#112</a>)이 최적해에서 많은 블록쌍의 선후를 <b>탐색 없이 고정</b>,
+Lawler 정확 DP(<a href="#p37">#37</a>), ATC look-ahead dispatch(<a href="#p39">#39</a>, <a href="#p45">#45</a>), Moore–Hodgson(지각 개수 최소, O(n log n))(<a href="#p111">#111</a>).</p>
+<p><b>우리 코드의 문제:</b> <code>_orderings</code>(:848)는 slack + crane-complexity 기반 EDD 타이브레이크. 평범한 EDD는 가중 tardiness에 약하다.</p>
+<p><b>적용:</b> <code>_orderings</code>·<code>_tardiness_seed</code>(:1057)의 1차 정렬을 <b>ATC index</b>(=urgency×due-slack 지수가중)로 교체하고,
+<b>Emmons 규칙</b>으로 확정 가능한 쌍의 선후를 고정해 후속 탐색공간을 줄인다. 베이당 O(n log n), 즉시 적용 가능.</p>
+<p class="tag"><span class="t imp">영향: 중 (저렴한 baseline 상승)</span><span class="t eff">노력: 낮음</span><span class="t risk">리스크: 낮음</span></p>
+</div></div>
+</section>
+
+<section id="roadmap">
+<h2>권장 구현 로드맵 (objective-safe · 시간예산 우선)</h2>
+<p class="lead">병목 #4(176.7/180s)가 살아있으므로 <b>"먼저 싸고 안전한 즉효 → 그 다음 구조적 변경"</b> 순서. 각 단계는 기존 official-checker 게이트로 보호되어 −1 리스크 없음.</p>
+<table class="road">
+<thead><tr><th>Wave</th><th>무엇</th><th>인사이트</th><th>근거</th><th>리스크</th></tr></thead>
+<tbody>
+<tr><td><b>0 · 진단</b></td><td>per-bay tardiness 하한 L* 계산 + "L*=0인데 Z1&gt;0" 베이 식별 (읽기 전용)</td><td>②</td><td>#29 #35 #47</td><td>없음</td></tr>
+<tr><td><b>1 · 즉효</b></td><td>ATC/Emmons 순서 시드(⑧) + 정확 타이밍 DP로 <code>_shift_*</code> 교체(①) + 내부 SA 수용(⑦)</td><td>① ⑦ ⑧</td><td>#106 #36 #39</td><td>낮음 (geometry 불변, 최종 게이트 유지)</td></tr>
+<tr><td><b>2 · 배치</b></td><td>마감-인지 레이어/통로 배치(③) — <code>_decode_bay</code> 선택키에 j≥k 통로보존 항 승격</td><td>③</td><td>#14 #21 #9</td><td>중 (feasibility 재검)</td></tr>
+<tr><td><b>3 · 구조</b></td><td>작은 베이 CP-SAT 정확해(⑤) + tardiness-타겟 ALNS·증분평가(⑥)</td><td>⑤ ⑥</td><td>#92 #87 #86</td><td>중 (시간상한 관리)</td></tr>
+<tr><td><b>4 · 통합</b></td><td>LBBD 2단계(④): master 배정·sub = <code>run_parallel_bay_decode</code> feasibility oracle + no-good cut</td><td>④</td><td>#145 #115 #113</td><td>높음 (예산·복잡도)</td></tr>
+</tbody></table>
+<p class="note">※ Wave 1은 layout/배정을 바꾸지 않아 Z2/Z3에 영향이 없다(순수 Z1↓) — 가장 먼저, 가장 안전하게 Z1을 끌어내릴 수 있는 구간. Wave 0은 "어디가 회수 가능한 손실인가"를 알려줘 Wave 1~4의 탐색을 집중시킨다.</p>
+</section>
+
+<section id="mapping">
+<h2>Method → 우리 코드 매핑 (요약)</h2>
+<table class="map">
+<thead><tr><th>우리 병목 (code)</th><th>file:line</th><th>문헌 처방</th><th>대표 논문</th></tr></thead>
+<tbody>
+<tr><td>베이 내 크레인 직렬화 = 단일 EDD 사슬</td><td>_decode_bay :735 / force :811</td><td>Blocking Job-Shop alternative-graph; sequence↔timing 분리</td><td>#132 #133 #106</td></tr>
+<tr><td>레이어/통로 배치 미최적화</td><td>_candidate_positions; pressure :510</td><td>anticipatory placement; pre-marshalling clear-above</td><td>#14 #21 #26 #9</td></tr>
+<tr><td>배정 재최적화 깊이 부족</td><td>_tardy_redecode_moves :2088</td><td>LBBD master/sub + no-good cut; tardiness-ALNS</td><td>#145 #115 #86 #147</td></tr>
+<tr><td>타이밍 보정이 14틱 국소탐색</td><td>_shift_tardy_intervals :2016</td><td>정확 O(n²) 타이밍 DP (고정 순서)</td><td>#106 #107 #108</td></tr>
+<tr><td>시간예산 176.7/180s</td><td>work_deadline :2479</td><td>per-bay 하한으로 탐색 가지치기; CP-SAT/beam 시간상한</td><td>#29 #31 #34 #87</td></tr>
+<tr><td>게이트 비대칭(탐색까지 탐욕)</td><td>gate :3259 / z1 gate :2840</td><td>탐색 SA accept-worse, 반환만 안전게이트</td><td>#97 #122 #40</td></tr>
+<tr><td>순서 시드가 평EDD</td><td>_orderings :848 / seed :1057</td><td>ATC dispatch + Emmons dominance</td><td>#39 #45 #36 #112</td></tr>
+<tr><td>작은 베이 미정확화</td><td>(전역 그리디)</td><td>CP-SAT no_overlap_2d + cumulative + j≥k</td><td>#92 #94 #87 #95</td></tr>
+</tbody></table>
+</section>
+
+
+<section id="papers">
+<h2>문헌 147편 — 주제군별</h2>
+<p class="lead">18개 검색 주제로 haiku web-researcher 18개를 병렬 팬아웃해 수집(177건) 후 중복 제거(147편). 각 논문은 첫 등장 주제군에 1회 배치. 번호는 위 인사이트의 <a href="#p1">#n</a> 인용과 일치.</p>
+<ul class='toc-cats'><li><a href="#cat0">Shipyard Block Spatial Scheduling (SSP)</a> <span class="cnt">10</span></li><li><a href="#cat1">Shipbuilding Block Stockyard &amp; Stacking</a> <span class="cnt">6</span></li><li><a href="#cat2">Crane Scheduling — Non-Crossing / Interference</a> <span class="cnt">9</span></li><li><a href="#cat3">Container Pre-Marshalling &amp; Block Relocation (j≥k analog)</a> <span class="cnt">10</span></li><li><a href="#cat4">Single-Machine Total / Weighted Tardiness</a> <span class="cnt">9</span></li><li><a href="#cat5">Parallel-Machine Total Weighted Tardiness</a> <span class="cnt">8</span></li><li><a href="#cat6">RCPSP with Spatial / 2D Resources</a> <span class="cnt">5</span></li><li><a href="#cat7">Temporal / Dynamic 2D Bin Packing with Due Dates</a> <span class="cnt">11</span></li><li><a href="#cat8">Irregular Strip Packing / Nesting (NFP)</a> <span class="cnt">9</span></li><li><a href="#cat9">Large Neighborhood Search (LNS / ALNS)</a> <span class="cnt">9</span></li><li><a href="#cat10">Constraint Programming (CP-SAT / OR-Tools)</a> <span class="cnt">9</span></li><li><a href="#cat11">Berth Allocation (space-time packing)</a> <span class="cnt">9</span></li><li><a href="#cat12">Just-in-Time / Due-Date Scheduling &amp; Timing DP</a> <span class="cnt">8</span></li><li><a href="#cat13">Matheuristics &amp; Logic-Based Benders Decomposition</a> <span class="cnt">9</span></li><li><a href="#cat14">GA / Metaheuristics for Shipyard</a> <span class="cnt">4</span></li><li><a href="#cat15">Time-Space Network &amp; Dynamic Facility Layout</a> <span class="cnt">6</span></li><li><a href="#cat16">Blocking Job-Shop / No-Wait (crane-hold analog)</a> <span class="cnt">10</span></li><li><a href="#cat17">Combined 2D Packing + Scheduling (AM nesting)</a> <span class="cnt">6</span></li></ul>
+<section class="catsec" id="cat0">
+  <h3>1. Shipyard Block Spatial Scheduling (SSP) <span class="cnt">10 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p1">
+  <td class="num">1</td>
+  <td class="yr">1996</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/0957417496000103" target="_blank" rel="noopener">A spatial scheduling system and its application to shipbuilding: DAS-CURVE</a></div>
+    <div class="pmeta">K.J. Lee, J.K. Lee, S.Y. Choi · Expert Systems with Applications, Vol. 11, No. 2, pp. 311–324</div>
+    <div class="pm"><span class="lbl">Method</span> Knowledge-based spatial scheduling system (Daewoo/KAIST) combining block arrangement, assignment, and scheduling algorithms for polygonal objects in rectangular workplaces, with due-date and workload-balance objectives.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Foundational formulation of bay-assignment + placement + scheduling as a unified problem; DAS-CURVE&#x27;s block-arrangement and dispatch logic is the direct ancestor of OGC&#x27;s phase-1/phase-2 structure.</div>
+  </td>
+</tr>
+<tr id="p2">
+  <td class="num">2</td>
+  <td class="yr">1996</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://snu.elsevierpure.com/en/publications/modeling-and-solving-the-spatial-block-scheduling-problem-in-a-sh" target="_blank" rel="noopener">Modeling and solving the spatial block scheduling problem in a shipbuilding company</a></div>
+    <div class="pmeta">Kyungchul Park, Kyungsik Lee, Sungsoo Park, Sunghwan Kim · Computers &amp; Industrial Engineering, Vol. 30, No. 3, pp. 357–364. DOI: 10.1016/0360-8352(96)00004-6</div>
+    <div class="pm"><span class="lbl">Method</span> Partial enumeration + decomposition for scheduling combined with a heuristic spatial-allocation procedure, treating simultaneous bay assignment and 2D placement as a coupled optimization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> First MIP-style formulation of SSP co-optimizing schedule and spatial layout; decomposition strategy directly applicable to OGC&#x27;s (bay, position, time) decision coupling.</div>
+  </td>
+</tr>
+<tr id="p3">
+  <td class="num">3</td>
+  <td class="yr">2008</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.tandfonline.com/doi/abs/10.1080/09537280802474941" target="_blank" rel="noopener">Heuristic and metaheuristic spatial planning of assembly blocks with process schedules in an assembly shop using differential evolution</a></div>
+    <div class="pmeta">Supported by Daewoo Shipbuilding and Marine Engineering (DSME) · Production Planning &amp; Control, Vol. 19, No. 6, pp. 605–615</div>
+    <div class="pm"><span class="lbl">Method</span> Bottom-left-fill heuristic for placement combined with differential evolution metaheuristic to jointly optimize block sequencing order and orientations, formulated as combinatorial optimization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> DE-based joint optimization of block sequence and orientation is directly portable to OGC; orientation search + placement order is a key lever for crane-serialization reduction.</div>
+  </td>
+</tr>
+<tr id="p4">
+  <td class="num">4</td>
+  <td class="yr">2011</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.tandfonline.com/doi/abs/10.1080/00207541003709536" target="_blank" rel="noopener">Spatial scheduling algorithm minimising makespan at block assembly shop in shipbuilding</a></div>
+    <div class="pmeta">Junli Zheng, Zhibin Jiang, Qiang Chen et al. · International Journal of Production Research, Vol. 49, No. 8, pp. 2351–2371. DOI: 10.1080/00207541003709536</div>
+    <div class="pm"><span class="lbl">Method</span> Greedy spatial scheduling algorithm with multiple placement strategies (largest contact area, bottom-left-fill variants) and block sequencing rules targeting makespan minimization on polygonal workplates.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Demonstrates that spatial placement policy (contact area maximization) directly affects how long blocks block each other; same logic governs OGC crane-access serialization duration.</div>
+  </td>
+</tr>
+<tr id="p5">
+  <td class="num">5</td>
+  <td class="yr">2012</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.semanticscholar.org/paper/Solving-the-spatial-scheduling-problem:-a-two-stage-Zhang-Chen/12435a0e8e7c305d541c5159d8e9699a624fd63b" target="_blank" rel="noopener">Solving the spatial scheduling problem: a two-stage approach</a></div>
+    <div class="pmeta">Zhiying Zhang, Jie Chen · International Journal of Production Research, Vol. 50, No. 10, pp. 2732–2743. DOI: 10.1080/00207543.2011.588623</div>
+    <div class="pm"><span class="lbl">Method</span> Two-stage approach: agglomeration algorithm (AA) clusters spatiotemporally close blocks into virtual blocks (stage 1), then nonlinear MIP optimizes schedule and 2D placement jointly (stage 2).</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Spatial-temporal clustering before scheduling reduces the combinatorial search; analogous to grouping OGC blocks by crane-access window to sequence exits without collision.</div>
+  </td>
+</tr>
+<tr id="p6">
+  <td class="num">6</td>
+  <td class="yr">2015</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835215002296" target="_blank" rel="noopener">Spatial scheduling for large assembly blocks in shipbuilding</a></div>
+    <div class="pmeta">Byunghoon Kwon, Gyunghyun Lee (Lim) · Computers &amp; Industrial Engineering, Vol. 89, pp. 203–212. DOI: 10.1016/j.cie.2015.02.009</div>
+    <div class="pm"><span class="lbl">Method</span> MIP model solved by commercial solver; modifies bottom-left-fill into diagonal-fill (considers both bottom-left and top-right anchor points) to handle large irregularly-shaped blocks; minimizes total weighted tardiness.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Direct predecessor to OGC&#x27;s formulation: MIP with tardiness objective + diagonal-fill placement for irregular blocks; shows commercial MIP is viable at shipyard scale (≤30 min).</div>
+  </td>
+</tr>
+<tr id="p7">
+  <td class="num">7</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.tandfonline.com/doi/full/10.1080/00207543.2018.1424369" target="_blank" rel="noopener">Resource and time criticality based block spatial scheduling in a shipyard under uncertainty</a></div>
+    <div class="pmeta">Vijaya Dixit, Priyanka Verma, Piyush Raj, Mayank Sharma · International Journal of Production Research, Vol. 56, No. 22. DOI: 10.1080/00207543.2018.1424369</div>
+    <div class="pm"><span class="lbl">Method</span> Priority-rule simulation combining time criticality index (TCI) and resource/space criticality index (RCI) under stochastic processing times; first to introduce spatial-resource criticality into BSS dispatch rules.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> RCI-based dispatching directly models bay-congestion priority; tells OGC which blocks to move first when crane access bottlenecks appear, reducing expected tardiness under uncertainty.</div>
+  </td>
+</tr>
+<tr id="p8">
+  <td class="num">8</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835220306550" target="_blank" rel="noopener">Spatial scheduling for irregularly shaped blocks in shipbuilding</a></div>
+    <div class="pmeta">Yan Ge, Aimin Wang · Computers &amp; Industrial Engineering, Vol. 152, Feb 2021. DOI: 10.1016/j.cie.2020.106985</div>
+    <div class="pm"><span class="lbl">Method</span> MIP model for irregular-polygon blocks using standard-angle filling (angles rounded to 15° multiples) to approximate polygon packing as near-rectangular, jointly minimizing delay and maximizing workspace utilization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Standard-angle polygon simplification reduces OGC&#x27;s irregular-shape non-overlap complexity; the MIP delay-minimization structure is directly applicable to Z1 (total tardiness) reduction.</div>
+  </td>
+</tr>
+<tr id="p9">
+  <td class="num">9</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.tandfonline.com/doi/full/10.1080/00207543.2020.1748247" target="_blank" rel="noopener">Spatial arrangement using deep reinforcement learning to minimise rearrangement in ship block stockyards</a></div>
+    <div class="pmeta">Byeongseop Kim, Yongkuk Jeong, Jong Gye Shin · International Journal of Production Research, Vol. 59. DOI: 10.1080/00207543.2020.1748247</div>
+    <div class="pm"><span class="lbl">Method</span> Multi-agent deep reinforcement learning with separate DQN-based policies for block arrival placement and rearrangement; reward shaped to minimize unnecessary block moves in stockyard.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> DRL placement policy that minimizes future blocking/relocation directly addresses OGC&#x27;s crane-access serialization: learned policy can pre-position blocks to minimize j&gt;=k conflicts.</div>
+  </td>
+</tr>
+<tr id="p10">
+  <td class="num">10</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10951-024-00804-1" target="_blank" rel="noopener">Quick and situ-aware spatiotemporal scheduling for shipbuilding manufacturing</a></div>
+    <div class="pmeta">Junying He, Soon-Ik Hong, Seong-Hee Kim · Journal of Scheduling. DOI: 10.1007/s10951-024-00804-1</div>
+    <div class="pm"><span class="lbl">Method</span> Two-phase algorithm: phase 1 assigns bay and processing-start-date (scheduling), phase 2 determines exact (x,y) coordinates and rotation within bay (placement); validated on KSOE industrial datasets targeting tardiness and workload fairness.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Most recent direct analog to OGC&#x27;s problem (bay assignment + placement + tardiness + workload balance); phase-1/phase-2 decomposition and KSOE validation make it directly portable.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat1">
+  <h3>2. Shipbuilding Block Stockyard &amp; Stacking <span class="cnt">6 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p11">
+  <td class="num">11</td>
+  <td class="yr">2025</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.tandfonline.com/doi/full/10.1080/0305215X.2025.2466829" target="_blank" rel="noopener">Integrated dynamic scheduling of shipyard blocks considering adaptive adjustment in stockyard layout</a></div>
+    <div class="pmeta">Meijing Zhong, Chunjin Li, Yuan Hu, Chao Kang, Zan Liu, Jian Guo, Yang Xie · Engineering Optimization (online first, DOI 10.1080/0305215X.2025.2466829)</div>
+    <div class="pm"><span class="lbl">Method</span> Binary-search-tree heap-field layout + DRL integrated scheduler; reduces interference block moves 56% over baseline.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Combines layout adaptation with scheduling to cut interference-move counts — directly analogous to reducing crane-blocking that serializes our bay entries/exits.</div>
+  </td>
+</tr>
+<tr id="p12">
+  <td class="num">12</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1155/2017/1923646" target="_blank" rel="noopener">Spatial Scheduling Optimization Algorithm for Block Assembly in Shipbuilding</a></div>
+    <div class="pmeta">Zhengyang Shang, Jinan Gu, Wei Ding, Enock Andrews Duodu · Mathematical Problems in Engineering, Article ID 1923646</div>
+    <div class="pm"><span class="lbl">Method</span> Best-contact algorithm (BCA) + genetic algorithm jointly optimize block sequence and start times to minimize makespan.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> GA-based joint sequence+timing search is portable to OGC&#x27;s combined bay-assignment+ENTRY/EXIT scheduling to pull tardiness toward zero.</div>
+  </td>
+</tr>
+<tr id="p13">
+  <td class="num">13</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1007/s10696-023-09490-1" target="_blank" rel="noopener">A stack-based retrieval method for the steel plate yard retrieval problem in shipbuilding</a></div>
+    <div class="pmeta">Lebao Wu, Zuhua Jiang, Xinyu Li · Flexible Services and Manufacturing Journal, 36(1)</div>
+    <div class="pm"><span class="lbl">Method</span> IP model + heuristic that sequences retrieval stacks and preferentially relocates blocking plates to target-free stacks to minimize relocation count.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Relocation-minimization logic for stacked storage directly models the crane vertical-access (j≥k) serialization; fewer relocations = shorter crane queues = less tardiness.</div>
+  </td>
+</tr>
+<tr id="p14">
+  <td class="num">14</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2018.05.007" target="_blank" rel="noopener">Yard Crane Scheduling for container storage, retrieval, and relocation</a></div>
+    <div class="pmeta">Virgile Galle, Cynthia Barnhart, Patrick Jaillet · European Journal of Operational Research, 271(1), 288–316</div>
+    <div class="pm"><span class="lbl">Method</span> Integer program jointly scheduling crane moves for storage, retrieval, and relocation; local-search heuristic optimizes future relocation cost at time of storage.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Anticipatory storage placement to cut future crane blocking time directly translates to choosing OGC ENTRY positions that minimize downstream crane-serialization tardiness.</div>
+  </td>
+</tr>
+<tr id="p15">
+  <td class="num">15</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2017.08.048" target="_blank" rel="noopener">The Block Retrieval Problem</a></div>
+    <div class="pmeta">Marcos de Melo da Silva, Güneş Erdoğan, Maria Battarra, Vitaly Strusevich · European Journal of Operational Research, 265(3), 931–950</div>
+    <div class="pm"><span class="lbl">Method</span> NP-hardness proofs, branch-and-bound, and heuristics for retrieving stacked items in a prescribed departure order with minimum relocations.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Establishes complexity of crane-access-blocked retrieval sequencing; lower-bound and B&amp;B insights apply to OGC EXIT scheduling under the j≥k crane constraint.</div>
+  </td>
+</tr>
+<tr id="p16">
+  <td class="num">16</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1080/17445302.2024.2400492" target="_blank" rel="noopener">Optimising outbound scheduling in shipyard steel stockyard</a></div>
+    <div class="pmeta">Jinghua Li, Ming He, Lei Zhou, Dening Song, Boxin Yang · Ships and Offshore Structures (online first, DOI 10.1080/17445302.2024.2400492)</div>
+    <div class="pm"><span class="lbl">Method</span> Outbound scheduling model solved by improved ant colony optimization (ECS-IACO) with dynamic pheromone matrix, minimizing energy and delay.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Due-date-driven outbound sequencing from a stacked yard — the retrieval ordering insight reduces crane-queue buildup that is OGC&#x27;s primary tardiness driver.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat2">
+  <h3>3. Crane Scheduling — Non-Crossing / Interference <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p17">
+  <td class="num">17</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2016.08.041" target="_blank" rel="noopener">A generalized classification scheme for crane scheduling with interference</a></div>
+    <div class="pmeta">Nils Boysen, Dirk Briskorn, Frank Meisel · European Journal of Operational Research, Vol. 258(1), pp. 343–357</div>
+    <div class="pm"><span class="lbl">Method</span> Taxonomy/classification framework unifying non-crossing, safety-distance, and interference constraints across ports, rail terminals, and warehouses; surveys complexity results.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides canonical vocabulary and problem decomposition for modeling our crane j≥k serialization constraint as a non-crossing scheduling sub-problem.</div>
+  </td>
+</tr>
+<tr id="p18">
+  <td class="num">18</td>
+  <td class="yr">2015</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1287/trsc.2015.0641" target="_blank" rel="noopener">Scheduling Multiple Yard Cranes with Crane Interference and Safety Distance Requirement</a></div>
+    <div class="pmeta">Yong Wu, Wenkai Li, Matthew E. H. Petering, Mark Goh, Robert de Souza · Transportation Science, Vol. 49(4)</div>
+    <div class="pm"><span class="lbl">Method</span> O(n³) clustering-reassigning heuristic enforcing non-crossing + safety distance; benchmarked against MILP, near-optimal in real-time.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Direct template for serializing crane moves under interference: convert our j≥k access constraint into a safety-distance scheduling layer to cut waiting-induced tardiness.</div>
+  </td>
+</tr>
+<tr id="p19">
+  <td class="num">19</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1287/trsc.1090.0298" target="_blank" rel="noopener">Sequencing Two Cooperating Automated Stacking Cranes in a Container Terminal</a></div>
+    <div class="pmeta">Iris F. A. Vis, Hector J. Carlo · Transportation Science, Vol. 44(4)</div>
+    <div class="pm"><span class="lbl">Method</span> Mathematical model for two non-crossing cranes sharing one block; lower-bound algorithm + simulated-annealing heuristic within 2% of lower bound.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Seminal 2-crane non-crossing formulation directly analogous to our single-bay two-layer crane access problem; SA heuristic is portable to our time-limited solver.</div>
+  </td>
+</tr>
+<tr id="p20">
+  <td class="num">20</td>
+  <td class="yr">2015</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1287/trsc.2014.0533" target="_blank" rel="noopener">Scheduling Twin Yard Cranes in a Container Block</a></div>
+    <div class="pmeta">Boysen, Nils; Briskorn, Dirk; Meisel, Frank · Transportation Science, Vol. 49(3)</div>
+    <div class="pm"><span class="lbl">Method</span> Models twin ASC problem as multiple asymmetric generalized TSP with precedence constraints; solved with adaptive large neighborhood search (ALNS) for makespan minimization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ALNS framework for non-crossing twin-crane sequencing is directly portable; precedence-constraint encoding maps onto our vertical-access (j≥k) ordering requirement.</div>
+  </td>
+</tr>
+<tr id="p21">
+  <td class="num">21</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1007/s10951-021-00710-w" target="_blank" rel="noopener">Twin-crane scheduling during seaside workload peaks with a dedicated handshake area</a></div>
+    <div class="pmeta">Lennart Zey, Dirk Briskorn, Nils Boysen · Journal of Scheduling, Vol. 25(1), pp. 3–34</div>
+    <div class="pm"><span class="lbl">Method</span> Exact procedures for non-crossing twin-crane coordination using a handshake staging area; precedence constraints from stacked containers in transfer zone; makespan objective.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Handshake zone is analogous to our intermediate staging tactic: parking blocks in a neutral layer so crane j-access is unblocked, directly reducing serialization delays.</div>
+  </td>
+</tr>
+<tr id="p22">
+  <td class="num">22</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2018.07.043" target="_blank" rel="noopener">An exact solution approach for scheduling cooperative gantry cranes</a></div>
+    <div class="pmeta">Dominik Kress, Jan Dornseifer, Florian Jaehn · European Journal of Operational Research, Vol. 273(1), pp. 82–101</div>
+    <div class="pm"><span class="lbl">Method</span> Dynamic programming with dominance/bounding for two gantry cranes sharing rails; beam-search heuristic for online use; non-crossing + time-window constraints; minimizes makespan.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> DP with dominance properties can enumerate crane-access sequences under j≥k constraint efficiently; beam-search variant fits our 4-CPU wall-clock budget.</div>
+  </td>
+</tr>
+<tr id="p23">
+  <td class="num">23</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2018.08.009" target="_blank" rel="noopener">A Benders decomposition-based framework for solving quay crane scheduling problems</a></div>
+    <div class="pmeta">Defeng Sun, Lixin Tang, Roberto Baldacci · European Journal of Operational Research, Vol. 273(2), pp. 504–515</div>
+    <div class="pm"><span class="lbl">Method</span> Logic-based Benders decomposition: master problem assigns workloads respecting non-crossing; slave subproblems sequence operations per crane; logic cuts enforce feasibility.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Decomposition separates our bay-assignment (which determines crane-access order) from block-sequencing; master-slave structure controls the j≥k serialization bottleneck explicitly.</div>
+  </td>
+</tr>
+<tr id="p24">
+  <td class="num">24</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1080/00207543.2016.1193249" target="_blank" rel="noopener">Crane scheduling problem with non-interference constraints in a steel coil distribution centre</a></div>
+    <div class="pmeta">Gabriela N. Maschietto, Yassine Ouazene, Martín G. Ravetti, Maurício C. de Souza, Farouk Yalaoui · International Journal of Production Research, Vol. 55(6), pp. 1607–1622</div>
+    <div class="pm"><span class="lbl">Method</span> Two-crane parallel-machine scheduling with non-interference; MILP for small instances; genetic algorithm achieving near-optimal gaps of 2–10% on real warehouse instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Steel-coil warehouse is structurally identical to shipyard bay: two cranes on shared rail, blocking, real due dates — GA with non-interference encoding directly applicable.</div>
+  </td>
+</tr>
+<tr id="p25">
+  <td class="num">25</td>
+  <td class="yr">2025</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2025.10.032" target="_blank" rel="noopener">Advances in multi-crane scheduling: Extended non-interference modeling and temporal-constraint-based valid inequalities</a></div>
+    <div class="pmeta">Woo-Jin Shin, Hyun-Jung Kim · European Journal of Operational Research, Vol. 331(1), pp. 35–47</div>
+    <div class="pm"><span class="lbl">Method</span> Generalized closed-form Extended Temporal Distance (ETD) model for N cranes transporting across multiple track locations; MILP + valid inequalities from network analysis; minimizes total flow time.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ETD model handles multi-location crane moves (enter/exit at different bay positions) — exactly our block ENTRY/EXIT timing model — providing tighter interference bounds to cut tardiness.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat3">
+  <h3>4. Container Pre-Marshalling &amp; Block Relocation (j≥k analog) <span class="cnt">10 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p26">
+  <td class="num">26</td>
+  <td class="yr">2016</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10696-016-9246-6" target="_blank" rel="noopener">Solving the Pre-Marshalling Problem to Optimality with A* and IDA*</a></div>
+    <div class="pmeta">Silke Boge, Marc Goerigk, Sigrid Knust · Flexible Services and Manufacturing Journal (Springer), published online 2016</div>
+    <div class="pm"><span class="lbl">Method</span> A* and IDA* search with novel branching and symmetry-breaking rules to solve pre-marshalling (clear-above-before-access) to proven optimality.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Directly models the j&gt;=k vertical-access rule as a must-clear-above constraint; A*/IDA* framework ports to deciding which crane-blocked bay slot to clear first to free tardy blocks.</div>
+  </td>
+</tr>
+<tr id="p27">
+  <td class="num">27</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/ejores/v274y2019i1p142-154.html" target="_blank" rel="noopener">Integer Programming Models for the Pre-Marshalling Problem</a></div>
+    <div class="pmeta">Consuelo Parreño-Torres, Ramon Alvarez-Valdes, Rubén Ruiz · European Journal of Operational Research, Vol. 274(1), pp. 142-154</div>
+    <div class="pm"><span class="lbl">Method</span> Two families of ILP formulations plus an iterative solution procedure that avoids needing a hard-to-obtain upper bound, solved with CPLEX.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ILP formulation of must-clear-above ordering can be embedded as a subproblem to enumerate minimum-relocation move sequences that unblock tardy items.</div>
+  </td>
+</tr>
+<tr id="p28">
+  <td class="num">28</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/ejores/v271y2018i1p40-56.html" target="_blank" rel="noopener">A New Effective Unified Model for Solving the Pre-Marshalling and Block Relocation Problems</a></div>
+    <div class="pmeta">Marcos de Melo da Silva, Sophie Toulouse, Roberto Wolfler Calvo · European Journal of Operational Research, Vol. 271(1), pp. 40-56</div>
+    <div class="pm"><span class="lbl">Method</span> Single unified ILP formulation covering PMP, BRP, and restricted-BRP variants simultaneously, benchmarked against state-of-the-art branch-and-bound.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Unifying pre-marshalling and relocation in one model mirrors our combined problem: a single formulation could co-optimize crane-clearance moves and block scheduling to cut tardiness.</div>
+  </td>
+</tr>
+<tr id="p29">
+  <td class="num">29</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054818300583" target="_blank" rel="noopener">An Exact Algorithm for the Unrestricted Block Relocation Problem</a></div>
+    <div class="pmeta">Shunji Tanaka, Fumitaka Mizuno · Computers &amp; Operations Research, Vol. 95, pp. 12-31</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-and-bound with new lower bounds and dominance properties for the unrestricted BRP (any blocking container may be relocated), achieving optimality on large benchmarks.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Tight lower bounds and dominance rules for clearing blocking items directly translate to bounding how many crane-access violations must be resolved before a tardy block&#x27;s EXIT time.</div>
+  </td>
+</tr>
+<tr id="p30">
+  <td class="num">30</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/ejores/v304y2023i2p494-514.html" target="_blank" rel="noopener">An Exact Algorithm for the Unrestricted Container Relocation Problem with New Lower Bounds and Dominance Rules</a></div>
+    <div class="pmeta">Bo Jin, Shunji Tanaka · European Journal of Operational Research, Vol. 304(2), pp. 494-514</div>
+    <div class="pm"><span class="lbl">Method</span> Iterative-deepening branch-and-bound (IDBB) with two new polynomial-time lower bounds and mutually consistent dominance rules for the unrestricted container relocation problem.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> State-of-the-art exact BRP solver; lower bounds on relocations give a floor on unavoidable crane-serialization delay, enabling better EXIT-time estimates to reduce Z1.</div>
+  </td>
+</tr>
+<tr id="p31">
+  <td class="num">31</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2206.12303" target="_blank" rel="noopener">The Bounded Beam Search Algorithm for the Block Relocation Problem</a></div>
+    <div class="pmeta">Tiziano Bacci, Sara Mattia, Paolo Ventura · arXiv:2206.12303 (extended from Computers &amp; Operations Research, Vol. 103, 2019)</div>
+    <div class="pm"><span class="lbl">Method</span> Polynomial-time lower bound embedded in a bounded beam search, limiting enumeration with heuristic pruning criteria; outperforms prior heuristics on standard BRP benchmarks.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Beam search with crane-blocking lower bound can guide fast feasible sequencing of block entries/exits under j&gt;=k, keeping schedule within time limits on the 4-CPU eval server.</div>
+  </td>
+</tr>
+<tr id="p32">
+  <td class="num">32</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1709.09972" target="_blank" rel="noopener">Deep Learning Assisted Heuristic Tree Search for the Container Pre-Marshalling Problem</a></div>
+    <div class="pmeta">André Hottung, Shunji Tanaka, Kevin Tierney · Computers &amp; Operations Research, Vol. 113 (2020)</div>
+    <div class="pm"><span class="lbl">Method</span> Neural networks trained on near-optimal solutions learn branching heuristics and admissible lower bounds; integrated into DLTS tree search achieving &lt;2% optimality gap on real instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Learned lower bound on clearance moves can approximate crane-serialization cost within our scheduling loop; branching policy trained offline is CPU-only and fits eval-server constraints.</div>
+  </td>
+</tr>
+<tr id="p33">
+  <td class="num">33</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/transe/v137y2020ics1366554519311949.html" target="_blank" rel="noopener">Minimizing Crane Times in Pre-Marshalling Problems</a></div>
+    <div class="pmeta">Consuelo Parreño-Torres, Ramon Alvarez-Valdes, Rubén Ruiz, Kevin Tierney · Transportation Research Part E: Logistics and Transportation Review, Vol. 137, article 101917</div>
+    <div class="pm"><span class="lbl">Method</span> ILP model plus iterative-deepening branch-and-bound minimizing actual crane time (not move count) in pre-marshalling, with new upper/lower bounds and dominance criteria.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Optimizing crane time rather than move count matches our tardiness objective: bounding crane-clearance duration tightens EXIT-time windows and directly reduces Z1.</div>
+  </td>
+</tr>
+<tr id="p34">
+  <td class="num">34</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://dl.acm.org/doi/10.1016/j.cor.2024.106635" target="_blank" rel="noopener">The Container Premarshalling Problem under Limited Crane Time: A Constraint Programming Approach</a></div>
+    <div class="pmeta">Celia Jiménez-Piqueras, Consuelo Parreño-Torres, Ramon Alvarez-Valdes, Rubén Ruiz · Computers &amp; Operations Research, Vol. 166, article 106635</div>
+    <div class="pm"><span class="lbl">Method</span> CP model for CPMP-LCT (premarshalling when full bay rearrangement is infeasible within a crane time budget); CP outperforms ILP on partial-rearrangement instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Partial-clearance under time budget is exactly our situation: crane time is shared, so this CP approach selects which j&gt;=k violations to fix within the scheduling window to minimize tardiness.</div>
+  </td>
+</tr>
+<tr id="p35">
+  <td class="num">35</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1904.03347" target="_blank" rel="noopener">A Study on the Block Relocation Problem: Lower Bound Derivations and Strong Formulations</a></div>
+    <div class="pmeta">Chao Lu, Bo Zeng, Shixin Liu · arXiv:1904.03347</div>
+    <div class="pm"><span class="lbl">Method</span> General lower-bound framework using critical substructures; strong MIP formulation covering 8 BRP variants; iterative exact procedure benchmarked across all variants.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Comprehensive lower-bound taxonomy for all BRP variants provides tight dual bounds on crane-blocking delay, enabling provably good EXIT-time assignments that minimize tardiness.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat4">
+  <h3>5. Single-Machine Total / Weighted Tardiness <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p36">
+  <td class="num">36</td>
+  <td class="yr">1969</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/inm/oropre/v17y1969i4p701-715.html" target="_blank" rel="noopener">One-Machine Sequencing to Minimize Certain Functions of Job Tardiness</a></div>
+    <div class="pmeta">H. Emmons · Operations Research, 17(4):701–715</div>
+    <div class="pm"><span class="lbl">Method</span> Three pairwise job-ordering dominance theorems that fix precedence between job pairs, pruning the search space for any exact 1||ΣT_j solver.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Emmons&#x27; dominance rules let us immediately fix order of many block-pairs without search, shrinking the crane-serialization scheduling space.</div>
+  </td>
+</tr>
+<tr id="p37">
+  <td class="num">37</td>
+  <td class="yr">1977</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S0167506008707428" target="_blank" rel="noopener">A &#x27;Pseudopolynomial&#x27; Algorithm for Sequencing Jobs to Minimize Total Tardiness</a></div>
+    <div class="pmeta">E. L. Lawler · Annals of Discrete Mathematics, 1:331–342</div>
+    <div class="pm"><span class="lbl">Method</span> DP decomposition: select job with max processing time, enumerate its position after EDD position; recursion reduces to independent subproblems; O(n²P) time.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Lawler&#x27;s decomposition is the canonical exact DP for 1||ΣT_j; directly computes optimal entry/exit sequence for crane-serialized blocks within a bay.</div>
+  </td>
+</tr>
+<tr id="p38">
+  <td class="num">38</td>
+  <td class="yr">1985</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/opre.33.2.363" target="_blank" rel="noopener">A Branch and Bound Algorithm for the Total Weighted Tardiness Problem</a></div>
+    <div class="pmeta">C. N. Potts, L. N. Van Wassenhove · Operations Research, 33(2):363–377</div>
+    <div class="pm"><span class="lbl">Method</span> B&amp;B with Lagrangian relaxation lower bounds (subproblem = 1||ΣwC_j), fast multiplier-adjustment instead of subgradient, plus DP-dominance pruning in the tree.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Solves 1||ΣwT_j exactly up to ~50 jobs; directly applicable to scheduling crane-access slots for weighted-priority blocks per bay.</div>
+  </td>
+</tr>
+<tr id="p39">
+  <td class="num">39</td>
+  <td class="yr">1987</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.semanticscholar.org/paper/Priority-Rules-for-Job-Shops-with-Weighted-Tardiness-Vepsalainen-Morton/6e6eb8df4cd3c2b994fc8823bade0e8a28bab32a" target="_blank" rel="noopener">Priority Rules for Job Shop Scheduling: Making More Efficient Use of the Flexibility of Soft Due-Dates (ATC rule)</a></div>
+    <div class="pmeta">A.-P. J. Vepsalainen, T. E. Morton · Management Science, 33(8):1035–1047</div>
+    <div class="pm"><span class="lbl">Method</span> ATC index = (w_j/p_j)·exp(-max(d_j-p_j-t,0)/(k·p̄)), a look-ahead priority rule that blends WSPT urgency with exponential due-date slack penalisation.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ATC is a fast O(n log n) construction heuristic for weighted tardiness; use it to build the initial block-release ordering before any crane-aware refinement.</div>
+  </td>
+</tr>
+<tr id="p40">
+  <td class="num">40</td>
+  <td class="yr">1998</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/ijoc.10.3.341" target="_blank" rel="noopener">Local Search Heuristics for the Single Machine Total Weighted Tardiness Scheduling Problem</a></div>
+    <div class="pmeta">H. A. J. Crauwels, C. N. Potts, L. N. Van Wassenhove · INFORMS Journal on Computing, 10(3):341–350</div>
+    <div class="pm"><span class="lbl">Method</span> Comparative study of descent, simulated annealing, threshold accepting, tabu search, and genetic algorithms on 1||ΣwT_j using a binary encoding plus decoding heuristic.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Establishes benchmark local-search operators (swap, insert) and their performance profiles; template for crane-aware neighborhood moves on the block sequence.</div>
+  </td>
+</tr>
+<tr id="p41">
+  <td class="num">41</td>
+  <td class="yr">2002</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/abs/10.1287/ijoc.14.1.52.7712" target="_blank" rel="noopener">An Iterated Dynasearch Algorithm for the Single-Machine Total Weighted Tardiness Scheduling Problem</a></div>
+    <div class="pmeta">R. K. Congram, C. N. Potts, S. L. van de Velde · INFORMS Journal on Computing, 14(1):52–67</div>
+    <div class="pm"><span class="lbl">Method</span> Dynasearch: DP over an exponential-size &#x27;compound move&#x27; neighborhood (all sequences of non-overlapping adjacent swaps) in polynomial time, iterated with perturbation.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Searches vastly more of the permutation space per iteration than simple swap; can efficiently explore crane-serialisation reorderings that standard 2-opt misses.</div>
+  </td>
+</tr>
+<tr id="p42">
+  <td class="num">42</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/ejores/v202y2010i1p1-7.html" target="_blank" rel="noopener">The Single-Machine Total Tardiness Scheduling Problem: Review and Extensions</a></div>
+    <div class="pmeta">C. Koulamas · European Journal of Operational Research, 202(1):1–7</div>
+    <div class="pm"><span class="lbl">Method</span> Survey of exact algorithms, FPTAS, and heuristics for 1||ΣT_j; extensions cover release dates, sequence-dependent setups, and generalised due-date models.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Road-map for choosing the right algorithm tier (exact vs. heuristic) as bay sizes and time limits vary in the shipyard problem.</div>
+  </td>
+</tr>
+<tr id="p43">
+  <td class="num">43</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2005.05579" target="_blank" rel="noopener">Data-driven Algorithm for Scheduling with Total Tardiness</a></div>
+    <div class="pmeta">M. Bouška, A. Novák, P. Šůcha, I. Módos, Z. Hanzálek · arXiv:2005.05579 (also EJOR 308(3):990–1006, 2023)</div>
+    <div class="pm"><span class="lbl">Method</span> Deep neural network trained on optimal solutions acts as a polynomial-time criterion estimator inside Lawler&#x27;s decomposition, replacing the exhaustive DP split search.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Achieves ~0.5% optimality gap on instances up to 350 jobs in milliseconds; can be trained on solved crane-schedule subproblems to guide fast online sequencing.</div>
+  </td>
+</tr>
+<tr id="p44">
+  <td class="num">44</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2402.14847" target="_blank" rel="noopener">Deep Learning-Driven Scheduling Algorithm for a Single Machine Problem Minimizing the Total Tardiness</a></div>
+    <div class="pmeta">M. Bouška, P. Šůcha · arXiv:2402.14847 (extended EJOR version)</div>
+    <div class="pm"><span class="lbl">Method</span> Improved DNN estimator within Lawler&#x27;s DP decomposition with faster dataset generation; reduces optimality gap further and scales to larger instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Directly portable: train on crane-serialised single-bay scheduling instances to get a near-optimal sequencer that respects release/due-date structure.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat5">
+  <h3>6. Parallel-Machine Total Weighted Tardiness <span class="cnt">8 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p45">
+  <td class="num">45</td>
+  <td class="yr">1987</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/abs/10.1287/mnsc.33.8.1035" target="_blank" rel="noopener">Priority Rules for Job Shops with Weighted Tardiness Costs</a></div>
+    <div class="pmeta">A.P.J. Vepsalainen, T.E. Morton · Management Science, 33(8), pp. 1035–1047</div>
+    <div class="pm"><span class="lbl">Method</span> ATC (Apparent Tardiness Cost) composite dispatching rule blending WSPT and slack for weighted tardiness.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ATC/ATCS applied per bay as a fast assignment/sequencing priority gives an O(n log n) greedy that minimises tardy wait time in the crane-serialisation queue.</div>
+  </td>
+</tr>
+<tr id="p46">
+  <td class="num">46</td>
+  <td class="yr">2011</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.semanticscholar.org/paper/Dominance-rules-for-the-parallel-machine-total-with-Jouglet-Savourey/f4cdb4010a9a050986197aab4c5187ddc79dd71c" target="_blank" rel="noopener">Dominance Rules for the Parallel Machine Total Weighted Tardiness Scheduling Problem with Release Dates</a></div>
+    <div class="pmeta">A. Jouglet, D. Savourey · Computers &amp; Operations Research, 38(5), pp. 1259–1266</div>
+    <div class="pm"><span class="lbl">Method</span> Dominance/dominance-filtering rules adapted from single-machine literature to prune infeasible or suboptimal job-machine assignments with release dates.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Pruning rules eliminate orderings that cannot reduce Z1, directly cutting the crane-serialisation search space during bay-assignment decisions.</div>
+  </td>
+</tr>
+<tr id="p47">
+  <td class="num">47</td>
+  <td class="yr">2012</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1051/ro/2012010" target="_blank" rel="noopener">Branch-and-Bound Algorithm for Total Weighted Tardiness Minimization on Parallel Machines under Release Dates Assumptions</a></div>
+    <div class="pmeta">I. Kacem, N. Souayah, M. Haouari · RAIRO – Operations Research, 46(2), pp. 125–147</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-and-bound with novel lower/upper bounds for Pm|r_j|sum w_j T_j; solves instances up to 50 jobs × 4 machines.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides exact lower-bound framework applicable per-bay; lower-bound values can seed metaheuristic improvement for Z1 reduction.</div>
+  </td>
+</tr>
+<tr id="p48">
+  <td class="num">48</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s12532-010-0019-z" target="_blank" rel="noopener">Exact Algorithm over an Arc-Time-Indexed Formulation for Parallel Machine Scheduling Problems</a></div>
+    <div class="pmeta">A. Pessoa, E. Uchoa, M.P. de Aragão, R. Rodrigues · Mathematical Programming Computation, 2(3–4), pp. 259–290</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-cut-and-price over arc-time-indexed formulation (variable per job-pair × completion-time), first to solve P||sum w_j T_j up to 100 jobs optimally.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Arc-time formulation can model bay-level crane-serialisation constraints as precedence arcs, enabling MIP-exact Z1 minimisation for small instances.</div>
+  </td>
+</tr>
+<tr id="p49">
+  <td class="num">49</td>
+  <td class="yr">2012</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1811.02882" target="_blank" rel="noopener">Iterated Local Search and Very Large Neighborhoods for the Parallel-Machines Total Tardiness Problem</a></div>
+    <div class="pmeta">F. Della Croce, T. Garaix, A. Grosso · Computers &amp; Operations Research, 39(6), pp. 1213–1217</div>
+    <div class="pm"><span class="lbl">Method</span> ILS combining generalised pairwise-interchange, dynasearch (polynomial-time exhaustive over chained swaps), and machine-reassignment neighbourhood.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Dynasearch explores chained-move neighbourhoods; applying it within each bay&#x27;s schedule can rapidly reduce Z1 by escaping crane-induced local optima.</div>
+  </td>
+</tr>
+<tr id="p50">
+  <td class="num">50</td>
+  <td class="yr">2007</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054806000463" target="_blank" rel="noopener">Parallel Machine Total Tardiness Scheduling with a New Hybrid Metaheuristic Approach</a></div>
+    <div class="pmeta">D. Anghinolfi, M. Paolucci · Computers &amp; Operations Research, 34(11), pp. 3471–3490</div>
+    <div class="pm"><span class="lbl">Method</span> Hybrid particle-swarm / clonal-selection metaheuristic for Pm||sum T_j, encoding schedules as priority permutations decoded by ATC dispatching.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Permutation-encoded population search avoids exhaustive enumeration; directly portable to the bay-assignment + ENTRY/EXIT time optimisation loop.</div>
+  </td>
+</tr>
+<tr id="p51">
+  <td class="num">51</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S0305054820300034" target="_blank" rel="noopener">Analysis of Variable Neighborhood Descent as a Local Search Operator for Total Weighted Tardiness Problem on Unrelated Parallel Machines</a></div>
+    <div class="pmeta">R.O.M. Diana, S.R. de Souza · Computers &amp; Operations Research, 117, art. 104886</div>
+    <div class="pm"><span class="lbl">Method</span> VND with multiple neighbourhood structures (insertion, swap, machine-reassignment) embedded into IG, ABC, and GA as local-search operator for R||sum w_j T_j.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> VND systematically exploits multiple move types; embedding it inside bay-level improvement loops can reduce Z1 by reordering crane-access queues.</div>
+  </td>
+</tr>
+<tr id="p52">
+  <td class="num">52</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S037722172100672X" target="_blank" rel="noopener">Iterated Greedy Algorithms for a Complex Parallel Machine Scheduling Problem</a></div>
+    <div class="pmeta">D. Mecler, V. Abu-Marrul, R. Martinelli, A. Hoff · European Journal of Operational Research, 300(2), pp. 545–560</div>
+    <div class="pm"><span class="lbl">Method</span> Iterated Greedy destroy-and-repair with Random VND local search for parallel machines with release dates, family setups, and machine eligibility.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Destroy-and-repair on bay assignments resets crane-blocking configurations; re-inserting blocks by earliest-release/latest-due order directly targets Z1.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat6">
+  <h3>7. RCPSP with Spatial / 2D Resources <span class="cnt">5 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p53">
+  <td class="num">53</td>
+  <td class="yr">2000</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.researchgate.net/publication/245280867_Packing_Problems_and_Project_Scheduling_Models_An_Integrating_Perspective" target="_blank" rel="noopener">Packing Problems and Project Scheduling Models: An Integrating Perspective</a></div>
+    <div class="pmeta">Sönke Hartmann · Journal of the Operational Research Society, Vol. 51, pp. 1083–1092</div>
+    <div class="pm"><span class="lbl">Method</span> Unifying classification showing every packing problem is a special case of RCPSP; enables cross-pollination of solvers</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides theoretical bridge: OGC 2D polygon packing per bay is an sRCPSP instance, so RCPSP priority-rule technology directly transfers</div>
+  </td>
+</tr>
+<tr id="p54">
+  <td class="num">54</td>
+  <td class="yr">2015</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1155/2015/628259" target="_blank" rel="noopener">A Branch and Bound Algorithm for Project Scheduling Problem with Spatial Resource Constraints</a></div>
+    <div class="pmeta">Hu et al. · Mathematical Problems in Engineering (Hindawi), Article 628259</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-and-bound with implicit enumeration scheme + precedence-based lower bound + dominance pruning for 2D spatial RCPSP</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> First exact B&amp;B for 2D sRCPSP in shipbuilding context; dominance rules could tighten our crane-serialization ordering search space</div>
+  </td>
+</tr>
+<tr id="p55">
+  <td class="num">55</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.ejor.2024.07.018" target="_blank" rel="noopener">A three-dimensional spatial resource-constrained project scheduling problem: Model and heuristic</a></div>
+    <div class="pmeta">Jingwen Zhang, Lubo Li, Erik Demeulemeester, Haohua Zhang · European Journal of Operational Research, Vol. 319, No. 3, pp. 943–966</div>
+    <div class="pm"><span class="lbl">Method</span> IP formulation of 3D sRCPSP + heuristic with 36 priority rules (11 new spatial-feature rules) + 3 spatial allocation strategies + decision-tree rule selector</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> 3D spatial resource = our bay-layer structure; new spatial priority rules (e.g. volumetric urgency) can be adapted to encode crane-access clearance as a priority signal</div>
+  </td>
+</tr>
+<tr id="p56">
+  <td class="num">56</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835224006880" target="_blank" rel="noopener">A Q-learning based hyper-heuristic scheduling algorithm with multi-rule selection for sub-assembly in shipbuilding</a></div>
+    <div class="pmeta">Authors from ScienceDirect (2024) · Computers &amp; Industrial Engineering (September 2024), Article S0360835224006880</div>
+    <div class="pm"><span class="lbl">Method</span> Q-learning agent selects among multiple spatial layout heuristics (low-level) and sequencing rules online; minimises makespan under space + worker resources</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Adaptive rule selection learns which crane-compatible placement heuristic to invoke per block, replacing our static greedy and potentially cutting crane-wait tardiness</div>
+  </td>
+</tr>
+<tr id="p57">
+  <td class="num">57</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S0377221724007161" target="_blank" rel="noopener">Solving the parallel processor scheduling and bin packing problems with contiguity constraints: Mathematical models and computational studies</a></div>
+    <div class="pmeta">Researchers at Tilburg University · European Journal of Operational Research (2024)</div>
+    <div class="pm"><span class="lbl">Method</span> MILP with contiguity constraints coupling bin-packing assignment with parallel-machine scheduling; exact decomposition via LP relaxation + column generation</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Contiguity = our crane-access vertical-clearance rule; decomposition approach decouples bay assignment from position so crane constraint can be imposed as a cut</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat7">
+  <h3>8. Temporal / Dynamic 2D Bin Packing with Due Dates <span class="cnt">11 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p58">
+  <td class="num">58</td>
+  <td class="yr">2013</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.semanticscholar.org/paper/A-genetic-algorithm-for-two-dimensional-bin-packing-Bennell-Lee/28f53e1528d848f64a0b19ad8e8f899f2908dbae" target="_blank" rel="noopener">A Genetic Algorithm for Two-Dimensional Bin Packing with Due Dates</a></div>
+    <div class="pmeta">Julia A. Bennell, Lai Soon Lee, Chris N. Potts · International Journal of Production Economics, Vol. 145(2), pp. 547–560</div>
+    <div class="pm"><span class="lbl">Method</span> GA with multi-crossover operator and best-fit placement decoder; minimizes number of bins AND maximum lateness Lmax jointly.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Establishes the core 2DBPP-DD benchmark; GA ordering heuristic directly maps to block-to-bay assignment under due-date pressure driving Z1.</div>
+  </td>
+</tr>
+<tr id="p59">
+  <td class="num">59</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1703.07244" target="_blank" rel="noopener">A Hybrid Feasibility Constraints-Guided Search to the Two-Dimensional Bin Packing Problem with Due Dates</a></div>
+    <div class="pmeta">Sergey Polyakovskiy, Rym M&#x27;Hallah · European Journal of Operational Research, Vol. 266(3), pp. 819–839</div>
+    <div class="pm"><span class="lbl">Method</span> Two-stage hybrid: CP-based neighbourhood search for bin assignment, then MIP sub-problems guided by lookahead feasibility constraints to minimize Lmax.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Lookahead feasibility guards prevent selecting bay/time assignments that guarantee lateness; directly applicable to ENTRY/EXIT slot selection to cut Z1.</div>
+  </td>
+</tr>
+<tr id="p60">
+  <td class="num">60</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221720308274" target="_blank" rel="noopener">Number of Bins and Maximum Lateness Minimization in Two-Dimensional Bin Packing</a></div>
+    <div class="pmeta">Claudio Arbib, Fabrizio Marinelli, Andrea Pizzuti · European Journal of Operational Research, Vol. 291(1), pp. 101–113</div>
+    <div class="pm"><span class="lbl">Method</span> Sequential Value Correction (SVC) heuristic that tightens lower bounds on Lmax by 31% for industry instances; bi-objective formulation solved via iterative bound improvement.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> SVC&#x27;s tight Lmax bound can guide bay assignment order to systematically minimise maximum tardiness, transferable to Z1 upper-bound tightening.</div>
+  </td>
+</tr>
+<tr id="p61">
+  <td class="num">61</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/jomega/v102y2021ics0305048320306654.html" target="_blank" rel="noopener">Just-in-Time Two-Dimensional Bin Packing</a></div>
+    <div class="pmeta">Sergey Polyakovskiy, Rym M&#x27;Hallah · Omega, Vol. 102, Article 102311</div>
+    <div class="pm"><span class="lbl">Method</span> Integrated CP model plus two cut-and-check decompositions (CP-master and warm-started MIP-master) minimizing total weighted earliness-tardiness for 2D packing.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Cut-and-check decomposition separates packing feasibility from scheduling lateness — matches OGC structure where crane/spatial feasibility and tardiness are coupled.</div>
+  </td>
+</tr>
+<tr id="p62">
+  <td class="num">62</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1703.07290" target="_blank" rel="noopener">Just-in-Time Batch Scheduling Problem with Two-Dimensional Bin Packing Constraints</a></div>
+    <div class="pmeta">S. Polyakovskiy, A. Makarowsky, R. M&#x27;Hallah · Proceedings of the Genetic and Evolutionary Computation Conference (GECCO), pp. 321–328</div>
+    <div class="pm"><span class="lbl">Method</span> CP (impact-based search in IBM CP Optimizer) and agent-based constructive method; CP wins on small instances, agent-based on large.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Agent-based constructive approach scales to large instances with earliness-tardiness penalties — applicable to large OGC shipyard instances where exact methods time out.</div>
+  </td>
+</tr>
+<tr id="p63">
+  <td class="num">63</td>
+  <td class="yr">2025</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5343698" target="_blank" rel="noopener">Exact Solutions to the Two-Dimensional Bin Packing Problem with Due Dates</a></div>
+    <div class="pmeta">Milad Dehghan, Sergey Polyakovskiy, Rym M&#x27;Hallah · SSRN Working Paper (preprint, July 2025)</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-and-bound / exact MIP approach for 2DBPP-DD; most recent state-of-the-art exact solver for this combined problem.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides exact optimality certificates for small instances; useful as oracle to validate whether Z1-reduction heuristics reach optimal lateness on OGC toy instances.</div>
+  </td>
+</tr>
+<tr id="p64">
+  <td class="num">64</td>
+  <td class="yr">2016</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ieeexplore.ieee.org/document/7814593/" target="_blank" rel="noopener">The Temporal Bin Packing Problem: An Application to Workload Management in Data Centres</a></div>
+    <div class="pmeta">Milan de Cauwer, Deepak Mehta, Barry O&#x27;Sullivan · IEEE 28th International Conference on Tools with Artificial Intelligence (ICTAI), pp. 157–164</div>
+    <div class="pm"><span class="lbl">Method</span> Formalises TBPP where items consume capacity during a time interval [start, end]; column generation lower bound plus first-fit greedy heuristic.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Foundational TBPP model: blocks occupying bay floor space only during [ENTRY, EXIT] is exactly the temporal bin packing formulation; column generation bound is directly portable.</div>
+  </td>
+</tr>
+<tr id="p65">
+  <td class="num">65</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1902.04925" target="_blank" rel="noopener">A Branch-and-Price Algorithm for the Temporal Bin Packing Problem</a></div>
+    <div class="pmeta">Mauro Dell&#x27;Amico, Fabio Furini, Manuel Iori · Computers &amp; Operations Research, Vol. 114, Article 104825</div>
+    <div class="pm"><span class="lbl">Method</span> Exponential-size formulation solved via branch-and-price; polynomial and extended formulations compared; handles instances up to 500 items, 150 time steps.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Branch-and-price framework for temporal packing scales to OGC instance sizes; pricing sub-problem structure usable for bay-selection with time-window capacity at every tick.</div>
+  </td>
+</tr>
+<tr id="p66">
+  <td class="num">66</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/chapter/10.1007/978-3-319-58253-5_19" target="_blank" rel="noopener">Matheuristics for the Temporal Bin Packing Problem</a></div>
+    <div class="pmeta">Fabio Furini, X. Shen · Recent Developments in Metaheuristics, Operations Research/Computer Science Interfaces Vol. 62, Springer</div>
+    <div class="pm"><span class="lbl">Method</span> Matheuristic combining LP relaxation of extended TBPP formulation with large neighbourhood search; competitive with exact B&amp;P on medium instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Matheuristic approach is CPU-friendly within the 4-core/no-GPU evaluation server; LNS on top of LP relaxation is directly implementable for crane-serialisation-aware bay scheduling.</div>
+  </td>
+</tr>
+<tr id="p67">
+  <td class="num">67</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054820300769" target="_blank" rel="noopener">Multi-Objective Temporal Bin Packing Problem: An Application in Cloud Computing</a></div>
+    <div class="pmeta">Nursen Aydin, I. Muter, S. I. Birbil · Computers &amp; Operations Research, Vol. 121, Article 104959</div>
+    <div class="pm"><span class="lbl">Method</span> Weighted-sum MIP plus fire-up elimination heuristic; minimises active bins and server start-ups simultaneously over time.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Multi-objective TBPP with activation costs mirrors Z2 (workload imbalance) + Z1 trade-off; fire-up elimination maps to reducing idle-crane wait times that cause tardiness.</div>
+  </td>
+</tr>
+<tr id="p68">
+  <td class="num">68</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/ijoc.2022.1165" target="_blank" rel="noopener">Bin Packing Problem with Time Lags</a></div>
+    <div class="pmeta">Orlando Rivera Letelier, François Clautiaux, Ruslan Sadykov · INFORMS Journal on Computing, Vol. 34(4)</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-cut-and-price with compact + exponential formulation; separation algorithms for feasible item-to-bin assignment under minimum and maximum lag constraints.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Time-lag constraints (minimum gap between dependent packing events) model crane serialisation ordering; branch-cut-and-price exact framework applicable to small OGC subproblems.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat8">
+  <h3>9. Irregular Strip Packing / Nesting (NFP) <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p69">
+  <td class="num">69</td>
+  <td class="yr">2008</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221706012379" target="_blank" rel="noopener">The Geometry of Nesting Problems: A Tutorial</a></div>
+    <div class="pmeta">J.A. Bennell, J.F. Oliveira · European Journal of Operational Research, Vol. 184, pp. 397–415</div>
+    <div class="pm"><span class="lbl">Method</span> Unified tutorial covering no-fit polygon (NFP), phi-functions, and raster representations for placement feasibility in irregular 2D packing.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides the geometric toolkit (NFP, phi-function, raster) needed to test non-overlap feasibility when placing each block in a bay, the inner loop of any Z1-reducing scheduler.</div>
+  </td>
+</tr>
+<tr id="p70">
+  <td class="num">70</td>
+  <td class="yr">2006</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/opre.1060.0293" target="_blank" rel="noopener">A New Bottom-Left-Fill Heuristic Algorithm for the Two-Dimensional Irregular Packing Problem</a></div>
+    <div class="pmeta">E. Burke, R. Hellier, G. Kendall, G. Whitwell · Operations Research, Vol. 54(3), pp. 587–601</div>
+    <div class="pm"><span class="lbl">Method</span> Bottom-left-fill greedy placement using NFP-based collision detection; hill-climbing and tabu search perturbation improve compaction of irregular polygons.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Fast BLF placement directly assigns (x,y) for each block in a bay; embedded in a scheduler it yields feasible positions in microseconds, enabling many candidate entry/exit times to be evaluated.</div>
+  </td>
+</tr>
+<tr id="p71">
+  <td class="num">71</td>
+  <td class="yr">2008</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://dl.acm.org/doi/10.1016/j.cor.2006.02.026" target="_blank" rel="noopener">A Comprehensive and Robust Procedure for Obtaining the No-Fit Polygon Using Minkowski Sums</a></div>
+    <div class="pmeta">J.A. Bennell, K.A. Song · Computers &amp; Operations Research, Vol. 35(3), pp. 1082–1096</div>
+    <div class="pm"><span class="lbl">Method</span> Minkowski-sum-based NFP computation that correctly handles concavities, holes, slits, and lock-and-key configurations with internal-edge removal.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Robust NFP pre-computation eliminates expensive polygon-intersection checks at runtime; correct NFPs for concave shipyard blocks are a prerequisite for any overlap-free placement move.</div>
+  </td>
+</tr>
+<tr id="p72">
+  <td class="num">72</td>
+  <td class="yr">2009</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S1572528609000218" target="_blank" rel="noopener">An Iterated Local Search Algorithm Based on Nonlinear Programming for the Irregular Strip Packing Problem</a></div>
+    <div class="pmeta">T. Imamichi, M. Yagiura, H. Nagamochi · Discrete Optimization, Vol. 6(4), pp. 345–361</div>
+    <div class="pm"><span class="lbl">Method</span> Overlap-minimization via unconstrained nonlinear programming (quasi-Newton) for separation; iterated local search with polygon-swap moves drives total overlap to zero.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ILS+NLP separation is one of the strongest heuristics for compacting irregular polygons; adapting it to each bay gives the tightest packing under crane (j≥k) and floor constraints, reducing waiting-induced tardiness.</div>
+  </td>
+</tr>
+<tr id="p73">
+  <td class="num">73</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0925527317302980" target="_blank" rel="noopener">Jostle Heuristics for the 2D-Irregular Shapes Bin Packing Problems with Free Rotation</a></div>
+    <div class="pmeta">A. Martinez-Sykora, R. Alvarez-Valdes, J.A. Bennell, J.M. Tamarit · International Journal of Production Economics, Vol. 195, pp. 12–26</div>
+    <div class="pm"><span class="lbl">Method</span> Jostle: iteratively re-packs shapes by alternating leftmost and rightmost placement passes, shaking the container to fill gaps; diversification via local-search perturbation.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Jostle&#x27;s re-insertion loop can be used after any block exits a bay to re-tighten remaining shapes, directly shrinking the effective footprint and enabling earlier entry of tardy blocks.</div>
+  </td>
+</tr>
+<tr id="p74">
+  <td class="num">74</td>
+  <td class="yr">2013</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221713005080" target="_blank" rel="noopener">A New Approach for Sheet Nesting Problem Using Guided Cuckoo Search and Pairwise Clustering</a></div>
+    <div class="pmeta">A. Elkeran · European Journal of Operational Research, Vol. 231(3), pp. 757–769</div>
+    <div class="pm"><span class="lbl">Method</span> Pairwise polygon clustering pre-groups congruent shapes; guided cuckoo search optimises strip length while a secondary overlap-minimisation phase resolves collisions.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Clustering blocks that share shape families reduces NFP diversity and speeds up placement enumeration per bay, allowing more schedule candidates to be tested within the time budget.</div>
+  </td>
+</tr>
+<tr id="p75">
+  <td class="num">75</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2103.08739" target="_blank" rel="noopener">A Fast and Scalable Bottom-Left-Fill Algorithm to Solve Nesting Problems Using a Semi-Discrete Representation</a></div>
+    <div class="pmeta">S. Chehrazad, D. Roose, T. Wauters · European Journal of Operational Research (arXiv:2103.08739, published EJOR 2022)</div>
+    <div class="pm"><span class="lbl">Method</span> Semi-discrete representation: pieces and strip discretised as equidistant vertical segments; sweep-line BLF placement runs in milliseconds even with rotations on standard benchmarks.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Millisecond feasibility checks per placement trial allow an outer scheduling loop to enumerate thousands of (bay, orientation, entry-time) combinations, attacking Z1 by exploring more time-slot candidates.</div>
+  </td>
+</tr>
+<tr id="p76">
+  <td class="num">76</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221719303820" target="_blank" rel="noopener">Irregular Packing Problems: A Review of Mathematical Models</a></div>
+    <div class="pmeta">A.A.S. Leao, F.M.B. Toledo, J.F. Oliveira, M.A. Carravilla, R. Alvarez-Valdés · European Journal of Operational Research, Vol. 282(3), pp. 803–822</div>
+    <div class="pm"><span class="lbl">Method</span> Systematic taxonomy of MIP, NLP, CP, and combinatorial models for nesting, with unified notation comparing NFP-based, phi-function, and raster formulations.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Identifies which model classes scale to the 10–100 block instances in OGC 2026 and which are too costly; guides model selection so placement decisions stay tractable inside the scheduling loop.</div>
+  </td>
+</tr>
+<tr id="p77">
+  <td class="num">77</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221716307950" target="_blank" rel="noopener">Matheuristics for the Irregular Bin Packing Problem with Free Rotations</a></div>
+    <div class="pmeta">A. Martinez-Sykora, R. Alvarez-Valdes, J. Bennell, R. Ruiz, J.M. Tamarit · European Journal of Operational Research, Vol. 258(2), pp. 440–455</div>
+    <div class="pm"><span class="lbl">Method</span> Constructive matheuristic (NFP-based greedy) combined with VLNS (very large neighbourhood search) and ILP re-optimisation for the irregular bin packing problem with continuous rotations.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> The constructive+VLNS pattern maps directly to our bay-assignment sub-problem: build an initial feasible placement per bay, then apply neighbourhood search to free space for blocks with tight due dates.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat9">
+  <h3>10. Large Neighborhood Search (LNS / ALNS) <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p78">
+  <td class="num">78</td>
+  <td class="yr">1998</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/chapter/10.1007/3-540-49481-2_30" target="_blank" rel="noopener">Using Constraint Programming and Local Search Methods to Solve Vehicle Routing Problems</a></div>
+    <div class="pmeta">Paul Shaw · CP-98: 4th Int&#x27;l Conference on Principles and Practice of Constraint Programming, LNCS 1520, pp. 417–431, Springer</div>
+    <div class="pm"><span class="lbl">Method</span> Defines Large Neighborhood Search: iteratively destroy a partial solution using relatedness-based removal, then repair with CP-guided insertion.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Foundational destroy/repair template; relatedness-removal maps directly to grouping crane-blocked blocks for simultaneous rescheduling to cut tardiness.</div>
+  </td>
+</tr>
+<tr id="p79">
+  <td class="num">79</td>
+  <td class="yr">2000</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://dl.acm.org/doi/10.1006/jcph.1999.6413" target="_blank" rel="noopener">Record Breaking Optimization Results Using the Ruin and Recreate Principle</a></div>
+    <div class="pmeta">Gerhard Schrimpf, Johannes Schneider, Hermann Stamm-Wilbrandt, Gunter Dueck · Journal of Computational Physics, 159(2), 139–171</div>
+    <div class="pm"><span class="lbl">Method</span> Ruin-and-Recreate: aggressively destroy a large fraction of current solution, reconstruct greedily, accept via record-to-record travel criterion.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Large-ruin strategy for escaping crane-serialization deadlocks; R&amp;R on a tardy block cluster can simultaneously free vertical-access chains.</div>
+  </td>
+</tr>
+<tr id="p80">
+  <td class="num">80</td>
+  <td class="yr">2006</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/trsc.1050.0135" target="_blank" rel="noopener">An Adaptive Large Neighborhood Search Heuristic for the Pickup and Delivery Problem with Time Windows</a></div>
+    <div class="pmeta">Stefan Ropke, David Pisinger · Transportation Science, 40(4), 455–472</div>
+    <div class="pm"><span class="lbl">Method</span> ALNS: maintains a pool of destroy (random, Shaw, worst) and repair (greedy, k-regret) operators; roulette-wheel adaptive weight updates score each operator&#x27;s improvement history.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Core ALNS framework to port directly: operator pool can include crane-aware block removal, weight updates steer search toward operators that reduce Z1.</div>
+  </td>
+</tr>
+<tr id="p81">
+  <td class="num">81</td>
+  <td class="yr">2007</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054805003023" target="_blank" rel="noopener">A General Heuristic for Vehicle Routing Problems</a></div>
+    <div class="pmeta">David Pisinger, Stefan Ropke · Computers &amp; Operations Research, 34(8), 2403–2435</div>
+    <div class="pm"><span class="lbl">Method</span> Unifies five VRP variants into a single ALNS by transforming them into a rich pickup-and-delivery model; demonstrates operator generality across problem structures.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Shows ALNS scales to multi-attribute combined assignment+routing; the bay-assignment + crane-serialization coupling in OGC mirrors this multi-constraint setting.</div>
+  </td>
+</tr>
+<tr id="p82">
+  <td class="num">82</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/chapter/10.1007/978-1-4419-1665-5_13" target="_blank" rel="noopener">Large Neighborhood Search (handbook chapter)</a></div>
+    <div class="pmeta">David Pisinger, Stefan Ropke · Handbook of Metaheuristics, 2nd ed., Springer, pp. 399–420</div>
+    <div class="pm"><span class="lbl">Method</span> Comprehensive survey of LNS variants: destroy operators (random, Shaw, worst, cluster), repair operators (greedy, k-regret), acceptance criteria (SA, record-to-record), and design guidelines.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Operator design blueprint for OGC: cluster-remove crane-blocked stacks, use k-regret reinsertion to prioritize blocks with tightest due dates, minimizing Z1.</div>
+  </td>
+</tr>
+<tr id="p83">
+  <td class="num">83</td>
+  <td class="yr">2009</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.semanticscholar.org/paper/An-Adaptive-Large-Neighborhood-Search-Algorithm-for-Muller/e52835889c74f2509323814b52f804de8a42ae36" target="_blank" rel="noopener">An Adaptive Large Neighborhood Search Algorithm for the Resource-Constrained Project Scheduling Problem</a></div>
+    <div class="pmeta">Laurent Flindt Muller · MIC 2009: VIII Metaheuristics International Conference</div>
+    <div class="pm"><span class="lbl">Method</span> Applies ALNS to RCPSP: destroy operators remove precedence-violating or resource-overloaded activity subsets; repair re-inserts with earliest feasible start times.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> RCPSP&#x27;s precedence/resource constraints parallel OGC&#x27;s crane vertical-access (j≥k) precedence; destroy-repair pattern for constrained project scheduling maps directly.</div>
+  </td>
+</tr>
+<tr id="p84">
+  <td class="num">84</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/transe/v105y2017icp123-147.html" target="_blank" rel="noopener">Improved Formulations and an Adaptive Large Neighborhood Search Heuristic for the Integrated Berth Allocation and Quay Crane Assignment Problem</a></div>
+    <div class="pmeta">Çağatay Iris, Dario Pacino, Stefan Ropke · Transportation Research Part E, 105, 123–147</div>
+    <div class="pm"><span class="lbl">Method</span> ALNS for simultaneous berth-time allocation + crane assignment: destroy operators remove vessel–berth–crane triplets; repair uses regret-based reinsertion respecting crane coverage and time-window constraints.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Combined spatial-assignment + crane-assignment + timing problem identical in structure to OGC bay+position+crane+entry-exit; operator patterns for joint feasibility are directly reusable.</div>
+  </td>
+</tr>
+<tr id="p85">
+  <td class="num">85</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S037722172030936X" target="_blank" rel="noopener">Meta-analysis of Metaheuristics: Quantifying the Effect of Adaptiveness in Adaptive Large Neighborhood Search</a></div>
+    <div class="pmeta">Renata Turkeš, Kenneth Sörensen, Lars Magnus Hvattum · European Journal of Operational Research, 292(2), 423–442</div>
+    <div class="pm"><span class="lbl">Method</span> Random-effects meta-analysis of 25 ALNS implementations across 63 studies; quantifies the average marginal benefit of the adaptive operator-selection layer (~0.14% improvement).</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Calibrates whether to invest in adaptive weights vs. simpler LNS for OGC; confirms adaptiveness pays but is not the dominant factor—operator design and repair quality matter more.</div>
+  </td>
+</tr>
+<tr id="p86">
+  <td class="num">86</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417421012719" target="_blank" rel="noopener">Weighted Earliness/Tardiness Parallel Machine Scheduling Problem with a Common Due Date</a></div>
+    <div class="pmeta">Not confirmed from abstract (Expert Systems with Applications 2021) · Expert Systems with Applications, 186 (2021)</div>
+    <div class="pm"><span class="lbl">Method</span> ET-ALNS: novel earliness-tardiness ALNS extension with ad-hoc removal/insertion operators and embedded fast objective re-evaluation for parallel machine scheduling with a common due window.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Direct template for Z1 (tardiness) objective in OGC: specialized remove-tardy-block operators + fast incremental objective update pattern accelerates per-iteration evaluation.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat10">
+  <h3>11. Constraint Programming (CP-SAT / OR-Tools) <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p87">
+  <td class="num">87</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.CP.2023.3" target="_blank" rel="noopener">The CP-SAT-LP Solver (Invited Talk)</a></div>
+    <div class="pmeta">Laurent Perron, Frédéric Didier, Steven Gay · 29th International Conference on Principles and Practice of Constraint Programming (CP 2023), LIPIcs vol. 280</div>
+    <div class="pm"><span class="lbl">Method</span> Hybrid CP+SAT+LP solver with lazy clause generation, LNS portfolio workers, and MIP presolve/cutting planes run in parallel.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Drop-in solver for our combined ENTRY/EXIT timing + bay assignment model; portfolio workers provide LNS that can escape crane-serialization bottlenecks driving Z1.</div>
+  </td>
+</tr>
+<tr id="p88">
+  <td class="num">88</td>
+  <td class="yr">2013</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10951-012-0285-x" target="_blank" rel="noopener">Solving RCPSP/max by Lazy Clause Generation</a></div>
+    <div class="pmeta">Andreas Schutt, Thibaut Feydy, Peter J. Stuckey, Mark G. Wallace · Journal of Scheduling, vol. 16, pp. 273–289, Springer</div>
+    <div class="pm"><span class="lbl">Method</span> Hybrid finite-domain CP + SAT with no-good learning and conflict-driven search for resource-constrained scheduling with generalized precedence (time-lag) constraints.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> RCPSP/max precedence relations are structurally identical to our crane j≥k access ordering; LCG&#x27;s no-good learning can discover and cut crane-blocking patterns that inflate Z1.</div>
+  </td>
+</tr>
+<tr id="p89">
+  <td class="num">89</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1009.0347" target="_blank" rel="noopener">Solving the Resource Constrained Project Scheduling Problem with Generalized Precedences by Lazy Clause Generation</a></div>
+    <div class="pmeta">Andreas Schutt, Thibaut Feydy, Peter J. Stuckey, Mark G. Wallace · arXiv:1009.0347 (conference version CP 2010)</div>
+    <div class="pm"><span class="lbl">Method</span> LCG hybrid that encodes time-window and resource constraints as SAT clauses, applies unit propagation and conflict analysis to prune the scheduling search tree.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Conference precursor demonstrating LCG closes 573 previously open RCPSP instances; provides blueprint for encoding crane-access precedences as learnable SAT clauses.</div>
+  </td>
+</tr>
+<tr id="p90">
+  <td class="num">90</td>
+  <td class="yr">2013</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1208.3015" target="_blank" rel="noopener">Explaining Time-Table-Edge-Finding Propagation for the Cumulative Resource Constraint</a></div>
+    <div class="pmeta">Andreas Schutt, Thibaut Feydy, Peter J. Stuckey · CPAIOR 2013, LNCS vol. 7874, pp. 234–250 (arXiv:1208.3015)</div>
+    <div class="pm"><span class="lbl">Method</span> Combines time-table resource profile with edge-finding in a cumulative propagator that generates explanations (nogood clauses) compatible with lazy clause generation.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> This propagator is used inside CP-SAT&#x27;s cumulative constraint; stronger pruning tightens ENTRY windows for blocks waiting behind crane-blocked neighbours, directly cutting tardiness.</div>
+  </td>
+</tr>
+<tr id="p91">
+  <td class="num">91</td>
+  <td class="yr">2009</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/chapter/10.1007/978-3-642-04244-7_62" target="_blank" rel="noopener">Edge Finding Filtering Algorithm for Discrete Cumulative Resources in O(kn log n)</a></div>
+    <div class="pmeta">Petr Vilím · CP 2009, LNCS vol. 5732, pp. 802–816, Springer</div>
+    <div class="pm"><span class="lbl">Method</span> O(kn log n) edge-finding algorithm for discrete cumulative constraints, using a sweep-line data structure to detect and prune infeasible interval orderings.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> The core propagation algorithm underlying OR-Tools&#x27; add_cumulative; efficient pruning of bay-capacity (workload) windows helps schedule earlier EXIT times, reducing Z1.</div>
+  </td>
+</tr>
+<tr id="p92">
+  <td class="num">92</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/chapter/10.1007/978-3-031-08011-1_17" target="_blank" rel="noopener">Packing by Scheduling: Using Constraint Programming to Solve a Complex 2D Cutting Stock Problem</a></div>
+    <div class="pmeta">Yiqing Luo, J. Christopher Beck · CPAIOR 2022, LNCS vol. 13292, pp. 239–255, Springer</div>
+    <div class="pm"><span class="lbl">Method</span> Reformulates 2D cutting-stock as a scheduling problem: each item becomes an interval variable on X and Y axes; no_overlap_2d (diffn) enforces non-overlap; CP solves placement+quantity jointly.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Direct methodological bridge: encodes our 2D polygon placement as CP interval pairs with no_overlap_2d, enabling timing (ENTRY/EXIT) and position to be co-optimized in one CP-SAT model.</div>
+  </td>
+</tr>
+<tr id="p93">
+  <td class="num">93</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S2214716022000215" target="_blank" rel="noopener">Industrial-size Job Shop Scheduling with Constraint Programming</a></div>
+    <div class="pmeta">Giacomo Da Col, Erich C. Teppan · Operations Research Perspectives, vol. 9, article 100249, Elsevier</div>
+    <div class="pm"><span class="lbl">Method</span> Benchmarks OR-Tools CP-SAT and IBM CP Optimizer on instances up to 1M operations, comparing no-overlap propagation, LNS, and portfolio strategies at industrial scale.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides empirical guidance on when CP-SAT&#x27;s built-in LNS beats CP Optimizer for job-shop variants similar to our bay-assignment + time scheduling subproblem.</div>
+  </td>
+</tr>
+<tr id="p94">
+  <td class="num">94</td>
+  <td class="yr">2025</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2502.13483" target="_blank" rel="noopener">PyJobShop: Solving Scheduling Problems with Constraint Programming in Python</a></div>
+    <div class="pmeta">Leon Lan, Joost Berkhout · arXiv:2502.13483</div>
+    <div class="pm"><span class="lbl">Method</span> Open-source Python library wrapping OR-Tools CP-SAT and CP Optimizer; unified API for FJSP, RCPSP, and multi-mode scheduling; benchmarked on 9,000+ instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides ready-made CP models for resource-constrained scheduling with release dates and due dates; can be adapted to add crane-ordering constraints and minimize weighted tardiness.</div>
+  </td>
+</tr>
+<tr id="p95">
+  <td class="num">95</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.mdpi.com/2077-1312/11/8/1517" target="_blank" rel="noopener">A Constrained Programming Model for the Optimization of Industrial-Scale Scheduling Problems in the Shipbuilding Industry</a></div>
+    <div class="pmeta">(Sanmartín-Antelo and co-authors) · Journal of Marine Science and Engineering, vol. 11, no. 8, article 1517, MDPI</div>
+    <div class="pm"><span class="lbl">Method</span> CP model for FJSP with assembly hierarchy, limited buffer capacity, and due-date constraints in a real shipbuilding facility; minimizes makespan and tardiness jointly.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Real shipyard CP application with spatial buffer and due-date tardiness objectives; demonstrates feasibility of CP for the exact constraint mix (placement + timing + tardiness) in our problem.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat11">
+  <h3>12. Berth Allocation (space-time packing) <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p96">
+  <td class="num">96</td>
+  <td class="yr">1998</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0167637798000108" target="_blank" rel="noopener">The Berth Planning Problem</a></div>
+    <div class="pmeta">Andrew Lim · Operations Research Letters, Vol. 22(2-3), pp. 105-110</div>
+    <div class="pm"><span class="lbl">Method</span> Transforms berth allocation to 2D rectangle-packing/graph-coloring; proves NP-hardness; proposes greedy heuristic.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Establishes the ship-in-quay = block-in-bay space-time rectangle analogy; NP-hardness proof motivates heuristic-first approach for our packing+scheduling problem.</div>
+  </td>
+</tr>
+<tr id="p97">
+  <td class="num">97</td>
+  <td class="yr">2003</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0191261502000279" target="_blank" rel="noopener">Berth Scheduling by Simulated Annealing</a></div>
+    <div class="pmeta">Kap Hwan Kim, Kyung Chan Moon · Transportation Research Part B, Vol. 37(6), pp. 541-560</div>
+    <div class="pm"><span class="lbl">Method</span> SA metaheuristic jointly optimizes 2D berthing position and time, minimizing total weighted tardiness/earliness via neighborhood moves in time-space.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Direct analog: SA on (position, entry-time, exit-time) tuples is portable to our (bay, x, y, ENTRY, EXIT) decisions to cut tardiness.</div>
+  </td>
+</tr>
+<tr id="p98">
+  <td class="num">98</td>
+  <td class="yr">2004</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s00291-003-0140-8" target="_blank" rel="noopener">The Berth Allocation Problem: Models and Solution Methods</a></div>
+    <div class="pmeta">Yongpei Guan, Raymond K. Cheung · OR Spectrum, Vol. 26, pp. 75-92</div>
+    <div class="pm"><span class="lbl">Method</span> Two MIP formulations for continuous BAP (minimize weighted flow-time); tree-search + lower-bound procedure + pair-wise exchange heuristic for large instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> MIP formulation for non-overlapping 2D time-space rectangles with weighted completion objectives directly maps to our bay-level block scheduling with Z1 weighting.</div>
+  </td>
+</tr>
+<tr id="p99">
+  <td class="num">99</td>
+  <td class="yr">2003</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s00291-002-0109-z" target="_blank" rel="noopener">A Scheduling Method for Berth and Quay Cranes</a></div>
+    <div class="pmeta">Young-Man Park, Kap Hwan Kim · OR Spectrum, Vol. 25, pp. 1-23</div>
+    <div class="pm"><span class="lbl">Method</span> Two-phase IP: Phase 1 sub-gradient for berthing position+time+crane count; Phase 2 dynamic programming for detailed crane schedule given Phase 1 output.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Two-phase decomposition (assign bay/time first, then resolve crane conflicts in Phase 2) mirrors our need to decouple ENTRY/EXIT assignment from crane-access serialization repair.</div>
+  </td>
+</tr>
+<tr id="p100">
+  <td class="num">100</td>
+  <td class="yr">2007</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/trsc.1060.0171" target="_blank" rel="noopener">The Berth Allocation Problem: A Strong Formulation Solved by a Lagrangean Approach</a></div>
+    <div class="pmeta">M. Flavia Monaco, Marcello Sammarra · Transportation Science, Vol. 41(2), pp. 265-280</div>
+    <div class="pm"><span class="lbl">Method</span> Compact, strong MIP for discrete BAP with valid inequalities; Lagrangean relaxation + subgradient provides tight lower bound enabling branch-and-bound pruning.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Strong LP relaxation bounding technique applicable to our combined packing+crane-access MIP to certify optimality gaps and guide branch-and-bound for Z1 reduction.</div>
+  </td>
+</tr>
+<tr id="p101">
+  <td class="num">101</td>
+  <td class="yr">2011</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/transe/v47y2011i4p461-473.html" target="_blank" rel="noopener">Models for the Discrete Berth Allocation Problem: A Computational Comparison</a></div>
+    <div class="pmeta">Katja Buhrkal, Sara Zuglian, Stefan Ropke, Jesper Larsen, Richard Lusby · Transportation Research Part E, Vol. 47(4), pp. 461-473</div>
+    <div class="pm"><span class="lbl">Method</span> Systematic comparison of three MIP models (position-based, time-indexed, set-partitioning) for discrete BAP; set-partitioning model dominates computationally.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Identifies which MIP encoding scales best for combined time-space problems; set-partitioning structure is directly portable to our bay-block assignment with release/due constraints.</div>
+  </td>
+</tr>
+<tr id="p102">
+  <td class="num">102</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221709003579" target="_blank" rel="noopener">A Survey of Berth Allocation and Quay Crane Scheduling Problems in Container Terminals</a></div>
+    <div class="pmeta">Christian Bierwirth, Frank Meisel · European Journal of Operational Research, Vol. 202(3), pp. 615-627</div>
+    <div class="pm"><span class="lbl">Method</span> Taxonomy of BAP/QCSP models along spatial (discrete/continuous) and temporal (static/dynamic) axes; classifies objective functions, constraint types, and solution methods.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Taxonomy maps 1-to-1 onto our problem axes (continuous space, dynamic arrivals, tardiness objective); guides which exact/heuristic method class to port for crane-blocking subproblem.</div>
+  </td>
+</tr>
+<tr id="p103">
+  <td class="num">103</td>
+  <td class="yr">2015</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/ejores/v244y2015i3p675-689.html" target="_blank" rel="noopener">A Follow-up Survey of Berth Allocation and Quay Crane Scheduling Problems in Container Terminals</a></div>
+    <div class="pmeta">Christian Bierwirth, Frank Meisel · European Journal of Operational Research, Vol. 244(3), pp. 675-689</div>
+    <div class="pm"><span class="lbl">Method</span> Extends 2010 survey with 120+ new papers; documents shift toward integrated BAP+crane+yard models, robust/stochastic variants, and ALNS/MIP hybrid dominance.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Documents that integrated crane-assignment models cut tardiness versus decoupled approaches — directly motivates integrating crane-access constraints into our scheduling objective.</div>
+  </td>
+</tr>
+<tr id="p104">
+  <td class="num">104</td>
+  <td class="yr">2016</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054816000046" target="_blank" rel="noopener">An Adaptive Large Neighborhood Search for the Discrete and Continuous Berth Allocation Problem</a></div>
+    <div class="pmeta">Gustavo Henrique Mauri, Geraldo Regis Mauri, Luiz Antonio Nogueira Lorena, Gilbert Laporte · Computers &amp; Operations Research, Vol. 70, pp. 140-154</div>
+    <div class="pm"><span class="lbl">Method</span> ALNS with destroy/repair operators (random removal, worst-first removal, regret-based reinsertion) unified across discrete and continuous BAP variants.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ALNS destroy/repair on (bay, entry-time, exit-time) tuples is directly portable; worst-tardiness removal targets the crane-blocked blocks causing our Z1.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat12">
+  <h3>13. Just-in-Time / Due-Date Scheduling &amp; Timing DP <span class="cnt">8 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p105">
+  <td class="num">105</td>
+  <td class="yr">1990</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/opre.38.1.22" target="_blank" rel="noopener">Sequencing with Earliness and Tardiness Penalties: A Review</a></div>
+    <div class="pmeta">K.R. Baker, G.D. Scudder · Operations Research, 38(1), pp. 22–36</div>
+    <div class="pm"><span class="lbl">Method</span> Systematic review of JIT scheduling models: dominance properties, common vs. distinct due dates, single vs. parallel machines, penalty structures.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Establishes structural properties (V-shaped sequences, idle-time insertion) that directly inform how to sequence blocks around their due-EXIT dates to minimize Z1.</div>
+  </td>
+</tr>
+<tr id="p106">
+  <td class="num">106</td>
+  <td class="yr">2005</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221704000682" target="_blank" rel="noopener">Optimal Timing of a Sequence of Tasks with General Completion Costs</a></div>
+    <div class="pmeta">M. Sourd, O. Witz · European Journal of Operational Research, 165(1), pp. 82–96</div>
+    <div class="pm"><span class="lbl">Method</span> Dynamic programming O(n²) algorithm that computes optimal start-times for a fixed job sequence with arbitrary convex completion-cost functions and idle-time penalties.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Given a fixed crane-serialization order, this timing DP finds ENTRY/EXIT times minimizing Z1 exactly — decouples sequencing from timing, enabling a clean two-phase solver.</div>
+  </td>
+</tr>
+<tr id="p107">
+  <td class="num">107</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S0377221723006690" target="_blank" rel="noopener">Just-in-Time Scheduling Problem with Affine Idleness Cost</a></div>
+    <div class="pmeta">Zhen Tan, Guanqi Fu · European Journal of Operational Research, 313(3), pp. 954–976</div>
+    <div class="pm"><span class="lbl">Method</span> O(n²) DP for timing sub-problem with non-convex cost + genetic algorithm with early-discarding for sequencing; handles earliness, tardiness, and idle-time costs jointly.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Crane serialization inserts forced idle gaps between blocks; this paper&#x27;s DP handles affine idle costs — directly models the waiting cost when crane access is delayed.</div>
+  </td>
+</tr>
+<tr id="p108">
+  <td class="num">108</td>
+  <td class="yr">2010</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054809002895" target="_blank" rel="noopener">Fast Neighborhood Search for the Single Machine Earliness–Tardiness Scheduling Problem</a></div>
+    <div class="pmeta">S. Kedad-Sidhoum, F. Sourd · Computers &amp; Operations Research, 37(8), pp. 1464–1471</div>
+    <div class="pm"><span class="lbl">Method</span> Block-structured schedule representation with O(n²) swap and extract-reinsert neighborhoods; embedded timing operator recomputes optimal ENTRY/EXIT after each move.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides fast local-search moves for reassigning block order within a bay while re-timing entries/exits to cut Z1, exploiting the timing-subproblem structure after each swap.</div>
+  </td>
+</tr>
+<tr id="p109">
+  <td class="num">109</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221720303519" target="_blank" rel="noopener">A Meta-Heuristic to Solve the Just-in-Time Job-Shop Scheduling Problem</a></div>
+    <div class="pmeta">M.M. Ahmadian, A. Salehipour, T.C.E. Cheng · European Journal of Operational Research, 288(1), pp. 14–29</div>
+    <div class="pm"><span class="lbl">Method</span> Variable Neighbourhood Search (VNS) decomposing JIT-JSS into sub-problems; each operation has a distinct due-date with earliness/tardiness penalty; achieves new best solutions on benchmarks.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> The shipyard problem is essentially JIT-JSS with crane precedence constraints; VNS sub-problem decomposition maps onto bay-level scheduling of block ENTRY/EXIT sequences.</div>
+  </td>
+</tr>
+<tr id="p110">
+  <td class="num">110</td>
+  <td class="yr">2020</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S036083522030509X" target="_blank" rel="noopener">Structural Properties and Algorithms for Earliness and Tardiness Scheduling Against Common Due Dates and Windows: A Review</a></div>
+    <div class="pmeta">G.A. Rolim, M.S. Nagano · Computers &amp; Industrial Engineering, 149, Article 106803</div>
+    <div class="pm"><span class="lbl">Method</span> Surveys 26 structural properties of optimal JIT schedules (V-shape, no-idle, position constraints) and classifies algorithms across machine environments and due-date variants.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Condensed reference for which structural properties survive with release dates and distinct due-dates — directly applicable when deciding whether to allow idle time before crane access.</div>
+  </td>
+</tr>
+<tr id="p111">
+  <td class="num">111</td>
+  <td class="yr">1968</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/mnsc.15.1.102" target="_blank" rel="noopener">A n Job, One Machine Sequencing Algorithm for Minimizing the Number of Late Jobs</a></div>
+    <div class="pmeta">J.M. Moore · Management Science, 15(1), pp. 102–109</div>
+    <div class="pm"><span class="lbl">Method</span> O(n log n) greedy algorithm (Moore-Hodgson): schedule EDD order; when a job becomes tardy, drop the longest-processing job seen so far; minimizes number of tardy jobs.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides a fast feasible baseline that maximizes on-time blocks; minimizing tardy count directly reduces Z1 ≥ 0 terms — use as initial solution seeding further optimization.</div>
+  </td>
+</tr>
+<tr id="p112">
+  <td class="num">112</td>
+  <td class="yr">1991</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/opre.39.5.836" target="_blank" rel="noopener">Earliness-Tardiness Scheduling Problems, I: Weighted Deviation of Completion Times About a Common Due Date</a></div>
+    <div class="pmeta">H. Emmons · Operations Research, 39(5), pp. 836–846</div>
+    <div class="pm"><span class="lbl">Method</span> Dominance theorems establishing pairwise job-ordering conditions (Emmons rules) that must hold in any optimal single-machine tardiness sequence; used to prune branch-and-bound trees.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Emmons dominance conditions prune the combinatorial explosion of bay-sequencing: pairs of blocks with clear priority order are fixed, shrinking the search space for crane-access scheduling.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat13">
+  <h3>14. Matheuristics &amp; Logic-Based Benders Decomposition <span class="cnt">9 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p113">
+  <td class="num">113</td>
+  <td class="yr">2003</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10107-003-0375-9" target="_blank" rel="noopener">Logic-based Benders decomposition</a></div>
+    <div class="pmeta">J. N. Hooker, G. Ottosson · Mathematical Programming, Vol. 96, pp. 33–60</div>
+    <div class="pm"><span class="lbl">Method</span> Generalizes Benders decomposition so subproblems can be any optimization model (CP, MIP); master fixes assignment variables, subproblem sequences tasks.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Canonical framework: fix bay/entry-time master (MIP), solve crane-ordering subproblem (CP) per bay, cut back infeasibilities — directly decomposes our joint problem.</div>
+  </td>
+</tr>
+<tr id="p114">
+  <td class="num">114</td>
+  <td class="yr">2007</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/opre.1060.0371" target="_blank" rel="noopener">Planning and Scheduling by Logic-Based Benders Decomposition</a></div>
+    <div class="pmeta">J. N. Hooker · Operations Research, Vol. 55, No. 3, pp. 588–602</div>
+    <div class="pm"><span class="lbl">Method</span> MILP master assigns tasks to facilities; CP subproblem schedules tasks on each facility and generates Benders cuts (no-good + optimality) back to master.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Shows MILP+CP LBBD for multi-machine scheduling with resource constraints; directly portable to bay-assignment master + per-bay crane-serialization CP subproblem.</div>
+  </td>
+</tr>
+<tr id="p115">
+  <td class="num">115</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ideas.repec.org/a/eee/ejores/v317y2024i3p890-905.html" target="_blank" rel="noopener">Combinatorial Benders Decomposition for Single Machine Scheduling in Additive Manufacturing with Two-Dimensional Packing Constraints</a></div>
+    <div class="pmeta">Zhaofang Mao, Enyuan Fu, Dian Huang, Kan Fang, Lin Chen · European Journal of Operational Research, Vol. 317, No. 3, pp. 890–905</div>
+    <div class="pm"><span class="lbl">Method</span> Combinatorial Benders decomposes batch-assignment (master MIP) from 2D rectangle packing (subproblem); combinatorial cuts + acceleration strategies for makespan minimization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Nearest published analogue to our problem: packing+scheduling exact decomposition; swap makespan for tardiness and rectangles for polygons and the framework applies directly.</div>
+  </td>
+</tr>
+<tr id="p116">
+  <td class="num">116</td>
+  <td class="yr">2026</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S0377221726000767" target="_blank" rel="noopener">Improving the Efficiency of Logic-Based Benders Decomposition for p-Batch Scheduling Problems with Two-Dimensional Packing</a></div>
+    <div class="pmeta">Florian Braun, Thomas Reuter, Guenther Zaepfel (and co-authors, EJOR 2026) · European Journal of Operational Research (online Jan 2026)</div>
+    <div class="pm"><span class="lbl">Method</span> Dynamic approximation of 2D packing subproblems, criticality-based prioritization, and greedy/irreducible stronger Benders cuts to accelerate LBBD for batch+packing problems.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Most recent acceleration toolkit for packing+scheduling LBBD; cut-strengthening and subproblem approximation techniques are drop-in improvements for crane-serialization subproblems.</div>
+  </td>
+</tr>
+<tr id="p117">
+  <td class="num">117</td>
+  <td class="yr">2022</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/ijoc.2021.1113" target="_blank" rel="noopener">Novel Formulations and Logic-Based Benders Decomposition for the Integrated Parallel Machine Scheduling and Location Problem</a></div>
+    <div class="pmeta">Yantong Li, Jean-François Côté, Leandro Callegari-Coelho, Peng Wu · INFORMS Journal on Computing, Vol. 34, No. 2, pp. 1048–1069</div>
+    <div class="pm"><span class="lbl">Method</span> LBBD: MILP master locates machines and assigns jobs; CP subproblem sequences jobs per machine; novel formulations tighten master LP relaxation for makespan.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Location+assignment+sequencing structure mirrors our bay-selection+block-assignment+crane-ordering; location as discrete set closely analogous to bay choice.</div>
+  </td>
+</tr>
+<tr id="p118">
+  <td class="num">118</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://pubsonline.informs.org/doi/10.1287/trsc.2018.0822" target="_blank" rel="noopener">Column Generation for the Integrated Berth Allocation, Quay Crane Assignment, and Yard Assignment Problem</a></div>
+    <div class="pmeta">Kai Wang, Lu Zhen, Shuaian Wang, Gilbert Laporte · Transportation Science, Vol. 52, No. 4, pp. 812–834</div>
+    <div class="pm"><span class="lbl">Method</span> Dantzig-Wolfe reformulation over vessel patterns; column generation provides LP lower bound; pricing solved exactly; dual stabilization accelerates convergence.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Integrates spatial assignment (yard/berth) with crane assignment via column generation — template for reformulating our bay+crane-time assignment as a set-partitioning pricing problem.</div>
+  </td>
+</tr>
+<tr id="p119">
+  <td class="num">119</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835224005187" target="_blank" rel="noopener">An Accelerated Benders Decomposition Algorithm for the Integrated Storage Space Assignment, Berth Allocation, and Yard Crane Deployment Problem</a></div>
+    <div class="pmeta">Golsa Soroushnia, Mahdi Alinaghian, Amirsalar Malekahmadi · Computers &amp; Industrial Engineering, Vol. 194</div>
+    <div class="pm"><span class="lbl">Method</span> Accelerated Benders decomposition with combinatorial Benders cut + 8 valid inequalities for a three-way integrated spatial-assignment, berth, and crane-deployment MIP.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Shows that yard-crane deployment (spatial+temporal) integrates cleanly with Benders when valid inequalities tighten subproblem cuts — directly reduces crane waiting = our tardiness driver.</div>
+  </td>
+</tr>
+<tr id="p120">
+  <td class="num">120</td>
+  <td class="yr">2025</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2512.20239" target="_blank" rel="noopener">Hierarchical Rectangle Packing Solved by Multi-Level Recursive Logic-based Benders Decomposition</a></div>
+    <div class="pmeta">Josef Grus, Zdeněk Hanzálek, Christian Artigues, Cyrille Briand, Emmanuel Hebrard · arXiv:2512.20239</div>
+    <div class="pm"><span class="lbl">Method</span> Multi-level recursive LBBD: each level fixes container dimensions and decomposes into nested packing subproblems; dynamically refines block-dimension constraints without manual candidate enumeration.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Multi-level decomposition for packing-within-packing matches our nested structure (bay → floor → polygon placement); recursive cut propagation could handle crane-layer dependency.</div>
+  </td>
+</tr>
+<tr id="p121">
+  <td class="num">121</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/1910.11944" target="_blank" rel="noopener">Logic-Based Benders Decomposition for Large-Scale Optimization</a></div>
+    <div class="pmeta">J. N. Hooker · Chapter in Large Scale Optimization in Supply Chains and Smart Manufacturing, Springer; arXiv:1910.11944</div>
+    <div class="pm"><span class="lbl">Method</span> Comprehensive survey + theory of LBBD including branch-and-check variant; organizes literature by problem domain; covers planning, scheduling, packing, stochastic settings.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Authoritative reference and recipe book for choosing master/subproblem split and cut type; branch-and-check variant avoids repeated master solves — crucial for tight time limits.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat14">
+  <h3>15. GA / Metaheuristics for Shipyard <span class="cnt">4 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p122">
+  <td class="num">122</td>
+  <td class="yr">2015</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1155/2015/841637" target="_blank" rel="noopener">A Hybrid Heuristic Algorithm for Ship Block Construction Space Scheduling Problem</a></div>
+    <div class="pmeta">Shicheng Hu, Tengjiao Liu, Song Wang, Yonggui Kao, Xuedong Sun · Discrete Dynamics in Nature and Society, Article 841637</div>
+    <div class="pm"><span class="lbl">Method</span> Corner-guided BLF initial solution improved by simulated annealing with accept-worse neighbor moves to escape local optima; targets makespan minimization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> SA escape mechanism for shipyard block packing can be applied to our crane-serialized bay sequences to pull tardy blocks earlier.</div>
+  </td>
+</tr>
+<tr id="p123">
+  <td class="num">123</td>
+  <td class="yr">2007</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://onepetro.org/JSPD/article-abstract/23/01/17/173380/A-Genetic-Algorithm-for-Erection-Scheduling-at-a" target="_blank" rel="noopener">A Genetic Algorithm for Erection Scheduling at a Dock</a></div>
+    <div class="pmeta">Xu Ai-min, Ye Jin · Journal of Ship Production and Design, Vol. 23, No. 1, pp. 17–22</div>
+    <div class="pm"><span class="lbl">Method</span> GA with a novel feasibility-preserving crossover operator over erection sequences; model includes crane-capacity and erection-network (precedence) constraints.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Crane-capacity and precedence constraints modeled directly in GA crossover; the j≥k crane access rule is structurally similar to erection precedence and can inherit this encoding.</div>
+  </td>
+</tr>
+<tr id="p124">
+  <td class="num">124</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1155/2019/2615154" target="_blank" rel="noopener">A Metaheuristic Algorithm to Transporter Scheduling for Assembly Blocks in a Shipyard considering Precedence and Cooperating Constraints</a></div>
+    <div class="pmeta">Tao et al. · Discrete Dynamics in Nature and Society, Article 2615154</div>
+    <div class="pm"><span class="lbl">Method</span> Hybrid topological-graph GA + Tabu Search encoding precedence and cooperation constraints; minimizes logistics time (empty travel + waiting + delay) for heavy block transporters.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> GA-Tabu hybrid with explicit delay minimization under precedence constraints maps onto our crane serialization bottleneck; Tabu prevents cycling in sequencing decisions.</div>
+  </td>
+</tr>
+<tr id="p125">
+  <td class="num">125</td>
+  <td class="yr">2014</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417413008361" target="_blank" rel="noopener">Block Transportation Scheduling under Delivery Restriction in Shipyard using Meta-Heuristic Algorithms</a></div>
+    <div class="pmeta">C.M. Joo, B.S. Kim · Expert Systems with Applications, Vol. 41, No. 6, pp. 2851–2858</div>
+    <div class="pm"><span class="lbl">Method</span> MIP formulation + GA and Self-Evolution Algorithm (SEA) for block delivery sequencing with time-window delivery restrictions; minimizes total penalty (delay) time.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Penalty-time minimization (= tardiness) under delivery windows directly parallels Z1; SEA&#x27;s self-adaptation avoids parameter tuning on varied instance sizes.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat15">
+  <h3>16. Time-Space Network &amp; Dynamic Facility Layout <span class="cnt">6 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p126">
+  <td class="num">126</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ascelibrary.org/doi/10.1061/%28ASCE%29CP.1943-5487.0000745" target="_blank" rel="noopener">Space-Time Repetitive Project Scheduling Considering Location and Congestion</a></div>
+    <div class="pmeta">Sha Tao, Changzhi Wu, Zhaohan Sheng, Xiangyu Wang · Journal of Computing in Civil Engineering, Vol. 32(3), ASCE</div>
+    <div class="pm"><span class="lbl">Method</span> Multiobjective MIP model for activity scheduling + workspace congestion; solved via NSGA-II with electromagnetism-like mechanism.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Models spatial congestion serializing activities — directly analogous to crane-access serialization driving OUR Z1; congestion penalty can inform bay-time slot allocation to avoid crane queue buildup.</div>
+  </td>
+</tr>
+<tr id="p127">
+  <td class="num">127</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221717301935" target="_blank" rel="noopener">Novel Time-Space Network Flow Formulation and Approximate Dynamic Programming Approach for the Crane Scheduling in a Coil Warehouse</a></div>
+    <div class="pmeta">Yuan Yuan, Lixin Tang · European Journal of Operational Research, Vol. 262(2), pp. 424–437</div>
+    <div class="pm"><span class="lbl">Method</span> Event-based time-space network flow: nodes = location × stage, edges = crane moves; 0-1 LP + approximate dynamic programming with affine value-function approximation.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Directly solves crane serialization through a time-space network — the core bottleneck of OUR Z1; the ADP approach is portable to our crane-access ordering subproblem within 30-min wall-clock limits.</div>
+  </td>
+</tr>
+<tr id="p128">
+  <td class="num">128</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://onlinelibrary.wiley.com/doi/abs/10.1002/net.22042" target="_blank" rel="noopener">An Innovative Operation-Time-Space Network for Solving Different Logistic Problems with Capacity and Time Constraints</a></div>
+    <div class="pmeta">Daniela Ambrosino, Veronica Asta · Networks, Vol. 78(3), pp. 350–367, Wiley</div>
+    <div class="pm"><span class="lbl">Method</span> Generic operation-time-space network graph (nodes = operation × time × location) unified LP flow formulation; applied to port rail shunting and quay crane scheduling.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides a unifying graph abstraction to encode crane access ordering + bay occupancy + time windows simultaneously — a ready blueprint for our combined scheduling-spatial model.</div>
+  </td>
+</tr>
+<tr id="p129">
+  <td class="num">129</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.aimsciences.org/article/doi/10.3934/jimo.2019030" target="_blank" rel="noopener">An Integrated Dynamic Facility Layout and Job Shop Scheduling Problem: A Hybrid NSGA-II and Local Search Algorithm</a></div>
+    <div class="pmeta">Behrad Erfani, Sadoullah Ebrahimnejad, Amirhossein Moosavi · Journal of Industrial and Management Optimization, Vol. 16(4)</div>
+    <div class="pm"><span class="lbl">Method</span> Simultaneous optimization of facility layout and job scheduling via hybrid NSGA-II + local search; quantifies 10% mean-flow-time gain vs. sequential optimization.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Demonstrates that co-optimizing physical layout (= bay assignment) with scheduling yields 10%+ tardiness reduction vs. decoupled approach — justifies integrated formulation for our Z1 attack.</div>
+  </td>
+</tr>
+<tr id="p130">
+  <td class="num">130</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835223006277" target="_blank" rel="noopener">A Matheuristic Algorithm for Block Assignment Problem in Long-Term Production Planning in the Shipbuilding Industry</a></div>
+    <div class="pmeta">Jonghwa Lee, Byung-In Kim · Computers &amp; Industrial Engineering, Vol. 184, Article 109573</div>
+    <div class="pm"><span class="lbl">Method</span> Two-stage matheuristic: stage 1 assigns block groups to regions (beam search); stage 2 assigns individual blocks to assembly shops (MIP); minimizes workload deviation.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Provides a real-world validated two-stage decomposition for bay (shop) assignment under workload balance — directly applicable to OUR Z2 + Z1 tradeoff and scalable to competition instance sizes.</div>
+  </td>
+</tr>
+<tr id="p131">
+  <td class="num">131</td>
+  <td class="yr">1997</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://ascelibrary.org/doi/10.1061/%28ASCE%290887-3801%281997%2911%3A1%2848%29" target="_blank" rel="noopener">SCaRC: Space-Constrained Resource-Constrained Scheduling System</a></div>
+    <div class="pmeta">Walid Y. Thabet, Yvan J. Beliveau · Journal of Computing in Civil Engineering, Vol. 11(1), pp. 48–59, ASCE</div>
+    <div class="pm"><span class="lbl">Method</span> Knowledge-based system that treats workspace area as an explicit renewable resource constraint alongside labor/equipment; integrates space-based and resource-based scheduling in a single heuristic.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Seminal formalization of workspace as a scheduling resource — the conceptual foundation for treating crane-vertical-access clearance as a blocking resource constraint in our model.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat16">
+  <h3>17. Blocking Job-Shop / No-Wait (crane-hold analog) <span class="cnt">10 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p132">
+  <td class="num">132</td>
+  <td class="yr">2002</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221701003381" target="_blank" rel="noopener">Job-shop scheduling with blocking and no-wait constraints</a></div>
+    <div class="pmeta">Alessandro Mascis, Dario Pacciarelli · European Journal of Operational Research, vol. 143(3), pp. 498–517</div>
+    <div class="pm"><span class="lbl">Method</span> Alternative graph (generalized disjunctive graph) formulation unifying blocking and no-wait constraints; dispatching heuristics on the graph.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Foundational model: blocking = zero buffer = crane hold. Alternative graph encodes crane-serialization waits exactly; basis for all downstream local-search methods.</div>
+  </td>
+</tr>
+<tr id="p133">
+  <td class="num">133</td>
+  <td class="yr">2009</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/pii/S0166218X09000870" target="_blank" rel="noopener">A new neighborhood and tabu search for the Blocking Job Shop</a></div>
+    <div class="pmeta">Heinz Gröflin, Andreas Klinkert · Discrete Applied Mathematics, vol. 157, pp. 3643–3655</div>
+    <div class="pm"><span class="lbl">Method</span> Feasible neighborhood via &#x27;closure&#x27; and short-cycle properties of the disjunctive graph; tabu search on critical-arc swaps that preserve feasibility under blocking.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Directly portable: crane-access blocking = zero buffer; feasible-neighbor generation via critical-arc swap prevents infeasible crane-wait states, reducing tardiness.</div>
+  </td>
+</tr>
+<tr id="p134">
+  <td class="num">134</td>
+  <td class="yr">2011</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10878-009-9278-x" target="_blank" rel="noopener">The flexible blocking job shop with transfer and set-up times</a></div>
+    <div class="pmeta">Heinz Gröflin, Dinh Nguyen Pham, Reinhard Bürgy · Journal of Combinatorial Optimization, vol. 22, pp. 121–144</div>
+    <div class="pm"><span class="lbl">Method</span> Local search with feasible neighborhood for flexible BJS (alternative machines, no buffers, setup times); implied co-moves of affected operations maintain feasibility.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Crane lifts are &#x27;transfer&#x27; ops; implied co-moves model the cascade unblocking after a crane clears a path, enabling tardiness-aware sequencing.</div>
+  </td>
+</tr>
+<tr id="p135">
+  <td class="num">135</td>
+  <td class="yr">2017</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10951-017-0532-2" target="_blank" rel="noopener">A neighborhood for complex job shop scheduling problems with regular objectives</a></div>
+    <div class="pmeta">Reinhard Bürgy · Journal of Scheduling, vol. 20, pp. 391–422</div>
+    <div class="pm"><span class="lbl">Method</span> Job-reinsertion neighborhood for complex job-shops (blocking, setup, transfer) with any regular objective (makespan, total tardiness, total weighted tardiness); tabu search.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Supports total-tardiness objective directly; reinserting a blocked block into an earlier crane-clear slot maps onto our Z1 reduction goal.</div>
+  </td>
+</tr>
+<tr id="p136">
+  <td class="num">136</td>
+  <td class="yr">2016</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://link.springer.com/article/10.1007/s10732-014-9279-5" target="_blank" rel="noopener">An iterated greedy metaheuristic for the blocking job shop scheduling problem</a></div>
+    <div class="pmeta">Marco Pranzo, Dario Pacciarelli · Journal of Heuristics, vol. 22, pp. 587–611</div>
+    <div class="pm"><span class="lbl">Method</span> Iterated Greedy (destruction + greedy reconstruction) adapted for BJS; handles makespan on FT and LA benchmarks, beats state-of-art at the time.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> IG skeleton is CPU-cheap and restartable; directly adaptable to tardiness by changing the insertion criterion to EDD/slack during greedy reconstruction.</div>
+  </td>
+</tr>
+<tr id="p137">
+  <td class="num">137</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417418308078" target="_blank" rel="noopener">An iterated greedy algorithm for solving the total tardiness parallel blocking flow shop scheduling problem</a></div>
+    <div class="pmeta">Immaculada Ribas Vila, Ramón Companys Pascual, Xavier Tort-Martorell · Expert Systems with Applications, vol. 121, pp. 347–361</div>
+    <div class="pm"><span class="lbl">Method</span> Iterated Greedy with NEH-based initialization and due-date-aware insertion for parallel blocking flow shops; minimizes total tardiness under zero-buffer constraints.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Closest structural match: blocking + total-tardiness + parallel lines (analogous to parallel bays); IG with tardiness-aware insertion directly addresses our Z1 objective.</div>
+  </td>
+</tr>
+<tr id="p138">
+  <td class="num">138</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.mdpi.com/1999-4893/12/11/242" target="_blank" rel="noopener">On Neighborhood Structures and Repair Techniques for Blocking Job Shop Scheduling Problems</a></div>
+    <div class="pmeta">Gröflin, Bürgy et al. · Algorithms (MDPI), vol. 12, no. 11, article 242</div>
+    <div class="pm"><span class="lbl">Method</span> Simulated annealing with interchange/shift operators and scheduling-tailored repair procedures (transformation + feasibility repair) for blocking JSP with total tardiness.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> SA + repair directly handles crane-induced infeasibility cycles; repair technique prevents getting stuck on infeasible crane-access states while optimizing Z1.</div>
+  </td>
+</tr>
+<tr id="p139">
+  <td class="num">139</td>
+  <td class="yr">2019</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417419304774" target="_blank" rel="noopener">The blocking flow shop scheduling problem: A comprehensive and conceptual review</a></div>
+    <div class="pmeta">Hugo H. Miyata, Marcelo S. Nagano · Expert Systems with Applications, vol. 137, pp. 130–156</div>
+    <div class="pm"><span class="lbl">Method</span> Systematic review of 139 papers (1969–2019): taxonomizes objectives, methods (77% metaheuristics), and open problems in blocking flowshop scheduling.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Survey confirms iterated greedy + local search dominate tardiness variants; maps which existing operators are transferable to our crane-blocking / multi-bay setting.</div>
+  </td>
+</tr>
+<tr id="p140">
+  <td class="num">140</td>
+  <td class="yr">2025</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.rairo-ro.org/articles/ro/abs/2025/05/ro240845/ro240845.html" target="_blank" rel="noopener">A MILP model to minimize total tardiness in a job shop scheduling problem with blocking and no-wait constraints</a></div>
+    <div class="pmeta">Zineb Lissioued, Samia Ourari, Hacène Ait Haddadène · RAIRO – Operations Research, vol. 59, pp. 2545–2558</div>
+    <div class="pm"><span class="lbl">Method</span> First MILP (CPLEX) for the combined blocking-and-no-wait JSP with total tardiness objective; establishes benchmark baselines on classical instances.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> MILP bounds tighten feasibility proof for crane-blocked schedules; model structure (disjunctive + no-wait) mirrors ENTRY/EXIT time-window constraints in our problem.</div>
+  </td>
+</tr>
+<tr id="p141">
+  <td class="num">141</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2302.02506" target="_blank" rel="noopener">Generating Dispatching Rules for the Interrupting Swap-Allowed Blocking Job Shop Problem Using Graph Neural Network and Reinforcement Learning</a></div>
+    <div class="pmeta">Vivian W.H. Wong, Sang Hun Kim, Junyoung Park, Jinkyoo Park, Kincho H. Law · arXiv preprint arXiv:2302.02506</div>
+    <div class="pm"><span class="lbl">Method</span> Dynamic disjunctive-graph GNN trained via RL to generate real-time dispatching rules for blocking JSP with machine disruptions (swap-allowed variant).</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> GNN captures which blocked crane-access arc to break next; learned policy could replace greedy dispatch at each crane decision, directly reducing serialization-caused tardiness.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section><section class="catsec" id="cat17">
+  <h3>18. Combined 2D Packing + Scheduling (AM nesting) <span class="cnt">6 papers</span></h3>
+  <table class="papers"><tbody>
+<tr id="p142">
+  <td class="num">142</td>
+  <td class="yr">2018</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://doi.org/10.1016/j.cie.2018.09.048" target="_blank" rel="noopener">Production scheduling and nesting in additive manufacturing</a></div>
+    <div class="pmeta">A. Chergui, K. Hadj-Hamou, F. Vignat · Computers &amp; Industrial Engineering, Vol. 126, pp. 292–301</div>
+    <div class="pm"><span class="lbl">Method</span> Two-phase MILP + heuristic: groups irregular parts into batches, then sequences batches on parallel AM machines to minimize total tardiness.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Direct blueprint: decouple bay-assignment (batching) from time-sequencing, then minimize Z1 with a repair heuristic over each phase.</div>
+  </td>
+</tr>
+<tr id="p143">
+  <td class="num">143</td>
+  <td class="yr">2021</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S030505482100037X" target="_blank" rel="noopener">Machine scheduling with orientation selection and two-dimensional packing for additive manufacturing</a></div>
+    <div class="pmeta">Yuxin Che, Kanxin Hu, Zhenzhen Zhang, Andrew Lim · Computers &amp; Operations Research, Vol. 130, Article 105245</div>
+    <div class="pm"><span class="lbl">Method</span> MILP model + simulated annealing with 11 neighbourhood operators; first work coupling part-orientation selection with batch-machine scheduling and 2D packing.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> SA operators that swap orientation and re-pack within a time slot can be adapted to reorder crane-access sequence and reduce blocking-induced tardiness.</div>
+  </td>
+</tr>
+<tr id="p144">
+  <td class="num">144</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.tandfonline.com/doi/full/10.1080/00207543.2023.2167015" target="_blank" rel="noopener">An iterated local search for customer order scheduling in additive manufacturing</a></div>
+    <div class="pmeta">Benedikt Zipfel, Janis Neufeld, Udo Buscher · International Journal of Production Research, Vol. 62(3), pp. 605–625</div>
+    <div class="pm"><span class="lbl">Method</span> ILS metaheuristic with perturbation + local search over joint nesting-and-scheduling decisions; MIP model integrates sequence-dependent setups and unrelated parallel machines; minimizes total weighted tardiness of orders.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ILS perturbation operators that reassign blocks between bays (machines) while re-nesting can escape crane-serialization deadlocks and cut Z1.</div>
+  </td>
+</tr>
+<tr id="p145">
+  <td class="num">145</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.semanticscholar.org/paper/Optimal-decomposition-approach-for-solving-large-of-Nascimento-Silva/55c649b6dc1dd458917d74f5181677b1b4b1a59f" target="_blank" rel="noopener">Optimal decomposition approach for solving large nesting and scheduling problems of additive manufacturing systems</a></div>
+    <div class="pmeta">Paulo Jorge Nascimento, Cristóvão Silva, Carlos Henggeler Antunes, Samuel Moniz · European Journal of Operational Research, Vol. 317(1), pp. 92–110</div>
+    <div class="pm"><span class="lbl">Method</span> Logic-based Benders decomposition (MIP+CP and pure CP variants); scheduling in master, nesting feasibility in sub-problem; solves instances 1–2 orders of magnitude larger than prior exact methods; minimizes cumulative tardiness.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Shows that Benders-separated crane-feasibility checks (sub-problem) with tardiness-driven sequencing (master) scale to production-size instances matching OGC problem scale.</div>
+  </td>
+</tr>
+<tr id="p146">
+  <td class="num">146</td>
+  <td class="yr">2024</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://arxiv.org/abs/2308.09468" target="_blank" rel="noopener">A new branch-and-cut approach for integrated planning in additive manufacturing</a></div>
+    <div class="pmeta">Benedikt Zipfel, Felix Tamke, Leopold Kuttner · European Journal of Operational Research (online 2024, arXiv 2308.09468)</div>
+    <div class="pm"><span class="lbl">Method</span> Branch-and-cut via combinatorial Benders decomposition: scheduling master problem + orthogonal-packing-with-rotation feasibility sub-problem; state-of-the-art packing techniques accelerate sub-problem.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> Packing sub-problem can be extended with crane-access (j≥k) feasibility checks, yielding an exact cut that prunes crane-blocking configurations and drives tardiness to zero.</div>
+  </td>
+</tr>
+<tr id="p147">
+  <td class="num">147</td>
+  <td class="yr">2023</td>
+  <td class="paper">
+    <div class="ptitle"><a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054823003386" target="_blank" rel="noopener">Unrelated parallel batch processing machine scheduling with time requirements and two-dimensional packing constraints</a></div>
+    <div class="pmeta">(authors confirmed via ScienceDirect ISSN S0305054823003386) · Computers &amp; Operations Research, Vol. 159</div>
+    <div class="pm"><span class="lbl">Method</span> MILP model + ALNS with 11 removal and 7 insertion operators; Skyline and Open-Space packing patterns as sub-heuristics; minimizes total tardiness on unrelated parallel batch machines with release/due dates.</div>
+    <div class="pr"><span class="lbl">→ Z1 relevance</span> ALNS destroy-repair paradigm with embedded packing sub-heuristic is the closest architecture to our problem: swap blocks across bays, repack, check crane-access, update Z1.</div>
+  </td>
+</tr>
+  </tbody></table>
+</section>
+</section>
+</main>
+
+<footer><div class="wrap">
+생성: 2026-06-06 · 데이터 <code>notes/z1-papers-data.json</code> · 코드 매핑 <code>src/myalgorithm.py</code>·<code>src/parallel_decode.py</code> (code-analyzer 정독).
+링크는 수집 당시 haiku가 제시한 출처(arXiv/DOI/publisher/Scholar) — 인용 전 확인 권장. 일부 URL은 Scholar 검색 링크일 수 있음.
+</div></footer>
+</body></html>

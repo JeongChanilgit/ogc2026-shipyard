@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전략 리서치 — 솔버 없이 이기기 (OGC 2026)</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --fg: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --card: #16161c;
+    --card-2: #1f1f27;
+    --border: #2a2a32;
+    --c-pack: #f59e0b;   /* 주황 - 패킹 */
+    --c-ship: #3b82f6;   /* 파랑 - 조선소 SSP */
+    --c-sched: #10b981;  /* 초록 - 스케줄링/엔진 */
+    --c-crane: #8b5cf6;  /* 보라 - 크레인 */
+    --c-syn: #ec4899;    /* 핑크 - 통합 */
+    --shadow: 0 4px 24px rgba(0,0,0,0.45);
+    --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.65;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  .wrapper { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  a { color: inherit; }
+
+  /* HERO */
+  .hero {
+    position: relative; padding: 72px 0 48px; text-align: center;
+    background:
+      radial-gradient(circle at 18% 25%, rgba(245,158,11,0.13) 0%, transparent 42%),
+      radial-gradient(circle at 82% 20%, rgba(59,130,246,0.13) 0%, transparent 42%),
+      radial-gradient(circle at 50% 90%, rgba(236,72,153,0.10) 0%, transparent 45%);
+  }
+  .hero .badge {
+    display: inline-block; padding: 6px 14px;
+    background: rgba(236,72,153,0.14); border: 1px solid rgba(236,72,153,0.32);
+    border-radius: 999px; font-size: 12px; letter-spacing: 0.08em;
+    color: var(--c-syn); margin-bottom: 22px; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 46px); font-weight: 800; line-height: 1.15; margin-bottom: 14px;
+    background: linear-gradient(135deg, #fff 0%, #fbbf24 50%, #f472b6 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .lead { font-size: 17px; color: var(--muted); max-width: 720px; margin: 0 auto; }
+  .hero .lead strong { color: var(--fg); }
+  .meta-row { margin-top: 18px; font-size: 12px; color: var(--dim); letter-spacing: 0.04em; }
+
+  /* THESIS */
+  .thesis {
+    margin: 36px auto 0; max-width: 860px; padding: 26px 30px;
+    background: linear-gradient(135deg, rgba(236,72,153,0.08), rgba(16,185,129,0.06));
+    border: 1px solid var(--border); border-left: 3px solid var(--c-syn);
+    border-radius: 12px; text-align: left; font-size: 15px; box-shadow: var(--shadow);
+  }
+  .thesis .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-syn); margin-bottom: 10px; }
+  .thesis p { color: var(--muted); }
+  .thesis strong { color: var(--fg); }
+  .thesis .punch { display:block; margin-top: 14px; font-size: 16px; color: var(--fg); font-weight: 600; }
+
+  /* NAV */
+  nav.toc {
+    position: sticky; top: 0; z-index: 20; background: rgba(10,10,15,0.82);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); margin-top: 48px;
+  }
+  nav.toc .wrapper { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+  nav.toc a {
+    text-decoration: none; font-size: 13px; color: var(--muted); padding: 7px 13px;
+    border-radius: 8px; border: 1px solid transparent; transition: all .15s; white-space: nowrap;
+  }
+  nav.toc a:hover { color: var(--fg); background: var(--card-2); border-color: var(--border); }
+  nav.toc a .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align: middle; }
+
+  /* SECTION */
+  section { padding: 56px 0 8px; }
+  .sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .sec-num {
+    font-family: var(--mono); font-size: 13px; font-weight: 700; width: 40px; height: 40px;
+    display: grid; place-items: center; border-radius: 10px; flex-shrink: 0;
+  }
+  .sec-head h2 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; line-height: 1.2; }
+  .sec-sub { color: var(--dim); font-size: 14px; margin: 0 0 26px 54px; }
+  @media (max-width: 600px){ .sec-sub { margin-left: 0; } }
+
+  /* color helpers */
+  .pack  .sec-num { background: rgba(245,158,11,0.14); color: var(--c-pack); }
+  .ship  .sec-num { background: rgba(59,130,246,0.14); color: var(--c-ship); }
+  .sched .sec-num { background: rgba(16,185,129,0.14); color: var(--c-sched); }
+  .crane .sec-num { background: rgba(139,92,246,0.14); color: var(--c-crane); }
+  .syn   .sec-num { background: rgba(236,72,153,0.14); color: var(--c-syn); }
+  .pack  h3.block-t, .pack  .key strong  { color: var(--c-pack); }
+  .ship  h3.block-t, .ship  .key strong  { color: var(--c-ship); }
+  .sched h3.block-t, .sched .key strong  { color: var(--c-sched); }
+  .crane h3.block-t, .crane .key strong  { color: var(--c-crane); }
+  .syn   h3.block-t { color: var(--c-syn); }
+
+  h3.block-t { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; margin: 30px 0 14px; font-weight: 700; }
+
+  /* CARDS */
+  .cards { display: grid; gap: 12px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; transition: border-color .15s, transform .15s;
+  }
+  .card:hover { border-color: #3a3a44; transform: translateY(-1px); }
+  .card .t { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .card .t code { font-family: var(--mono); font-size: 13px; background: var(--card-2); padding: 1px 6px; border-radius: 5px; }
+  .card .d { color: var(--muted); font-size: 14px; }
+  .card .why { color: var(--dim); font-size: 13px; margin-top: 6px; font-style: italic; }
+
+  /* TABLE (repos) */
+  .repo-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 4px; }
+  .repo-table th, .repo-table td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .repo-table th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .repo-table td.r a { font-family: var(--mono); font-size: 12.5px; text-decoration: none; color: var(--fg); border-bottom: 1px dashed #555; }
+  .repo-table td.r a:hover { border-bottom-color: var(--fg); }
+  .repo-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .tag { display:inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px; font-family: var(--mono); white-space: nowrap; }
+  .tag.py { background: rgba(16,185,129,0.16); color:#34d399; }
+  .tag.rs { background: rgba(245,158,11,0.16); color:#fbbf24; }
+  .tag.js { background: rgba(59,130,246,0.16); color:#60a5fa; }
+  .tag.cpp{ background: rgba(139,92,246,0.16); color:#a78bfa; }
+  .star { color: var(--c-pack); font-weight:700; }
+
+  /* KEY recos */
+  .key { background: var(--card-2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-top: 16px; }
+  .key ol, .key ul { margin: 0; padding-left: 20px; }
+  .key li { margin: 8px 0; color: var(--muted); font-size: 14px; }
+  .key li strong { color: var(--fg); }
+
+  code.inline { font-family: var(--mono); font-size: 12.5px; background: var(--card-2); padding: 1px 6px; border-radius: 5px; color: #e4e4e7; }
+
+  /* SYNTHESIS pipeline */
+  .pipe { display: grid; gap: 14px; margin-top: 8px; counter-reset: step; }
+  .pipe .step {
+    position: relative; background: var(--card); border: 1px solid var(--border);
+    border-left: 3px solid var(--c-syn); border-radius: 12px; padding: 16px 20px 16px 58px;
+  }
+  .pipe .step::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 16px; top: 16px; width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(236,72,153,0.15); color: var(--c-syn); font-family: var(--mono);
+    font-weight: 700; display: grid; place-items: center; font-size: 14px;
+  }
+  .pipe .step h4 { font-size: 15px; margin-bottom: 4px; }
+  .pipe .step p { color: var(--muted); font-size: 13.5px; }
+  .pipe .step .tools { margin-top: 8px; }
+  .pipe .step .tools .tag { margin-right: 6px; }
+
+  .callout {
+    display:flex; gap:14px; align-items:flex-start; background: rgba(239,68,68,0.07);
+    border: 1px solid rgba(239,68,68,0.25); border-radius: 12px; padding: 16px 18px; margin: 18px 0;
+  }
+  .callout .ic { font-size: 20px; line-height:1; }
+  .callout .x { color: #fca5a5; font-size: 14px; }
+  .callout .x strong { color:#fff; }
+
+  /* REFERENCES */
+  .refs { columns: 2; column-gap: 28px; font-size: 12.5px; }
+  @media (max-width: 700px){ .refs { columns: 1; } }
+  .refs a { display:block; break-inside: avoid; color: var(--muted); text-decoration: none; padding: 5px 0; border-bottom: 1px solid transparent; }
+  .refs a:hover { color: var(--fg); }
+  .refs a span { color: var(--dim); font-family: var(--mono); font-size: 11px; }
+
+  footer { text-align:center; color: var(--dim); font-size: 12px; padding: 50px 0 70px; border-top: 1px solid var(--border); margin-top: 56px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrapper">
+    <span class="badge">OGC 2026 · 전략 리서치</span>
+    <h1>솔버 없이 이기기</h1>
+    <p class="lead">GitHub·논문·대회 사례에서 긁어온 <strong>비-솔버(heuristic / metaheuristic)</strong> 전략 인사이트 종합.
+      조선소 블록 패킹·스케줄링·할당이 한 번에 얽힌 문제를 상용 MIP 솔버 없이 푸는 길.</p>
+    <div class="meta-row">작성 2026-05-29 · 4개 영역 병렬 리서치 (irregular packing · shipyard SSP · tardiness/metaheuristic · crane access)</div>
+
+    <div class="thesis">
+      <div class="label">★ 핵심 테제</div>
+      <p>점수가 <strong>절대 품질이 아니라 랭크</strong>(<code class="inline">R − nb</code>)이고, 한 인스턴스라도 infeasible/timeout/crash 면 <strong>−1</strong>이다.
+      비정형 패킹은 MIP가 원래 가장 약한 영역이라, 순수 상용-솔버 팀도 30분 안에 큰 인스턴스에서 고품질 incumbent를 못 뽑을 수 있다.
+      <strong style="color:#fca5a5">단, 2026-05-29 스펙 재감사 정정:</strong> 운영위가 <strong>Gurobi 13.0.2·Xpress 9.8.1을 평가서버에 정식 제공</strong>(Gurobi·FICO 후원)하므로
+      <em>"솔버 팀이 firejail 라이선스 실패로 스스로 −1"이라는 가정은 틀렸다.</em> 상용 솔버 팀은 정상적으로 feasible 해를 낸다 → 우리는 그들을 <strong>목적값(랭크)으로 이겨야</strong> 한다.</p>
+      <span class="punch">승리 조건 = "솔버가 안 돌 것"이라는 기대가 아니라 → <span style="color:var(--c-syn)">항상 feasible 보장 + 강한 메타휴리스틱 품질로 랭크 우위</span></span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrapper">
+    <a href="#s1"><span class="dot" style="background:var(--c-pack)"></span>1. 비정형 2D 패킹</a>
+    <a href="#s2"><span class="dot" style="background:var(--c-ship)"></span>2. 조선소 공간 스케줄링</a>
+    <a href="#s3"><span class="dot" style="background:var(--c-sched)"></span>3. Tardiness · 메타휴리스틱 엔진</a>
+    <a href="#s4"><span class="dot" style="background:var(--c-crane)"></span>4. 크레인 수직접근 제약</a>
+    <a href="#s5"><span class="dot" style="background:var(--c-syn)"></span>5. 통합 아키텍처</a>
+    <a href="#refs"><span class="dot" style="background:var(--dim)"></span>참고문헌</a>
+  </div>
+</nav>
+
+<!-- ============ SECTION 1 ============ -->
+<section id="s1" class="pack">
+  <div class="wrapper">
+    <div class="sec-head"><div class="sec-num">P</div><h2>비정형 2D 패킹 / 네스팅</h2></div>
+    <p class="sec-sub">Irregular Strip Packing · Nesting — 비-볼록 폴리곤을 정수 좌표·이산 방향으로 베이에 채우기</p>
+
+    <h3 class="block-t">핵심 알고리즘</h3>
+    <div class="cards">
+      <div class="card"><div class="t">No-Fit-Polygon (NFP) / Inner-Fit-Polygon (IFP)</div>
+        <div class="d">두 폴리곤이 닿지만 안 겹치는 상대 위치 영역을 사전계산 → 겹침 검사를 <em>점-내부 판정</em>으로 환원. IFP는 베이 경계 안에 넣을 수 있는 영역.</div>
+        <div class="why">이산 방향 집합이 고정이라 (피스쌍 × 방향) NFP를 한 번 precompute해 캐싱 가능 → 최대 속도 레버. Toledo의 <strong>discrete/raster NFP</strong>는 정수 좌표에 천연 적합.</div></div>
+      <div class="card"><div class="t">Bottom-Left-Fill (BLF) 디코더</div>
+        <div class="d">피스를 하나씩 "가장 아래 → 그다음 왼쪽" 가능 지점에 배치 (Burke et al. 2006). 순서+방향 시퀀스가 주어지면 결정론적·저렴.</div>
+        <div class="why">메타휴리스틱의 내부 루프로 이상적 — 메타휴리스틱은 (순서, 방향)만 탐색하고 기하 배치는 BLF가 맡는다.</div></div>
+      <div class="card"><div class="t">순서·방향 메타휴리스틱 (GA / SA / Tabu / GRASP)</div>
+        <div class="d">피스 시퀀스 + 방향을 SA/GA/tabu로 탐색, 디코더는 BLF. Burke의 BLF + tabu/hill-climbing이 정석 조합.</div>
+        <div class="why">솔버 불필요·CPU/시간 예산에 맞춰 튜닝 자유.</div></div>
+      <div class="card"><div class="t">Separation / Compaction (jostling)</div>
+        <div class="d">겹친 상태에서 시작해 평행이동으로 밀어내 분리·압축. sparrow의 "exploration → compression"이 현재 SOTA.</div></div>
+      <div class="card"><div class="t">Raster / Grid 비트마스크 배치</div>
+        <div class="d">베이를 정수 그리드로 이산화, 충돌 비트마스크로 패킹.</div>
+        <div class="why"><strong>정수 좌표 + 이산 방향</strong>엔 이게 가장 단순·빠름. NFP 부동소수점 robustness 버그를 회피, NumPy로 벡터화.</div></div>
+    </div>
+
+    <h3 class="block-t">오픈소스 — 재사용 가치순</h3>
+    <table class="repo-table">
+      <thead><tr><th>저장소</th><th>언어</th><th>재사용 포인트</th></tr></thead>
+      <tbody>
+        <tr><td class="r"><span class="star">★</span> <a href="https://github.com/seanys/2D-Irregular-Packing-Algorithm">seanys/2D-Irregular-Packing-Algorithm</a></td><td><span class="tag py">Python</span></td><td>순수 파이썬. NFP 생성·BLF·SA+BLF·GA·TOPOS 전부 포함. <strong>가장 이식하기 좋음</strong> (LICENSE 확인 후).</td></tr>
+        <tr><td class="r"><a href="https://github.com/JeroenGar/jagua-rs">JeroenGar/jagua-rs</a></td><td><span class="tag rs">Rust·MIT</span></td><td>INFORMS JoC 충돌검출 엔진. 비-볼록 충돌검출 설계의 레퍼런스(파이썬 재구현 시 청사진).</td></tr>
+        <tr><td class="r"><a href="https://github.com/JeroenGar/sparrow">JeroenGar/sparrow</a> · <a href="https://github.com/PaulDL-RS/spyrrow">PaulDL-RS/spyrrow</a></td><td><span class="tag rs">Rust·MIT</span></td><td>SOTA strip-packing 휴리스틱. spyrrow는 파이썬 래퍼. <em>주의: Rust 빌드 필요 → 무인터넷 제출엔 리스크.</em> 알고리즘 청사진으로.</td></tr>
+        <tr><td class="r"><a href="https://github.com/Jack000/SVGnest">Jack000/SVGnest</a></td><td><span class="tag js">JS·MIT</span></td><td>가장 읽기 쉬운 NFP + GA-over-placement 레퍼런스.</td></tr>
+        <tr><td class="r"><a href="https://github.com/deepnest-next/deepnest">deepnest-next/deepnest</a></td><td><span class="tag js">JS+C++</span></td><td>SVGnest 후계, 더 빠른 엔진.</td></tr>
+        <tr><td class="r"><a href="https://github.com/tamasmeszaros/libnest2d">libnest2d</a> · <a href="https://github.com/Ultimaker/pynest2d">pynest2d</a></td><td><span class="tag cpp">C++/py</span></td><td>PrusaSlicer/Cura 엔진. 강력하나 C++ 빌드 의존.</td></tr>
+        <tr><td class="r"><a href="https://github.com/secnot/rectpack">secnot/rectpack</a></td><td><span class="tag py">Python</span></td><td>순수 파이썬 직사각형 패킹 — 직사각 베이/근사 bbox에 가장 근접.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="key">
+      <strong style="color:var(--c-pack)">솔버 없는 파이썬 구현 권고</strong>
+      <ol>
+        <li><strong>이산 NFP/IFP를 한 번만 precompute</strong> — 고정 방향 집합 + 정수 그리드라 유한·캐싱 가능. 단일 최대 속도 레버.</li>
+        <li><strong>정수 raster/비트마스크 충돌</strong>을 NumPy로 — NFP 부동소수점 고통 회피.</li>
+        <li><strong>BLF 디코더 + (순서, 방향)에 대한 SA/GRASP</strong> — seanys SA+BLF 이식. anytime·CPU 전용. 순서는 EDD/면적 내림차순으로 seed.</li>
+        <li>핫 루프는 NumPy 벡터화, 기하 전처리는 setup 단계에서 Shapely로 (루프 안 X).</li>
+        <li>먼저 읽기: Bennell &amp; Oliveira, <em>"The geometry of nesting problems: A tutorial"</em> (EJOR 2008) — raster·삼각법·NFP·phi-function 한 번에 비교.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 2 ============ -->
+<section id="s2" class="ship">
+  <div class="wrapper">
+    <div class="sec-head"><div class="sec-num">S</div><h2>조선소 블록 공간 스케줄링</h2></div>
+    <p class="sec-sub">Spatial Scheduling Problem (SSP) / Block Stockyard — <strong>이 대회와 가장 가까운 실제 연구 분야</strong> (한국 OR/IE 학계·조선사 다수 논문)</p>
+
+    <div class="callout" style="background:rgba(59,130,246,0.07);border-color:rgba(59,130,246,0.25)">
+      <div class="ic">🎯</div>
+      <div class="x" style="color:#93c5fd">우리 문제는 곧 <strong>"공간 스케줄링 문제 / 블록 적치장 배치 문제"</strong>다 — 2D 패킹(네스팅) + 납기 기반 스케줄링의 결합. 현대중공업·삼성중공업·대우조선·한화오션 + SNU/KAIST가 30년 가까이 다뤄온 문제다. 바퀴를 다시 발명할 필요 없다.</div>
+    </div>
+
+    <h3 class="block-t">핵심 논문 (알고리즘 중심)</h3>
+    <div class="cards">
+      <div class="card"><div class="t">Park, Lee, Park &amp; Kim (1996) — 공간 블록 스케줄링 기초 논문</div><div class="d">분해(decomposition) + 부분 열거 스케줄링 + 휴리스틱 공간 할당 탐색. 공간·일정 동시 처리. <em>Computers &amp; Industrial Engineering 30(3).</em></div></div>
+      <div class="card"><div class="t">Koh, Park, Choi 등 — GA 동적 블록 배치</div><div class="d">블록 배치 <em>시퀀스</em>를 GA로 인코딩 → 2D 배치로 디코드. "시퀀스 GA + greedy 배치 디코더"의 전형.</div></div>
+      <div class="card"><div class="t">Liu, Chua 등 (2015) — 대형 조립 블록 공간 스케줄링</div><div class="d">2단계 휴리스틱: <strong>디스패칭 우선순위 규칙 + diagonal-fill (BLF 변형)</strong> 공간 할당.</div></div>
+      <div class="card"><div class="t">(2021) 비정형 블록 공간 스케줄링</div><div class="d"><strong>GA + SA 하이브리드</strong>, 정점배치 + bottom-left moving 규칙으로 비정형 폴리곤 디코드.</div></div>
+      <div class="card"><div class="t">Roh / Cho 등 (2017) — 빈 공간·미배치 블록 고려</div><div class="d">명시적 <strong>free-space 관리</strong> + 아직 안 들어가는 블록의 <strong>지연(deferral)</strong> 처리 → 우리의 −1 회피와 직결.</div></div>
+      <div class="card"><div class="t">Cheon, Woo 등 (2020) — DRL로 재배치 최소화</div><div class="d">미래 relocation(간섭 블록) 최소화하도록 배치를 학습. <em>단, 평가서버 GPU 없음 → 추론만 CPU 가능 여부 검토.</em></div></div>
+      <div class="card"><div class="t">Xie 등 (2025) — 적치장 레이아웃 적응 동적 스케줄링</div><div class="d">이진탐색트리 free-space 레이아웃 + DRL. 실데이터에서 간섭 이동 ~56% 감소.</div></div>
+      <div class="card"><div class="t">(2023) 블록 배정 matheuristic / (2024) rolling-horizon 스케줄러</div><div class="d">배정 레이어에 MIP+휴리스틱 결합 / situ-aware 롤링호라이즌 — 시간축 분할 패턴.</div></div>
+    </div>
+
+    <h3 class="block-t">공간+시간 결합의 반복 패턴</h3>
+    <div class="cards">
+      <div class="card"><div class="t">시퀀스 + greedy 디코더</div><div class="d">메타휴리스틱은 <em>블록 순서</em>만 탐색, 결정론적 배치기(BLF·diagonal-fill·NFP)가 기하 실현. <strong>이 분리가 솔버 없는 레버.</strong></div></div>
+      <div class="card"><div class="t">시간축 BLF / 롤링호라이즌</div><div class="d">ENTRY/EXIT를 이벤트 시각(다른 블록의 EXIT)에 스냅, 호라이즌 전진, 활성 집합만 재패킹.</div></div>
+      <div class="card"><div class="t">Free-space 리스트 — defer-not-fail</div><div class="d">빈 사각형 추적, 못 넣는 블록은 실패 대신 ENTRY 지연. <strong>infeasible을 절대 안 만든다 (Roh 2017).</strong></div></div>
+      <div class="card"><div class="t">시간-공간 분해</div><div class="d">베이 배정 고정 → 베이별 2D패킹 + 1D tardiness 독립; 혹은 일정 고정 → 패킹. 반복.</div></div>
+    </div>
+
+    <div class="key">
+      <strong style="color:var(--c-ship)">이전될 아이디어</strong>
+      <ol>
+        <li><strong>EDD/우선순위 디스패치 + 활성 시간창 한정 BLF</strong> — 베이스라인의 EDD+best-fit을 BLF/diagonal-fill로 업그레이드 (Liu 2015).</li>
+        <li><strong>시퀀스 기반 메타휴리스틱 + 기하 결정론 디코더</strong> — GA/SA를 블록순서·베이선택에만 씌우고 배치는 빠른 결정론 배치기. 견고·솔버 불필요.</li>
+        <li><strong>크레인 접근 = 역시간/LIFO 배치</strong> — 컨테이너 relocation 로직 차용: 블록의 EXIT가 "위에 있는" 공존 블록 이동을 요구하지 않도록 retrieval 순서로 배치.</li>
+        <li><strong>defer-not-fail</strong>: 못 넣으면 ENTRY를 미뤄서라도 항상 feasible → −1 페널티 직접 방어.</li>
+        <li><strong>3-항 목적함수의 시간-공간 분해</strong>: 베이배정(Z2 불균형·Z3 선호 견인) 고정 → 베이별 2D패킹+tardiness(Z1) → 재배정 반복으로 부하 균형.</li>
+      </ol>
+    </div>
+    <div class="callout">
+      <div class="ic">⚠️</div>
+      <div class="x"><strong>주의:</strong> 공개된 OGC 2024/2025 솔루션 레포는 못 찾음. OGC 2024는 <em>번들배송 라우팅</em> 문제(다른 도메인)라 writeup 전이 안 됨. → 직접 만든 베이스라인 + 위 SSP 논문이 최선의 출발점.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 3 ============ -->
+<section id="s3" class="sched">
+  <div class="wrapper">
+    <div class="sec-head"><div class="sec-num">E</div><h2>Tardiness 스케줄링 · 메타휴리스틱 엔진</h2></div>
+    <p class="sec-sub">디스패칭 규칙 cheat-sheet + 실제 탐색 엔진 (ALNS) + 무료·오프라인 도구</p>
+
+    <h3 class="block-t">납기 디스패칭 규칙 — cheat-sheet</h3>
+    <table class="repo-table">
+      <thead><tr><th>규칙</th><th>우선순위</th><th>언제 이기나</th></tr></thead>
+      <tbody>
+        <tr><td><strong>EDD</strong></td><td>최소 d<sub>j</sub></td><td>작업 길이 비슷·tardiness가 순서지배일 때. max-tardiness 최적, <em>총</em>-tardiness엔 약함.</td></tr>
+        <tr><td><strong>WSPT/SPT</strong></td><td>최소 p<sub>j</sub> (또는 p<sub>j</sub>/w<sub>j</sub>)</td><td>과부하·혼잡 시(대부분 지연 → flow 최소화).</td></tr>
+        <tr><td><strong>MDD</strong></td><td>최소 min(d<sub>j</sub>, t+p<sub>j</sub>)</td><td>slack&gt;0이면 EDD처럼, 이미 늦으면 SPT처럼. 단순·견고. <strong>총-tardiness 강한 기본값 → bulletproof 폴백.</strong></td></tr>
+        <tr><td><strong>ATC</strong></td><td>(w<sub>j</sub>/p<sub>j</sub>)·exp(−max(d<sub>j</sub>−p<sub>j</sub>−t,0)/(k·p̄))</td><td>일반 단일머신 가중 총-tardiness의 <strong>최강 규칙</strong>. WSPT↔EDD 보간. k≈1.5~4.5(slack 빡빡)·0.5~2(여유).</td></tr>
+        <tr><td><strong>ATCS</strong> ★</td><td>ATC + setup항 + 릴리즈 할인 exp(−max(r<sub>j</sub>−t,0)/(k₃·p̄))</td><td><strong>릴리즈 시각이 있을 때(우리 ENTRY≥R!) — 본 문제에 직접 매칭.</strong> Lee, Bhaskaran &amp; Pinedo 1997.</td></tr>
+      </tbody>
+    </table>
+    <div class="key" style="margin-top:14px"><span style="color:var(--c-sched);font-weight:700">실전 결론:</span> <strong>ATCS</strong>를 주 constructive 휴리스틱으로(릴리즈+선호 가중 처리), <strong>MDD</strong>는 항상-feasible 폴백으로. k는 인스턴스 통계로 간단 grid 튜닝.</div>
+
+    <h3 class="block-t">메타휴리스틱 프레임워크 — ALNS가 정답</h3>
+    <div class="cards">
+      <div class="card"><div class="t">왜 ALNS (Adaptive Large Neighborhood Search)인가</div>
+        <div class="d">결합형 패킹+스케줄링은 <strong>ruin-and-recreate</strong>가 맞다 — destroy/repair가 ENTRY/EXIT/베이/위치를 자연스럽게 함께 재결정.</div>
+        <div class="why">정석 레퍼런스: Shaw 1998 (LNS) · Schrimpf 2000 (ruin-recreate) · Ropke &amp; Pisinger 2006 (ALNS, 적응 연산자 가중치 + SA식 수용).</div></div>
+      <div class="card"><div class="t">연산자 설계</div>
+        <div class="d">이웃: 인접쌍/블록 swap, insertion(작업→새 위치), time-shift. destroy: random, <strong>worst-tardiness removal</strong>, related/shaw-removal(같은 베이·겹치는 시간창).</div></div>
+      <div class="card"><div class="t">SA / GRASP / Tabu — 언제</div>
+        <div class="d">SA = ALNS 내부 <em>수용 기준</em>으로. GRASP = 무작위 greedy 다중 재시작(4코어 병렬에 자명). Tabu = 강하나 feasible 유지 어려움.</div>
+        <div class="why">"항상 incumbent 보유" 요구엔 <strong>constructive-greedy + ALNS(SA 수용)</strong>가 실용 승자.</div></div>
+    </div>
+
+    <h3 class="block-t">무료·오프라인 도구 (상용 라이선스 X)</h3>
+    <table class="repo-table">
+      <thead><tr><th>도구</th><th>구분</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td class="r"><span class="star">★</span> <a href="https://github.com/N-Wouda/ALNS">N-Wouda/ALNS</a> · <a href="https://pypi.org/project/alns/">PyPI alns</a></td><td><span class="tag py">Python</span></td><td>pip 설치 ALNS 프레임워크. state+destroy/repair만 주면 연산자선택·수용·정지 제공. deps numpy/matplotlib뿐. <strong>주 엔진 권장.</strong></td></tr>
+        <tr><td class="r"><a href="https://github.com/google/or-tools">google/or-tools</a> (CP-SAT)</td><td><span class="tag py">Apache-2</span></td><td><strong>pip 설치 후 완전 무료·오프라인</strong>(라이선스 서버 X). "솔버"지만 Gurobi/Xpress와 달리 허용. <em>서브문제 한정 사용</em>(고정-베이 1머신 tardiness 재시퀀싱 등).</td></tr>
+        <tr><td class="r"><a href="https://github.com/alberto-santini/adaptive-large-neighbourhood-search">alberto-santini/ALNS</a></td><td><span class="tag cpp">C++</span></td><td>Ropke식 header-only 레퍼런스(아이디어용).</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="ic">🛡️</div>
+      <div class="x"><strong>견고성 체크리스트 (timeout=−1 방지)</strong> — 점수 모델상 "가끔 천재적"보다 "항상 feasible"이 이긴다.
+        <ol style="margin:10px 0 0 18px;color:var(--muted)">
+          <li><strong>feasible incumbent를 먼저</strong> 구성(EDD/ATCS+best-fit)하고 저장 후 개선 루프 진입.</li>
+          <li><strong>하드 타임 가드:</strong> <code class="inline">timelimit</code> 읽어 90~95%에서 중단, 직렬화 여유 남김. <code class="inline">time.monotonic()</code>을 매 반복 체크.</li>
+          <li>현재해와 별도로 <strong>best-feasible 보관</strong>, feasibility 통과한 해만 emit.</li>
+          <li>개선 루프 전체를 <strong>try/except</strong>로 감싸 예외 시 저장 incumbent 반환 — 절대 crash 금지.</li>
+          <li>큰 인스턴스는 이웃·repair 노력 축소(graceful degradation). 빈/불법해보다 평범한 feasible.</li>
+          <li>고정 RNG seed + 반환 전 공식 <code class="inline">check_feasibility</code> 검증.</li>
+          <li><strong>4코어 활용:</strong> 독립 무작위 재시작(GRASP) 또는 병렬 ALNS 체인, best-feasible만 채택.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="key">
+      <strong style="color:var(--c-sched)">대회 우승 패턴 (ROADEF/EURO 등, 상용 MIP 없이)</strong>
+      <p style="color:var(--muted);font-size:14px;margin-top:6px">최근 ROADEF 챌린지 우승자들(2020 Buljubašić&amp;Vasquez, 2022 Fontan&amp;Libralesso)은 <strong>ILS / ALNS + 문제특화 destroy-repair + 빠른 local-search + penalty-relaxation</strong>을 썼고 <em>상용 MIP를 쓰지 않았다.</em> → 우리 전략과 정확히 일치.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 4 ============ -->
+<section id="s4" class="crane">
+  <div class="wrapper">
+    <div class="sec-head"><div class="sec-num">C</div><h2>크레인 수직접근 제약</h2></div>
+    <p class="sec-sub">"위에 뭔가 쌓여 있으면 못 든다" (l<sub>2</sub> ≥ l<sub>1</sub> 규칙) — 이 문제의 진짜 난점. 컨테이너 재배치 문제와 구조 동형.</p>
+
+    <h3 class="block-t">유사 문제 + 핵심 레퍼런스</h3>
+    <div class="cards">
+      <div class="card"><div class="t">Block/Container Relocation Problem (BRP/CRP) — 가장 가까운 동형</div>
+        <div class="d">"위에 쌓이면 못 꺼낸다" ≡ "타깃 위 블로킹 컨테이너를 relocate해야 한다". 기초 서베이 Lehnfeld &amp; Knust 2014(EJOR). Beam search + dominance 하한 da Silva 2022 (arXiv:2206.12303).</div></div>
+      <div class="card"><div class="t">Pre-marshalling — 우리의 ENTRY 순서결정과 직결</div>
+        <div class="d">미래 retrieval을 막지 않게 미리 재정렬. Tanaka(2018) iterative-deepening B&amp;B, Tierney(2019) 대형 B&amp;B.</div></div>
+      <div class="card"><div class="t">3D bin packing + LIFO/접근성 (차량 적재)</div>
+        <div class="d">배송 순서대로 relocation 없이 꺼낼 수 있어야. Gzara 2020(pallet loading, reachability), Pollaris 2021(multi-drop LIFO = 수직 클리어런스). 우리 EXIT 순서 = multi-drop LIFO.</div></div>
+      <div class="card"><div class="t">Blocking / no-wait job-shop</div>
+        <div class="d">ENTRY/EXIT 크레인 이벤트 순서결정 = alternative graph 상의 blocking 제약 시퀀싱 (Mascis &amp; Pacciarelli 2002).</div></div>
+    </div>
+
+    <h3 class="block-t">오픈소스 / 벤치마크</h3>
+    <table class="repo-table">
+      <thead><tr><th>저장소</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td class="r"><a href="https://github.com/rubenlej/block-relocation-problem">rubenlej/block-relocation-problem</a></td><td>BRP 코드 + Caserta 인스턴스 (크레인 작업시간 변형).</td></tr>
+        <tr><td class="r"><a href="https://github.com/ahottung/DLTS">ahottung/DLTS</a></td><td>Pre-marshalling용 Deep-Learning Tree Search + 검증/테스트 인스턴스·최적해.</td></tr>
+        <tr><td class="r"><a href="https://github.com/luisgarciar/3D-bin-packing">luisgarciar/3D-bin-packing</a></td><td>RL 3D-BPP 환경, 마스크 로직 재사용.</td></tr>
+        <tr><td class="r"><a href="https://sites.google.com/site/shunjitanaka/brp">Shunji Tanaka — BRP/PMP</a></td><td>정석 CV09/BF 벤치마크 셋 + exact solver.</td></tr>
+        <tr><td class="r"><a href="https://github.com/xabbuh/brp-php">xabbuh/brp-php</a></td><td>BRP 도구/알고리즘 (PHP, 아이디어용).</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="background:rgba(139,92,246,0.07);border-color:rgba(139,92,246,0.28)">
+      <div class="ic">⚡</div>
+      <div class="x" style="color:#c4b5fd"><strong>수직접근 feasibility 검사 — 효율 자료구조 (핵심).</strong> 모노토니시티(l<sub>2</sub> ≥ l<sub>1</sub>만 문제) 활용:
+        <ol style="margin:10px 0 0 18px;color:var(--muted)">
+          <li><strong>레이어별 점유 비트마스크:</strong> (베이, 레벨)마다 정수 그리드 boolean raster. 겹침 = bitwise-AND, 존재 = <code class="inline">(A &amp; B).any()</code> — NumPy <code class="inline">uint64</code>로 O(cells/64).</li>
+          <li><strong>"상위합집합" suffix-OR 마스크 (핵심):</strong> 각 레벨 L에 <code class="inline">U[L] = (레벨 ≥ L의 모든 in-bay 레이어 footprint OR)</code>. 블록 i의 l₁ 추출 가능성 = i footprint AND <code class="inline">U[l₁]</code> (자기 기여 제외). all-pairs 대신 레이어당 AND 1회.</li>
+          <li><strong>증분 유지:</strong> ENTRY/EXIT는 한 블록의 K 레이어만 건드림 → suffix-OR을 해당 블록 top 이하 레벨만 재계산.</li>
+          <li>raster AND 전에 bbox / cell-list 사전필터.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="key">
+      <strong style="color:var(--c-crane)">솔버 없는 처리 아이디어</strong>
+      <ol>
+        <li><strong>EXIT를 CRP retrieval처럼</strong> — (x,y,o,ENTRY,EXIT) 후보를 "미래 공존 블록 중 상위 footprint가 겹치는 수(=blocker)"로 채점, blocker=0 우선. BRP look-ahead 하한의 직접 포팅.</li>
+        <li><strong>Pre-marshalling식 ENTRY 순서:</strong> 키 큰(레이어 多)·EXIT 늦은 블록을 footprint-disjoint 영역에 → suffix-OR 마스크 sparse 유지.</li>
+        <li><strong>Bounded beam search</strong>(이벤트 순서) — alternative graph 노드=부분 ENTRY/EXIT 순서, (tardiness + 위반수) 상위 beam만 확장, suffix-OR로 prune. arXiv:2206.12303 직접 적용.</li>
+        <li><strong>LIFO 시간창 → precedence:</strong> A footprint가 B 레벨 위에 있으면 ENTRY(A)·EXIT(A)를 B 기준 선후관계로 → 기하 제약을 위상정렬 가능한 일정 precedence로 변환.</li>
+        <li><strong>레벨별 skyline 배치:</strong> 기존 footprint 위로 상위 마스크를 가장 적게 올리는 곳에 신규 블록 → 추출 경로를 구성적으로 확보.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECTION 5 ============ -->
+<section id="s5" class="syn">
+  <div class="wrapper">
+    <div class="sec-head"><div class="sec-num">∑</div><h2>통합 권고 아키텍처</h2></div>
+    <p class="sec-sub">4개 영역을 하나의 솔버 없는 파이프라인으로 — <code class="inline">src/myalgorithm.py</code>에서 구현</p>
+
+    <div class="pipe">
+      <div class="step">
+        <h4>Constructive seed — 항상 feasible부터</h4>
+        <p><strong>ATCS 순서</strong>(릴리즈 R + 선호 가중 처리) + <strong>활성 시간창 한정 BLF/raster 배치</strong>, 배치 시 suffix-OR <strong>크레인(l₂≥l₁) 검사</strong> 내장. 못 넣으면 defer(ENTRY 지연) — 절대 실패 금지. <strong>MDD</strong>는 폴백.</p>
+        <div class="tools"><span class="tag py">ATCS</span><span class="tag py">BLF/raster</span><span class="tag py">defer-not-fail</span></div>
+      </div>
+      <div class="step">
+        <h4>Improvement 엔진 — ALNS + SA 수용</h4>
+        <p>상태 = 전체 배정(베이, x/y, 방향, ENTRY/EXIT). destroy = {random, worst-tardiness, related-by-bay/time}; repair = ATCS-순 재삽입 + best-fit 패킹 + 크레인 검사. <code class="inline">alns</code> 패키지로.</p>
+        <div class="tools"><span class="tag py">N-Wouda/alns</span><span class="tag py">ruin &amp; recreate</span></div>
+      </div>
+      <div class="step">
+        <h4>Geometry 엔진 — 사전계산 + 비트마스크</h4>
+        <p>이산 NFP/IFP를 방향별 한 번 precompute. 정수 raster 비트마스크 충돌(NumPy). 크레인용 suffix-OR 마스크 + 증분 갱신. seanys 레포의 NFP/BLF 이식.</p>
+        <div class="tools"><span class="tag py">discrete NFP/IFP</span><span class="tag py">suffix-OR mask</span><span class="tag py">numpy</span></div>
+      </div>
+      <div class="step">
+        <h4>Robustness 하니스 — −1 절대 회피</h4>
+        <p>feasible-first · 타임가드 90~95% · best-feasible 보관 · 전체 try/except · 반환 전 <code class="inline">check_feasibility</code> · 4코어 병렬 재시작(GRASP) 후 best 채택.</p>
+        <div class="tools"><span class="tag py">time guard</span><span class="tag py">try/except</span><span class="tag py">4-core GRASP</span></div>
+      </div>
+      <div class="step">
+        <h4>(선택) CP-SAT 서브솔버</h4>
+        <p>고정-베이 단일머신 tardiness 재시퀀싱 등 <em>하위문제 한정</em>·짧은 타임리밋. 무료·오프라인이라 합법. 최상위 메서드로는 쓰지 않음.</p>
+        <div class="tools"><span class="tag py">OR-Tools CP-SAT</span><span class="tag py">bounded</span></div>
+      </div>
+    </div>
+
+    <div class="key" style="border-left:3px solid var(--c-syn)">
+      <strong style="color:var(--c-syn)">목적함수 분해 (3-항)</strong>
+      <p style="color:var(--muted);font-size:14px;margin-top:6px">베이 배정 고정(Z2 부하불균형·Z3 선호 견인) → 베이별 2D패킹 + tardiness(Z1) 독립 풀이 → 부하 균형 위해 재배정 반복. 가중치 <code class="inline">w1,w2,w3</code>는 인스턴스마다 다르므로 (예: w1이 압도적) <strong>인스턴스별로 어느 항을 더 공략할지 동적 결정.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCES ============ -->
+<section id="refs">
+  <div class="wrapper">
+    <div class="sec-head"><div class="sec-num" style="background:rgba(161,161,170,0.12);color:var(--muted)">¶</div><h2>참고문헌 · 링크</h2></div>
+    <div class="refs">
+      <a href="https://github.com/seanys/2D-Irregular-Packing-Algorithm">seanys/2D-Irregular-Packing-Algorithm <span>(Python NFP+BLF+SA+GA)</span></a>
+      <a href="https://github.com/JeroenGar/jagua-rs">JeroenGar/jagua-rs <span>(Rust 충돌엔진)</span></a>
+      <a href="https://github.com/JeroenGar/sparrow">JeroenGar/sparrow <span>(SOTA strip-packing)</span></a>
+      <a href="https://github.com/PaulDL-RS/spyrrow">PaulDL-RS/spyrrow <span>(sparrow Python 래퍼)</span></a>
+      <a href="https://github.com/Jack000/SVGnest">Jack000/SVGnest <span>(JS NFP+GA)</span></a>
+      <a href="https://github.com/deepnest-next/deepnest">deepnest-next/deepnest</a>
+      <a href="https://github.com/tamasmeszaros/libnest2d">tamasmeszaros/libnest2d</a>
+      <a href="https://github.com/Ultimaker/pynest2d">Ultimaker/pynest2d</a>
+      <a href="https://github.com/secnot/rectpack">secnot/rectpack <span>(Python 직사각 패킹)</span></a>
+      <a href="https://gent.cs.kuleuven.be/vakgroepit/sites/gent.cs.kuleuven.be/files/nesting_problems_tutorialEJOR-184-2008.pdf">Bennell &amp; Oliveira — Nesting tutorial (EJOR 2008)</a>
+      <a href="https://ideas.repec.org/a/inm/oropre/v54y2006i3p587-601.html">Burke et al. — BLF Heuristic (OR 2006)</a>
+      <a href="https://snu.elsevierpure.com/en/publications/modeling-and-solving-the-spatial-block-scheduling-problem-in-a-sh">Park et al. — Spatial Block Scheduling (1996)</a>
+      <a href="https://ieeexplore.ieee.org/document/1560417/">Koh et al. — GA Dynamic Block Arrangement</a>
+      <a href="https://www.hindawi.com/journals/mpe/2017/1923646/">Shang et al. — Spatial Scheduling for Block Assembly (2017)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835215002296">Liu, Chua — Spatial scheduling large blocks (2015)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835220306550">Spatial scheduling for irregular blocks (2021)</a>
+      <a href="https://link.springer.com/article/10.1007/s00170-017-1525-1">Roh/Cho — free space &amp; unplaced block (2017)</a>
+      <a href="https://www.tandfonline.com/doi/full/10.1080/00207543.2020.1748247">Cheon et al. — DRL stockyard rearrangement (2020)</a>
+      <a href="https://www.tandfonline.com/doi/full/10.1080/0305215X.2025.2466829">Xie et al. — Dynamic block scheduling (2025)</a>
+      <a href="https://link.springer.com/article/10.1007/s10951-024-00804-1">Situ-aware spatiotemporal scheduling (2024)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835223006277">Matheuristic for block assignment (2023)</a>
+      <a href="https://www.semanticscholar.org/paper/c8667c0f5e395cb28c492521a7924f49be9a6432">Lee, Bhaskaran &amp; Pinedo — ATCS (1997)</a>
+      <a href="https://www.cicirello.org/publications/wtsbenchmarks.pdf">Cicirello — Weighted Tardiness benchmarks</a>
+      <a href="https://freuder.wordpress.com/wp-content/uploads/2019/09/shaw_cp98.pdf">Shaw — LNS (CP 1998)</a>
+      <a href="https://www.semanticscholar.org/paper/4f80e70e51e368858c3df0787f05c3aa2b9650b4">Schrimpf et al. — Ruin &amp; Recreate (2000)</a>
+      <a href="https://backend.orbit.dtu.dk/ws/portalfiles/portal/3154899/">Ropke &amp; Pisinger — ALNS (2006)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054822001654">Mara et al. — ALNS survey (2022)</a>
+      <a href="https://github.com/N-Wouda/ALNS">N-Wouda/ALNS <span>(Python 프레임워크)</span></a>
+      <a href="https://pypi.org/project/alns/">PyPI: alns</a>
+      <a href="https://github.com/google/or-tools">google/or-tools <span>(CP-SAT, 무료·오프라인)</span></a>
+      <a href="https://d-krupke.github.io/cpsat-primer/">CP-SAT Primer</a>
+      <a href="https://github.com/alberto-santini/adaptive-large-neighbourhood-search">alberto-santini/ALNS (C++)</a>
+      <a href="https://link.springer.com/article/10.1007/s10732-022-09508-1">ROADEF 2020 winners (J. Heuristics 2023)</a>
+      <a href="https://roadef.org/challenge/2020/en/sprintresult.php">ROADEF 2020 results</a>
+      <a href="https://ideas.repec.org/a/eee/ejores/v239y2014i2p297-312.html">Lehnfeld &amp; Knust — relocation survey (2014)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835222005381">BRP &amp; Pre-Marshalling survey (2022)</a>
+      <a href="https://arxiv.org/abs/2206.12303">da Silva — Bounded Beam Search BRP (2022)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S037722171930325X">Tierney et al. — B&amp;B pre-marshalling (2019)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221720304069">Gzara et al. — Pallet Loading 3D (2020)</a>
+      <a href="https://link.springer.com/article/10.1007/s00291-021-00645-w">Pollaris et al. — 3D-VRP loading (2021)</a>
+      <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221701003381">Mascis &amp; Pacciarelli — blocking job-shop (2002)</a>
+      <a href="https://ar5iv.labs.arxiv.org/html/2104.04525">Rasterized irregular packing (arXiv:2104.04525)</a>
+      <a href="https://github.com/rubenlej/block-relocation-problem">rubenlej/block-relocation-problem</a>
+      <a href="https://github.com/ahottung/DLTS">ahottung/DLTS</a>
+      <a href="https://github.com/luisgarciar/3D-bin-packing">luisgarciar/3D-bin-packing</a>
+      <a href="https://sites.google.com/site/shunjitanaka/brp">Shunji Tanaka — BRP/PMP 벤치마크</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  OGC 2026 · The Grand Shipyard Puzzle — 전략 리서치 종합 · 2026-05-29<br>
+  다음 단계 → <code style="font-family:var(--mono)">notes/strategy-debate.md</code> 3-에이전트 토론으로 이 아키텍처 stress-test
+</footer>
+
+</body>
+</html>

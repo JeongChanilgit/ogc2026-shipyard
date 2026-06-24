@@ -1,0 +1,67 @@
+{
+  "config": {
+    "instances_spec": "prob_37,prob_38",
+    "timelimit": 90.0,
+    "tag": "internal best-of smoke",
+    "generated": "2026-06-17 15:22:49"
+  },
+  "totals": {
+    "instances_spec": "prob_37,prob_38",
+    "timelimit": 90.0,
+    "n_instances": 2,
+    "n_feasible": 2,
+    "n_infeasible": 0,
+    "n_win": 0,
+    "n_lose": 2,
+    "max_wall": 88.31300000002375,
+    "sum_gassign_obj": null,
+    "sum_prod_obj": null,
+    "total_delta": null,
+    "sum_competitor_obj": 75224321.69,
+    "sum_gassign_obj_with_comp": 100676206.0
+  },
+  "instances": [
+    {
+      "instance": "prob_37",
+      "n_blocks": 250,
+      "n_bays": 3,
+      "w1": 3333,
+      "w2": 4,
+      "w3": 600,
+      "gassign_obj": 10049740.0,
+      "gassign_z1": 2016.0,
+      "gassign_z2": 703,
+      "gassign_z3": 5546.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 88.31199999997625,
+      "prod_obj": null,
+      "delta": null,
+      "competitor_obj": 6934080.46,
+      "baseline_obj": 8870958.0,
+      "verdict": "lose"
+    },
+    {
+      "instance": "prob_38",
+      "n_blocks": 250,
+      "n_bays": 3,
+      "w1": 13333,
+      "w2": 2,
+      "w3": 300,
+      "gassign_obj": 90626466.0,
+      "gassign_z1": 6560.0,
+      "gassign_z2": 1643,
+      "gassign_z3": 10529.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 88.31300000002375,
+      "prod_obj": null,
+      "delta": null,
+      "competitor_obj": 68290241.23,
+      "baseline_obj": 147272112.0,
+      "verdict": "lose"
+    }
+  ]
+}

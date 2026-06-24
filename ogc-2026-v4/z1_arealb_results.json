@@ -1,0 +1,430 @@
+[
+  {
+    "prob": 38,
+    "feasible": true,
+    "w1": 13333,
+    "full_z1": 4526.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 4526.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 55
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 88
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 107
+      }
+    },
+    "wall_s": 0.2,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 40,
+    "feasible": true,
+    "w1": 667,
+    "full_z1": 4082.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 4082.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 65
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 46
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 87
+      },
+      "3": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 52
+      }
+    },
+    "wall_s": 0.5,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL",
+      "3": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 27,
+    "feasible": true,
+    "w1": 13333,
+    "full_z1": 2695.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 2695.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 51
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 99
+      }
+    },
+    "wall_s": 0.2,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 33,
+    "feasible": true,
+    "w1": 6667,
+    "full_z1": 1595.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 1595.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 69
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 59
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 72
+      }
+    },
+    "wall_s": 0.2,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 37,
+    "feasible": true,
+    "w1": 3333,
+    "full_z1": 1436.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 1436.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 42
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 96
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 112
+      }
+    },
+    "wall_s": 0.2,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 39,
+    "feasible": true,
+    "w1": 13333,
+    "full_z1": 1131.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 1131.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 63
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 77
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 110
+      }
+    },
+    "wall_s": 0.3,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 32,
+    "feasible": true,
+    "w1": 3333,
+    "full_z1": 1087.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 1087.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 48
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 58
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 94
+      }
+    },
+    "wall_s": 0.3,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 26,
+    "feasible": true,
+    "w1": 13333,
+    "full_z1": 1032.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 1032.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 52
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 58
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 40
+      }
+    },
+    "wall_s": 0.2,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 29,
+    "feasible": true,
+    "w1": 13333,
+    "full_z1": 0.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 0.0,
+    "pack_pct": 0.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 75
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 50
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 25
+      }
+    },
+    "wall_s": 0.1,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 14,
+    "feasible": true,
+    "w1": 17778,
+    "full_z1": 0.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 0.0,
+    "pack_pct": 0.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 59
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 91
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 56
+      },
+      "3": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 44
+      }
+    },
+    "wall_s": 0.2,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL",
+      "3": "OPTIMAL"
+    }
+  },
+  {
+    "prob": 20,
+    "feasible": true,
+    "w1": 26667,
+    "full_z1": 3.0,
+    "area_lb_best": 0.0,
+    "area_lb_proven": 0.0,
+    "pack_addressable": 3.0,
+    "pack_pct": 100.0,
+    "struct_pct": 0.0,
+    "bay_results": {
+      "0": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 73
+      },
+      "1": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 44
+      },
+      "2": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 61
+      },
+      "3": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 71
+      },
+      "4": {
+        "best": 0.0,
+        "lb": 0.0,
+        "status": "OPTIMAL",
+        "n_blocks": 51
+      }
+    },
+    "wall_s": 0.4,
+    "statuses": {
+      "0": "OPTIMAL",
+      "1": "OPTIMAL",
+      "2": "OPTIMAL",
+      "3": "OPTIMAL",
+      "4": "OPTIMAL"
+    }
+  }
+]

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 — 알고리즘 정리 + 점수</title>
+<style>
+  :root{--bg:#0e1116;--panel:#171b22;--panel2:#1c222b;--line:#2b313c;--ink:#e6edf3;--mut:#9aa6b2;--dim:#6b7682;
+    --good:#3fb950;--bad:#f85149;--warn:#d29922;--acc:#58a6ff;--acc2:#bc8cff;--z1:#f0883e;--z2:#3fb950;--z3:#bc8cff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 22px 90px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:19px;margin:38px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px}
+  h2 .n{font-size:12px;font-weight:700;color:#0e1116;background:var(--acc);border-radius:6px;padding:2px 9px}
+  h3{font-size:15px;margin:20px 0 8px;color:var(--ink)}
+  .sub{color:var(--mut);margin:0 0 18px;font-size:13px}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .lead{background:linear-gradient(135deg,#172132,#171b22);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .lead b{color:var(--acc)}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;color:#c9d6e3}
+  /* objective */
+  .obj{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .obj .c{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;border-top:3px solid}
+  .obj .c.z1{border-top-color:var(--z1)} .obj .c.z2{border-top-color:var(--z2)} .obj .c.z3{border-top-color:var(--z3)}
+  .obj .t{font-weight:700;font-size:15px} .obj .w{color:var(--dim);font-size:11.5px;margin:2px 0 6px} .obj .d{color:var(--mut);font-size:12.5px}
+  .formula{text-align:center;font-size:16px;margin:12px 0;color:var(--ink)}
+  .formula .z1{color:var(--z1);font-weight:700} .formula .z2{color:var(--z2);font-weight:700} .formula .z3{color:var(--z3);font-weight:700}
+  /* pipeline */
+  .pipe{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:12px}
+  .stage .ord{flex:0 0 26px;height:26px;border-radius:7px;background:#1b2433;color:var(--acc);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .stage .body{flex:1}
+  .stage .nm{font-weight:700} .stage .nm .tag{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+  .tg-z1{background:#3a2a14;color:var(--z1)} .tg-z23{background:#1f2e22;color:var(--z2)} .tg-z3{background:#241c33;color:var(--z3)} .tg-gate{background:#102a18;color:var(--good)}
+  .stage .ds{color:var(--mut);font-size:12.5px;margin-top:2px}
+  .arrow{color:var(--dim);text-align:center;font-size:13px;margin:-2px 0}
+  ul.t{margin:6px 0;padding-left:18px} ul.t li{margin:5px 0;color:var(--mut)} ul.t li b{color:var(--ink)}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 10px}
+  .p-ship{background:#11331c;color:var(--good);border:1px solid #1d5b2e} .p-no{background:#3a1416;color:var(--bad);border:1px solid #5b1d1d}
+  /* score table */
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  td:first-child,th:first-child{text-align:left}
+  tbody tr:hover{background:#10141a}
+  .zz{color:var(--bad);font-weight:700} .z0{color:var(--dim)}
+  .gain{color:var(--good);font-weight:700} .flat{color:var(--dim)} .worse{color:var(--bad);font-weight:700}
+  .totrow td{border-top:2px solid var(--line);font-weight:700;color:var(--ink)}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center}
+  .card .lab{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px} .card .big{font-size:20px;font-weight:700;margin-top:3px}
+  .foot{color:var(--dim);font-size:11.5px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+  .small{font-size:11px;color:var(--dim)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.obj,.cards,.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OGC 2026 — 알고리즘 정리 &amp; 점수</h1>
+  <p class="sub">2026-06-10 · 제출 엔트리 <span class="mono">src/myalgorithm.py</span> · 번들 v08 · myalgorithm md5 <span class="mono">77f3725d…</span></p>
+
+  <div class="lead">
+    <b>한 줄.</b> EDD 그리디 <b>floor</b> → CP-SAT/로컬서치 <b>후처리</b> → full-objective <b>gate</b> 의 3단 파이프라인.
+    핵심 설계는 <b>(1) 짧은 평가시간에 z1 폭발을 막는 adaptive raster floor 게이트</b> 와 <b>(2) 검증된 floor보다 나빠지지 않는 objective-safe gate(−1 원천 차단)</b>.
+    전 20개 인스턴스 100/300/1000초 모두 <b>feasible · −1 0건</b>, 시간을 주면 총 obj가 −43% 내려간다.
+  </div>
+
+  <!-- ===== objective ===== -->
+  <h2><span class="n">1</span> 목적함수</h2>
+  <div class="formula">min &nbsp; w<sub>1</sub>·<span class="z1">Z1</span> &nbsp;+&nbsp; w<sub>2</sub>·<span class="z2">Z2</span> &nbsp;+&nbsp; w<sub>3</sub>·<span class="z3">Z3</span></div>
+  <div class="obj">
+    <div class="c z1"><div class="t">Z1 — 지연(tardiness)</div><div class="w">w1 ≈ 10,000 ~ 29,000 (지배적)</div>
+      <div class="d">Σ max(0, EXIT − due). 크레인 수직접근(j≥k)으로 블록이 직렬화되면 EXIT가 밀려 발생. <b>가중치가 압도적이라 −1 다음으로 1순위.</b></div></div>
+    <div class="c z2"><div class="t">Z2 — 작업부하 불균형</div><div class="w">w2 ≈ 4 ~ 10 (작음)</div>
+      <div class="d">베이 가중 부하의 (max − min). 베이 배정만의 함수. 가중치가 작아 obj 기여도 미미.</div></div>
+    <div class="c z3"><div class="t">Z3 — 선호도 이탈</div><div class="w">w3 ≈ 125 ~ 200</div>
+      <div class="d">Σ (S<sub>max</sub> − S<sub>선택베이</sub>). <b>베이 배정만의 함수</b>(위치·시간 무관). z1=0인 인스턴스에선 obj의 84~99%를 차지하는 숨은 지배자.</div></div>
+  </div>
+  <p class="small">결정변수(블록당 동시): 베이 j · 위치 (x,y) · 방향 o · ENTRY 시각 · EXIT 시각. 3개 NP-hard(2D 비정형 패킹 + 단일머신 tardiness + 배정)가 결합.</p>
+
+  <!-- ===== pipeline ===== -->
+  <h2><span class="n">2</span> 파이프라인 (floor → 후처리 → gate)</h2>
+  <div class="pipe">
+    <div class="stage"><div class="ord">A</div><div class="body">
+      <div class="nm">FLOOR — EDD + Best-Fit 그리디 + 리페어 <span class="tag tg-z1">z1 기반</span></div>
+      <div class="ds">블록을 EDD(마감 빠른 순)로 정렬, 각 블록을 (베이·방향·위치·시각) 후보 중 <code>_placement_score</code>(w1·tard + w2·load + w3·pref) 최소로 배치 → 위반은 후처리 리페어. <b>검증된 feasible 해를 보장</b>(이게 −1 방지의 바닥).</div></div></div>
+    <div class="arrow">▼ &nbsp;<b>adaptive 게이트</b>: <code>1.2e-3·n² &gt; 0.4·T</code> 이면(짧은 tl·큰 인스턴스) → raster floor + pos_k=3, 아니면 default</div>
+    <div class="stage"><div class="ord">B</div><div class="body">
+      <div class="nm">cum_level — 베이별 CP-SAT 재디코드 <span class="tag tg-z1">z1</span></div>
+      <div class="ds">베이별로 위치·시각을 다시 풀어 tardiness를 낮춤. 후처리 예산의 ~70% 사용(가장 무거운 z1 레버).</div></div></div>
+    <div class="stage"><div class="ord">C</div><div class="body">
+      <div class="nm">bbox_pack / cpsat_timing — CP-SAT 위치·타이밍 <span class="tag tg-z1">z1</span></div>
+      <div class="ds">시간 겹침 ⟹ footprint 공간분리(크레인-safe)로 직렬화를 공간으로 펼쳐 tardiness 추가 절감.</div></div></div>
+    <div class="stage"><div class="ord">D</div><div class="body">
+      <div class="nm">crossbay_relocate / Front B — 베이 재배정 <span class="tag tg-z3">z2·z3</span></div>
+      <div class="ds">z1=0이면 블록을 선호 베이로 relocate/swap(<code>_assignment_proxy</code>로 랭크)해 z3(선호도) 절감. <b>z3 최적화의 유일 능동 레버.</b> 후처리 끝에서 남은 예산만 사용.</div></div></div>
+    <div class="stage"><div class="ord">E</div><div class="body">
+      <div class="nm">seeds_decode — 대안 배정 디코드 <span class="tag tg-z3">탐색</span></div>
+      <div class="ds">선호도-우선/부하-균형/CP-SAT(z2+z3 최소)/floor 배정을 seed로 재디코드해 더 나은 배정 탐색.</div></div></div>
+    <div class="arrow">▼</div>
+    <div class="stage" style="border-color:#1d5b2e"><div class="ord" style="background:#102a18;color:var(--good)">✓</div><div class="body">
+      <div class="nm">GATE — <code>consider()</code> full-objective 채택 <span class="tag tg-gate">objective-safe</span></div>
+      <div class="ds">모든 후보를 <b>전체 목적함수</b>로 비교해 best만 유지. 검증된 floor를 절대 밑돌지 않음 → <b>−1(infeasible/timeout)·악화 원천 차단.</b> 모든 실험 노브는 default OFF라 기본 동작 무회귀.</div></div></div>
+  </div>
+
+  <!-- ===== key design ===== -->
+  <h2><span class="n">3</span> 핵심 설계 결정</h2>
+  <div class="two">
+    <div>
+      <h3><span class="pill p-ship">채택</span> Adaptive raster floor 게이트</h3>
+      <ul class="t">
+        <li>짧은 tl·큰 인스턴스에선 default 그리디 floor가 느려 z1이 <b>폭발</b>(예: prob_20 35,795)하고 −1 위험.</li>
+        <li>크레인 충돌검사를 Shapely 대신 <b>폴리곤-래스터(정수셀 보수적 superset)</b> 로 바꿔 빠르게 → 넓은 위치탐색(pos_k=3) 가능 → <b>dense·feasible floor</b>로 z1 제압.</li>
+        <li><b>긴 tl엔 발동 안 함</b>(max est=108 &lt; 0.4·300=120) → default floor 그대로(무회귀). = 짧은-tl 보험.</li>
+        <li>효과: tl=100서 catastrophe(obj 6.5M~46M) → 정상(208K~669K).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>특성화된 한계 (조사로 확정)</h3>
+      <ul class="t">
+        <li><b>z1</b>: 시간 주면 해결(긴 tl서 19/20 z1≤2). 평가서버 긴 예산이면 거의 0.</li>
+        <li><b>z3</b>: <b>z1↔z3 Pareto에 막힘</b>. 블록을 선호 베이로 몰면 과부하→z1 20~180배 폭발. 현 z3는 "z1=0 유지의 대가". 짧은 tl도 동일(raster 과밀).</li>
+        <li><b>변동</b>: CP-SAT 4-worker wall-clock 비결정성으로 ±15~27% run-to-run 변동(잔존 핵심 요인).</li>
+        <li><b>prob_13</b>: 긴 tl서 후처리가 더 좋은 해(z1=1)를 버리고 z1=10에 수렴(비단조) → <b>best-obj 유지 fix시 ~26% 개선 여지(차기 1순위).</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== scores ===== -->
+  <h2><span class="n">4</span> 점수 — 전 20개 × tl=100/300/1000초</h2>
+  <p class="sub">현재 배포 설정(default env), conda env=ogc2025, conc 2. 데이터 <span class="mono">results/capture/{final100,final300,final1000}</span>.</p>
+  <div class="cards">
+    <div class="card"><div class="lab">총 obj @100s</div><div class="big">3,368,728</div></div>
+    <div class="card"><div class="lab">@300s</div><div class="big gain">2,554,401</div><div class="small">−24%</div></div>
+    <div class="card"><div class="lab">@1000s</div><div class="big gain">1,913,231</div><div class="small">−43%</div></div>
+    <div class="card"><div class="lab">feasible / −1</div><div class="big">20·20·20 / 0</div></div>
+  </div>
+  <table>
+    <thead><tr><th>인스턴스</th><th>n</th><th>z1@100</th><th>obj@100</th><th>z1@300</th><th>obj@300</th><th>z1@1000</th><th>obj@1000</th><th>1000 vs 100</th></tr></thead>
+    <tbody>
+      <tr><td>prob_1</td><td>100</td><td class="z0">0</td><td>3,673</td><td class="z0">0</td><td>3,673</td><td class="z0">0</td><td>3,673</td><td class="flat">flat</td></tr>
+      <tr><td>prob_2</td><td>100</td><td class="z0">0</td><td>5,030</td><td class="z0">0</td><td>5,030</td><td class="z0">0</td><td>5,030</td><td class="flat">flat</td></tr>
+      <tr><td>prob_3</td><td>100</td><td class="z0">0</td><td>82,410</td><td class="z0">0</td><td>82,410</td><td class="z0">0</td><td>82,410</td><td class="flat">flat</td></tr>
+      <tr><td>prob_4</td><td>100</td><td class="zz">1</td><td>154,220</td><td class="z0">0</td><td>110,172</td><td class="z0">0</td><td>110,172</td><td class="gain">−29%</td></tr>
+      <tr><td>prob_5</td><td>150</td><td class="z0">0</td><td>105,924</td><td class="z0">0</td><td>96,822</td><td class="z0">0</td><td>96,822</td><td class="gain">−9%</td></tr>
+      <tr><td>prob_6</td><td>150</td><td class="z0">0</td><td>91,221</td><td class="z0">0</td><td>93,712</td><td class="z0">0</td><td>87,804</td><td class="gain">−4%</td></tr>
+      <tr><td>prob_7</td><td>150</td><td class="z0">0</td><td>117,158</td><td class="z0">0</td><td>115,604</td><td class="z0">0</td><td>115,604</td><td class="flat">−1%</td></tr>
+      <tr><td>prob_8</td><td>150</td><td class="z0">0</td><td>11,252</td><td class="z0">0</td><td>11,252</td><td class="z0">0</td><td>11,252</td><td class="flat">flat</td></tr>
+      <tr><td>prob_9</td><td>200</td><td class="z0">0</td><td>208,510</td><td class="z0">0</td><td>76,610</td><td class="z0">0</td><td>72,840</td><td class="gain">−65%</td></tr>
+      <tr><td>prob_10</td><td>200</td><td class="z0">0</td><td>100,604</td><td class="z0">0</td><td>80,059</td><td class="z0">0</td><td>80,059</td><td class="gain">−20%</td></tr>
+      <tr><td>prob_11</td><td>200</td><td class="zz">1</td><td>206,376</td><td class="zz">1</td><td>94,278</td><td class="z0">0</td><td>66,185</td><td class="gain">−68%</td></tr>
+      <tr><td>prob_12</td><td>200</td><td class="z0">0</td><td>207,074</td><td class="z0">0</td><td>129,724</td><td class="z0">0</td><td>99,064</td><td class="gain">−52%</td></tr>
+      <tr style="background:#1f1518"><td>prob_13 ⚠</td><td>250</td><td class="zz">1</td><td>245,705</td><td class="zz">10</td><td>330,342</td><td class="zz">10</td><td>330,342</td><td class="worse">+34%</td></tr>
+      <tr><td>prob_14</td><td>250</td><td class="zz">7</td><td>359,749</td><td class="z0">0</td><td>114,116</td><td class="z0">0</td><td>112,678</td><td class="gain">−69%</td></tr>
+      <tr><td>prob_15</td><td>250</td><td class="z0">0</td><td>137,484</td><td class="z0">0</td><td>37,814</td><td class="z0">0</td><td>37,814</td><td class="gain">−73%</td></tr>
+      <tr><td>prob_16</td><td>250</td><td class="z0">0</td><td>147,209</td><td class="z0">0</td><td>96,187</td><td class="z0">0</td><td>96,187</td><td class="gain">−35%</td></tr>
+      <tr><td>prob_17</td><td>300</td><td class="zz">1</td><td>213,946</td><td class="zz">1</td><td>182,223</td><td class="z0">0</td><td>125,412</td><td class="gain">−41%</td></tr>
+      <tr><td>prob_18</td><td>300</td><td class="zz">4</td><td>284,640</td><td class="z0">0</td><td>107,690</td><td class="z0">0</td><td>93,012</td><td class="gain">−67%</td></tr>
+      <tr><td>prob_19</td><td>300</td><td class="z0">0</td><td>95,960</td><td class="z0">0</td><td>93,113</td><td class="z0">0</td><td>76,472</td><td class="gain">−20%</td></tr>
+      <tr><td>prob_20</td><td>300</td><td class="zz">2</td><td>590,583</td><td class="zz">19</td><td>693,570</td><td class="zz">2</td><td>210,399</td><td class="gain">−64%</td></tr>
+      <tr class="totrow"><td>합계</td><td></td><td></td><td>3,368,728</td><td></td><td>2,554,401</td><td></td><td>1,913,231</td><td class="gain">−43%</td></tr>
+    </tbody>
+  </table>
+  <p class="small">z1 빨강=&gt;0, 회색=0. ⚠ prob_13: 긴 tl서 비단조로 z1=10 고착(tl=300·1000 ×3런 동일=결정적). 채점은 per-instance obj 순위 <code>R − nb</code> — <b>−1 회피</b>가 최우선(한 인스턴스 −1 = 평균 R/2 손실).</p>
+
+  <!-- ===== bottom line ===== -->
+  <h2><span class="n">5</span> 요약 &amp; 다음</h2>
+  <ul class="t">
+    <li><b>성숙도</b>: z1 해결(시간), z3 Pareto-floor, z2 가중치 미미, 전 구간 −1 0건. 시간 확장성 양호(−43%).</li>
+    <li><b>차기 1순위</b>: prob_13류 <b>비단조 후처리</b> — best-full-obj 유지(궤적 중 더 좋은 해 보존)로 prob_13 ~26% 개선, 일반 fix 가능성.</li>
+    <li><span class="pill p-no">막다른 길</span> CP-SAT 전역 z3 재배정(packing-blocked) · Front B 튜닝/best-of-N(노이즈) · 짧은-tl z3(raster z1-안전 대가) · best-of-two floor(감당·예측 불가).</li>
+  </ul>
+
+  <div class="foot">
+    산출물: 아카이브 <span class="mono">archive/2026-06-10-session/</span> · 번들 <span class="mono">submissions/v08-adaptive-raster-*.zip</span>(미제출) ·
+    점수표 재생성 <span class="mono">notes/_final_table.py</span> · 메모리 ogc2026-{adaptive-raster,z3-variance,shorttl-robustness}.
+    작업 영역 <span class="mono">src/myalgorithm.py·src/baseline_greedy.py</span>만, <span class="mono">utils.py·baseline/</span> 불가침. 평가서버 4코어·16GB·인터넷차단·tl 수분~30분.
+  </div>
+</div>
+</body>
+</html>

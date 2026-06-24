@@ -1,0 +1,93 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>OGC2026 알고리즘 3-way 비교: 원래 vs H1 vs H2</title>
+<style>
+:root{--bg:#0f1117;--card:#1a1d27;--ink:#e6e8ef;--mut:#9aa3b2;--line:#2b3040;
+--win:#34d399;--lose:#f87171;--acc:#60a5fa;--warn:#fbbf24;}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.6 -apple-system,"Segoe UI",sans-serif;padding:28px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:19px;margin:30px 0 10px;color:var(--acc)}
+.sub{color:var(--mut);margin-bottom:18px}
+.frame{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:16px 0}
+.lever{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0}
+.lever>div{flex:1;min-width:200px;background:#12151e;border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+.lever b{color:var(--warn)}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.col{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.col h3{margin:0 0 4px;font-size:17px}.col .tag{font-size:12px;color:var(--mut);margin-bottom:12px}
+.col.orig{border-top:3px solid var(--acc)}.col.h1{border-top:3px solid var(--warn)}.col.h2{border-top:3px solid var(--win)}
+.step{margin:9px 0;padding-left:14px;border-left:2px solid var(--line)}
+.step b{color:var(--ink)}.step span{color:var(--mut);font-size:13.5px}
+.pros{color:var(--win);font-size:13.5px;margin-top:8px}.cons{color:var(--lose);font-size:13.5px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:center}
+th{background:#12151e;color:var(--mut)}td.l{text-align:left}
+.w{color:var(--win);font-weight:600}.x{color:var(--lose);font-weight:600}
+.mut{color:var(--mut)}.k{color:var(--warn);font-weight:600}
+.note{background:#12151e;border-left:3px solid var(--warn);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:14px}
+code{background:#12151e;padding:1px 5px;border-radius:4px;color:#c7d2fe;font-size:13px}
+</style></head><body>
+
+<h1>OGC2026 — 알고리즘 3-way 비교</h1>
+<div class="sub">원래(production) vs H1(weight-adaptive 전역그리디) vs H2(toss+CP-SAT) · 2026-06-20 연구루프</div>
+
+<div class="frame">
+<h2 style="margin-top:0">공통 프레임 — 모든 솔버는 같은 3단계다</h2>
+<div style="text-align:center;font-size:16px;margin:6px 0 12px">
+배정(어느 베이) &nbsp;→&nbsp; 패킹(x,y,방향) &nbsp;→&nbsp; 타이밍(진입/퇴출)</div>
+<div class="lever">
+<div><b>Z2·Z3 = 배정만의 함수</b><br><span>부하불균형·선호는 어느 블록이 어느 베이냐로만 결정. 패킹·타이밍과 무관(정사영).</span></div>
+<div><b>Z1 = 타이밍의 함수</b><br><span>지연 = Σmax(0,퇴출−마감). 레이아웃 고정 시 CP-SAT가 1-D disjunctive로 최적해를 푼다.</span></div>
+<div><b>패킹(x,y,o) = 거의 중립</b><br><span>격리+동일 CP-SAT 타이밍 검증: v2가 더 조밀(interlock↑)해도 z1 wash. 패킹은 레버 아님.</span></div>
+</div>
+<div class="note">⇒ 세 솔버의 진짜 차이는 <b>배정의 z1↔z3 trade-off</b>와 <b>z1 추정 정확도</b>다. 패킹은 어느 쪽이든 비슷.</div>
+</div>
+
+<h2>알고리즘별 상세</h2>
+<div class="cols">
+
+<div class="col orig"><h3>원래 (production)</h3><div class="tag">myalgorithm.algorithm · gassign-first(T≥200)</div>
+<div class="step"><b>① 배정</b> <span>CP-SAT z1-aware 마스터(gassign). <b>z1을 직접 최적화</b>하며 베이 배정.</span></div>
+<div class="step"><b>② 패킹</b> <span>fastfloor 크레인-aware bottom-left. time-first(진입=R 후 위치탐색), <b>폴리곤-래스터 충돌 + 크레인 j≥k</b>. (AABB 아님)</span></div>
+<div class="step"><b>③ 타이밍</b> <span><code>_cpsat_bay_timing_verified</code> — 고정 레이아웃 위 per-bay 지각 <b>최적</b> 재타이밍.</span></div>
+<div class="step"><b>+</b> <span>box best-of, per-bay polish, never −1.</span></div>
+<div class="pros">강점: 성숙·검증됨, z1-aware 배정, 최적 타이밍, 경쟁자 격파(set2).</div>
+<div class="cons">약점: z1 위해 <b>분산 → z3 큼</b>(prob_38 z3=8080).</div>
+</div>
+
+<div class="col h1"><h3>H1 (weight-adaptive 전역그리디)</h3><div class="tag">global_cpsat.py</div>
+<div class="step"><b>① 배정</b> <span><b>1-pass 전역그리디</b>: 각 블록(EDD)을 <code>w1·tardy_est + w2·Δz2 + w3·Δz3</code> 최소 베이에. tardy_est=area-time 혼잡 추정(weight-adaptive, CW 없음).</span></div>
+<div class="step"><b>② 패킹</b> <span>v2 폴리곤 패킹(비트맵+크레인+exact).</span></div>
+<div class="step"><b>③ 타이밍</b> <span>원래의 CP-SAT 타이밍 오라클 (동일).</span></div>
+<div class="pros">강점: <b>z3 압살</b>(선호 베이 적극 배정). 진짜 w 반영.</div>
+<div class="cons">약점: tardy_est가 <b>crude proxy</b> → 작은/저-w1 인스턴스서 z1 오추정 → 과적(z1·z2↑). 승 1/4.</div>
+</div>
+
+<div class="col h2"><h3>H2 (toss + 실제 z1 + CP-SAT)</h3><div class="tag">solve_official.py · 검증중</div>
+<div class="step"><b>① 배정</b> <span>everyone-preferred 시작 → <b>toss 국소탐색</b>: 블록을 베이 간 이동해 <code>w1·z1 + w2·z2 + w3·z3</code> 최소화. z1 = <b>실제 per-bay 패킹 지각</b>(proxy 아님), 4코어 병렬 평가.</span></div>
+<div class="step"><b>② 패킹</b> <span>v2 폴리곤 패킹 (H1과 동일).</span></div>
+<div class="step"><b>③ 타이밍</b> <span>CP-SAT 타이밍 오라클 (동일).</span></div>
+<div class="pros">강점: <b>실제 z1 평가</b>로 H1의 약점(crude proxy) 교정 + z3 toss + 최적 타이밍.</div>
+<div class="cons">약점: toss가 비싸다(이동마다 재패킹). 결과 대기중(bvpo6wnl0).</div>
+</div>
+</div>
+
+<h2>데이터 (공식 obj, @200s)</h2>
+<table>
+<tr><th>인스턴스</th><th>w1/w2/w3</th><th>원래 obj</th><th>H1 obj</th><th>H1 결과</th><th>z3: 원래→H1</th></tr>
+<tr><td>prob_38</td><td>13333/2/300</td><td>91.1M</td><td class="w">89.5M</td><td class="w">승 +1.8%</td><td>8080 → <b>3816</b></td></tr>
+<tr><td>prob_37</td><td>3333/4/600</td><td>8.58M</td><td class="x">10.80M</td><td class="x">패 −25.9%</td><td>2921 → 687</td></tr>
+<tr><td>prob_25</td><td>667/1/20</td><td>0.55M</td><td class="x">0.82M</td><td class="x">패 −48.5%</td><td>3642 → 1284</td></tr>
+<tr><td>prob_40</td><td>667/1/13</td><td>4.19M</td><td class="x">4.39M</td><td class="x">패 −4.6%</td><td>12258 → 7816</td></tr>
+</table>
+<div class="note">H1 패턴: <b>z3는 모든 인스턴스서 우리가 압승</b>(배정 레버 작동). 지는 건 전부 <b>우리 z1이 더 나쁨</b> — crude tardy_est가 z1을 못 잡음. H2는 실제 z1로 이걸 교정하는 가설. (H2 수치 갱신 예정)</div>
+
+<h2>핵심 종합</h2>
+<div class="frame">
+<div class="step"><b>1. 패킹은 레버가 아니다.</b> <span>원래도 폴리곤-aware. v2가 더 조밀해도 같은 CP-SAT 타이밍 하에서 z1 wash. → 셋 다 패킹은 비슷.</span></div>
+<div class="step"><b>2. CP-SAT 타이밍 = z1 레버.</b> <span>셋 다 동일하게 사용. 고정 레이아웃 위 지각 최적.</span></div>
+<div class="step"><b>3. 진짜 승부처 = 배정.</b> <span>원래는 z1 위해 분산→z3 희생. H1/H2는 z3를 살리고(선호 배정) z1은 CP-SAT에 맡김. <b>관건 = 배정 단계의 z1 추정 정확도</b>: H1=crude(약함), H2=실제(정확 기대).</span></div>
+<div class="step"><b>4. weight-adaptive 필수.</b> <span>w1이 667~29.6K로 다양 → 배정의 z1↔z3 저울질이 인스턴스 w를 봐야. H1은 그렇게 설계(자동 적응), H2는 실제 obj로 자동 적응.</span></div>
+</div>
+<div class="sub">파일: <code>global_cpsat.py</code>(H1) · <code>solve_official.py</code>(H2) · <code>RESEARCH-LOG.md</code>(원장) · 측정=공식 <code>../src/utils.check_feasibility</code></div>
+
+</body></html>

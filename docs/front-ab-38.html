@@ -1,0 +1,44 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>prob_38 frontmove A/B</title><style>
+ body{background:#0d1320;color:#d6deee;font:14px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:32px}
+ .wrap{max-width:980px;margin:0 auto} h1{font-size:22px;margin:0 0 4px}
+ h2{font-size:16px;color:#9fb0cc;margin:24px 0 10px;border-bottom:1px solid #23304a;padding-bottom:6px}
+ .sub{color:#7e8aa3;margin-bottom:14px} table{width:100%;border-collapse:collapse}
+ th,td{padding:7px 10px;border-bottom:1px solid #1c2740;text-align:left}
+ th{color:#7e8aa3;font-size:12px} td.r{text-align:right;font-variant-numeric:tabular-nums}
+ .b,td.b{font-weight:700;color:#36d17a}
+ .panel{background:#141d2e;border:1px solid #23304a;border-radius:10px;padding:16px}
+ .verdict{border-radius:10px;padding:14px 18px;margin:12px 0;font-size:15px}
+ .win{background:#13241c;border:1px solid #2c5} .lose{background:#241616;border:1px solid #a44}
+ .verdict b{font-size:18px} code{background:#1c2740;padding:1px 6px;border-radius:4px;color:#9fd}
+</style></head><body><div class="wrap">
+<h1>prob_38 — frontmove A/B (루프 구조, 같은 고정 초기해)</h1>
+<div class="sub">A = no-front · B = +frontmove(K16·ts4·bud50, 라운드 끝) · 통합(순수-t+moveall+듀얼윈도우+move/swap) · TL=900s · 고정 v2 출발해</div>
+
+<div class="verdict lose">
+✗ +frontmove 최종 obj = <b>55,344,617</b> vs no-front <b>54,600,593</b>
+(+744,024 악화).
+가설검증 → frontmove 자체 Δ=0; <b>다른 스텝 합계 Δ: A 6,789,089 → B 6,045,065</b>
+(-744,024 = front가 못 키움).
+</div>
+
+<h2>요약</h2>
+<div class="panel"><table>
+<tr><th>지표</th><th class="r">A: no-front</th><th class="r" style="border-left:1px solid #2a3a5a">B: +frontmove</th></tr>
+<tr><td>최종 obj</td><td class="r" class=b>54,600,593</td><td class="r" style="border-left:1px solid #2a3a5a">55,344,617</td></tr>
+<tr><td>z1</td><td class="r" class=b>3,955</td><td class="r" style="border-left:1px solid #2a3a5a">4,021</td></tr>
+<tr><td>z3</td><td class="r">6,214</td><td class="r" class=b style="border-left:1px solid #2a3a5a">5,769</td></tr>
+<tr><td>후처리 총 Δobj</td><td class="r" class=b>6,789,089</td><td class="r" style="border-left:1px solid #2a3a5a">6,045,065</td></tr>
+<tr><td>다른 스텝 Δobj(front 제외)</td><td class="r" class=b>6,789,089</td><td class="r" style="border-left:1px solid #2a3a5a">6,045,065</td></tr>
+<tr><td>스텝 수</td><td class="r" class=b>553</td><td class="r" style="border-left:1px solid #2a3a5a">533</td></tr>
+</table></div>
+
+<h2>스텝별 Δobj — A vs B (가설: B의 다른 스텝이 더 큰가?)</h2>
+<div class="panel"><table>
+<tr><th>스텝</th><th class="r">A 호출/채택</th><th class="r">A Δobj</th>
+<th class="r" style="border-left:1px solid #2a3a5a">B 호출/채택</th><th class="r">B Δobj</th><th class="r">B−A boost</th></tr>
+<tr><td>순수-t</td><td class="r">6/2</td><td class="r">173,329</td><td class="r" style="border-left:1px solid #2a3a5a">6/1</td><td class="r">53,332</td><td class="r" style="color:#e0734d;font-weight:700">-119,997</td></tr><tr><td>C3 cross-bay</td><td class="r">308/16</td><td class="r">1,691,547</td><td class="r" style="border-left:1px solid #2a3a5a">272/11</td><td class="r">1,207,734</td><td class="r" style="color:#e0734d;font-weight:700">-483,813</td></tr><tr><td>x-area(면적)</td><td class="r">5/4</td><td class="r">1,639,959</td><td class="r" style="border-left:1px solid #2a3a5a">3/3</td><td class="r">1,773,289</td><td class="r" style="color:#6ee7a0;font-weight:700">+133,330</td></tr><tr><td>x-time(시간)</td><td class="r">4/3</td><td class="r">893,311</td><td class="r" style="border-left:1px solid #2a3a5a">3/3</td><td class="r">439,989</td><td class="r" style="color:#e0734d;font-weight:700">-453,322</td></tr><tr><td>y-area</td><td class="r">4/3</td><td class="r">1,933,285</td><td class="r" style="border-left:1px solid #2a3a5a">3/3</td><td class="r">1,799,955</td><td class="r" style="color:#e0734d;font-weight:700">-133,330</td></tr><tr><td>y-time</td><td class="r">4/0</td><td class="r">0</td><td class="r" style="border-left:1px solid #2a3a5a">3/2</td><td class="r">93,331</td><td class="r" style="color:#6ee7a0;font-weight:700">+93,331</td></tr><tr><td>o-area</td><td class="r">4/2</td><td class="r">399,990</td><td class="r" style="border-left:1px solid #2a3a5a">3/1</td><td class="r">159,996</td><td class="r" style="color:#e0734d;font-weight:700">-239,994</td></tr><tr><td>z3 move</td><td class="r">110/2</td><td class="r">57,668</td><td class="r" style="border-left:1px solid #2a3a5a">106/1</td><td class="r">175,819</td><td class="r" style="color:#6ee7a0;font-weight:700">+118,151</td></tr><tr><td>z3 swap</td><td class="r">108/0</td><td class="r">0</td><td class="r" style="border-left:1px solid #2a3a5a">105/1</td><td class="r">167,809</td><td class="r" style="color:#6ee7a0;font-weight:700">+167,809</td></tr>
+</table></div>
+<p class="sub" style="margin-top:18px">boost &gt; 0(초록) = frontmove가 그 스텝의 실현 Δobj를 키움(구조 흔들기 효과). 빨강 = 줄임(시간 강탈).</p>
+<p class="sub">생성: <code>_batch_front.py</code> → <code>brief38_nofront/front.json</code> → <code>_render_front_ab.py</code>.</p>
+</div></body></html>

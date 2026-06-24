@@ -1,0 +1,4 @@
+feasspill: obj=233202 z1=10 z2=4137 z3=199 wall=261.2
+[saved] _fs_members_prob_13.json
+legacy-realize (same assign): obj=1312292 z1=68 z2=4137 z3=199 wall=6.0
+  target: z1<=3 beats legacy(113500); z1=0 -> ~43K beats comp(71823)

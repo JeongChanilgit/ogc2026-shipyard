@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OGC 2026 알고리즘과 결과 해설</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d8dee8;
+      --paper: #ffffff;
+      --soft: #f6f8fb;
+      --blue: #2563eb;
+      --green: #0f8a5f;
+      --amber: #b7791f;
+      --red: #c2413a;
+      --teal: #0e7490;
+      --violet: #6d5bd0;
+      --navy: #22304a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f3f6fa;
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+      line-height: 1.62;
+    }
+
+    header {
+      background: #132238;
+      color: white;
+      padding: 54px 28px 34px;
+      border-bottom: 5px solid #2da6a0;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #9bd8d4;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 880px;
+      margin: 18px 0 0;
+      color: #dbe7f5;
+      font-size: 18px;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+
+    nav .wrap {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 20px;
+    }
+
+    nav a {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      color: var(--navy);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 650;
+      border-radius: 6px;
+    }
+
+    nav a:hover { background: #e8eef7; }
+
+    main {
+      padding: 28px 20px 70px;
+    }
+
+    section {
+      max-width: 1180px;
+      margin: 0 auto 28px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 28px;
+      line-height: 1.22;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 10px 0; }
+
+    code, .mono {
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      background: #eef2f7;
+      padding: 1px 5px;
+      border-radius: 4px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfcfe;
+    }
+
+    .metric {
+      border-left: 5px solid var(--blue);
+    }
+
+    .metric.good { border-left-color: var(--green); }
+    .metric.warn { border-left-color: var(--amber); }
+    .metric.bad { border-left-color: var(--red); }
+
+    .metric .num {
+      display: block;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.05;
+    }
+
+    .metric .label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin: 18px 0;
+    }
+
+    .flow .step {
+      border: 1px solid var(--line);
+      background: #f9fbff;
+      border-top: 5px solid var(--teal);
+      border-radius: 8px;
+      padding: 13px;
+      min-height: 126px;
+    }
+
+    .step b {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--navy);
+    }
+
+    .tagrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin: 10px 0;
+    }
+
+    .tag {
+      border: 1px solid #cfd8e6;
+      border-radius: 999px;
+      padding: 3px 9px;
+      background: #f8fafc;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .note {
+      border-left: 5px solid var(--amber);
+      background: #fff8e7;
+      padding: 13px 15px;
+      border-radius: 6px;
+      margin: 14px 0;
+    }
+
+    .ok {
+      border-left: 5px solid var(--green);
+      background: #edf9f3;
+      padding: 13px 15px;
+      border-radius: 6px;
+      margin: 14px 0;
+    }
+
+    .danger {
+      border-left: 5px solid var(--red);
+      background: #fff1f1;
+      padding: 13px 15px;
+      border-radius: 6px;
+      margin: 14px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    th {
+      background: #edf2f8;
+      color: #253044;
+      font-weight: 750;
+      position: sticky;
+      top: 45px;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+
+    .scroll {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .scroll table { margin: 0; }
+
+    .bar {
+      width: 100%;
+      height: 12px;
+      background: #e5eaf2;
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 120px;
+    }
+
+    .bar > i {
+      display: block;
+      height: 100%;
+      background: var(--green);
+    }
+
+    .bar.neg > i { background: var(--red); }
+    .small { color: var(--muted); font-size: 13px; }
+
+    .formula {
+      margin: 14px 0;
+      padding: 15px;
+      background: #101828;
+      color: #eef7ff;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      white-space: pre;
+      line-height: 1.45;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      margin: 12px 0;
+      padding: 12px 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 750;
+      color: var(--navy);
+    }
+
+    ul { padding-left: 22px; }
+    li { margin: 6px 0; }
+    li { overflow-wrap: anywhere; }
+
+    footer {
+      color: #667085;
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 880px) {
+      header { padding: 38px 20px 28px; }
+      section { padding: 20px; }
+      .grid.cols-2, .grid.cols-3, .grid.cols-4, .flow {
+        grid-template-columns: 1fr;
+      }
+      th { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">OGC 2026 · The Grand Shipyard Puzzle</p>
+      <h1>우리 알고리즘과 실험 결과 한 번에 이해하기</h1>
+      <p class="subtitle">
+        이 문서는 <span class="mono">C:\claude-develop\OGC2026</span> 작업공간의 코드와 결과 파일을 바탕으로,
+        최적화 배경이 적은 컴퓨터공학 학부생도 따라올 수 있게 문제, 알고리즘, 성능, 남은 리스크를 설명한다.
+      </p>
+    </div>
+  </header>
+
+  <nav>
+    <div class="wrap">
+      <a href="#problem">문제 직관</a>
+      <a href="#objective">점수식</a>
+      <a href="#algorithm">알고리즘</a>
+      <a href="#concepts">최적화 개념</a>
+      <a href="#implementation">구현 포인트</a>
+      <a href="#results">결과</a>
+      <a href="#risks">리스크</a>
+      <a href="#sources">근거 파일</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="problem">
+      <h2>1. 이 문제는 무엇인가?</h2>
+      <p>
+        조선소에는 여러 개의 작업장인 <b>베이</b>가 있고, 배를 만들 때 쓰는 여러 <b>블록</b>을
+        베이에 넣었다가 일정 시간이 지난 뒤 빼야 한다. 블록은 단순한 직사각형이 아니라 층이 있는
+        다각형 모양이다. 그래서 “언제 넣을지”만 정하는 문제가 아니라 “어느 베이에, 어떤 방향으로,
+        어디에 놓고, 언제 넣고, 언제 뺄지”를 동시에 정해야 한다.
+      </p>
+
+      <div class="grid cols-3">
+        <div class="card">
+          <h3>공간 문제</h3>
+          <p>같은 베이에 동시에 있는 블록끼리는 같은 높이 층에서 겹치면 안 된다. 블록이 다각형이라 단순한 박스 충돌보다 어렵다.</p>
+        </div>
+        <div class="card">
+          <h3>시간 문제</h3>
+          <p>각 블록은 release time 이후에 들어갈 수 있고, processing time만큼 머문 뒤 due date 전에 나가면 좋다.</p>
+        </div>
+        <div class="card">
+          <h3>크레인 문제</h3>
+          <p>블록을 넣고 뺄 때 위에서 수직으로 내려오는 길이 막히면 안 된다. 이 제약이 가장 실수하기 쉽다.</p>
+        </div>
+      </div>
+
+      <div class="note">
+        CS식으로 보면 입력 JSON을 받아서, 모든 블록에 대해 <span class="mono">(bay, x, y, orientation, entry, exit)</span>를 정하는
+        매우 큰 조합 탐색 문제다. 완전탐색은 사실상 불가능하므로 좋은 휴리스틱과 검증 장치가 필요하다.
+      </div>
+    </section>
+
+    <section id="objective">
+      <h2>2. 점수식: 무엇을 최소화하나?</h2>
+      <p>
+        공식 목적함수는 세 항의 가중합이다. 낮을수록 좋다.
+      </p>
+      <div class="formula">objective = w1 · Z1 + w2 · Z2 + w3 · Z3
+
+Z1 = 전체 지연 시간 합
+Z2 = 베이별 작업부하 불균형
+Z3 = 선호하지 않는 베이에 배정한 페널티</div>
+
+      <div class="grid cols-3">
+        <div class="card metric">
+          <span class="num">Z1</span>
+          <span class="label">tardiness, 마감 지연</span>
+          <p>블록이 due date보다 늦게 나가면 그만큼 벌점. w1이 크면 “무조건 늦지 않게”가 최우선이다.</p>
+        </div>
+        <div class="card metric">
+          <span class="num">Z2</span>
+          <span class="label">workload imbalance, 부하 불균형</span>
+          <p>한 베이에 일이 몰리면 벌점. 큰 베이는 더 많이 받아도 되도록 면적 보정이 들어간다.</p>
+        </div>
+        <div class="card metric">
+          <span class="num">Z3</span>
+          <span class="label">preference deviation, 선호도 손실</span>
+          <p>각 블록은 선호 베이가 있다. 최고 선호 베이가 아닌 곳에 넣으면 차이만큼 벌점이다.</p>
+        </div>
+      </div>
+
+      <p>
+        중요한 관찰은 <b>Z2와 Z3는 위치나 시간과 무관하고, 거의 전적으로 block-to-bay 배정만 보면 계산된다</b>는 점이다.
+        반대로 Z1과 feasibility는 실제 배치와 시간표에 강하게 묶인다. 우리 알고리즘은 이 구조를 적극 이용한다.
+      </p>
+    </section>
+
+    <section id="algorithm">
+      <h2>3. 우리 알고리즘의 큰 그림</h2>
+      <p>
+        현재 제출 엔트리는 <span class="mono">src/myalgorithm.py</span>의
+        <span class="mono">algorithm(prob_info, timelimit)</span>이다. 한 문장으로 요약하면
+        <b>“항상 feasible한 바닥해를 먼저 확보하고, 그 위에서 베이 배정 후보를 여러 개 만들고, 각 후보를 베이별로 디코딩한 뒤,
+        공식 검증기를 통과한 가장 좋은 해만 반환하는 anytime 휴리스틱”</b>이다.
+      </p>
+
+      <div class="flow" aria-label="algorithm flow">
+        <div class="step">
+          <b>1. 안전 바닥해</b>
+          <span>trivial 직렬 배치와 baseline greedy를 후보로 확보한다. 목적은 -1 회피다.</span>
+        </div>
+        <div class="step">
+          <b>2. 배정 시드</b>
+          <span>pref, balanced, tardy, CP-SAT 같은 block-to-bay 배정 후보를 만든다.</span>
+        </div>
+        <div class="step">
+          <b>3. 베이별 디코딩</b>
+          <span>각 베이 안에서 순서, 위치, 방향, entry/exit를 greedily 만든다.</span>
+        </div>
+        <div class="step">
+          <b>4. 국소 탐색</b>
+          <span>shift, swap, destroy/repair로 배정을 조금씩 바꿔 본다.</span>
+        </div>
+        <div class="step">
+          <b>5. 검증 게이트</b>
+          <span>공식 <span class="mono">check_feasibility</span>를 통과하고 바닥해보다 좋은 후보만 반환한다.</span>
+        </div>
+      </div>
+
+      <h3>왜 이렇게 나누나?</h3>
+      <p>
+        베이 배정만 정하면 Z2/Z3는 빠르게 계산할 수 있다. 그리고 베이들은 물리적으로 독립된 작업장이므로,
+        한 베이 안의 배치 문제를 따로 풀 수 있다. 즉 거대한 문제 하나를
+        <b>배정 문제 + 베이별 배치/스케줄 문제</b>로 나눠서 계산량을 줄인다.
+      </p>
+
+      <div class="ok">
+        설계 원칙은 “좋은 해를 찾는 것”보다 먼저 “나쁜 상황에서도 반드시 제출 가능한 해를 내는 것”이다.
+        대회 점수식에서 infeasible, timeout, crash는 곧 -1이므로, 안정성이 성능의 일부다.
+      </div>
+    </section>
+
+    <section id="concepts">
+      <h2>4. 최적화 개념을 CS식으로 풀어보기</h2>
+
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>휴리스틱</h3>
+          <p>
+            항상 최적임을 증명하지는 못하지만 빠르게 괜찮은 답을 만드는 규칙이다.
+            예를 들어 “마감일이 빠른 블록부터 배치하자”는 EDD 규칙이 휴리스틱이다.
+          </p>
+        </div>
+        <div class="card">
+          <h3>CP-SAT</h3>
+          <p>
+            OR-Tools의 제약 프로그래밍 솔버다. 여기서는 전체 공간 배치까지 풀지 않고,
+            Z2/Z3에 강한 <b>베이 배정 시드</b>를 만드는 데만 쓴다.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Local Search</h3>
+          <p>
+            현재 해 주변의 작은 변경을 시도한다. 우리 코드는 블록 하나를 다른 베이로 옮기는 shift,
+            두 블록의 베이를 바꾸는 swap, 여러 블록을 빼고 다시 넣는 destroy/repair를 쓴다.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Simulated Annealing</h3>
+          <p>
+            가끔은 점수가 나빠지는 이동도 허용해서 지역 최적점에 갇히는 것을 피한다.
+            시간이 지날수록 그런 모험을 줄이는 방식이다.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Incumbent</h3>
+          <p>
+            지금까지 찾은 가장 좋은 feasible 해다. anytime 알고리즘은 언제 끊겨도 이 incumbent를 반환할 수 있어야 한다.
+          </p>
+        </div>
+        <div class="card">
+          <h3>Feasibility Gate</h3>
+          <p>
+            빠른 내부 점수 계산만 믿지 않고, 마지막에는 공식 검증기를 통과한 해만 반환한다.
+            이 덕분에 aggressive한 후보 생성과 안전성을 같이 가져간다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="implementation">
+      <h2>5. 구현에서 중요한 장치들</h2>
+
+      <h3>5.1 완전한 크레인 안전 슬롯 탐색</h3>
+      <p>
+        baseline의 시간 슬롯 탐색은 새 블록이 들어갈 때 “새 블록이 기존 블록에 막히는가”는 확인하지만,
+        나중에 들어온 새 블록이 이미 배치된 블록의 과거 entry/exit 순간을 막는 <b>retroactive obstruction</b>을 놓칠 수 있다.
+        우리 코드는 <span class="mono">_find_slot_crane_safe</span>에서 양방향으로 검사한다.
+      </p>
+      <p>
+        쉽게 말하면 “B가 A보다 나중에 들어왔더라도, A가 들어오던 순간에 B가 이미 있었다고 가정하면 A의 크레인 경로가 막히는가?”까지
+        확인한다. 이 차이가 congested tardiness 인스턴스에서 feasibility와 Z1 개선을 크게 만든 핵심이다.
+      </p>
+
+      <h3>5.2 Budget-bounded decode</h3>
+      <p>
+        어떤 배정 시드는 너무 한 베이에 몰려 디코딩이 오래 걸린다. 이전 방식처럼 그냥 skip하면 좋은 후보를 놓칠 수 있다.
+        현재 코드는 시간이 부족하면 남은 블록을 빈 시간창에 직렬로 넣어 <b>끝까지 feasible 후보를 완성</b>한다.
+      </p>
+
+      <h3>5.3 Seed banking</h3>
+      <p>
+        CP-SAT나 balanced seed를 디코딩한 직후의 해가 이미 좋고 feasible일 수 있다. 그런데 local search가 그 배치를 변형하다가
+        같은 빠른 점수지만 실제 크레인 제약은 깨진 layout을 만들 수 있다. 그래서 좋은 seed 결과를 search 전에 후보 목록에 따로 저장한다.
+      </p>
+
+      <h3>5.4 Regime router</h3>
+      <p>
+        <span class="mono">src/regime.py</span>는 가중치 비율, packing density, 블록 수를 보고
+        decomposition, tossup, escape 같은 탐색 모드를 고른다. 단, 시간 안전장치는 건드리지 않도록 설계되어 있다.
+      </p>
+
+      <h3>5.5 꺼져 있는 실험 기능</h3>
+      <p>
+        <span class="mono">OGC_PARALLEL_MS</span>, <span class="mono">OGC_M4_CUT</span>,
+        <span class="mono">OGC_FAST_CRANE</span> 같은 기능은 코드에 있지만 기본값은 꺼져 있다.
+        로그 분석상 기본 문제들에서는 이득이 작거나 오히려 시간·품질 trade-off가 나빠졌기 때문이다.
+      </p>
+    </section>
+
+    <section id="results">
+      <h2>6. 결과 분석</h2>
+      <p>
+        아래 집계는 작업공간의 최신 벤치 CSV 3개
+        <span class="mono">bench_20260530_131543.csv</span>,
+        <span class="mono">bench_20260530_130950.csv</span>,
+        <span class="mono">bench_20260530_132538.csv</span>를 합친 것이다.
+        이 묶음은 gen 17개, stress 4개, tard/clust 24개, 총 45개 인스턴스를 포함한다.
+      </p>
+
+      <div class="grid cols-4">
+        <div class="card metric good">
+          <span class="num">45 / 45</span>
+          <span class="label">우리 알고리즘 feasible</span>
+        </div>
+        <div class="card metric good">
+          <span class="num">38</span>
+          <span class="label">baseline 대비 개선 인스턴스</span>
+        </div>
+        <div class="card metric">
+          <span class="num">87.9%</span>
+          <span class="label">개선율 중앙값</span>
+        </div>
+        <div class="card metric warn">
+          <span class="num">2</span>
+          <span class="label">최신 CSV상 회귀/시간위험 인스턴스</span>
+        </div>
+      </div>
+
+      <h3>그룹별 요약</h3>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>그룹</th>
+              <th>개수</th>
+              <th>feasible</th>
+              <th>개선/동률/회귀</th>
+              <th>평균 개선율</th>
+              <th>중앙 개선율</th>
+              <th>우리 평균 시간</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>gen</td>
+              <td>17</td>
+              <td>17/17</td>
+              <td>12 / 4 / 1</td>
+              <td>53.8%</td>
+              <td>73.4%</td>
+              <td>31.3s</td>
+            </tr>
+            <tr>
+              <td>stress</td>
+              <td>4</td>
+              <td>4/4</td>
+              <td>2 / 1 / 1</td>
+              <td>20.5%</td>
+              <td>46.3%</td>
+              <td>50.7s</td>
+            </tr>
+            <tr>
+              <td>tard/clust</td>
+              <td>24</td>
+              <td>24/24</td>
+              <td>24 / 0 / 0</td>
+              <td>83.8%</td>
+              <td>88.0%</td>
+              <td>47.1s</td>
+            </tr>
+            <tr>
+              <td><b>전체</b></td>
+              <td><b>45</b></td>
+              <td><b>45/45</b></td>
+              <td><b>38 / 5 / 2</b></td>
+              <td><b>66.9%</b></td>
+              <td><b>87.9%</b></td>
+              <td><b>42.2s</b></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>가장 큰 개선 사례</h3>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>인스턴스</th>
+              <th>baseline obj</th>
+              <th>ours obj</th>
+              <th>개선율</th>
+              <th>해석</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>stress_n60_w1_tight_s201</td>
+              <td>6,205.2</td>
+              <td>16.8</td>
+              <td>99.7%</td>
+              <td>tight한 w1 계열에서 tardiness와 배정 균형을 동시에 크게 줄임.</td>
+            </tr>
+            <tr>
+              <td>clust_n50_m3_d55_rw20_s708</td>
+              <td>5,704.3</td>
+              <td>51.7</td>
+              <td>99.1%</td>
+              <td>clustered release에서 preference/balance 시드가 강하게 작동.</td>
+            </tr>
+            <tr>
+              <td>tard_n24_m2_d70_t0_s602</td>
+              <td>4,385.5</td>
+              <td>43.4</td>
+              <td>99.0%</td>
+              <td>베이 배정만 잘 잡아도 Z2/Z3가 크게 내려가는 사례.</td>
+            </tr>
+            <tr>
+              <td>gen_n10_tight_w2_s5</td>
+              <td>241,160.9</td>
+              <td>2,870.3</td>
+              <td>98.8%</td>
+              <td>w2 지배 인스턴스에서 CP-SAT/balanced 배정의 효과가 매우 큼.</td>
+            </tr>
+            <tr>
+              <td>gen_n120_tight_w1_s14</td>
+              <td>11,052.2</td>
+              <td>135.6</td>
+              <td>98.8%</td>
+              <td>큰 문제에서도 좋은 배정과 예산 제한 디코딩이 버팀.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>회귀 또는 시간 위험 사례</h3>
+      <div class="danger">
+        최신 CSV 묶음에는 60초 제한을 넘긴 실행이 2개 있다. 로컬 벤치 도구는 실제 평가 서버처럼 강제 kill을 하지 않으므로,
+        이 둘은 “feasible로 기록되었지만 제출 관점에서는 timeout 위험”으로 봐야 한다.
+      </div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>인스턴스</th>
+              <th>baseline obj</th>
+              <th>ours obj</th>
+              <th>개선율</th>
+              <th>우리 시간</th>
+              <th>가능한 원인</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>stress_n80_w3_tight_s202</td>
+              <td>106,030.7</td>
+              <td>223,112.7</td>
+              <td>-110.4%</td>
+              <td>77.1s</td>
+              <td>w3 지배에서는 “모두 최고 선호 베이에 몰기”가 답에 가까운데, 다른 시드가 시간을 먹고 baseline floor도 충분히 보호되지 못한 흔적.</td>
+            </tr>
+            <tr>
+              <td>gen_n120_loose_w3_s13</td>
+              <td>211,335.5</td>
+              <td>430,918.5</td>
+              <td>-103.9%</td>
+              <td>66.0s</td>
+              <td>w3 지배 대형 인스턴스에서 시간 초과성 실행. 이전 clean run에서는 동률 결과도 있어 재현성 점검 필요.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <details>
+        <summary>전체 인스턴스 요약 테이블 보기</summary>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>인스턴스</th>
+                <th>n</th>
+                <th>m</th>
+                <th>baseline</th>
+                <th>ours</th>
+                <th>개선율</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>gen_n10_loose_w1_s1</td><td>10</td><td>2</td><td>1,160.4</td><td>574.7</td><td>50.5%</td></tr>
+              <tr><td>gen_n10_loose_w2_s2</td><td>10</td><td>2</td><td>246,801.3</td><td>7,114.0</td><td>97.1%</td></tr>
+              <tr><td>gen_n10_loose_w3_s3</td><td>10</td><td>2</td><td>12,421.6</td><td>12,421.6</td><td>0.0%</td></tr>
+              <tr><td>gen_n10_tight_w1_s4</td><td>10</td><td>2</td><td>992.4</td><td>372.3</td><td>62.5%</td></tr>
+              <tr><td>gen_n10_tight_w2_s5</td><td>10</td><td>2</td><td>241,160.9</td><td>2,870.3</td><td>98.8%</td></tr>
+              <tr><td>gen_n120_loose_w1_s11</td><td>120</td><td>4</td><td>11,982.8</td><td>295.2</td><td>97.5%</td></tr>
+              <tr><td>gen_n120_loose_w2_s12</td><td>120</td><td>4</td><td>269,026.6</td><td>5,813.4</td><td>97.8%</td></tr>
+              <tr><td>gen_n120_loose_w3_s13</td><td>120</td><td>4</td><td>211,335.5</td><td>430,918.5</td><td>-103.9%</td></tr>
+              <tr><td>gen_n120_tight_w1_s14</td><td>120</td><td>4</td><td>11,052.2</td><td>135.6</td><td>98.8%</td></tr>
+              <tr><td>gen_n120_tight_w2_s15</td><td>120</td><td>4</td><td>251,746.1</td><td>4,512.1</td><td>98.2%</td></tr>
+              <tr><td>gen_n40_loose_w1_s16</td><td>40</td><td>2</td><td>3,911.4</td><td>1,727.5</td><td>55.8%</td></tr>
+              <tr><td>gen_n40_loose_w1_s6</td><td>40</td><td>3</td><td>5,595.7</td><td>1,490.0</td><td>73.4%</td></tr>
+              <tr><td>gen_n40_loose_w2_s7</td><td>40</td><td>3</td><td>147,178.4</td><td>2,817.1</td><td>98.1%</td></tr>
+              <tr><td>gen_n40_loose_w3_s17</td><td>40</td><td>4</td><td>57,066.6</td><td>57,066.6</td><td>0.0%</td></tr>
+              <tr><td>gen_n40_loose_w3_s8</td><td>40</td><td>3</td><td>61,472.7</td><td>61,472.7</td><td>0.0%</td></tr>
+              <tr><td>gen_n40_tight_w1_s9</td><td>40</td><td>3</td><td>4,788.0</td><td>454.5</td><td>90.5%</td></tr>
+              <tr><td>gen_n40_tight_w3_s10</td><td>40</td><td>3</td><td>73,330.4</td><td>73,330.4</td><td>0.0%</td></tr>
+              <tr><td>stress_n100_w1_tight_s204</td><td>100</td><td>3</td><td>10,822.9</td><td>10,822.9</td><td>0.0%</td></tr>
+              <tr><td>stress_n50_w2_tight_s203</td><td>50</td><td>2</td><td>65,723.1</td><td>4,817.6</td><td>92.7%</td></tr>
+              <tr><td>stress_n60_w1_tight_s201</td><td>60</td><td>2</td><td>6,205.2</td><td>16.8</td><td>99.7%</td></tr>
+              <tr><td>stress_n80_w3_tight_s202</td><td>80</td><td>3</td><td>106,030.7</td><td>223,112.7</td><td>-110.4%</td></tr>
+              <tr><td>clust_n20_m2_d50_rw10_s701</td><td>20</td><td>2</td><td>1,733.8</td><td>452.5</td><td>73.9%</td></tr>
+              <tr><td>clust_n24_m2_d45_rw8_s707</td><td>24</td><td>2</td><td>2,552.7</td><td>83.7</td><td>96.7%</td></tr>
+              <tr><td>clust_n24_m2_d55_rw12_s702</td><td>24</td><td>2</td><td>794.2</td><td>482.1</td><td>39.3%</td></tr>
+              <tr><td>clust_n30_m2_d50_rw15_s703</td><td>30</td><td>2</td><td>34,743.7</td><td>859.2</td><td>97.5%</td></tr>
+              <tr><td>clust_n30_m3_d55_rw12_s704</td><td>30</td><td>3</td><td>4,325.4</td><td>512.5</td><td>88.2%</td></tr>
+              <tr><td>clust_n40_m2_d55_rw20_s705</td><td>40</td><td>2</td><td>3,669.2</td><td>635.7</td><td>82.7%</td></tr>
+              <tr><td>clust_n40_m3_d50_rw15_s706</td><td>40</td><td>3</td><td>5,273.0</td><td>639.7</td><td>87.9%</td></tr>
+              <tr><td>clust_n50_m3_d55_rw20_s708</td><td>50</td><td>3</td><td>5,704.3</td><td>51.7</td><td>99.1%</td></tr>
+              <tr><td>tard_n20_m2_d55_t1_s607</td><td>20</td><td>2</td><td>1,523.7</td><td>269.5</td><td>82.3%</td></tr>
+              <tr><td>tard_n20_m2_d60_t0_s601</td><td>20</td><td>2</td><td>1,503.5</td><td>720.1</td><td>52.1%</td></tr>
+              <tr><td>tard_n24_m2_d70_t0_s602</td><td>24</td><td>2</td><td>4,385.5</td><td>43.4</td><td>99.0%</td></tr>
+              <tr><td>tard_n24_m2_d88_t0_s611</td><td>24</td><td>2</td><td>4,647.6</td><td>348.2</td><td>92.5%</td></tr>
+              <tr><td>tard_n24_m2_d96_t0_s616</td><td>24</td><td>2</td><td>855.9</td><td>249.8</td><td>70.8%</td></tr>
+              <tr><td>tard_n30_m2_d65_t0_s603</td><td>30</td><td>2</td><td>4,793.2</td><td>243.1</td><td>94.9%</td></tr>
+              <tr><td>tard_n30_m2_d92_t0_s612</td><td>30</td><td>2</td><td>2,933.5</td><td>1,352.2</td><td>53.9%</td></tr>
+              <tr><td>tard_n30_m3_d60_t0_s604</td><td>30</td><td>3</td><td>4,563.0</td><td>552.4</td><td>87.9%</td></tr>
+              <tr><td>tard_n30_m3_d88_t0_s613</td><td>30</td><td>3</td><td>4,499.8</td><td>998.4</td><td>77.8%</td></tr>
+              <tr><td>tard_n36_m3_d94_t0_s618</td><td>36</td><td>3</td><td>8,070.7</td><td>884.0</td><td>89.0%</td></tr>
+              <tr><td>tard_n40_m2_d70_t0_s605</td><td>40</td><td>2</td><td>3,964.2</td><td>176.8</td><td>95.5%</td></tr>
+              <tr><td>tard_n40_m2_d92_t0_s614</td><td>40</td><td>2</td><td>56,274.7</td><td>4,257.9</td><td>92.4%</td></tr>
+              <tr><td>tard_n40_m3_d65_t0_s606</td><td>40</td><td>3</td><td>4,738.6</td><td>788.3</td><td>83.4%</td></tr>
+              <tr><td>tard_n40_m3_d90_t0_s615</td><td>40</td><td>3</td><td>4,139.2</td><td>644.4</td><td>84.4%</td></tr>
+              <tr><td>tard_n50_m3_d60_t0_s608</td><td>50</td><td>3</td><td>5,051.1</td><td>298.0</td><td>94.1%</td></tr>
+              <tr><td>tard_n50_m3_d90_t0_s617</td><td>50</td><td>3</td><td>5,711.5</td><td>206.5</td><td>96.4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section id="risks">
+      <h2>7. 결론과 남은 리스크</h2>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>현재 강점</h3>
+          <ul>
+            <li>Feasibility를 최우선으로 설계했다. trivial floor, baseline floor, final gate가 모두 안전장치다.</li>
+            <li>Z2/Z3가 배정만으로 정해진다는 구조를 잘 이용한다.</li>
+            <li>w1/w2 또는 tardiness/imbalance 성격의 인스턴스에서 baseline 대비 큰 개선이 반복된다.</li>
+            <li>크레인 제약의 retroactive obstruction을 명시적으로 보완했다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>주의할 점</h3>
+          <ul>
+            <li>w3 지배 인스턴스에서는 단순 preference 몰아주기가 강한 경우가 있어, 복잡한 탐색이 손해일 수 있다.</li>
+            <li>로컬 벤치 일부는 60초를 넘겼다. 실제 서버에서는 timeout이 될 수 있으므로 hard wall-clock 재검증이 필요하다.</li>
+            <li>Local search는 많은 trace에서 추가 개선이 거의 없었다. CP-SAT/balanced seed가 이미 핵심이고 search는 보조에 가깝다.</li>
+            <li>fast crane path는 개별 디코딩은 빨라지지만 budget-decode의 직렬화 효과를 줄여 전체 점수를 악화시킨 실험이 있었다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note">
+        발표나 보고서에서는 “우리는 마법 같은 단일 알고리즘을 만든 것이 아니라, 문제 구조를 읽고 Z2/Z3 배정 문제와 Z1/feasibility 디코딩 문제로 나눴다”는 점을 강조하는 것이 좋다.
+        이 설명이 최적화 배경이 없는 청중에게 가장 설득력 있다.
+      </div>
+    </section>
+
+    <section id="sources">
+      <h2>8. 근거 파일</h2>
+      <ul>
+        <li><span class="mono">src/myalgorithm.py</span>: 제출 엔트리와 핵심 알고리즘.</li>
+        <li><span class="mono">src/baseline_greedy.py</span>: 공식 baseline 기반 greedy와 위치/시간 후보 생성.</li>
+        <li><span class="mono">src/regime.py</span>: 인스턴스 성격별 탐색 설정.</li>
+        <li><span class="mono">src/parallel_decode.py</span>: opt-in 4-core multi-start 실험 코드.</li>
+        <li><span class="mono">src/geom_kernel.py</span>: 보수적인 raster geometry prefilter.</li>
+        <li><span class="mono">results/bench_20260530_131543.csv</span>: gen 17개 최신 CSV.</li>
+        <li><span class="mono">results/bench_20260530_130950.csv</span>: stress 4개 최신 CSV.</li>
+        <li><span class="mono">results/bench_20260530_132538.csv</span>: tard/clust 24개 최신 CSV.</li>
+        <li><span class="mono">results/_final_regression.log</span>: pytest 40개 통과 기록.</li>
+        <li><span class="mono">submissions/v05-final-20260530-113903.meta.json</span>: 제출 zip 구성과 크기 메타데이터.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    Generated from local workspace analysis on 2026-05-30 KST.
+  </footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+{
+  "tag": "v-unified-augment-10of20",
+  "timestamp_kst": "20260614-120502",
+  "zip_filename": "v-unified-augment-10of20-20260614-120502.zip",
+  "zip_size_bytes": 198090,
+  "zip_sha256": "3d774e534e81a337e44744393469a6212dda11eb37e78ce0f31ceb9c420670ce",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 86456
+    },
+    {
+      "path": "fastfloor.py",
+      "bytes": 50164
+    },
+    {
+      "path": "geom_kernel.py",
+      "bytes": 4367
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 10447
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 400070
+    },
+    {
+      "path": "packer.py",
+      "bytes": 28694
+    },
+    {
+      "path": "parallel_decode.py",
+      "bytes": 26540
+    },
+    {
+      "path": "rebuild.py",
+      "bytes": 33642
+    },
+    {
+      "path": "regime.py",
+      "bytes": 18316
+    },
+    {
+      "path": "t5_candidates.py",
+      "bytes": 14565
+    },
+    {
+      "path": "uconstruct.py",
+      "bytes": 20066
+    },
+    {
+      "path": "z3race.py",
+      "bytes": 25155
+    }
+  ],
+  "note": "Unified constructive augment: full-20 paired x2 = 10/20 vs competitor (legacy 9/20). uconstruct+packer+rebuild bundled."
+}

@@ -1,0 +1,144 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>OGC 2026 — P0 개선 구현 결과</title>
+<style>
+ body{font-family:'Segoe UI',system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1c2733;line-height:1.6}
+ header{background:#0f2c44;color:#fff;padding:30px 40px}
+ header h1{margin:0 0 6px;font-size:24px} header p{margin:0;opacity:.85}
+ .wrap{max-width:1180px;margin:0 auto;padding:24px 28px 80px}
+ .verdict{font-size:18px;font-weight:700;background:#fff;border-left:6px solid #2e9e5b;padding:15px 18px;border-radius:6px;margin:14px 0 8px}
+ section{background:#fff;border-radius:10px;padding:20px 24px;margin:18px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+ section h2{margin:0 0 14px;font-size:18px;border-bottom:2px solid #eef1f4;padding-bottom:8px}
+ h3{font-size:15px;margin:14px 0 6px}
+ .kpis{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0}
+ .kpi{background:#fff;border:1px solid #eef1f4;border-radius:10px;padding:14px 18px;flex:1;min-width:130px}
+ .kpi .n{font-size:26px;font-weight:700} .kpi .l{color:#5a6b7b;font-size:12.5px}
+ .win .n{color:#2e9e5b} .bad .n{color:#c0392b}
+ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+ th,td{padding:7px 9px;border-bottom:1px solid #eef1f4;text-align:right}
+ th{background:#0f2c44;color:#fff} td.l,th.l{text-align:left}
+ td.flip{background:#e8f6ee;font-weight:700;color:#1e7a44}
+ td.imp{color:#2e9e5b} td.reg{color:#c0392b;font-weight:700}
+ .win-row{background:#fbfffc} .loss-row{background:#fff7f6}
+ code{background:#eef1f4;border-radius:4px;padding:1px 5px;font-size:12px}
+ .note{background:#fff8e6;border-left:5px solid #e0a800;padding:12px 16px;border-radius:6px;margin:10px 0}
+ .note.g{background:#e8f6ee;border-left-color:#2e9e5b} .note.r{background:#fdecea;border-left-color:#c0392b}
+ .tag{display:inline-block;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;color:#fff}
+ .tg{background:#2e9e5b} .tr{background:#c0392b} .ty{background:#e0a800}
+ ul{margin:6px 0}
+</style></head><body>
+<header><h1>OGC 2026 — P0 개선 구현 결과 (토론대로)</h1>
+<p>토론 P0 적용 · 신규 인스턴스 prob_1…20 · timelimit 60s · baseline / 수정전 / 수정후 비교</p></header>
+<div class="wrap">
+
+ <div class="verdict">핵심 발견: <b>대형 인스턴스 결과는 ±20× 양봉(bimodal) 코인플립</b> —
+  같은 코드·같은 입력이 "정상(~40–80M)" 또는 "폭발(~850–924M)"을 <b>비결정적으로</b> 낸다.
+  이 노이즈가 어떤 목적함수 튜닝보다 크다. 채택본은 <b>안전한 postprocess(절대 악화 없음)</b>뿐 —
+  나머지(force-place·예산컷·리저브)는 모두 노이즈에 묻혀 신뢰 못 함 → 미채택.</div>
+
+ <div class="note r"><b>비결정성 증거 (단독 실행, 평가서버에 가까움, 동일 코드):</b>
+  <ul style="margin:6px 0">
+   <li><b>prob_13</b>: 924M · 42M · 42M · 40M — 폭발 ↔ 정상 (23× 변동)</li>
+   <li><b>prob_14</b>: 853M · 853M · 78M — "78M 승"은 <b>3회 중 1회뿐</b>(운)</li>
+   <li><b>prob_15</b>: 655M · 36.7M · 32.6M — 18× 변동</li>
+  </ul>
+  원인: greedy <b>Phase-2 repair의 wall-clock 시간게이트</b>(<code>elapsed&gt;0.90·T → force-place</code>)가
+  타이밍 지터에 따라 force-place 블록 수를 바꿔, due-blind 강제배치가 Z1을 터뜨림(w1 지배 → obj 폭발).
+  → <b>1순위는 obj 최적화가 아니라 이 분산을 없애는 것</b>(결정적 greedy / multi-start / 폭발 감지+재시도).</div>
+
+ <div class="kpis">
+  <div class="kpi"><div class="n">20/20</div><div class="l">feasible (유지)</div></div>
+  <div class="kpi"><div class="n">±20×</div><div class="l">대형 obj 분산(노이즈)</div></div>
+  <div class="kpi win"><div class="n">0 risk</div><div class="l">postprocess (게이트, 악화불가)</div></div>
+  <div class="kpi bad"><div class="n">3개</div><div class="l">실험 미채택(노이즈/회귀)</div></div>
+ </div>
+ <div class="note"><b>스위트 1회 참고치</b>(동시실행 → 서버와 다름): feasible 20/20, R−nb 35→37,
+  prob_15·16 대패→승. 단 위 비결정성 때문에 <b>서버 재현 보장 없음</b> — 이 수치를 목표 달성으로 읽지 말 것.</div>
+
+ <section>
+  <h2>1. 무엇을 구현했나 (채택) — 검증된 후처리 확장</h2>
+  <div class="note g"><b>P0-B: <code>_postprocess_verified_solution</code>를 대형 인스턴스로 확장.</b>
+   기존 <code>n≤150</code> 게이트를 풀어, feasible 해에 <b>EDD left-shift 재스케줄</b>
+   (<code>_fixed_layout_reschedule</code>)을 250~300블록에도 적용. force-place로 먼 미래에
+   몰린 블록을 더 이른 crane-safe 슬롯으로 당겨 <b>Z1을 깎음</b>.</div>
+  <ul>
+   <li><b>안전성(핵심)</b>: 모든 채택은 <code>check_feasibility</code> 게이트 통과 + obj가
+       floor보다 낮을 때만(<code>consider</code>). → <b>설계상 floor보다 나빠질 수 없음</b>.</li>
+   <li><b>−1/초과 방어</b>: 재스케줄에 <code>deadline</code> 인자 추가 → n²/bays 크레인 탐색이
+       마감 넘으면 즉시 중단(None 반환). 호출부는 <code>pp_reserve = 2 + 3e-5·n²</code>만큼
+       여유 있을 때만 시작 + <code>pp_deadline = hard_stop − 2·check_cost</code>. → 큰 인스턴스에서도 벽시계 안전.</li>
+   <li>이미 예산을 다 쓴(또는 초과한) 인스턴스는 자동 skip → 부작용 없음.</li>
+  </ul>
+ </section>
+
+ <section>
+  <h2>2. 인스턴스별 결과 (baseline / 수정전 / 수정후)</h2>
+  <table>
+   <thead><tr><th class="l">inst</th><th>baseline</th><th>수정전 ours</th><th>수정후 ours</th>
+     <th>vs baseline</th><th>변화</th><th class="l">비고</th></tr></thead>
+   <tbody>
+    <tr><td class="l">prob_1</td><td>3,465,502</td><td>5,200,982</td><td>5,200,982</td><td>+50%</td><td>·</td><td class="l">overrun, floor 변동(노이즈)</td></tr>
+    <tr class="win-row"><td class="l">prob_2</td><td>10,760</td><td>8,690</td><td>8,690</td><td class="imp">−19%</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr class="win-row"><td class="l">prob_3</td><td>385,177</td><td>102,140</td><td>102,140</td><td class="imp">−74%</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr class="win-row"><td class="l">prob_4</td><td>1,578,890</td><td>799,799</td><td>799,799</td><td class="imp">−49%</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr class="win-row"><td class="l">prob_5</td><td>125,602</td><td>119,692</td><td>119,692</td><td class="imp">−5%</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr class="win-row"><td class="l">prob_6</td><td>INFEAS</td><td>710,567,468</td><td class="imp">50,246,195</td><td>단독feas</td><td class="imp">−93%</td><td class="l">postprocess 개선</td></tr>
+    <tr class="win-row"><td class="l">prob_7</td><td>1,340,149</td><td>1,286,815</td><td>1,286,815</td><td class="imp">−4%</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr><td class="l">prob_8</td><td>11,252</td><td>11,252</td><td>11,252</td><td>0%</td><td>·</td><td class="l">동점</td></tr>
+    <tr class="win-row"><td class="l">prob_9</td><td>36,894,925</td><td>35,041,638</td><td>35,041,638</td><td class="imp">−5%</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr class="win-row"><td class="l">prob_10</td><td>11,277,759</td><td>6,500,679</td><td class="imp">3,352,219</td><td class="imp">−70%</td><td class="imp">−48%</td><td class="l">postprocess 개선</td></tr>
+    <tr class="win-row"><td class="l">prob_11</td><td>38,632,363</td><td>33,924,794</td><td class="imp">32,234,391</td><td class="imp">−17%</td><td class="imp">−5%</td><td class="l">개선</td></tr>
+    <tr class="win-row"><td class="l">prob_12</td><td>45,956,468</td><td>41,728,142</td><td class="imp">40,282,338</td><td class="imp">−12%</td><td class="imp">−3%</td><td class="l">개선</td></tr>
+    <tr class="win-row"><td class="l">prob_13</td><td>INFEAS</td><td>40,081,797</td><td class="imp">37,086,392</td><td>단독feas</td><td class="imp">−7%</td><td class="l">개선 (cascade에선 924M로 회귀했던 케이스)</td></tr>
+    <tr class="loss-row"><td class="l">prob_14</td><td>85,469,877</td><td>853,039,346</td><td>853,039,346</td><td class="reg">+898%</td><td>·</td><td class="l"><b>미해결</b> — 레이아웃 재배정 필요(P2)</td></tr>
+    <tr class="win-row"><td class="l">prob_15</td><td>38,844,956</td><td>655,233,956</td><td class="flip">29,674,471</td><td class="imp">−24%</td><td class="imp">−95%</td><td class="l"><b>대패→승 역전</b></td></tr>
+    <tr class="win-row"><td class="l">prob_16</td><td>12,341,022</td><td>376,606,220</td><td class="flip">11,141,007</td><td class="imp">−10%</td><td class="imp">−97%</td><td class="l"><b>대패→승 역전</b></td></tr>
+    <tr class="win-row"><td class="l">prob_17</td><td>INFEAS</td><td>459,444,934</td><td>459,154,024</td><td>단독feas</td><td>−0%</td><td class="l">승 유지</td></tr>
+    <tr class="win-row"><td class="l">prob_18</td><td>INFEAS</td><td>51,355,805</td><td>51,355,805</td><td>단독feas</td><td>·</td><td class="l">승 유지</td></tr>
+    <tr class="loss-row"><td class="l">prob_19</td><td>33,810,970</td><td>685,018,517</td><td>685,018,517</td><td class="reg">+1926%</td><td>·</td><td class="l"><b>미해결</b> — 레이아웃 재배정 필요(P2)</td></tr>
+    <tr class="win-row"><td class="l">prob_20</td><td>INFEAS</td><td>1,200,200,411</td><td>1,198,093,718</td><td>단독feas</td><td>−0%</td><td class="l">승 유지</td></tr>
+   </tbody>
+  </table>
+  <p style="color:#5a6b7b;font-size:12.5px">집계: feasible 20/20, head-to-head 승 16·무 1·패 3(prob_1·14·19),
+   <b>R−nb baseline 14 / ours 37</b> (수정전 16 / 35). 결과: <code>results/eval_safe_20260601_1730/</code>.</p>
+ </section>
+
+ <section>
+  <h2>3. 시도했다가 되돌린 것 (정직성 — 토론 −1 Guardian 원칙)</h2>
+  <div class="note r"><span class="tag tr">REVERTED</span> <b>force-place 휴리스틱 변경</b>
+   (due-aware / earliest-entry cascade): 격리 테스트에선 prob_14를 853M→74M로 줄였으나,
+   전체 스위트에서 <b>prob_13을 40M→924M으로 조용히 회귀</b>시켰고 경쟁(타이밍) 의존적이었음.
+   이유: force-place는 <b>게이트 없이 직접 반환되는 greedy floor</b>를 바꾸므로 안전망이 없다.
+   → 원복. 안전한 레버는 게이트된 postprocess(위 §1)뿐.</div>
+  <div class="note r"><span class="tag tr">REVERTED</span> <b>base_budget을 T로 cap</b>
+   (1.15·T→T): 60s 초과(−1 위험)를 없앴지만 <b>prob_11 32M→710M, prob_18 51M→922M 회귀</b>.
+   그 &gt;T 런웨이가 cliff-민감 형상의 repair 품질에 필수였음. → 원복. (토론 B-D4가 경고한 self-harm 확인.)</div>
+  <div class="note r"><span class="tag tr">REVERTED</span> <b>250×4 예산-리저브</b>
+   (base_budget=0.90·T로 postprocess 창 확보): 처음엔 단독 1회에서 prob_14 78M·prob_15 33M으로
+   유망해 보였으나, <b>3회 반복하니 노이즈였음</b> — prob_14: 853M·853M·78M (승 1/3), prob_13: 924M·42M·42M.
+   리저브는 폭발을 <b>신뢰성 있게 막지도, prob_14를 신뢰성 있게 고치지도 못함</b>. 예산만 깎으므로 원복.</div>
+  <p style="color:#5a6b7b;font-size:12.5px">세 실험(force-place·예산컷·리저브) 모두 효과가 <b>±20× 노이즈보다 작아</b>
+   신뢰할 수 없거나 회귀를 일으킴. → 안전 채택본엔 <b>악화 불가능한 postprocess만</b> 포함.</p>
+ </section>
+
+ <section>
+  <h2>4. 남은 일 — 우선순위 재정렬 (분산이 1순위)</h2>
+  <ul>
+   <li><b>① 비결정성 제거 (최우선·진짜 레버)</b>: 대형 결과가 ±20× 코인플립인 한 obj 튜닝은 무의미.
+       방안 — (a) greedy 결정화(시간게이트 의존 제거, 블록수 기반 게이트), (b) <b>multi-start</b>
+       (greedy를 2–3회 다른 seed/순서로 돌려 best 채택; 시간되는 인스턴스부터),
+       (c) <b>폭발 감지 + 재시도</b>(Z1이 임계 초과면 다른 순서로 재구축). 폭발률만 낮춰도 기대점수 급등.</li>
+   <li><b>② 다중시행 회귀 CI</b>(토론 P1): 인스턴스당 <b>3–5회</b> 돌려 <b>median + worst</b>로 채점
+       (1회 비교는 노이즈에 속음 — 이번 세션의 교훈). 제출 전 폭발률·feasibility 게이트.</li>
+   <li><b>③ prob_14·19 (레이아웃-bound 폭발)</b>: fixed-layout left-shift로 못 고침 → 블록 재배정
+       탐색 필요(토론 <b>P2 = ALNS</b>). 단 ①을 먼저 — 탐색도 코인플립 위에선 못 믿음.</li>
+   <li><b>④ 벽시계 초과</b>(prob_11·12 ~64–67s, &gt;T 예산): 기존 −1 위험. budget cut은 품질붕괴(§3) →
+       <b>greedy 내부 hard-deadline</b>(예산 유지, 벽시계만 강제)로. ①의 결정화와 함께 설계.</li>
+  </ul>
+  <div class="note g"><b>이번 세션의 핵심 교훈:</b> "1회 비교"는 ±20× 노이즈에 속는다. 모든 개선은
+   <b>다중시행으로 검증</b>해야 하고, 지금 가장 점수를 올릴 일은 obj 최적화가 아니라 <b>분산 축소</b>다.</div>
+ </section>
+
+ <p style="color:#5a6b7b;font-size:12px">변경 파일: <code>src/baseline_greedy.py</code>(force-place 원복+주석),
+  <code>src/myalgorithm.py</code>(postprocess 대형 확장 + 재스케줄 deadline). pytest 40/40 통과.
+  근거: <code>results/eval_safe_20260601_1730/summary.json</code> · 토론 <code>notes/improvement-debate.html</code>.</p>
+</div></body></html>

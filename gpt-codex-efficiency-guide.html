@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPT / Codex 효율 운영 가이드 — Claude 셋업을 GPT로 이식하기</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3645;
+    --txt:#e6edf3; --muted:#9aa7b5; --accent:#10a37f; --accent-b:#58a6ff;
+    --warn:#d29922; --gold:#f0b429; --red:#f85149; --green:#3fb950; --code:#0b0f15;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.65;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  header.hero{border-bottom:1px solid var(--border);padding-bottom:28px;margin-bottom:36px}
+  .kicker{color:var(--accent);font-weight:700;letter-spacing:.12em;font-size:12px;text-transform:uppercase}
+  h1{font-size:33px;line-height:1.2;margin:10px 0 8px}
+  .sub{color:var(--muted);font-size:16px;max-width:780px}
+  .meta-line{color:var(--muted);font-size:13px;margin-top:14px}
+  .meta-line b{color:var(--txt)}
+  h2{font-size:23px;margin:50px 0 16px;padding-top:18px;border-top:1px solid var(--border)}
+  h2 .num{color:var(--accent)}
+  h3{font-size:17px;margin:24px 0 8px}
+  a{color:var(--accent-b);text-decoration:none} a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  th,td{border:1px solid var(--border);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:700}
+  td.center,th.center{text-align:center}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.015)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:18px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .block{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:13px 16px}
+  .block h4{margin:0 0 7px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+  ul{margin:6px 0;padding-left:18px} li{margin:4px 0} li b{color:#fff}
+  code{background:var(--code);border:1px solid var(--border);border-radius:4px;padding:1px 6px;
+    font-family:"SF Mono",Consolas,monospace;font-size:12.5px;color:#7ee2c0}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;
+    overflow-x:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+  pre code{background:none;border:none;padding:0;color:#d6deeb}
+  .key{color:#db61a2}.com{color:var(--muted)}.str{color:#7ee2c0}.fn{color:#58a6ff}
+  .callout{border:1px solid #234;border-left:3px solid var(--accent);border-radius:8px;
+    padding:14px 18px;margin:16px 0;background:linear-gradient(180deg,rgba(16,163,127,.08),transparent)}
+  .callout.warn{border-left-color:var(--warn);background:linear-gradient(180deg,rgba(210,153,34,.09),transparent)}
+  .callout.blue{border-left-color:var(--accent-b);background:linear-gradient(180deg,rgba(88,166,255,.08),transparent)}
+  .badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;border:1px solid var(--border);
+    background:var(--panel2);color:var(--muted);margin:0 4px 4px 0}
+  .yes{color:var(--green);font-weight:700}.no{color:var(--red);font-weight:700}.partial{color:var(--warn);font-weight:700}
+  .step{display:flex;gap:14px;margin:14px 0}
+  .step .n{flex:0 0 30px;height:30px;background:var(--accent);color:#04130d;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:800}
+  .foot{margin-top:56px;padding-top:22px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
+  .tag{color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">OGC2026 · GPT 운영 가이드</div>
+  <h1>GPT / Codex 효율 운영 가이드</h1>
+  <p class="sub">우리가 Claude Code에 구축한 <b>토큰 절약 + 작업별 에이전트 + 병렬 위임</b> 셋업을
+  GPT 계열(Codex CLI · OpenAI API · ChatGPT)에 이식하는 실전 가이드.
+  Claude와 <b>같은 것</b>과 <b>다른 것</b>을 솔직하게 구분한다.</p>
+  <p class="meta-line">작성 <b>2026-06-03</b> · 대상 <b>OpenAI Codex CLI / API / ChatGPT</b> ·
+  ⚠️ 모델명·플래그는 빠르게 바뀌므로 도입 시 OpenAI 공식 문서로 현재값 확인 권장 (지식 컷오프 2026-01)</p>
+</header>
+
+<!-- ===== 0. 핵심 차이 ===== -->
+<h2><span class="num">0.</span> 먼저 — 무엇이 같고 무엇이 다른가</h2>
+<div class="callout warn">
+  <b>가장 중요한 사실:</b> Claude Code에는 한 세션이 여러 서브에이전트를 <b>네이티브로 병렬 spawn</b>하는
+  Agent/Task 도구가 있다. <b>Codex CLI에는 이에 1:1 대응하는 내장 fan-out 기능이 없다.</b>
+  그래서 "병렬 위임"은 GPT에서 <b>다른 방식으로 직접 구현</b>해야 한다(§3). 반면 <b>토큰 절약 규칙은 하니스와 무관</b>하게 그대로 이식된다(§2).
+</div>
+
+<table>
+  <thead><tr><th>능력</th><th class="center">Claude Code</th><th class="center">Codex CLI</th><th class="center">OpenAI API(직접 구축)</th></tr></thead>
+  <tbody>
+    <tr><td>프로젝트 컨텍스트 파일</td><td class="center">CLAUDE.md</td><td class="center"><span class="yes">AGENTS.md ✓</span></td><td class="center">system prompt</td></tr>
+    <tr><td>네이티브 서브에이전트 병렬 spawn</td><td class="center"><span class="yes">있음(Agent 도구)</span></td><td class="center"><span class="no">없음</span></td><td class="center"><span class="yes">직접 구현 가능</span></td></tr>
+    <tr><td>병렬 tool 호출(한 응답서 여러 함수)</td><td class="center"><span class="yes">있음</span></td><td class="center"><span class="partial">제한적</span></td><td class="center"><span class="yes"><code>parallel_tool_calls</code></span></td></tr>
+    <tr><td>프롬프트 캐싱(토큰 절약)</td><td class="center"><span class="yes">있음</span></td><td class="center"><span class="yes">자동</span></td><td class="center"><span class="yes">자동(접두 캐시)</span></td></tr>
+    <tr><td>모델 티어 분담</td><td class="center"><span class="yes">opus/sonnet/haiku</span></td><td class="center"><span class="yes">profile별 model</span></td><td class="center"><span class="yes">호출별 model</span></td></tr>
+    <tr><td>MCP 서버 연동</td><td class="center"><span class="yes">있음</span></td><td class="center"><span class="yes">있음</span></td><td class="center"><span class="partial">SDK로</span></td></tr>
+    <tr><td>구조화 출력(JSON 스키마)</td><td class="center"><span class="yes">있음</span></td><td class="center"><span class="partial">프롬프트로</span></td><td class="center"><span class="yes">Structured Outputs</span></td></tr>
+  </tbody>
+</table>
+<p style="color:var(--muted);font-size:13px">→ <b>전략:</b> 토큰 절약은 그대로 복사(§2). 병렬 위임은 Codex에선 "멀티 세션", API에선 "오케스트레이터 코드"로 구현(§3). 정의 표준·모델 티어는 그대로 이식(§4·§5).</p>
+
+<!-- ===== 1. 가장 큰 토큰 누수 ===== -->
+<h2><span class="num">1.</span> GPT에서도 동일한 최대 누수원</h2>
+<p>이 워크스페이스의 토큰 누수는 하니스와 무관하다 — 거대 파일을 통째로 모델에 넣는 것이다.</p>
+<table>
+  <thead><tr><th>파일</th><th class="center">크기</th><th>GPT에서 할 일</th></tr></thead>
+  <tbody>
+    <tr><td><code>instances/**/*.json</code></td><td class="center">1~3 MB (prob_14 ≈ <b>80만 토큰</b>)</td><td><code>python tools/peek.py</code>로 요약만</td></tr>
+    <tr><td><code>results/**/*.html</code></td><td class="center">0.3~1.7 MB</td><td>옆의 <code>report.md</code>(2KB)만 첨부</td></tr>
+    <tr><td><code>docs/*.pdf</code></td><td class="center">2.4 MB</td><td>필요한 쪽만 추출해 첨부</td></tr>
+  </tbody>
+</table>
+<div class="callout">우리가 만든 <code>tools/peek.py</code>는 <b>모델/하니스 무관 순수 파이썬</b>이라 Codex·ChatGPT·API 모두에서 그대로 쓴다.
+첨부·붙여넣기 전에 항상 <code>peek</code>로 줄여라.</div>
+
+<!-- ===== 2. Codex CLI 셋업 ===== -->
+<h2><span class="num">2.</span> Codex CLI 셋업 (GPT의 Claude Code 대응물)</h2>
+
+<h3>2.1 AGENTS.md — 이미 있음, 절약 규칙만 추가</h3>
+<p>워크스페이스 루트의 <code>AGENTS.md</code>를 Codex가 자동으로 읽는다. 여기에 토큰 절약 절을 추가하면 끝
+(우리 Claude쪽 <code>cheap-context</code> 스킬의 GPT 버전).</p>
+<pre><code><span class="com"># AGENTS.md 에 추가할 절 ↓</span>
+
+## 토큰 절약 규칙 (반드시 준수)
+- 거대 파일을 통째로 읽거나 첨부하지 마라:
+  - instances/**/*.json (1~3MB), results/**/*.html, docs/*.pdf
+- 대신 `python tools/peek.py &lt;파일|폴더&gt;` 로 수치 요약만 본다.
+- 결과는 results/&lt;dir&gt;/report.md · score_*.json (작은 요약) 만 읽는다.
+- 큰 소스는 해당 함수 구간만, 심볼 탐색은 ripgrep(`rg`) 사용.
+- 방금 수정한 파일을 검증용으로 다시 통째로 읽지 마라.</code></pre>
+
+<h3>2.2 config.toml — 모델 티어를 profile로 분담</h3>
+<p>Claude의 opus/sonnet/haiku 분담을 Codex에선 <b>profile</b>로 구현한다.
+무거운 판단은 강모델, 일상 작업은 빠른 모델, 잡일은 mini/nano.</p>
+<pre><code><span class="com"># ~/.codex/config.toml  (또는 프로젝트 .codex/config.toml)</span>
+<span class="key">model</span> = <span class="str">"&lt;강모델&gt;"</span>            <span class="com"># 기본: 어려운 추론·아키텍처</span>
+<span class="key">approval_policy</span> = <span class="str">"on-request"</span>  <span class="com"># 위험 동작만 승인</span>
+
+[<span class="fn">profiles.fast</span>]
+<span class="key">model</span> = <span class="str">"&lt;mini 계열&gt;"</span>        <span class="com"># 일상 코딩·탐색·요약</span>
+
+[<span class="fn">profiles.cheap</span>]
+<span class="key">model</span> = <span class="str">"&lt;nano 계열&gt;"</span>        <span class="com"># 잡일·포맷·단순 변환</span>
+
+<span class="com"># 사용: codex --profile fast "..."  /  codex --profile cheap "..."</span></code></pre>
+<div class="callout warn">모델명은 시기마다 다르다(예: GPT-5 계열 강모델 / mini / nano). 위 <code>&lt;...&gt;</code>를
+<code>codex --list-models</code> 또는 OpenAI 문서의 <b>현재 가용 모델</b>로 직접 매핑하라.</div>
+
+<h3>2.3 MCP·승인 모드</h3>
+<ul>
+  <li><b>MCP</b>: <code>config.toml</code>의 <code>[mcp_servers.*]</code>에 우리가 쓰는 서버 등록(Claude와 동일 개념).</li>
+  <li><b>승인 모드</b>: 읽기 위주 작업은 <code>on-request</code>/<code>never</code>로 권한 프롬프트를 줄여 왕복 토큰 절약.
+      평가서버는 인터넷 차단이므로 <b>네트워크 요청 도구는 끈다</b>.</li>
+</ul>
+
+<!-- ===== 3. 병렬 위임 ===== -->
+<h2><span class="num">3.</span> 병렬 위임 — GPT에서 구현하는 3가지 방법</h2>
+<p>Codex엔 네이티브 fan-out이 없으므로, 목적에 따라 셋 중 하나를 쓴다.</p>
+
+<div class="grid2">
+  <div class="card">
+    <h3>방법 A · 멀티 세션 (가장 쉬움)</h3>
+    <p style="color:var(--muted);font-size:13px">독립 작업을 <b>여러 Codex 프로세스</b>로 동시에 — 터미널 분할 + git worktree.</p>
+    <pre><code><span class="com"># 작업별 격리 worktree</span>
+git worktree add ../w-A featA
+git worktree add ../w-B featB
+<span class="com"># 각 창에서 (병렬)</span>
+cd ../w-A &amp;&amp; codex --profile fast <span class="str">"이슈 A 구현"</span>
+cd ../w-B &amp;&amp; codex --profile fast <span class="str">"이슈 B 구현"</span></code></pre>
+    <ul>
+      <li><b>장점</b>: 진짜 병렬, 파일 충돌 없음(worktree 격리)</li>
+      <li><b>용도</b>: 독립 코드 변경, 인스턴스별 솔버 실험</li>
+      <li><b>출처 패턴</b>: agent_farm의 worktree/lock 격리</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>방법 B · API 오케스트레이터 (진짜 fan-out)</h3>
+    <p style="color:var(--muted);font-size:13px">GPT API로 <b>오케스트레이터 스크립트</b>를 짜서 N개 서브태스크를 동시 호출.
+    Claude의 Agent 도구를 코드로 재현.</p>
+    <pre><code><span class="com"># asyncio 로 N개 모델 호출 병렬</span>
+<span class="key">async def</span> <span class="fn">worker</span>(task):
+    <span class="key">return await</span> client.responses.create(
+        model=<span class="str">"&lt;mini&gt;"</span>,        <span class="com"># 워커=경량</span>
+        input=task.prompt)
+
+results = <span class="key">await</span> asyncio.gather(
+    *[worker(t) <span class="key">for</span> t <span class="key">in</span> subtasks])
+<span class="com"># 오케스트레이터(강모델)가 results 합성</span></code></pre>
+    <ul>
+      <li><b>장점</b>: 모델 티어·구조화 출력·캐싱 완전 제어</li>
+      <li><b>용도</b>: 3-에이전트 토론, 인스턴스 일괄 분석</li>
+      <li><b>참고</b>: OpenAI Agents SDK도 동일 패턴 제공</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h3>방법 C · 파일 기반 오케스트레이션 (wshobson 패턴 · 단일 세션)</h3>
+  <p style="color:var(--muted);font-size:13px">한 Codex 세션 안에서 단계별 산출물을 <b>파일로 기록</b>하고 다음 단계는 그 파일을 읽는다.
+  컨텍스트 윈도우에 의존하지 않아 긴 워크플로·재개에 강함 (TOP1 레포 wshobson/agents의 핵심 기법).</p>
+  <pre><code><span class="com"># AGENTS.md 에 오케스트레이션 절차로 기술</span>
+<span class="str">1.</span> 분석 결과를 .task/01-analysis.md 로 저장
+<span class="str">2.</span> 다음 단계는 .task/01-analysis.md 를 읽고 .task/02-plan.md 작성   <span class="com"># 메모리 아닌 파일 참조</span>
+<span class="str">3.</span> state.json(current_step, files) 으로 중단 후 재개
+<span class="com"># → 컨텍스트가 비대해지지 않음 = 토큰 절약 + resume</span></code></pre>
+</div>
+
+<div class="callout blue">
+<b>병렬 상한:</b> 평가서버가 <b>4 CPU 코어</b>이므로 방법 A/B의 동시 실행은 <b>2~4개로 제한</b>하라
+(vijaythecoder가 병렬 ≤2로 제한한 것과 같은 이유). 무제한 fan-out은 비용·rate limit만 키운다.
+</div>
+
+<!-- ===== 4. 에이전트 정의 ===== -->
+<h2><span class="num">4.</span> 작업별 에이전트 정의 이식</h2>
+<p>우리가 Claude에 만든 <code>code-writer · code-analyzer · doc-writer</code>를 GPT로 옮긴다.
+정의 표준(트리거형 description + 최소권한 tools + model 티어)은 5개 레포 전부의 공통 합의라 그대로 쓴다.</p>
+
+<div class="grid2">
+  <div class="block">
+    <h4>Codex CLI</h4>
+    <p>역할별 <b>profile</b> + 역할 프롬프트를 <code>AGENTS.md</code>나 별도 프롬프트 파일로.
+    "이 역할일 때 이렇게 행동/이 도구만 사용"을 명시.</p>
+  </div>
+  <div class="block">
+    <h4>OpenAI API / Agents SDK</h4>
+    <p>역할별 <b>system 메시지 + tools 화이트리스트 + model</b>을 객체로 선언해 오케스트레이터가 골라 호출.
+    Claude 에이전트 <code>.md</code>의 frontmatter를 그대로 dict로 변환.</p>
+  </div>
+</div>
+
+<pre><code><span class="com"># 역할 정의를 코드로 (API/SDK)</span>
+CODE_ANALYZER = {
+  <span class="str">"model"</span>: <span class="str">"&lt;mini&gt;"</span>,                              <span class="com"># 읽기 분석=경량</span>
+  <span class="str">"tools"</span>: [<span class="str">"read_file"</span>, <span class="str">"grep"</span>],                  <span class="com"># 최소권한: 쓰기 도구 없음</span>
+  <span class="str">"system"</span>: <span class="str">"코드를 읽고 결론+file:line 근거만 반환. 파일 덤프 금지. 코드 수정 금지."</span>,
+}
+CODE_WRITER = {
+  <span class="str">"model"</span>: <span class="str">"&lt;강모델&gt;"</span>,                            <span class="com"># 구현=강모델</span>
+  <span class="str">"tools"</span>: [<span class="str">"read_file"</span>, <span class="str">"edit_file"</span>, <span class="str">"run"</span>],
+  <span class="str">"system"</span>: <span class="str">"명확한 스펙 1개를 구현하고 변경요약(file:line)+검증결과만 반환."</span>,
+}</code></pre>
+
+<table>
+  <thead><tr><th>역할</th><th class="center">모델 티어</th><th>도구(최소권한)</th><th>반환</th></tr></thead>
+  <tbody>
+    <tr><td>code-analyzer</td><td class="center">mini</td><td>read, grep <span class="no">(쓰기X)</span></td><td>결론 + file:line</td></tr>
+    <tr><td>code-writer</td><td class="center">강모델</td><td>read, edit, run</td><td>변경요약 + 검증</td></tr>
+    <tr><td>doc-writer</td><td class="center">mini</td><td>read, write(.md)</td><td>작성 경로 + 요지</td></tr>
+    <tr><td>critic / 전략토론</td><td class="center">강모델</td><td>read만</td><td>입장 + 근거 + 반박</td></tr>
+  </tbody>
+</table>
+
+<!-- ===== 5. API 효율 ===== -->
+<h2><span class="num">5.</span> GPT API 직접 구축 시 토큰 절약 핵심</h2>
+<ul>
+  <li><b>프롬프트 캐싱</b> — 긴 system/컨텍스트를 <b>요청 앞쪽에 고정</b>하면 동일 접두가 자동 캐시되어 입력 토큰 대폭 절감. 변하는 부분은 뒤에 둔다.</li>
+  <li><b><code>parallel_tool_calls</code></b> — 한 응답에서 독립 함수 여러 개를 동시에 호출(왕복 횟수↓).</li>
+  <li><b>Structured Outputs(json_schema)</b> — 스키마 강제로 파싱·재시도 토큰 제거. 서브태스크 반환을 구조화.</li>
+  <li><b>모델 티어 라우팅</b> — 정찰·분류·요약은 mini/nano, 어려운 한 단계만 강모델로 에스컬레이션.</li>
+  <li><b>max_output_tokens 상한</b> — 워커 출력을 의도적으로 짧게 묶어 "결론만" 반환 강제.</li>
+  <li><b>대용량은 모델 밖에서</b> — 인스턴스 JSON 파싱·집계는 파이썬(<code>peek.py</code>)으로 하고 모델엔 요약만.</li>
+</ul>
+
+<!-- ===== 6. ChatGPT ===== -->
+<h2><span class="num">6.</span> ChatGPT 앱(코딩 아닌 일반 사용)</h2>
+<ul>
+  <li><b>Projects</b>로 작업공간을 분리하고, 프로젝트 지침에 §1·§2의 토큰 절약 규칙을 넣어 매 대화에 적용.</li>
+  <li><b>Custom Instructions</b>에 "큰 파일은 요약만, 결론 먼저, 불필요한 재출력 금지" 류 상시 규칙.</li>
+  <li>병렬 fan-out은 ChatGPT 단독으론 불가 — 진짜 병렬이 필요하면 §3-B(API)로 내려간다.</li>
+</ul>
+
+<!-- ===== 7. 체크리스트 ===== -->
+<h2><span class="num">7.</span> 도입 체크리스트</h2>
+<div class="step"><div class="n">1</div><div><b>AGENTS.md에 토큰 절약 절 추가</b> (§2.1) — 하니스 무관, 즉시 효과. <span class="tag">가장 먼저</span></div></div>
+<div class="step"><div class="n">2</div><div><b>config.toml profile 3종</b>(default/fast/cheap)으로 모델 티어 분담 (§2.2)</div></div>
+<div class="step"><div class="n">3</div><div><b>peek.py 재사용</b> — 이미 있음, Codex/ChatGPT/API 공용 (§1)</div></div>
+<div class="step"><div class="n">4</div><div><b>병렬 방식 1개 선택</b>: 독립 코드작업=A(멀티 세션), 토론·일괄분석=B(API), 긴 워크플로=C(파일기반) (§3)</div></div>
+<div class="step"><div class="n">5</div><div><b>역할 정의 이식</b> — code-writer/analyzer/doc-writer를 profile 또는 API dict로 (§4)</div></div>
+<div class="step"><div class="n">6</div><div><b>병렬 상한 4 이하</b> 못박기 (4코어 평가서버) (§3)</div></div>
+
+<div class="callout">
+<b>한 줄 요약:</b> 토큰 절약 규칙(§1·§2)은 GPT에 <b>그대로 복사</b>되고 즉시 효과. 병렬 위임은 Codex가 네이티브로 못 하니
+<b>멀티 세션(A) 또는 API 오케스트레이터(B)</b>로 재현한다. 모델 티어·정의 표준은 Claude와 동일하게 이식.
+</div>
+
+<div class="foot">
+  <p>이 문서는 OGC2026 워크스페이스의 Claude 셋업(토큰 절약 + 작업별 에이전트 + 병렬 위임)을 GPT 계열로 이식하기 위한 내부 가이드다.
+  Claude쪽 원본 자료: <code>claude-subagents-research.html</code>(레포 벤치마킹), <code>.claude/skills/cheap-context/</code>(절약 규칙), <code>~/.claude/agents/</code>(역할 에이전트).</p>
+  <p>⚠️ OpenAI의 모델명·CLI 플래그·API 파라미터는 변동이 잦다(본 문서 지식 컷오프 2026-01). 도입 전 <b>현재 공식 문서로 검증</b>하라.
+  특히 <code>&lt;강모델&gt;/&lt;mini&gt;/&lt;nano&gt;</code> 자리표시자는 실제 가용 모델로 매핑 필요.</p>
+</div>
+
+</div>
+</body>
+</html>

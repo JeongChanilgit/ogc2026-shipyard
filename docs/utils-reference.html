@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>utils.py — OGC 2026 유틸리티 레퍼런스</title>
+<style>
+  /* === 기본 레이아웃 === */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #f7f8fc;
+  }
+  .page-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* === 헤더 === */
+  .doc-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e0e6f0;
+    padding: 28px 32px 24px;
+    border-radius: 10px;
+    margin-bottom: 32px;
+    border-left: 5px solid #4fc3f7;
+  }
+  .doc-header h1 { font-size: 1.7rem; font-weight: 700; margin-bottom: 6px; color: #fff; }
+  .doc-header .subtitle { font-size: 0.95rem; color: #9bb0cc; margin-bottom: 12px; }
+  .badge {
+    display: inline-block;
+    background: #e53e3e;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    margin-right: 6px;
+  }
+  .badge-info { background: #2b6cb0; }
+  .badge-ok   { background: #276749; }
+
+  /* === 목차 === */
+  .toc-box {
+    background: #fff;
+    border: 1px solid #dde3ef;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 36px;
+  }
+  .toc-box h2 { font-size: 1.05rem; margin-bottom: 12px; color: #2d3748; }
+  .toc-box ol { padding-left: 20px; }
+  .toc-box li { margin-bottom: 4px; }
+  .toc-box a  { color: #2b6cb0; text-decoration: none; font-size: 0.93rem; }
+  .toc-box a:hover { text-decoration: underline; }
+  .toc-sub { padding-left: 18px; list-style: disc; margin-top: 4px; }
+
+  /* === 섹션 그룹 === */
+  .section {
+    background: #fff;
+    border: 1px solid #dde3ef;
+    border-radius: 10px;
+    margin-bottom: 36px;
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 14px 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  /* 그룹별 색상 */
+  .sh-geo   { background: #ebf8ff; color: #1a365d; border-color: #bee3f8; }
+  .sh-model { background: #f0fff4; color: #1c4532; border-color: #c6f6d5; }
+  .sh-check { background: #fff5f5; color: #63171b; border-color: #fed7d7; }
+  .sh-inst  { background: #fffaf0; color: #652b19; border-color: #fbd38d; }
+  .sh-core  { background: #faf5ff; color: #322659; border-color: #d6bcfa; }
+
+  .num-badge {
+    display: inline-block;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-align: center;
+    line-height: 26px;
+    flex-shrink: 0;
+  }
+  .nb-geo   { background: #4299e1; color: #fff; }
+  .nb-model { background: #48bb78; color: #fff; }
+  .nb-check { background: #f56565; color: #fff; }
+  .nb-inst  { background: #ed8936; color: #fff; }
+  .nb-core  { background: #9f7aea; color: #fff; }
+
+  /* === 함수 카드 === */
+  .func-card {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f4f8;
+  }
+  .func-card:last-child { border-bottom: none; }
+  .func-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 4px;
+  }
+  .func-name .internal-mark {
+    font-size: 0.75rem;
+    color: #718096;
+    font-weight: 400;
+    margin-left: 6px;
+    font-style: italic;
+  }
+  .func-summary {
+    color: #4a5568;
+    font-size: 0.93rem;
+    margin-bottom: 12px;
+    border-left: 3px solid #cbd5e0;
+    padding-left: 10px;
+  }
+
+  /* === 코드 박스 === */
+  pre, code { font-family: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace; }
+  .sig-box {
+    background: #1a202c;
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    overflow-x: auto;
+    margin-bottom: 14px;
+    white-space: pre;
+  }
+  .kw   { color: #f6ad55; }  /* keyword */
+  .fn   { color: #68d391; }  /* function name */
+  .tp   { color: #63b3ed; }  /* type */
+  .cm   { color: #718096; font-style: italic; }  /* comment */
+
+  /* === 파라미터 표 === */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+  }
+  .param-table th {
+    background: #edf2f7;
+    text-align: left;
+    padding: 6px 10px;
+    font-weight: 700;
+    color: #2d3748;
+    border: 1px solid #e2e8f0;
+  }
+  .param-table td {
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  .param-table tr:nth-child(even) td { background: #f7fafc; }
+  .pn { font-family: "Cascadia Code", Consolas, monospace; color: #2b6cb0; font-weight: 600; }
+  .pt { font-family: "Cascadia Code", Consolas, monospace; color: #553c9a; font-size: 0.83rem; }
+
+  .returns-label {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #2d3748;
+    margin-bottom: 4px;
+  }
+  .returns-val {
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 0.87rem;
+    color: #276749;
+    background: #f0fff4;
+    border: 1px solid #c6f6d5;
+    border-radius: 4px;
+    padding: 4px 10px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+
+  /* === Callout 박스 === */
+  .callout {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 0.9rem;
+    border-left: 4px solid;
+  }
+  .callout-warn {
+    background: #fffbeb;
+    border-color: #f6ad55;
+    color: #7b341e;
+  }
+  .callout-danger {
+    background: #fff5f5;
+    border-color: #fc8181;
+    color: #63171b;
+  }
+  .callout-info {
+    background: #ebf8ff;
+    border-color: #4299e1;
+    color: #1a365d;
+  }
+  .callout-tip {
+    background: #f0fff4;
+    border-color: #48bb78;
+    color: #1c4532;
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* === 반환 dict 표 === */
+  .dict-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+    margin: 10px 0 14px;
+  }
+  .dict-table th {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 6px 10px;
+    text-align: left;
+    border: 1px solid #4a5568;
+  }
+  .dict-table td {
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  .dict-table tr:nth-child(even) td { background: #f7fafc; }
+  .dk { font-family: monospace; color: #553c9a; font-weight: 700; }
+  .dv { font-family: monospace; color: #276749; }
+
+  /* === 단계 흐름 === */
+  .stage-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .stage-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  .stage-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-align: center;
+    line-height: 32px;
+    color: #fff;
+  }
+  .sn1 { background: #4299e1; }
+  .sn2 { background: #48bb78; }
+  .sn3 { background: #ed8936; }
+  .sn4 { background: #9f7aea; }
+  .sn5 { background: #f56565; }
+  .stage-body { flex: 1; }
+  .stage-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; margin-bottom: 3px; }
+  .stage-desc  { font-size: 0.87rem; color: #4a5568; }
+
+  /* === 구분선 === */
+  .divider {
+    border: none;
+    border-top: 1px dashed #e2e8f0;
+    margin: 16px 0;
+  }
+
+  /* === 인라인 코드 === */
+  code {
+    background: #edf2f7;
+    color: #553c9a;
+    font-size: 0.87em;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* === 부록 조건 === */
+  .condition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .cond-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.87rem;
+  }
+  .cond-card strong { display: block; color: #2d3748; margin-bottom: 3px; font-size: 0.83rem; }
+
+  footer {
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.8rem;
+    margin-top: 40px;
+  }
+
+  /* === TOC 앵커 오프셋 === */
+  [id] { scroll-margin-top: 24px; }
+
+  /* === 용어 사전 === */
+  .glossary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  @media (max-width: 640px) { .glossary-grid { grid-template-columns: 1fr; } }
+  .gloss-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+  }
+  .gloss-term {
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-weight: 700;
+    color: #2b6cb0;
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+  }
+  .gloss-ko {
+    font-weight: 700;
+    color: #553c9a;
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+  }
+
+  /* === 치트시트 표 === */
+  .cheat-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    margin: 10px 0 14px;
+  }
+  .cheat-table th {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 6px 10px;
+    text-align: left;
+    border: 1px solid #4a5568;
+  }
+  .cheat-table td {
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  .cheat-table tr:nth-child(even) td { background: #f7fafc; }
+  .cheat-table a { color: #2b6cb0; text-decoration: none; }
+  .cheat-table a:hover { text-decoration: underline; }
+  .star { color: #f6ad55; font-size: 0.9rem; }
+
+  /* === worked example 박스 === */
+  .example-box {
+    background: #fefcf3;
+    border: 1px solid #fbd38d;
+    border-left: 4px solid #ed8936;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 0.88rem;
+  }
+  .example-title {
+    font-weight: 700;
+    color: #7b341e;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .example-box pre {
+    background: transparent;
+    padding: 0;
+    font-size: 0.87rem;
+    line-height: 1.5;
+    white-space: pre;
+    overflow-x: auto;
+    color: #1a202c;
+  }
+
+  /* === SVG 다이어그램 컨테이너 === */
+  .svg-wrap {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+  .svg-caption {
+    font-size: 0.82rem;
+    color: #718096;
+    margin-top: 6px;
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* === Stage 단계 카드 (확장) === */
+  .stage-detail-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 8px 0;
+  }
+  .stage-detail-card .sd-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #2d3748;
+    margin-bottom: 6px;
+  }
+  .stage-detail-card .sd-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 0.87rem;
+    align-items: flex-start;
+  }
+  .sd-label {
+    font-weight: 700;
+    color: #553c9a;
+    min-width: 72px;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    padding-top: 1px;
+  }
+  .sd-val { color: #2d3748; flex: 1; }
+
+  /* === 코드 예시 (JSON) === */
+  .json-box {
+    background: #1a202c;
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 0.83rem;
+    overflow-x: auto;
+    margin: 8px 0;
+    white-space: pre;
+    font-family: "Cascadia Code", Consolas, monospace;
+  }
+  .jk { color: #f6ad55; }  /* JSON key */
+  .jv { color: #68d391; }  /* JSON value - string */
+  .jn { color: #63b3ed; }  /* JSON value - number */
+  .jb { color: #fc8181; }  /* JSON value - bool/null */
+
+  /* === 목적함수 공식 박스 === */
+  .formula-box {
+    background: #faf5ff;
+    border: 1px solid #d6bcfa;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 0.87rem;
+    color: #322659;
+    white-space: pre;
+    overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<!-- 헤더 -->
+<div class="doc-header">
+  <h1>utils.py — OGC 2026 유틸리티 레퍼런스</h1>
+  <div class="subtitle">
+    베이 기하·블록 배치·크레인 경로·실현가능성 검사기 &mdash;
+    평가 서버(firejail)가 쓰는 정본. <code style="background:rgba(255,255,255,0.15);color:#fff;">src/</code>,
+    <code style="background:rgba(255,255,255,0.15);color:#fff;">baseline/</code>,
+    <code style="background:rgba(255,255,255,0.15);color:#fff;">alg_tester/</code> 3곳 동일 버전.
+  </div>
+  <span class="badge">수정 금지</span>
+  <span class="badge badge-info">읽기 전용</span>
+  <span class="badge badge-ok">1,432 줄</span>
+</div>
+
+<!-- 목차 -->
+<div class="toc-box">
+  <h2>목차 (클릭 가능)</h2>
+  <ol>
+    <li><a href="#sec-glossary">용어 사전 (Glossary)</a></li>
+    <li><a href="#sec-cheatsheet">한눈에 보기 치트시트</a></li>
+    <li><a href="#sec-geo">기하 헬퍼 (내부용 <code>_</code> 접두)</a>
+      <ul class="toc-sub">
+        <li><a href="#fn-resolve-layers">_resolve_layers</a></li>
+        <li><a href="#fn-anchor-verts">_anchor_verts</a></li>
+        <li><a href="#fn-anchor-layers">_anchor_layers</a></li>
+        <li><a href="#fn-translate-verts">_translate_verts</a></li>
+        <li><a href="#fn-poly-cached">_poly_from_verts_cached</a></li>
+        <li><a href="#fn-poly">_poly_from_verts</a></li>
+        <li><a href="#fn-bounding-box">_bounding_box</a></li>
+        <li><a href="#fn-bb-overlap">_bb_overlap</a></li>
+      </ul>
+    </li>
+    <li><a href="#sec-model">데이터 모델 (dataclass)</a>
+      <ul class="toc-sub">
+        <li><a href="#cls-bay">Bay</a></li>
+        <li><a href="#cls-block">Block</a></li>
+        <li><a href="#cls-collision">CollisionResult</a></li>
+        <li><a href="#cls-obstruction">EntryObstruction</a></li>
+      </ul>
+    </li>
+    <li><a href="#sec-check">충돌·진입·퇴출 검사</a>
+      <ul class="toc-sub">
+        <li><a href="#fn-check-collisions">check_collisions</a></li>
+        <li><a href="#fn-check-entry">check_entry</a></li>
+        <li><a href="#fn-check-exit">check_exit</a></li>
+      </ul>
+    </li>
+    <li><a href="#sec-inst">인스턴스 → 블록 구성</a>
+      <ul class="toc-sub">
+        <li><a href="#fn-blocks-from-instance">blocks_from_instance</a></li>
+      </ul>
+    </li>
+    <li><a href="#sec-feasibility">핵심: 실현가능성 검사기 <code>check_feasibility</code></a></li>
+  </ol>
+</div>
+
+
+<!-- ==================== 0-A. 용어 사전 ==================== -->
+<div class="section" id="sec-glossary">
+  <div class="section-header" style="background:#f0f4ff;color:#1a2055;border-color:#c3cef6;">
+    <span class="num-badge" style="background:#5a72d0;color:#fff;">G</span>
+    용어 사전 (Glossary) — 도메인을 모르는 사람을 위한 기초 개념
+  </div>
+  <div class="func-card">
+    <p style="font-size:0.92rem;color:#4a5568;margin-bottom:14px;">
+      utils.py 에 등장하는 도메인 용어를 조선소·물류 맥락을 모르는 사람도 이해할 수 있게 풀이한다.
+      코드 식별자(이탤릭체)와 한글 명칭을 함께 표기한다.
+    </p>
+
+    <!-- 베이 구조 SVG -->
+    <div class="svg-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="700" height="220" viewBox="0 0 700 220">
+        <!-- 배경 -->
+        <rect width="700" height="220" fill="#f8fafc"/>
+
+        <!-- 베이 A -->
+        <rect x="30" y="30" width="180" height="160" fill="#ebf8ff" stroke="#4299e1" stroke-width="2" rx="3"/>
+        <text x="120" y="18" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b6cb0">베이 A (Bay 0)</text>
+        <text x="120" y="202" text-anchor="middle" font-size="10" fill="#718096">width=180, height=160 (그리드 유닛)</text>
+
+        <!-- 블록 1 (Layer 0) -->
+        <rect x="45" y="130" width="70" height="40" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2"/>
+        <text x="80" y="153" text-anchor="middle" font-size="10" fill="#1a365d">Block 0</text>
+        <text x="80" y="164" text-anchor="middle" font-size="9" fill="#2b6cb0">Layer 0</text>
+
+        <!-- 블록 1 (Layer 1) -->
+        <rect x="45" y="90" width="70" height="38" fill="#90cdf4" stroke="#3182ce" stroke-width="1.5" rx="2"/>
+        <text x="80" y="112" text-anchor="middle" font-size="10" fill="#1a365d">Block 0</text>
+        <text x="80" y="123" text-anchor="middle" font-size="9" fill="#2b6cb0">Layer 1</text>
+
+        <!-- 블록 2 -->
+        <rect x="130" y="110" width="60" height="60" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5" rx="2"/>
+        <text x="160" y="143" text-anchor="middle" font-size="10" fill="#1c4532">Block 1</text>
+        <text x="160" y="154" text-anchor="middle" font-size="9" fill="#276749">Layer 0</text>
+
+        <!-- 크레인 -->
+        <line x1="80" y1="30" x2="80" y2="90" stroke="#e53e3e" stroke-width="2.5" stroke-dasharray="6,3"/>
+        <polygon points="75,35 85,35 80,28" fill="#e53e3e"/>
+        <text x="95" y="55" font-size="10" fill="#c53030">크레인 하강↓</text>
+
+        <!-- 좌표축 -->
+        <line x1="30" y1="190" x2="210" y2="190" stroke="#718096" stroke-width="1" marker-end="url(#arr)"/>
+        <line x1="30" y1="190" x2="30" y2="30" stroke="#718096" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="215" y="193" font-size="10" fill="#718096">x →</text>
+        <text x="34" y="26" font-size="10" fill="#718096">y ↑</text>
+        <text x="30" y="207" font-size="9" fill="#718096">원점(0,0)</text>
+
+        <!-- 베이 B -->
+        <rect x="250" y="30" width="200" height="160" fill="#f0fff4" stroke="#48bb78" stroke-width="2" rx="3"/>
+        <text x="350" y="18" text-anchor="middle" font-size="13" font-weight="bold" fill="#276749">베이 B (Bay 1)</text>
+
+        <!-- 블록 3 in Bay B -->
+        <rect x="265" y="100" width="80" height="70" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5" rx="2"/>
+        <text x="305" y="138" text-anchor="middle" font-size="10" fill="#1c4532">Block 2</text>
+        <text x="305" y="149" text-anchor="middle" font-size="9" fill="#276749">orient_idx=1</text>
+
+        <!-- 범례 -->
+        <rect x="490" y="30" width="185" height="160" fill="#fff" stroke="#e2e8f0" stroke-width="1" rx="4"/>
+        <text x="582" y="50" text-anchor="middle" font-size="12" font-weight="bold" fill="#2d3748">범례</text>
+        <rect x="505" y="60" width="18" height="12" fill="#bee3f8" stroke="#3182ce" stroke-width="1"/>
+        <text x="530" y="71" font-size="10" fill="#2d3748">Layer 0 (최하층)</text>
+        <rect x="505" y="80" width="18" height="12" fill="#90cdf4" stroke="#3182ce" stroke-width="1"/>
+        <text x="530" y="91" font-size="10" fill="#2d3748">Layer 1 (그 위 층)</text>
+        <rect x="505" y="100" width="18" height="12" fill="#c6f6d5" stroke="#48bb78" stroke-width="1"/>
+        <text x="530" y="111" font-size="10" fill="#2d3748">다른 블록</text>
+        <line x1="505" y1="125" x2="523" y2="125" stroke="#e53e3e" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <text x="530" y="129" font-size="10" fill="#2d3748">크레인 경로 (수직)</text>
+        <text x="500" y="150" font-size="9" fill="#718096">블록은 여러 layer(층)로</text>
+        <text x="500" y="163" font-size="9" fill="#718096">구성된 3D 형상</text>
+        <text x="500" y="176" font-size="9" fill="#718096">크레인은 수직으로만 이동</text>
+
+        <!-- 화살표 마커 -->
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#718096"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="svg-caption">베이(창고 구역) 2개와 블록(조선 부품) 배치 개념도. 크레인은 수직으로만 이동한다.</div>
+    </div>
+
+    <div class="glossary-grid">
+      <div class="gloss-card">
+        <div class="gloss-term">Bay</div>
+        <div class="gloss-ko">베이 / 보관 구역</div>
+        조선소 야드 안의 직사각형 보관 공간. 블록을 일시적으로 쌓아두는 "주차 구역"과 같다.
+        <code>width × height</code> 그리드 유닛 크기를 가진다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Block</div>
+        <div class="gloss-ko">블록 / 조선 부품</div>
+        조립이 필요한 선박 구성 요소 하나. 각 블록은 <em>release(투입 가능 시각)</em>, <em>processing_time(최소 체류 시간)</em>, <em>due_date(납기)</em>를 가진다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Layer</div>
+        <div class="gloss-ko">층 / 레이어</div>
+        블록을 2D 평면(x-y 바닥면)으로 자른 단면 폴리곤. Layer 0이 가장 아래, 인덱스가 클수록 위쪽. 크레인 경로 검사에서 층별로 충돌을 확인한다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Anchor / Anchoring</div>
+        <div class="gloss-ko">앵커링 / 기준점 정규화</div>
+        폴리곤의 최솟값 꼭짓점이 원점(0,0)이 되도록 좌표를 평행이동하는 작업.
+        "블록의 기준점을 바닥 왼쪽 모서리로 고정"하는 것과 같다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Orientation / orient_idx</div>
+        <div class="gloss-ko">방향 / 방향 인덱스</div>
+        블록을 90°·180° 등으로 회전·반전한 형상 변형 하나. <code>block_data["shape"]</code> 리스트의 인덱스로 선택한다. 같은 블록도 여러 방향을 가질 수 있다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Footprint</div>
+        <div class="gloss-ko">풋프린트 / 바닥면적</div>
+        블록이 베이 바닥면에서 차지하는 2D 영역. 각 레이어의 폴리곤 합집합이 전체 풋프린트를 형성한다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">ENTRY / EXIT time</div>
+        <div class="gloss-ko">진입 시각 / 퇴출 시각</div>
+        크레인이 블록을 베이에 내려놓는(ENTRY) 시각과 들어올리는(EXIT) 시각. 정수형 문자열로 솔루션 dict에 키로 사용된다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">AABB (Bounding Box)</div>
+        <div class="gloss-ko">축 정렬 바운딩 박스</div>
+        폴리곤을 감싸는 가장 작은 직사각형(<em>min_x, min_y, max_x, max_y</em>). 정확한 다각형 교차 계산 전에 빠른 겹침 사전 필터로 쓴다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Crane Vertical Access (j≥k)</div>
+        <div class="gloss-ko">크레인 수직접근 규칙</div>
+        수직 크레인이 블록을 내릴 때 새 블록의 레이어 k가 기존 블록의 레이어 j(j≥k) 높이를 통과한다는 물리적 사실. <em>이 규칙을 위반하면 즉시 infeasible, 점수 −1.</em>
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Sweep Collision</div>
+        <div class="gloss-ko">스윕(경로) 충돌</div>
+        크레인이 블록을 이동하는 <em>도중</em>에 다른 블록과 닿는 충돌. j&gt;k 인 경우. 최종 위치에서는 문제없어도 경로 중간에 막힐 수 있다.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">release_time / processing_time / due_date</div>
+        <div class="gloss-ko">출고 가능 시각 / 최소 체류 시간 / 납기</div>
+        <code>entry_time ≥ release_time</code>, <code>exit_time - entry_time ≥ processing_time</code>, 납기 초과 시 <em>tardiness(지연)</em> 발생 → Z1 증가.
+      </div>
+      <div class="gloss-card">
+        <div class="gloss-term">Tardiness (Z1)</div>
+        <div class="gloss-ko">지연량 / 납기 초과</div>
+        <code>max(0, exit_time − due_date)</code>. 납기 전 퇴출이면 0, 넘어가면 초과한 시간만큼 페널티.
+        전체 블록의 합이 목적함수 Z1.
+      </div>
+    </div>
+  </div>
+</div><!-- /sec-glossary -->
+
+
+<!-- ==================== 0-B. 치트시트 ==================== -->
+<div class="section" id="sec-cheatsheet">
+  <div class="section-header" style="background:#fffaf0;color:#652b19;border-color:#fbd38d;">
+    <span class="num-badge" style="background:#ed8936;color:#fff;">C</span>
+    한눈에 보기 치트시트 — 함수/클래스 전체 목록
+  </div>
+  <div class="func-card">
+    <p style="font-size:0.88rem;color:#718096;margin-bottom:10px;">중요도 ★★★=필수 이해, ★★=자주 쓰임, ★=내부용. 함수명 클릭 시 해당 카드로 이동.</p>
+    <table class="cheat-table">
+      <tr>
+        <th>함수 / 클래스</th>
+        <th>그룹</th>
+        <th>한 줄 역할</th>
+        <th>중요도</th>
+      </tr>
+      <tr><td><a href="#fn-resolve-layers"><code>_resolve_layers</code></a></td><td>기하 헬퍼</td><td>raw_layers를 순수 Python list-of-lists로 복사 (변조 방지)</td><td class="star">★</td></tr>
+      <tr><td><a href="#fn-anchor-verts"><code>_anchor_verts</code></a></td><td>기하 헬퍼</td><td>단일 꼭짓점 목록을 (0,0) 기준으로 정규화</td><td class="star">★</td></tr>
+      <tr><td><a href="#fn-anchor-layers"><code>_anchor_layers</code></a></td><td>기하 헬퍼</td><td>전체 레이어를 동일 오프셋으로 정규화 (레이어 간 정렬 유지)</td><td class="star">★★</td></tr>
+      <tr><td><a href="#fn-translate-verts"><code>_translate_verts</code></a></td><td>기하 헬퍼</td><td>꼭짓점 목록을 (dx,dy) 평행이동</td><td class="star">★</td></tr>
+      <tr><td><a href="#fn-poly-cached"><code>_poly_from_verts_cached</code></a></td><td>기하 헬퍼</td><td>꼭짓점 튜플 → Shapely Polygon (LRU 캐시, 8192개)</td><td class="star">★★</td></tr>
+      <tr><td><a href="#fn-poly"><code>_poly_from_verts</code></a></td><td>기하 헬퍼</td><td>가변 list → 캐시된 Shapely Polygon 변환 진입점</td><td class="star">★★</td></tr>
+      <tr><td><a href="#fn-bounding-box"><code>_bounding_box</code></a></td><td>기하 헬퍼</td><td>꼭짓점 목록의 AABB (min_x,min_y,max_x,max_y) 반환</td><td class="star">★★</td></tr>
+      <tr><td><a href="#fn-bb-overlap"><code>_bb_overlap</code></a></td><td>기하 헬퍼</td><td>두 AABB가 엄밀히 겹치는지 판단 (strict &lt;)</td><td class="star">★★</td></tr>
+      <tr><td><a href="#cls-bay"><code>Bay</code></a></td><td>데이터 모델</td><td>베이 치수 dataclass; contains_block() 경계 검사 포함</td><td class="star">★★★</td></tr>
+      <tr><td><a href="#cls-block"><code>Block</code></a></td><td>데이터 모델</td><td>배치된 블록 dataclass; layers_at_pos() O(1) 캐시 핵심</td><td class="star">★★★</td></tr>
+      <tr><td><a href="#cls-collision"><code>CollisionResult</code></a></td><td>데이터 모델</td><td>두 블록 동일 레이어 겹침 결과 레코드</td><td class="star">★★</td></tr>
+      <tr><td><a href="#cls-obstruction"><code>EntryObstruction</code></a></td><td>데이터 모델</td><td>크레인 경로 장애물 레코드; is_sweep 구분</td><td class="star">★★★</td></tr>
+      <tr><td><a href="#fn-check-collisions"><code>check_collisions</code></a></td><td>충돌 검사</td><td>공존 블록 쌍의 동일층 겹침 전체 검사</td><td class="star">★★★</td></tr>
+      <tr><td><a href="#fn-check-entry"><code>check_entry</code></a></td><td>충돌 검사</td><td>크레인 하강 경로 장애물 검사 (j≥k 규칙)</td><td class="star">★★★</td></tr>
+      <tr><td><a href="#fn-check-exit"><code>check_exit</code></a></td><td>충돌 검사</td><td>크레인 상승 경로 장애물 검사 (대칭)</td><td class="star">★★★</td></tr>
+      <tr><td><a href="#fn-blocks-from-instance"><code>blocks_from_instance</code></a></td><td>인스턴스 구성</td><td>인스턴스 JSON에서 특정 베이 선호 블록 목록 생성 (테스트용)</td><td class="star">★</td></tr>
+      <tr><td><a href="#sec-feasibility"><code>check_feasibility</code></a></td><td>핵심 검사기</td><td>솔루션 5단계 검증 + 목적함수 계산 — 평가 서버 정본</td><td class="star">★★★</td></tr>
+    </table>
+  </div>
+</div><!-- /sec-cheatsheet -->
+
+
+<!-- ==================== 1. 기하 헬퍼 ==================== -->
+<div class="section" id="sec-geo">
+  <div class="section-header sh-geo">
+    <span class="num-badge nb-geo">1</span>
+    기하 헬퍼 (내부용 <code>_</code> 접두)
+  </div>
+
+  <!-- _resolve_layers -->
+  <div class="func-card" id="fn-resolve-layers">
+    <div class="func-name">_resolve_layers <span class="internal-mark">internal</span></div>
+    <div class="func-summary">raw_layers 를 순수 Python list-of-lists 로 복사해 반환. 인스턴스 데이터 변조 방지용 얕은 복사.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 인스턴스 JSON에서 읽어온 레이어 데이터는 파이썬 내부적으로 동일 객체를 가리킬 수 있다.
+      솔버가 레이어 좌표를 제자리에서 수정하면 원본 인스턴스가 오염돼 이후 검사가 틀린 결과를 낸다.
+      이 함수는 항상 새 리스트를 만들어 반환해 그 문제를 차단한다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_resolve_layers</span>(raw_layers: <span class="tp">list</span>) -&gt; <span class="tp">list</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">raw_layers</td><td class="pt">list</td><td>각 원소가 폴리곤 꼭짓점 리스트 <code>[[x,y], ...]</code>인 레이어 목록</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list[list]</div>
+    <div class="callout callout-info">
+      <div class="callout-title">Note</div>
+      빈 레이어(<code>if layer</code>가 False인 항목)는 필터링된다. 인터페이스 호환성 유지용 경량 래퍼.
+    </div>
+    <div class="example-box">
+      <div class="example-title">계산 예시 — Worked Example</div>
+      <pre>raw = [[[0,0],[4,0],[4,3],[0,3]], [], [[1,1],[3,1],[3,2]]]
+result = _resolve_layers(raw)
+# result = [[[0,0],[4,0],[4,3],[0,3]], [[1,1],[3,1],[3,2]]]
+# 빈 레이어(인덱스 1)는 필터링되어 제거됨
+# len(result) == 2  (원본 3개 → 2개)</pre>
+    </div>
+  </div>
+
+  <!-- _anchor_verts -->
+  <div class="func-card" id="fn-anchor-verts">
+    <div class="func-name">_anchor_verts <span class="internal-mark">internal</span></div>
+    <div class="func-summary">단일 꼭짓점 목록의 바운딩 박스 최솟값이 (0, 0)이 되도록 평행이동.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 블록 형상 데이터는 임의 좌표에서 정의돼 있을 수 있다.
+      AABB 추정이나 그리드 배치 계산을 하려면 폴리곤을 원점 기준으로 정규화해야 한다.
+      이 함수는 단일 레이어 하나를 "왼쪽 아래 모서리 = (0,0)"이 되도록 이동시켜 준다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_anchor_verts</span>(verts: <span class="tp">list</span>) -&gt; <span class="tp">list</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">verts</td><td class="pt">list</td><td><code>[[x, y], ...]</code> 형태의 꼭짓점 목록</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list — 평행이동된 꼭짓점 목록</div>
+
+    <!-- SVG: 앵커링 시각화 -->
+    <div class="svg-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="560" height="150" viewBox="0 0 560 150">
+        <rect width="560" height="150" fill="#f8fafc"/>
+        <!-- 원본 폴리곤 -->
+        <polygon points="120,110 170,110 170,60 140,40 120,60" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5"/>
+        <text x="145" y="135" text-anchor="middle" font-size="11" fill="#2b6cb0">원본 폴리곤</text>
+        <text x="145" y="147" text-anchor="middle" font-size="9" fill="#718096">min_x=120, min_y=40</text>
+        <!-- 좌표 표시 -->
+        <text x="115" y="113" font-size="9" fill="#e53e3e">(120,110)</text>
+        <text x="172" y="113" font-size="9" fill="#e53e3e">(170,110)</text>
+        <text x="122" y="55" font-size="9" fill="#e53e3e">(120,60)</text>
+
+        <!-- 화살표 -->
+        <line x1="220" y1="80" x2="270" y2="80" stroke="#718096" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="245" y="73" text-anchor="middle" font-size="10" fill="#553c9a">−(120,40)</text>
+        <text x="245" y="95" text-anchor="middle" font-size="9" fill="#718096">_anchor_verts</text>
+
+        <!-- 정규화된 폴리곤 -->
+        <polygon points="310,110 360,110 360,60 330,40 310,60" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5"
+          transform="translate(170,0)"/>
+        <!-- 실제 좌표: 원본 - (120,40) -->
+        <!-- (0,70),(50,70),(50,20),(20,0),(0,20) -->
+        <polygon points="310,110 360,110 360,60 330,40 310,60" fill="none" stroke="none"/>
+        <polygon points="480,110 530,110 530,60 500,40 480,60" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5"/>
+        <text x="505" y="135" text-anchor="middle" font-size="11" fill="#276749">앵커링 후</text>
+        <text x="505" y="147" text-anchor="middle" font-size="9" fill="#718096">min_x=0, min_y=0</text>
+        <text x="474" y="113" font-size="9" fill="#276749">(0,70)</text>
+        <text x="532" y="113" font-size="9" fill="#276749">(50,70)</text>
+        <text x="476" y="55" font-size="9" fill="#276749">(0,20)</text>
+        <!-- 원점 마커 -->
+        <circle cx="480" cy="110" r="4" fill="#e53e3e"/>
+        <text x="462" y="108" font-size="9" fill="#e53e3e">원점</text>
+
+        <defs>
+          <marker id="arr2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#718096"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="svg-caption">_anchor_verts: 폴리곤 전체를 (min_x, min_y)만큼 빼서 왼쪽 아래가 원점이 되도록 이동</div>
+    </div>
+
+    <div class="example-box">
+      <div class="example-title">계산 예시</div>
+      <pre>verts = [[120, 110], [170, 110], [170, 60], [140, 40], [120, 60]]
+# min_x=120, min_y=40
+result = _anchor_verts(verts)
+# result = [[0, 70], [50, 70], [50, 20], [20, 0], [0, 20]]
+# 모든 x에서 120을 빼고, 모든 y에서 40을 뺌</pre>
+    </div>
+    <div class="callout callout-warn">
+      <div class="callout-title">주의 — 다중 레이어에는 사용 금지</div>
+      여러 레이어가 서로 정렬된 상태를 유지해야 할 때는 이 함수 대신 <code>_anchor_layers</code>를 써야 한다.
+      레이어별로 개별 앵커링하면 오프셋이 달라져 크레인 경로 기하가 깨진다.
+    </div>
+  </div>
+
+  <!-- _anchor_layers -->
+  <div class="func-card" id="fn-anchor-layers">
+    <div class="func-name">_anchor_layers <span class="internal-mark">internal</span></div>
+    <div class="func-summary">모든 레이어의 합집합 바운딩 박스 기준으로 전체를 동일 오프셋으로 평행이동. 레이어 간 상대 위치를 유지.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 블록은 여러 층(레이어)으로 구성된 3D 형상이다.
+      모든 레이어를 함께 정규화할 때 각 레이어를 따로 앵커링하면 레이어마다 다른 오프셋이 적용돼
+      물리적으로 어긋난 형상이 된다. 이 함수는 전체 레이어의 꼭짓점을 합산해 하나의 최솟값(min_x, min_y)을 구하고,
+      그 오프셋을 모든 레이어에 동일하게 빼주어 3D 형상의 상대 구조를 그대로 보존한다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_anchor_layers</span>(layers: <span class="tp">list</span>) -&gt; <span class="tp">list</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">layers</td><td class="pt">list[list]</td><td>레이어 목록. 각 레이어는 꼭짓점 리스트</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list[list] — 새 레이어 목록 (원본 불변)</div>
+    <div class="example-box">
+      <div class="example-title">계산 예시 — 왜 개별 앵커링이 틀리는가</div>
+      <pre>layers = [
+    [[10, 20], [30, 20], [30, 40], [10, 40]],  # Layer 0: min_x=10, min_y=20
+    [[15, 20], [25, 20], [25, 35], [15, 35]],  # Layer 1: min_x=15, min_y=20
+]
+
+# _anchor_layers 사용 → 전체 min_x=10, min_y=20 (동일 오프셋)
+result = _anchor_layers(layers)
+# Layer 0: [[0,0],[20,0],[20,20],[0,20]]
+# Layer 1: [[5,0],[15,0],[15,15],[5,15]]  ← 상대 위치 보존됨 (x+5 차이 유지)
+
+# _anchor_verts 를 각각 쓰면? (잘못된 방식)
+# Layer 0: [[0,0],[20,0],[20,20],[0,20]]   (min_x=10빼면 OK)
+# Layer 1: [[0,0],[10,0],[10,15],[0,15]]   (min_x=15빼면 → Layer 1이 Layer 0 대비 x+5 어긋남 사라짐!)</pre>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">사용 시점</div>
+      여러 레이어가 물리적으로 쌓인 3D 블록 형상을 정규화할 때. 동일 오프셋 보장이 크레인 j≥k 규칙의 전제 조건.
+    </div>
+  </div>
+
+  <!-- _translate_verts -->
+  <div class="func-card" id="fn-translate-verts">
+    <div class="func-name">_translate_verts <span class="internal-mark">internal</span></div>
+    <div class="func-summary">꼭짓점 목록 전체를 (dx, dy) 만큼 이동시켜 새 리스트로 반환.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 블록 형상은 로컬 좌표(0 기준)로 정의돼 있지만,
+      베이에 배치할 때는 실제 베이 좌표 (x, y)로 변환해야 한다.
+      <code>Block.__post_init__</code>이 이 함수를 써서 모든 레이어를 블록의 배치 위치(x, y)로 이동시킨다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_translate_verts</span>(verts: <span class="tp">list</span>, dx: <span class="tp">float</span>, dy: <span class="tp">float</span>) -&gt; <span class="tp">list</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">verts</td><td class="pt">list</td><td>원본 꼭짓점 목록</td></tr>
+      <tr><td class="pn">dx</td><td class="pt">float</td><td>x축 이동 거리</td></tr>
+      <tr><td class="pn">dy</td><td class="pt">float</td><td>y축 이동 거리</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list — 이동된 새 꼭짓점 목록 (원본 불변)</div>
+    <div class="example-box">
+      <div class="example-title">계산 예시</div>
+      <pre>verts = [[0,0],[10,0],[10,8],[0,8]]  # 로컬 좌표 (10×8 직사각형)
+result = _translate_verts(verts, dx=30, dy=15)
+# result = [[30,15],[40,15],[40,23],[30,23]]  # 베이 좌표 (30,15)에 배치됨</pre>
+    </div>
+  </div>
+
+  <!-- _poly_from_verts_cached -->
+  <div class="func-card" id="fn-poly-cached">
+    <div class="func-name">_poly_from_verts_cached <span class="internal-mark">internal, @lru_cache(8192)</span></div>
+    <div class="func-summary">불변 튜플 형태의 꼭짓점으로부터 Shapely Polygon 을 생성하고 LRU 캐시에 보관. 반복 호출 시 재계산 없음.</div>
+    <div class="sig-box"><span class="kw">@lru_cache</span>(maxsize=8192)
+<span class="kw">def</span> <span class="fn">_poly_from_verts_cached</span>(verts_tuple: <span class="tp">tuple</span>) -&gt; <span class="tp">Optional[ShapelyPolygon]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">verts_tuple</td><td class="pt">tuple[tuple[float,float],...]</td><td>해시 가능한 (x, y) 쌍의 튜플. 캐시 키로 사용.</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">ShapelyPolygon | None</div>
+    <div class="callout callout-info">
+      <div class="callout-title">Validity repair</div>
+      <code>buffer(0)</code> 로 자기교차(self-touching) 폴리곤을 자동 복구. 3개 미만 꼭짓점이거나 기하학적으로 퇴화(degenerate)된 경우 <code>None</code> 반환.
+    </div>
+  </div>
+
+  <!-- _poly_from_verts -->
+  <div class="func-card" id="fn-poly">
+    <div class="func-name">_poly_from_verts <span class="internal-mark">internal</span></div>
+    <div class="func-summary">가변 리스트를 해시 가능한 튜플로 변환 후 _poly_from_verts_cached 에 위임. 공개 호출 진입점.</div>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_poly_from_verts</span>(verts: <span class="tp">list</span>) -&gt; <span class="tp">Optional[ShapelyPolygon]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">verts</td><td class="pt">list</td><td><code>[[x, y], ...]</code> 형태. 빈 리스트 또는 꼭짓점 2개 이하면 None 반환.</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">ShapelyPolygon | None</div>
+  </div>
+
+  <!-- _bounding_box -->
+  <div class="func-card" id="fn-bounding-box">
+    <div class="func-name">_bounding_box <span class="internal-mark">internal</span></div>
+    <div class="func-summary">꼭짓점 목록의 AABB(Axis-Aligned Bounding Box) 를 반환. Shapely 사전 필터용.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 다각형 교차 계산(Shapely)은 비싸다. 두 폴리곤이 분명히 떨어져 있을 때조차
+      Shapely를 호출하면 낭비다. 이 함수가 반환한 직사각형 박스로 먼저 "겹칠 가능성이 없는 쌍"을 걸러내고,
+      통과한 쌍에만 정밀 교차를 호출한다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_bounding_box</span>(verts: <span class="tp">list</span>) -&gt; <span class="tp">tuple[float, float, float, float]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">verts</td><td class="pt">list</td><td>꼭짓점 목록</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">(min_x, min_y, max_x, max_y)</div>
+    <div class="example-box">
+      <div class="example-title">계산 예시</div>
+      <pre>verts = [[30,15],[40,15],[40,23],[30,23]]
+_bounding_box(verts)  # → (30, 15, 40, 23)</pre>
+    </div>
+  </div>
+
+  <!-- _bb_overlap -->
+  <div class="func-card" id="fn-bb-overlap">
+    <div class="func-name">_bb_overlap <span class="internal-mark">internal</span></div>
+    <div class="func-summary">두 AABB가 엄밀하게(strictly) 겹치는지 판단. 모서리·꼭짓점만 공유하는 경우는 False.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> check_collisions / check_entry / check_exit 모두 블록 쌍에 대해 AABB를 먼저 비교한다.
+      이 함수가 False를 반환하면 Shapely intersection을 전혀 호출하지 않아도 된다. 대부분의 블록 쌍은 여기서 걸려 O(1)에 skip된다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">_bb_overlap</span>(
+    a: <span class="tp">tuple[float,float,float,float]</span>,
+    b: <span class="tp">tuple[float,float,float,float]</span>
+) -&gt; <span class="tp">bool</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">a</td><td class="pt">tuple</td><td>(min_x, min_y, max_x, max_y) — 첫 번째 바운딩 박스</td></tr>
+      <tr><td class="pn">b</td><td class="pt">tuple</td><td>(min_x, min_y, max_x, max_y) — 두 번째 바운딩 박스</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">bool — 내부 넓이가 겹치면 True</div>
+    <div class="callout callout-info">
+      <div class="callout-title">판별식</div>
+      <code>a[0] &lt; b[2] and b[0] &lt; a[2] and a[1] &lt; b[3] and b[1] &lt; a[3]</code>
+      — 4개 strict inequality 모두 참일 때만 겹침.
+    </div>
+
+    <!-- SVG: AABB 겹침 vs 안겹침 -->
+    <div class="svg-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="520" height="160" viewBox="0 0 520 160">
+        <rect width="520" height="160" fill="#f8fafc"/>
+
+        <!-- 겹치는 경우 -->
+        <text x="120" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="#276749">겹침: True</text>
+        <rect x="30" y="30" width="100" height="80" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2" opacity="0.7"/>
+        <text x="80" y="75" text-anchor="middle" font-size="10" fill="#1a365d">A</text>
+        <rect x="80" y="60" width="100" height="80" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5" rx="2" opacity="0.7"/>
+        <text x="150" y="105" text-anchor="middle" font-size="10" fill="#1c4532">B</text>
+        <!-- 겹침 영역 표시 -->
+        <rect x="80" y="60" width="50" height="50" fill="#f6ad55" opacity="0.5" rx="1"/>
+        <text x="105" y="90" text-anchor="middle" font-size="9" fill="#7b341e">겹침</text>
+        <text x="120" y="148" text-anchor="middle" font-size="9" fill="#276749">a=(30,30,130,110), b=(80,60,180,140)</text>
+
+        <!-- 구분선 -->
+        <line x1="250" y1="10" x2="250" y2="155" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,2"/>
+
+        <!-- 안겹치는 경우 -->
+        <text x="385" y="18" text-anchor="middle" font-size="12" font-weight="bold" fill="#c53030">안겹침: False</text>
+        <rect x="270" y="40" width="90" height="70" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2"/>
+        <text x="315" y="78" text-anchor="middle" font-size="10" fill="#1a365d">A</text>
+        <rect x="400" y="40" width="90" height="70" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5" rx="2"/>
+        <text x="445" y="78" text-anchor="middle" font-size="10" fill="#1c4532">B</text>
+        <text x="385" y="148" text-anchor="middle" font-size="9" fill="#c53030">a=(270,40,360,110), b=(400,40,490,110)</text>
+        <text x="385" y="132" text-anchor="middle" font-size="9" fill="#c53030">360 ≮ 400 이므로 False</text>
+      </svg>
+      <div class="svg-caption">_bb_overlap: 두 박스의 min/max 좌표만으로 겹침을 O(1) 판단. 겹치면 Shapely 정밀 검사 진행.</div>
+    </div>
+    <div class="example-box">
+      <div class="example-title">계산 예시</div>
+      <pre>a = (30, 30, 130, 110)
+b = (80, 60, 180, 140)
+_bb_overlap(a, b)
+# 30 &lt; 180 and 80 &lt; 130 and 30 &lt; 140 and 60 &lt; 110  →  True
+
+c = (270, 40, 360, 110)
+d = (400, 40, 490, 110)
+_bb_overlap(c, d)
+# 270 &lt; 490 and 400 &lt; 360?  →  400 &lt; 360 = False  →  False</pre>
+    </div>
+  </div>
+
+</div><!-- /section-geo -->
+
+
+<!-- ==================== 2. 데이터 모델 ==================== -->
+<div class="section" id="sec-model">
+  <div class="section-header sh-model">
+    <span class="num-badge nb-model">2</span>
+    데이터 모델 (dataclass)
+  </div>
+
+  <!-- Bay -->
+  <div class="func-card" id="cls-bay">
+    <div class="func-name">Bay</div>
+    <div class="func-summary">단일 베이의 직사각형 치수를 담는 dataclass. 좌표계 원점은 좌하단 모서리. x는 수평(0…width), y는 수직(0…height).</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 클래스가 푸는 문제:</strong> 블록이 베이 경계를 벗어나는지 판단하는 기준 객체.
+      check_entry / check_feasibility 가 경계 검사에 이 객체를 사용한다. width·height 이 0 이하면 생성 시 ValueError.
+    </p>
+    <div class="sig-box"><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">Bay</span>:
+    width:  <span class="tp">int</span>           <span class="cm"># 베이 폭 (그리드 유닛)</span>
+    height: <span class="tp">int</span>           <span class="cm"># 베이 높이 (그리드 유닛)</span>
+    id:     <span class="tp">int</span> = 0       <span class="cm"># 0-기반 베이 인덱스</span></div>
+    <table class="param-table">
+      <tr><th>필드</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">width</td><td class="pt">int</td><td>베이 폭 (양의 정수, 위반 시 ValueError)</td></tr>
+      <tr><td class="pn">height</td><td class="pt">int</td><td>베이 높이 (양의 정수, 위반 시 ValueError)</td></tr>
+      <tr><td class="pn">id</td><td class="pt">int</td><td>0-기반 베이 인덱스. 기본값 0</td></tr>
+    </table>
+
+    <hr class="divider">
+    <strong style="font-size:0.9rem;color:#2d3748;">메서드</strong>
+
+    <div style="margin-top:10px">
+      <div class="func-name" style="font-size:0.95rem;">Bay.from_dict(d, idx) <span class="internal-mark">classmethod</span></div>
+      <div class="func-summary">인스턴스 JSON의 <code>bays[i]</code> 항목에서 Bay 객체를 생성한다.</div>
+      <div class="sig-box"><span class="kw">@classmethod</span>
+<span class="kw">def</span> <span class="fn">from_dict</span>(cls, d: <span class="tp">dict</span>, idx: <span class="tp">int</span> = 0) -&gt; <span class="tp">"Bay"</span></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="func-name" style="font-size:0.95rem;">Bay.contains_block(block)</div>
+      <div class="func-summary">블록의 AABB가 베이 경계 내부에 완전히 포함되는지 확인.</div>
+      <div class="sig-box"><span class="kw">def</span> <span class="fn">contains_block</span>(self, block: <span class="tp">"Block"</span>) -&gt; <span class="tp">bool</span></div>
+      <div class="callout callout-info">
+        <div class="callout-title">구현 세부</div>
+        실제 폴리곤이 아닌 <code>bounding_rect()</code> 를 기준으로 검사한다. 볼록하지 않은 형상이더라도 AABB가 베이를 벗어나지 않으면 True 를 반환한다. 검사 조건: <code>0 ≤ min_x &amp;&amp; max_x ≤ width &amp;&amp; 0 ≤ min_y &amp;&amp; max_y ≤ height</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Block -->
+  <div class="func-card" id="cls-block">
+    <div class="func-name">Block</div>
+    <div class="func-summary">베이 내 특정 위치·방향으로 배치된 단일 블록. 생성 시 월드 좌표 레이어 캐시를 미리 계산한다.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 클래스가 푸는 문제:</strong> 솔버는 같은 블록에 대해 check_entry / check_exit를 수백~수천 번 호출한다.
+      매번 "로컬 좌표 → 베이 좌표" 변환을 계산하면 느리다.
+      Block 객체는 생성 시 <em>한 번만</em> 레이어를 베이 좌표로 변환해 <code>_layers_cache</code>에 저장한다.
+      이후 <code>layers_at_pos()</code>는 O(1) 조회만 하면 된다.
+      위치나 방향이 바뀌면 <strong>반드시 새 Block 객체를 만들어야 한다.</strong>
+    </p>
+    <div class="sig-box"><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">Block</span>:
+    block_id:   <span class="tp">int</span>         <span class="cm"># instance["blocks"] 인덱스</span>
+    block_data: <span class="tp">dict</span>        <span class="cm"># instance["blocks"][i] 전체 dict</span>
+    x:          <span class="tp">int</span> = 0     <span class="cm"># 베이 좌표 x (정수 그리드)</span>
+    y:          <span class="tp">int</span> = 0     <span class="cm"># 베이 좌표 y (정수 그리드)</span>
+    orient_idx: <span class="tp">int</span> = 0    <span class="cm"># shape[] 인덱스 (0-기반)</span></div>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">중요 — 좌표는 정수</div>
+      평가 서버는 <code>x</code>, <code>y</code>를 <code>int(round(...))</code> 로 변환한다.
+      솔버가 부동소수점 위치를 반환하더라도 검사기는 정수 좌표로 반올림해 처리하므로,
+      솔버 내부에서도 정수 좌표를 사용하는 것이 안전하다.
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:0.9rem;color:#2d3748;">프로퍼티 &amp; 메서드</strong>
+
+    <table class="param-table" style="margin-top:10px">
+      <tr><th>이름</th><th>반환</th><th>설명</th></tr>
+      <tr>
+        <td class="pn">orientations</td>
+        <td class="pt">list</td>
+        <td><code>block_data["shape"]</code> 전체 — 가능한 모든 방향 항목</td>
+      </tr>
+      <tr>
+        <td class="pn">num_orientations</td>
+        <td class="pt">int</td>
+        <td>사용 가능한 방향 수</td>
+      </tr>
+      <tr>
+        <td class="pn">current_orient</td>
+        <td class="pt">dict</td>
+        <td>현재 <code>orient_idx</code>에 해당하는 shape 항목. 범위 초과 시 IndexError</td>
+      </tr>
+      <tr>
+        <td class="pn">orientation_index</td>
+        <td class="pt">int</td>
+        <td>JSON에 저장된 방향 식별자 <code>shape[i]["orientation"]</code></td>
+      </tr>
+      <tr>
+        <td class="pn">resolved_layers()</td>
+        <td class="pt">list[list]</td>
+        <td>현재 방향의 로컬 좌표 레이어 목록 (평행이동 미적용)</td>
+      </tr>
+      <tr>
+        <td class="pn">layers_at_pos()</td>
+        <td class="pt">list[list]</td>
+        <td>월드 좌표로 평행이동된 레이어 목록. <strong>O(1) 캐시 조회.</strong> check_entry/exit에서 반복 호출됨</td>
+      </tr>
+      <tr>
+        <td class="pn">bounding_rect()</td>
+        <td class="pt">tuple(4)</td>
+        <td>모든 레이어를 포함하는 월드 좌표 AABB. (min_x, min_y, max_x, max_y)</td>
+      </tr>
+      <tr>
+        <td class="pn">from_instance(block_id, instance, x, y, orient_idx)</td>
+        <td class="pt">Block</td>
+        <td>instance JSON dict에서 직접 Block 생성하는 classmethod</td>
+      </tr>
+    </table>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">캐싱 메커니즘</div>
+      <code>__post_init__</code> 에서 <code>_layers_cache</code> 를 한 번만 계산한다.
+      솔버가 check_entry/check_exit를 수백~수천 번 반복 호출할 때 Shapely 폴리곤 재구성 비용을 줄여준다.
+      블록 위치·방향이 바뀌면 새 Block 객체를 생성해야 한다 (dataclass 필드 직접 수정 금지).
+    </div>
+    <div class="example-box">
+      <div class="example-title">계산 예시 — layers_at_pos() 동작</div>
+      <pre># 인스턴스 JSON 구조 (개념):
+# blocks[0]["shape"][0]["layers"] = [[[0,0],[5,0],[5,4],[0,4]]]  # Layer 0, 로컬좌표
+# (첫 꼭짓점이 (0,0)임을 instance generator가 보장)
+
+b = Block(block_id=0, block_data=instance["blocks"][0], x=10, y=20, orient_idx=0)
+
+b.layers_at_pos()
+# → [[[10, 20], [15, 20], [15, 24], [10, 24]]]
+# Layer 0의 모든 꼭짓점에 (10, 20)이 더해진 월드 좌표
+
+b.bounding_rect()
+# → (10, 20, 15, 24)  — (min_x, min_y, max_x, max_y)</pre>
+    </div>
+    <div class="callout callout-danger">
+      <div class="callout-title">함정 — 정수 좌표 강제</div>
+      <code>check_feasibility</code>는 솔루션 dict의 x, y를 <code>int(round(...))</code>로 변환해 Block을 생성한다.
+      솔버가 부동소수점 좌표를 반환하면 반올림 후 위치가 미묘하게 달라져 경계·충돌 검사 결과가 바뀔 수 있다.
+      솔버 내부에서부터 정수 좌표를 쓰는 것이 안전하다.
+    </div>
+  </div>
+
+  <!-- CollisionResult -->
+  <div class="func-card" id="cls-collision">
+    <div class="func-name">CollisionResult</div>
+    <div class="func-summary">동일 레이어 인덱스에서 두 블록이 공간적으로 겹칠 때 check_collisions 가 생성하는 결과 레코드.</div>
+    <div class="sig-box"><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">CollisionResult</span>:
+    block_a:      <span class="tp">Block</span>
+    block_b:      <span class="tp">Block</span>
+    layer_index:  <span class="tp">int</span>          <span class="cm"># 겹침이 발생한 레이어 k (0-기반)</span>
+    intersection: <span class="tp">ShapelyPolygon</span>
+    area:         <span class="tp">float</span>          <span class="cm"># __post_init__ 에서 자동 계산</span></div>
+    <table class="param-table">
+      <tr><th>필드</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">block_a, block_b</td><td class="pt">Block</td><td>충돌하는 두 블록</td></tr>
+      <tr><td class="pn">layer_index</td><td class="pt">int</td><td>겹침이 발생한 레이어 인덱스 k</td></tr>
+      <tr><td class="pn">intersection</td><td class="pt">ShapelyPolygon</td><td>겹침 영역의 Shapely 기하 객체. 면적 계산·시각화에 활용 가능</td></tr>
+      <tr><td class="pn">area</td><td class="pt">float</td><td>겹침 면적 (자동 계산, <code>init=False</code>)</td></tr>
+    </table>
+  </div>
+
+  <!-- EntryObstruction -->
+  <div class="func-card" id="cls-obstruction">
+    <div class="func-name">EntryObstruction</div>
+    <div class="func-summary">check_entry(삽입) 또는 check_exit(제거) 시 크레인 경로를 막는 장애물 레코드. j≥k 규칙에 의해 생성된다.</div>
+    <div class="sig-box"><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">EntryObstruction</span>:
+    existing_block: <span class="tp">Block</span>         <span class="cm"># 장애물 블록 (self-ref = 베이 경계 위반)</span>
+    new_layer:      <span class="tp">int</span>           <span class="cm"># 삽입/제거 블록의 레이어 k</span>
+    exist_layer:    <span class="tp">int</span>           <span class="cm"># 장애물 블록의 레이어 j  (j ≥ k 항상 성립)</span>
+    intersection:   <span class="tp">ShapelyPolygon</span>
+    area:           <span class="tp">float</span>          <span class="cm"># 자동 계산</span></div>
+
+    <table class="param-table">
+      <tr><th>필드</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">existing_block</td><td class="pt">Block</td><td>장애물 블록. <strong>특수 케이스:</strong> <code>existing_block.block_id == new_block.block_id</code> 이면 베이 경계 초과를 의미함 (self-reference sentinel)</td></tr>
+      <tr><td class="pn">new_layer</td><td class="pt">int</td><td>삽입/제거 대상 블록의 레이어 인덱스 k</td></tr>
+      <tr><td class="pn">exist_layer</td><td class="pt">int</td><td>장애물 블록의 레이어 인덱스 j. 항상 j ≥ k</td></tr>
+      <tr><td class="pn">intersection</td><td class="pt">ShapelyPolygon</td><td>겹침 영역</td></tr>
+      <tr><td class="pn">area</td><td class="pt">float</td><td>겹침 면적 (자동 계산)</td></tr>
+    </table>
+
+    <div class="func-name" style="font-size:0.93rem;margin-top:10px;">EntryObstruction.is_sweep <span class="internal-mark">property</span></div>
+    <div class="func-summary" style="margin-bottom:8px">크레인 이동 경로(스윕) 충돌이면 True, 최종 안착 위치 충돌이면 False.</div>
+    <div class="returns-val">bool — <code>exist_layer &gt; new_layer</code> (즉 j &gt; k) 이면 True</div>
+
+    <p style="font-size:0.9rem;color:#4a5568;margin:10px 0;">
+      <strong>이 클래스가 푸는 문제:</strong> 크레인이 블록을 내리거나 올릴 때 왜 방해가 생기는지,
+      정확히 어느 레이어(k)와 어느 기존 블록 레이어(j)가 부딪히는지를 기록한다.
+      솔버는 이 정보를 보고 "어떤 블록을 먼저 꺼내야 삽입이 가능해지는지" 추론할 수 있다.
+    </p>
+
+    <!-- SVG: j>=k 크레인 규칙 시각화 -->
+    <div class="svg-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="640" height="240" viewBox="0 0 640 240">
+        <rect width="640" height="240" fill="#f8fafc"/>
+
+        <!-- 제목 -->
+        <text x="160" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#c53030">j == k: 최종 위치 충돌</text>
+        <text x="430" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#c53030">j &gt; k: 경로(Sweep) 충돌</text>
+        <text x="610" y="100" text-anchor="middle" font-size="11" font-weight="bold" fill="#276749">j &lt; k: 안전</text>
+
+        <!-- ==== 케이스 1: j==k ==== -->
+        <!-- 베이 윤곽 -->
+        <rect x="20" y="30" width="280" height="190" fill="none" stroke="#cbd5e0" stroke-width="1.5" rx="2"/>
+
+        <!-- 기존 블록 Layer 0 (j=0) -->
+        <rect x="60" y="150" width="90" height="40" fill="#fed7d7" stroke="#e53e3e" stroke-width="1.5" rx="2"/>
+        <text x="105" y="175" text-anchor="middle" font-size="10" fill="#63171b">기존 Block</text>
+        <text x="105" y="186" text-anchor="middle" font-size="9" fill="#c53030">Layer j=0</text>
+
+        <!-- 새 블록 Layer 0 (k=0) — 하강 중 -->
+        <rect x="80" y="80" width="90" height="40" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2" stroke-dasharray="4,2"/>
+        <text x="125" y="103" text-anchor="middle" font-size="10" fill="#1a365d">새 Block</text>
+        <text x="125" y="114" text-anchor="middle" font-size="9" fill="#2b6cb0">Layer k=0 (하강)</text>
+
+        <!-- 크레인 하강 화살표 -->
+        <line x1="125" y1="32" x2="125" y2="78" stroke="#e53e3e" stroke-width="2" marker-end="url(#arr3)"/>
+        <text x="138" y="58" font-size="9" fill="#c53030">크레인↓</text>
+
+        <!-- 충돌 X 표시 -->
+        <text x="105" y="145" text-anchor="middle" font-size="20" fill="#e53e3e">✕</text>
+        <text x="160" y="145" font-size="9" fill="#c53030">j=k=0, 겹침!</text>
+
+        <!-- 설명 -->
+        <text x="160" y="228" text-anchor="middle" font-size="9" fill="#4a5568">안착 위치에서 같은 층(j==k)이 겹침</text>
+        <text x="160" y="216" text-anchor="middle" font-size="9" fill="#4a5568">is_sweep = False</text>
+
+        <!-- 구분선 -->
+        <line x1="310" y1="20" x2="310" y2="235" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+        <!-- ==== 케이스 2: j>k ==== -->
+        <rect x="320" y="30" width="220" height="190" fill="none" stroke="#cbd5e0" stroke-width="1.5" rx="2"/>
+
+        <!-- 기존 블록 Layer 0 (j=0) 낮은 위치 -->
+        <rect x="360" y="160" width="80" height="35" fill="#fbd38d" stroke="#ed8936" stroke-width="1.5" rx="2"/>
+        <text x="400" y="181" text-anchor="middle" font-size="10" fill="#7b341e">기존 Block</text>
+        <text x="400" y="192" text-anchor="middle" font-size="9" fill="#7b341e">Layer j=1</text>
+
+        <!-- 기존 블록 Layer 1 (j=1) 위쪽 -->
+        <rect x="360" y="120" width="80" height="38" fill="#f6ad55" stroke="#ed8936" stroke-width="1.5" rx="2"/>
+        <text x="400" y="143" text-anchor="middle" font-size="9" fill="#7b341e">Layer j=0</text>
+
+        <!-- 새 블록 Layer 0 (k=0) — 하강 경로 중 j=1과 만남 -->
+        <rect x="380" y="65" width="80" height="35" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2" stroke-dasharray="4,2"/>
+        <text x="420" y="85" text-anchor="middle" font-size="10" fill="#1a365d">새 Block</text>
+        <text x="420" y="97" text-anchor="middle" font-size="9" fill="#2b6cb0">Layer k=0</text>
+
+        <!-- 크레인 화살표 -->
+        <line x1="420" y1="32" x2="420" y2="63" stroke="#e53e3e" stroke-width="2" marker-end="url(#arr3)"/>
+        <text x="440" y="50" font-size="9" fill="#c53030">↓ 하강</text>
+
+        <!-- 충돌 -->
+        <text x="425" y="113" font-size="9" fill="#c53030">k=0이 j=1 통과시 겹침!</text>
+        <text x="425" y="125" font-size="9" fill="#c53030">j&gt;k → is_sweep=True</text>
+
+        <text x="430" y="216" text-anchor="middle" font-size="9" fill="#4a5568">is_sweep = True</text>
+        <text x="430" y="228" text-anchor="middle" font-size="9" fill="#4a5568">최종 위치에 닿기 전에 경로 중 막힘</text>
+
+        <!-- ==== 케이스 3: j<k = 안전 ==== -->
+        <!-- 작은 박스로 표시 -->
+        <rect x="560" y="60" width="65" height="160" fill="none" stroke="#c6f6d5" stroke-width="1.5" rx="2"/>
+        <!-- 기존 Layer j=0 (낮음) -->
+        <rect x="568" y="170" width="50" height="30" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5" rx="2"/>
+        <text x="593" y="190" text-anchor="middle" font-size="8" fill="#276749">j=0</text>
+        <!-- 새 Layer k=1 (위) -->
+        <rect x="568" y="80" width="50" height="30" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2" stroke-dasharray="3,2"/>
+        <text x="593" y="100" text-anchor="middle" font-size="8" fill="#2b6cb0">k=1</text>
+        <text x="593" y="130" text-anchor="middle" font-size="9" fill="#276749">j=0 &lt; k=1</text>
+        <text x="593" y="143" text-anchor="middle" font-size="9" fill="#276749">충돌 없음</text>
+
+        <defs>
+          <marker id="arr3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#e53e3e"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="svg-caption">
+        크레인 수직 이동 규칙: j≥k인 모든 (k,j) 쌍을 검사한다.
+        j==k는 안착 위치 충돌(is_sweep=False), j&gt;k는 경로 중 충돌(is_sweep=True), j&lt;k는 항상 안전.
+      </div>
+    </div>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">크레인 j≥k 규칙 (핵심) — 왜 어렵고 왜 -1을 유발하는가</div>
+      <p style="margin-bottom:8px;">
+        크레인이 블록을 수직으로 내릴 때, 새 블록의 레이어 k는 기존 블록의 레이어 j (j ≥ k) 높이를 통과한다.
+        <strong>최종 위치에서 겹침이 없어도</strong>, 내려오는 경로 중간에 기존 블록의 상위 레이어(j&gt;k)와 겹치면 infeasible이다.
+        즉 "자리가 비어 있더라도 크레인 경로를 막는 블록을 먼저 꺼내야" 삽입이 가능하다.
+        이 제약을 위반하면 check_feasibility Stage 2 또는 Stage 5가 실패 → 점수 −1.
+      </p>
+      <ul style="padding-left:18px;font-size:0.88rem;">
+        <li><code>j == k</code>: 최종 안착 위치에서의 충돌 (같은 높이) — <code>is_sweep = False</code></li>
+        <li><code>j &gt; k</code>: 하강 경로 스윕 충돌 (내려오는 도중 지나가는 높이) — <code>is_sweep = True</code></li>
+        <li><code>j &lt; k</code>: 충돌 없음 — 기존 레이어 j가 새 레이어 k보다 낮아 내려오는 동안 닿지 않음</li>
+      </ul>
+      <strong style="display:block;margin-top:8px;">상승(EXIT)에도 동일 규칙이 대칭 적용된다.</strong>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-title">self-reference sentinel — 베이 경계 위반 구별법</div>
+      <code>existing_block.block_id == new_block.block_id</code>인 EntryObstruction은 다른 블록과의 충돌이 아니라
+      <strong>베이 경계 초과</strong>를 나타낸다. <code>check_entry</code>가 경계 위반 시 이 패턴으로 반환하므로,
+      호출자는 이 조건으로 "경계 문제"와 "블록간 충돌"을 구분해 처리할 수 있다.
+    </div>
+  </div>
+
+</div><!-- /section-model -->
+
+
+<!-- ==================== 3. 충돌·진입·퇴출 검사 ==================== -->
+<div class="section" id="sec-check">
+  <div class="section-header sh-check">
+    <span class="num-badge nb-check">3</span>
+    충돌·진입·퇴출 검사
+  </div>
+
+  <!-- check_collisions -->
+  <div class="func-card" id="fn-check-collisions">
+    <div class="func-name">check_collisions</div>
+    <div class="func-summary">공존하는 모든 블록 쌍에 대해 동일 레이어의 공간 겹침을 검사. AABB 선행 필터로 Shapely 호출을 최소화.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 같은 시간에 같은 베이에 있는 두 블록이 물리적으로 겹치는지 확인한다.
+      조선소 야드에서 두 부품이 동시에 같은 자리를 차지하면 물리적으로 불가능하다.
+      check_feasibility Stage 4에서 시간 구간이 겹치는 블록 쌍에만 이 함수를 호출한다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">check_collisions</span>(
+    bay:          <span class="tp">Bay</span>,
+    blocks:       <span class="tp">list[Block]</span>,
+    layer_indices:<span class="tp">Optional[set]</span> = None
+) -&gt; <span class="tp">list[CollisionResult]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">bay</td><td class="pt">Bay</td><td>대상 베이 (인터페이스 일관성용; 현재 구현에서 내부적으로 직접 접근하지 않음)</td></tr>
+      <tr><td class="pn">blocks</td><td class="pt">list[Block]</td><td>동시에 베이에 있다고 가정하는 블록 목록</td></tr>
+      <tr><td class="pn">layer_indices</td><td class="pt">Optional[set]</td><td>검사할 레이어 인덱스 집합. None이면 모든 공유 레이어 검사</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list[CollisionResult] — 겹침 없으면 []</div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">알고리즘</div>
+      <ol style="padding-left:18px;font-size:0.9rem;">
+        <li>모든 블록 쌍에 AABB 비교 → 겹치지 않으면 즉시 skip</li>
+        <li>AABB 통과 쌍에 대해 <code>min(n_A, n_B)</code> 레이어 수만큼 Shapely intersection 수행</li>
+        <li>면적 &gt; 0이면 CollisionResult 생성</li>
+      </ol>
+    </div>
+    <div class="callout callout-warn">
+      <div class="callout-title">레이어 비대칭</div>
+      두 블록의 레이어 수가 다를 경우 <code>min(n_A, n_B)</code> 까지만 비교한다.
+      키가 다른 두 블록이 같은 층에 공존할 때 실제로 겹치는 레이어만 검사한다.
+    </div>
+  </div>
+
+  <!-- check_entry -->
+  <div class="func-card" id="fn-check-entry">
+    <div class="func-name">check_entry</div>
+    <div class="func-summary">크레인이 new_block을 베이에 내릴(ENTRY) 때 장애물 여부를 검사. j≥k 하강 경로 규칙 적용.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 블록을 특정 위치에 놓고 싶어도, 크레인이 위에서 수직으로 내려오는 과정에서
+      이미 있는 블록의 상위 레이어를 통과해야 할 수 있다.
+      "자리는 비어 있지만 경로가 막혀 내릴 수 없다"는 상황을 정확히 잡아낸다.
+    </p>
+
+    <!-- SVG: 진입 통로 sweep -->
+    <div class="svg-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="560" height="200" viewBox="0 0 560 200">
+        <rect width="560" height="200" fill="#f8fafc"/>
+        <text x="140" y="15" text-anchor="middle" font-size="12" font-weight="bold" fill="#c53030">진입 막힘 — Sweep 충돌</text>
+        <text x="420" y="15" text-anchor="middle" font-size="12" font-weight="bold" fill="#276749">진입 가능</text>
+
+        <!-- 베이 A -->
+        <rect x="20" y="25" width="240" height="165" fill="none" stroke="#cbd5e0" stroke-width="1.5" rx="2"/>
+        <!-- 기존 블록 (2층짜리) -->
+        <rect x="80" y="130" width="80" height="35" fill="#fbd38d" stroke="#ed8936" stroke-width="1.5" rx="2"/>
+        <text x="120" y="152" text-anchor="middle" font-size="9" fill="#7b341e">기존 Block</text>
+        <text x="120" y="163" text-anchor="middle" font-size="9" fill="#7b341e">Layer 0 (j=0)</text>
+        <rect x="80" y="95" width="80" height="33" fill="#f6ad55" stroke="#ed8936" stroke-width="1.5" rx="2"/>
+        <text x="120" y="115" text-anchor="middle" font-size="9" fill="#7b341e">Layer 1 (j=1)</text>
+
+        <!-- 새 블록 목표 위치 (Layer k=0, 아래) -->
+        <rect x="90" y="130" width="80" height="35" fill="#bee3f8" stroke="#3182ce" stroke-width="1.5" rx="2" stroke-dasharray="5,3" opacity="0.6"/>
+        <text x="150" y="150" text-anchor="middle" font-size="8" fill="#2b6cb0">새 블록 목표</text>
+
+        <!-- 크레인 경로 (새 블록 k=0이 내려오는 중 j=1 통과) -->
+        <rect x="90" y="55" width="80" height="33" fill="#bee3f8" stroke="#3182ce" stroke-width="2" rx="2" stroke-dasharray="4,2" opacity="0.8"/>
+        <text x="165" y="70" font-size="9" fill="#2b6cb0">k=0 하강 중</text>
+        <text x="165" y="82" font-size="9" fill="#c53030">j=1과 겹침!</text>
+
+        <!-- 하강 화살표 -->
+        <line x1="130" y1="27" x2="130" y2="52" stroke="#e53e3e" stroke-width="2" marker-end="url(#arr4)"/>
+        <!-- 충돌 X -->
+        <text x="108" y="92" text-anchor="middle" font-size="22" fill="#e53e3e" opacity="0.8">✕</text>
+
+        <text x="140" y="198" text-anchor="middle" font-size="9" fill="#4a5568">목표 위치는 비어 있지만 경로가 막힘 → []가 아님</text>
+
+        <!-- 구분선 -->
+        <line x1="280" y1="10" x2="280" y2="195" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+        <!-- 베이 B (진입 가능) -->
+        <rect x="295" y="25" width="240" height="165" fill="none" stroke="#cbd5e0" stroke-width="1.5" rx="2"/>
+        <!-- 기존 블록 (1층짜리, 낮음) -->
+        <rect x="360" y="155" width="70" height="28" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5" rx="2"/>
+        <text x="395" y="173" text-anchor="middle" font-size="9" fill="#1c4532">기존 Block</text>
+        <text x="395" y="183" text-anchor="middle" font-size="9" fill="#1c4532">Layer 0 (j=0)</text>
+
+        <!-- 새 블록 (다른 위치, 경로 안 막힘) -->
+        <rect x="310" y="100" width="70" height="35" fill="#bee3f8" stroke="#3182ce" stroke-width="2" rx="2" stroke-dasharray="4,2"/>
+        <text x="345" y="120" text-anchor="middle" font-size="9" fill="#2b6cb0">새 Block k=0</text>
+        <line x1="345" y1="27" x2="345" y2="97" stroke="#3182ce" stroke-width="1.5" marker-end="url(#arr4b)" stroke-dasharray="4,2"/>
+        <text x="420" y="65" font-size="9" fill="#276749">경로에 장애물 없음</text>
+        <text x="420" y="78" font-size="9" fill="#276749">→ [] 반환</text>
+        <text x="420" y="91" font-size="9" fill="#276749">entry 가능!</text>
+
+        <defs>
+          <marker id="arr4" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#e53e3e"/>
+          </marker>
+          <marker id="arr4b" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#3182ce"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="svg-caption">check_entry: 크레인이 새 블록을 내리는 수직 경로 전체에서 기존 블록 레이어(j≥k)와의 겹침을 검사한다.</div>
+    </div>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">check_entry</span>(
+    bay:       <span class="tp">Bay</span>,
+    blocks:    <span class="tp">list[Block]</span>,
+    new_block: <span class="tp">Block</span>,
+    fast:      <span class="tp">bool</span> = False
+) -&gt; <span class="tp">list[EntryObstruction]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">bay</td><td class="pt">Bay</td><td>경계 검사용 베이</td></tr>
+      <tr><td class="pn">blocks</td><td class="pt">list[Block]</td><td>삽입 시점에 이미 베이에 있는 블록들</td></tr>
+      <tr><td class="pn">new_block</td><td class="pt">Block</td><td>삽입하려는 블록. x, y, orient_idx 가 목표 위치로 설정되어 있어야 함</td></tr>
+      <tr><td class="pn">fast</td><td class="pt">bool</td><td>True이면 첫 번째 장애물 발견 즉시 반환 (존재 여부만 필요할 때)</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list[EntryObstruction] — 장애물 없으면 []</div>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">베이 경계 위반 sentinel</div>
+      <code>bay.contains_block(new_block)</code>이 False이면
+      <code>existing_block == new_block</code> (self-reference)인 EntryObstruction 을 반환하고 즉시 종료한다.
+      다른 블록과의 충돌 검사는 수행되지 않는다.
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-title">검사 조건 3가지</div>
+      <ol style="padding-left:18px;font-size:0.9rem;">
+        <li><strong>베이 경계</strong>: new_block의 AABB가 베이 밖으로 나가지 않아야 함</li>
+        <li><strong>최종 위치 충돌 (j==k)</strong>: 같은 레이어끼리 공간 겹침 없어야 함</li>
+        <li><strong>하강 경로 스윕 (j&gt;k)</strong>: 내려오는 동안 상위 레이어 j를 통과할 때 겹침 없어야 함</li>
+      </ol>
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">솔버 사용 가이드</div>
+      솔버가 새 배치 후보를 평가할 때 <code>fast=True</code> 옵션으로 feasibility 만 확인하고,
+      세부 진단이 필요할 때만 <code>fast=False</code> (기본)로 전체 목록을 수집한다.
+    </div>
+  </div>
+
+  <!-- check_exit -->
+  <div class="func-card" id="fn-check-exit">
+    <div class="func-name">check_exit</div>
+    <div class="func-summary">크레인이 target_block을 베이에서 들어올릴(EXIT) 때 장애물 여부를 검사. j≥k 상승 경로 규칙 적용. check_entry와 기하 동일.</div>
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:10px;">
+      <strong>이 함수가 푸는 문제:</strong> 블록을 꺼내려 할 때 위에 다른 블록이 얹혀 있거나 옆 블록의 상위 레이어가 경로를 막으면
+      크레인이 블록을 들어올릴 수 없다. "꺼내고 싶은데 경로가 막혀 나올 수 없다"는 상황을 잡는다.
+      기하 논리는 check_entry와 동일하며, <code>blocks</code>에 target_block 자신이 포함돼도 내부에서 자동으로 제외한다.
+    </p>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">check_exit</span>(
+    bay:          <span class="tp">Bay</span>,
+    blocks:       <span class="tp">list[Block]</span>,
+    target_block: <span class="tp">Block</span>,
+    fast:         <span class="tp">bool</span> = False
+) -&gt; <span class="tp">list[EntryObstruction]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">bay</td><td class="pt">Bay</td><td>인터페이스 일관성용 (이미 배치된 블록이므로 경계 재검사 없음)</td></tr>
+      <tr><td class="pn">blocks</td><td class="pt">list[Block]</td><td>현재 베이에 있는 모든 블록. <strong>target_block 자신도 포함 가능</strong> — 내부에서 <code>block_id</code>로 자동 제외</td></tr>
+      <tr><td class="pn">target_block</td><td class="pt">Block</td><td>제거하려는 블록</td></tr>
+      <tr><td class="pn">fast</td><td class="pt">bool</td><td>True이면 첫 번째 장애물 발견 즉시 반환</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list[EntryObstruction] — 장애물 없으면 []</div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">self-exclusion</div>
+      <code>blocks</code> 목록에 <code>target_block</code> 자신이 포함되어도 안전하다.
+      내부에서 <code>exist.block_id == target_block.block_id</code> 조건으로 자동 skip 한다.
+      호출 전에 미리 제거할 필요 없다.
+    </div>
+    <div class="callout callout-warn">
+      <div class="callout-title">주의 — Stage 3 과의 차이</div>
+      Stage 3의 <code>present_at_exit</code> 조건은 <code>a_k &lt; ei &lt; e_k</code> (양쪽 strict).
+      <code>entry_time == exit_time</code>인 블록(아직 내려오지 않은 블록)은 co-present로 간주하지 않는다.
+    </div>
+  </div>
+
+</div><!-- /section-check -->
+
+
+<!-- ==================== 4. 인스턴스 → 블록 구성 ==================== -->
+<div class="section" id="sec-inst">
+  <div class="section-header sh-inst">
+    <span class="num-badge nb-inst">4</span>
+    인스턴스 → 블록 구성
+  </div>
+
+  <!-- blocks_from_instance -->
+  <div class="func-card" id="fn-blocks-from-instance">
+    <div class="func-name">blocks_from_instance</div>
+    <div class="func-summary">특정 베이를 가장 선호하는 블록들을 인스턴스 JSON에서 선택해 Block 객체 리스트를 만드는 편의 헬퍼. 단위 테스트·시각화 용도.</div>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">blocks_from_instance</span>(
+    instance:       <span class="tp">dict</span>,
+    bay_idx:        <span class="tp">int</span>,
+    positions:      <span class="tp">Optional[list[tuple[int,int]]]</span> = None,
+    orient_indices: <span class="tp">Optional[list[int]]</span>            = None
+) -&gt; <span class="tp">list[Block]</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">instance</td><td class="pt">dict</td><td>인스턴스 JSON (문제 파일을 로드한 dict)</td></tr>
+      <tr><td class="pn">bay_idx</td><td class="pt">int</td><td>대상 베이 인덱스. <code>argmax(bay_preferences) == bay_idx</code>인 블록만 선택</td></tr>
+      <tr><td class="pn">positions</td><td class="pt">list[(x,y)] | None</td><td>블록별 배치 위치. None이면 자동 그리드 배치</td></tr>
+      <tr><td class="pn">orient_indices</td><td class="pt">list[int] | None</td><td>블록별 방향 인덱스. None이면 전부 0</td></tr>
+    </table>
+    <div class="returns-label">반환값</div>
+    <div class="returns-val">list[Block] — 선택 순서대로 정렬, block_id는 원본 인덱스 유지</div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">주의 — 프로덕션 솔버에는 부적합</div>
+      자동 그리드 배치는 충돌 보장이 없다. 레이어 0의 AABB 기반으로 대략적인 배치만 제공한다.
+      시각화·빠른 테스트용으로만 활용하고, 실제 솔버는 직접 Block 객체를 생성해야 한다.
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-title">베이 선택 로직</div>
+      <code>prefs.index(max(prefs)) == bay_idx</code> — 동점 시 낮은 베이 인덱스 우선 (greedy baseline과 동일 기준).
+    </div>
+  </div>
+
+</div><!-- /section-inst -->
+
+
+<!-- ==================== 5. check_feasibility ==================== -->
+<div class="section" id="sec-feasibility">
+  <div class="section-header sh-core">
+    <span class="num-badge nb-core">5</span>
+    핵심: 실현가능성 검사기 <code>check_feasibility</code>
+  </div>
+
+  <div class="func-card">
+    <div class="func-name">check_feasibility</div>
+    <div class="func-summary">솔루션 전체를 5단계로 검증하고, 모두 통과 시 목적함수 값을 계산해 반환. 평가 서버에서 점수 산정에 사용되는 <strong>핵심 함수</strong>.</div>
+    <div class="sig-box"><span class="kw">def</span> <span class="fn">check_feasibility</span>(
+    prob_info: <span class="tp">dict</span>,
+    solution:  <span class="tp">dict</span>
+) -&gt; <span class="tp">dict</span></div>
+    <table class="param-table">
+      <tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="pn">prob_info</td><td class="pt">dict</td><td>
+        인스턴스 JSON. 필수 키: <code>"blocks"</code>, <code>"bays"</code><br>
+        선택 키: <code>"weights"</code> (없으면 w1=w2=w3=1.0 기본값)
+      </td></tr>
+      <tr><td class="pn">solution</td><td class="pt">dict</td><td>
+        솔버 출력. 구조: <code>{"operations": {str(time): [op, ...]}}</code><br>
+        ENTRY op 키: <code>type, block_id, bay_id, x, y, orient_idx</code><br>
+        EXIT op 키: <code>type, block_id, bay_id</code><br>
+        <strong>시간 키는 정수형 문자열</strong> (예: <code>"100"</code>)
+      </td></tr>
+    </table>
+
+    <p style="font-size:0.9rem;color:#4a5568;margin-bottom:12px;">
+      <strong>이 함수가 푸는 문제:</strong> 솔버가 만들어낸 솔루션 dict가 실제로 물리적으로 가능한지,
+      그리고 점수(목적함수 Z1+Z2+Z3)가 얼마인지를 한 번에 확인한다.
+      <strong>평가 서버가 이 함수 그대로를 사용하므로, 로컬에서 이 함수가 feasible=True를 반환해야 제출 점수가 나온다.</strong>
+      feasible=False → 해당 인스턴스 점수 −1.
+    </p>
+
+    <div class="callout callout-danger" style="margin-bottom:12px;">
+      <div class="callout-title">평가 서버 정본 — infeasible = 점수 −1</div>
+      이 검사기는 평가 서버에서 그대로 실행된다. <code>feasible=False</code>이면 그 인스턴스 점수는 즉시 −1.
+      전체 R팀 중 평균 R/2 순위 손실과 같은 효과. <strong>단 하나의 인스턴스도 infeasible을 내선 안 된다.</strong>
+      Stage 1 위반(타이밍 오류, 중복 연산)도 동일하게 −1 처리된다.
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:0.95rem;color:#2d3748;display:block;margin-bottom:12px;">5단계 검사 흐름 (단계별 상세)</strong>
+
+    <div class="callout callout-danger" style="margin-bottom:16px;">
+      <div class="callout-title">단계별 조기 종료</div>
+      첫 번째로 위반이 발생하는 단계에서 즉시 반환한다. 이후 단계는 평가되지 않는다.
+      반환된 <code>stage</code> 번호가 곧 <em>가장 앞선</em> 위반 단계이다.
+    </div>
+
+    <div class="stage-flow">
+      <div class="stage-item">
+        <div class="stage-num sn1">1</div>
+        <div class="stage-body">
+          <div class="stage-title">할당 유효성 (Assignment Validity)</div>
+          <div class="stage-desc">
+            모든 블록이 ENTRY 1회 + EXIT 1회씩 정확히 등장해야 한다.
+            <ul style="margin-top:6px;padding-left:18px;">
+              <li>중복 ENTRY 또는 중복 EXIT → 즉시 위반</li>
+              <li>누락된 block_id → 위반</li>
+              <li><code>bay_id ∈ [0, n_bays)</code>, <code>orient_idx ∈ [0, len(shape))</code> 범위 검사</li>
+              <li><code>entry_time ≥ release_time</code> (1e-6 부동소수점 허용오차)</li>
+              <li><code>exit_time - entry_time ≥ processing_time</code> (1e-6 허용오차)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stage 1 상세 -->
+    <div class="stage-detail-card">
+      <div class="sd-title">Stage 1 상세</div>
+      <div class="sd-row"><div class="sd-label">검사 입력</div><div class="sd-val"><code>solution["operations"]</code> dict 전체</div></div>
+      <div class="sd-row"><div class="sd-label">실패 조건</div><div class="sd-val">block_id 중복 ENTRY/EXIT, 누락 block_id, bay_id 범위 초과, orient_idx 범위 초과, entry_time &lt; release_time, exit_time−entry_time &lt; processing_time</div></div>
+      <div class="sd-row"><div class="sd-label">실패 반환</div><div class="sd-val"><code>{"feasible": False, "stage": 1, "violations": ["Stage1: block X ..."], "objective": None, ...}</code></div></div>
+      <div class="sd-row"><div class="sd-label">함정</div><div class="sd-val">시간 키는 <em>정수형 문자열</em>이어야 한다. <code>int(_t_str)</code>으로 변환 실패하면 Stage 1 위반 처리됨</div></div>
+    </div>
+
+    <div class="stage-flow">
+      <div class="stage-item">
+        <div class="stage-num sn2">2</div>
+        <div class="stage-body">
+          <div class="stage-title">크레인 진입 가능성 (Crane Entry Feasibility)</div>
+          <div class="stage-desc">
+            각 블록 ENTRY 시각 <code>ai</code>에 <code>check_entry</code> 호출.
+            <br>co-present 조건: <code>a_k ≤ ai &lt; e_k</code> (기존 블록의 퇴장 시각이 <code>ai</code>와 같으면 이미 나간 것 → 포함 안 함).
+            <br>위반 메시지 예: <code>Stage2: t=100: block 3 entry obstructed by block 7 (new_layer=0, exist_layer=1, kind=sweep, area=12.50)</code>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stage-detail-card">
+      <div class="sd-title">Stage 2 상세</div>
+      <div class="sd-row"><div class="sd-label">검사 입력</div><div class="sd-val">각 블록의 entry_time 시점 co-present 집합 (스냅숏)</div></div>
+      <div class="sd-row"><div class="sd-label">co-present 조건</div><div class="sd-val"><code>other["entry_time"] &lt;= ai &lt; other["exit_time"]</code> — 퇴장 시각이 정확히 같으면 이미 나간 것</div></div>
+      <div class="sd-row"><div class="sd-label">실패 조건</div><div class="sd-val"><code>check_entry()</code>가 빈 리스트가 아닌 것을 반환. 경계 초과(self-ref sentinel) 포함</div></div>
+      <div class="sd-row"><div class="sd-label">함정</div><div class="sd-val">베이 경계 초과도 Stage 2 위반. <code>existing_block.block_id == new_block.block_id</code>이면 경계 초과 메시지 출력</div></div>
+    </div>
+
+    <div class="stage-flow">
+      <div class="stage-item">
+        <div class="stage-num sn3">3</div>
+        <div class="stage-body">
+          <div class="stage-title">크레인 퇴출 가능성 (Crane Exit Feasibility)</div>
+          <div class="stage-desc">
+            각 블록 EXIT 시각 <code>ei</code>에 <code>check_exit</code> 호출.
+            <br>co-present 조건: <code>a_k &lt; ei &lt; e_k</code> (양쪽 strict; <code>entry_time == ei</code>인 블록은 아직 미도착).
+            <br>target_block 자신은 항상 <code>blocks</code>에 포함되어야 하며, <code>check_exit</code> 내부에서 자동 제외된다.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stage-detail-card">
+      <div class="sd-title">Stage 3 상세</div>
+      <div class="sd-row"><div class="sd-label">검사 입력</div><div class="sd-val">각 블록의 exit_time 시점 co-present 집합 + target 자신</div></div>
+      <div class="sd-row"><div class="sd-label">co-present 조건</div><div class="sd-val"><code>other["entry_time"] &lt; ei &lt; other["exit_time"]</code> — 양쪽 모두 strict</div></div>
+      <div class="sd-row"><div class="sd-label">Stage 2와 차이</div><div class="sd-val">Stage 2: entry_time &lt;= ai (왼쪽 닫힘). Stage 3: entry_time &lt; ei (양쪽 열림). 같은 시각에 동시 입출이면 Stage 3 에서 상대방이 co-present로 간주되지 않을 수 있음</div></div>
+    </div>
+
+    <div class="stage-flow">
+      <div class="stage-item">
+        <div class="stage-num sn4">4</div>
+        <div class="stage-body">
+          <div class="stage-title">공간 충돌 &amp; 베이 경계 (Spatial Collision &amp; Boundary)</div>
+          <div class="stage-desc">
+            4-a. <code>bay.contains_block</code>으로 모든 블록의 AABB 경계 검사.
+            <br>4-b. 동일 베이에서 시간 구간이 겹치는(<code>[a_p,e_p) ∩ [a_q,e_q) ≠ ∅</code>) 블록 쌍에 <code>check_collisions</code> 호출.
+            <br>시간이 겹치지 않는 쌍은 Shapely 검사 자체를 생략한다.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stage-detail-card">
+      <div class="sd-title">Stage 4 상세</div>
+      <div class="sd-row"><div class="sd-label">4-a 입력</div><div class="sd-val">각 Block의 bounding_rect() → Bay.contains_block()</div></div>
+      <div class="sd-row"><div class="sd-label">4-b 시간 겹침</div><div class="sd-val"><code>a_p &lt; e_q and a_q &lt; e_p</code> (반개구간 모델). 겹치는 쌍만 Shapely 정밀 검사</div></div>
+      <div class="sd-row"><div class="sd-label">함정</div><div class="sd-val">Stage 2/3를 통과했더라도 두 블록이 동시에 존재하면서 실제로 겹치면 Stage 4에서 잡힘. Stage 2/3는 크레인 경로 검사, Stage 4는 정적 공간 겹침 검사</div></div>
+    </div>
+
+    <div class="stage-flow">
+      <div class="stage-item">
+        <div class="stage-num sn5">5</div>
+        <div class="stage-body">
+          <div class="stage-title">순차 연산 가능성 (Sequential Operation Feasibility)</div>
+          <div class="stage-desc">
+            연산을 시간순 재현(replay). 베이별 <code>bay_present</code> 집합을 유지하며:
+            <ol style="margin-top:6px;padding-left:18px;">
+              <li>같은 시각에 EXIT가 ENTRY 뒤에 오면 위반 (EXIT → ENTRY 순서 강제)</li>
+              <li>EXIT: 블록이 <code>bay_present</code>에 있어야 하고, <code>check_exit</code> 통과해야 함</li>
+              <li>ENTRY: <code>check_entry</code> 통과해야 함; 성공 시 <code>bay_present</code>에 추가</li>
+            </ol>
+            <em>Stage 2/3보다 동시 시각 내 순서 위반을 더 엄격하게 잡는다.</em>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stage-detail-card">
+      <div class="sd-title">Stage 5 상세</div>
+      <div class="sd-row"><div class="sd-label">동작 원리</div><div class="sd-val">operations dict를 시간순(int(t_str) 기준)으로 정렬해 replay. bay_present[bay_id] 집합으로 현재 베이 상태 추적</div></div>
+      <div class="sd-row"><div class="sd-label">같은 시각 순서</div><div class="sd-val">EXIT 먼저, 그다음 ENTRY. 리스트에서 EXIT 뒤에 ENTRY가 먼저 나오면 위반. 솔루션 생성 시 같은 시각 ops를 EXIT→ENTRY 순으로 정렬해야 함</div></div>
+      <div class="sd-row"><div class="sd-label">Stage 2/3와 차이</div><div class="sd-val">Stage 2/3는 "스냅숏" 방식(각 블록의 시각에 co-present 계산). Stage 5는 "순차 재현" 방식(EXIT 후 ENTRY, 순서 엄격). Stage 2/3 통과 후 Stage 5 실패 가능</div></div>
+      <div class="sd-row"><div class="sd-label">함정</div><div class="sd-val">EXIT가 성공해야 bay_present에서 제거된다. EXIT 실패 시 bay_present는 그대로 — 이후 ENTRY가 막혀 연쇄 실패 가능</div></div>
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:0.95rem;color:#2d3748;display:block;margin-bottom:10px;">목적함수 계산 (5단계 모두 통과 시)</strong>
+
+    <div class="callout callout-tip">
+      <div class="callout-title">가중치 기본값</div>
+      <code>prob_info["weights"]</code>가 없으면 w1 = w2 = w3 = 1.0 을 사용한다.
+      실제 대회 인스턴스는 가중치가 다를 수 있으므로 항상 인스턴스 dict를 확인할 것.
+    </div>
+
+    <table class="param-table" style="margin-bottom:12px;">
+      <tr><th>구성요소</th><th>공식</th><th>설명</th></tr>
+      <tr>
+        <td class="pn">obj1 (tardiness)</td>
+        <td><code>Σ max(0, exit_time - due_date)</code></td>
+        <td>전체 지연 합계. due_date 는 <code>block_data["due_date"]</code>. 납기 전 퇴출이면 0 기여</td>
+      </tr>
+      <tr>
+        <td class="pn">obj2 (load balance)</td>
+        <td><code>math.floor(max|u_j1·load_j1 - u_j2·load_j2|)</code></td>
+        <td>정규화 작업부하 불균형. <code>u_j = avg_area / (W_j * H_j)</code><br>1개 베이면 0.0. <code>math.floor</code> 적용됨에 주의</td>
+      </tr>
+      <tr>
+        <td class="pn">obj3 (preference)</td>
+        <td><code>Σ (S_i_max - S_i_bay)</code></td>
+        <td>선호도 편차 합계. <code>S_i_max = max(bay_preferences)</code>. 가장 선호하는 베이에 배정하면 0 기여</td>
+      </tr>
+      <tr>
+        <td class="pn"><strong>objective</strong></td>
+        <td><code>w1·obj1 + w2·obj2 + w3·obj3</code></td>
+        <td>총 목적함수 값 (낮을수록 좋음)</td>
+      </tr>
+    </table>
+
+    <div class="formula-box">obj1 = Σ_i  max(0, exit_time_i - due_date_i)          # 전체 지연
+
+u_j  = avg_bay_area / (W_j * H_j)                   # 베이 j 정규화 계수
+obj2 = math.floor(
+         max |u_j1 * load_j1 - u_j2 * load_j2|      # 모든 베이 쌍 (j1≠j2)
+       )                                              # n_bays==1 이면 0.0
+
+obj3 = Σ_i (max_j bay_preferences_i[j] - bay_preferences_i[bay_id_i])
+
+objective = w1*obj1 + w2*obj2 + w3*obj3
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">obj2 주의 — math.floor 적용</div>
+      <code>obj2</code>에는 <code>math.floor</code>가 적용된다. 불균형이 3.9이면 obj2=3, 4.0이면 4.
+      솔버가 직접 불균형을 계산할 때 floor 없이 비교하면 미묘하게 다른 결론이 날 수 있다.
+      또한 <code>workload</code>는 <code>block_data["workload"]</code> 필드이며, 면적과는 다른 개념이다.
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:0.95rem;color:#2d3748;display:block;margin-bottom:10px;">반환 dict 구조</strong>
+
+    <table class="dict-table">
+      <tr><th>키</th><th>타입</th><th>설명</th></tr>
+      <tr><td class="dk">feasible</td><td class="dv">bool</td><td>5단계 모두 통과하면 True</td></tr>
+      <tr><td class="dk">stage</td><td class="dv">int</td><td>실패 단계 (1~5). 전체 통과 시 5 반환</td></tr>
+      <tr><td class="dk">violations</td><td class="dv">list[str]</td><td>위반 설명 문자열 목록. 통과 시 []</td></tr>
+      <tr><td class="dk">objective</td><td class="dv">float | None</td><td>총 목적함수 값. 불가능하면 None</td></tr>
+      <tr><td class="dk">obj1</td><td class="dv">float | None</td><td>지연(tardiness) 성분</td></tr>
+      <tr><td class="dk">obj2</td><td class="dv">float | None</td><td>작업부하 불균형 성분 (<code>math.floor</code> 적용됨)</td></tr>
+      <tr><td class="dk">obj3</td><td class="dv">float | None</td><td>베이 선호도 편차 성분</td></tr>
+    </table>
+
+    <p style="font-size:0.9rem;color:#2d3748;font-weight:700;margin:12px 0 6px;">반환 dict 예시 — Feasible (실현가능)</p>
+    <div class="json-box">{
+  <span class="jk">"feasible"</span>:  <span class="jb">true</span>,
+  <span class="jk">"stage"</span>:     <span class="jn">5</span>,
+  <span class="jk">"violations"</span>: <span class="jb">[]</span>,
+  <span class="jk">"objective"</span>: <span class="jn">1247.5</span>,
+  <span class="jk">"obj1"</span>:      <span class="jn">820.0</span>,   <span style="color:#718096">// 전체 지연 합계 (Z1)</span>
+  <span class="jk">"obj2"</span>:      <span class="jn">312.0</span>,   <span style="color:#718096">// math.floor 적용된 불균형 (Z2)</span>
+  <span class="jk">"obj3"</span>:      <span class="jn">115.5</span>    <span style="color:#718096">// 선호도 편차 합계 (Z3)</span>
+}</div>
+
+    <p style="font-size:0.9rem;color:#2d3748;font-weight:700;margin:12px 0 6px;">반환 dict 예시 — Infeasible (Stage 2 실패)</p>
+    <div class="json-box">{
+  <span class="jk">"feasible"</span>:  <span class="jb">false</span>,
+  <span class="jk">"stage"</span>:     <span class="jn">2</span>,
+  <span class="jk">"violations"</span>: [
+    <span class="jv">"Stage2: t=100: block 3 entry obstructed by block 7 (new_layer=0, exist_layer=1, kind=sweep, area=12.500)"</span>
+  ],
+  <span class="jk">"objective"</span>: <span class="jb">null</span>,
+  <span class="jk">"obj1"</span>:      <span class="jb">null</span>,
+  <span class="jk">"obj2"</span>:      <span class="jb">null</span>,
+  <span class="jk">"obj3"</span>:      <span class="jb">null</span>
+}</div>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">점수 모델과의 연결</div>
+      평가 서버는 <code>feasible=False</code>이면 <code>score = -1</code>을 부여한다.
+      한 인스턴스의 -1은 평균 R/2점 손실과 동일한 효과. <strong>Stage 1 위반(중복 연산, 타이밍 오류)도 infeasible = -1 처리</strong>된다.
+      솔버 개발 시 Stage 1 → 2 → 3 순서로 먼저 안정화하는 것이 유리하다.
+    </div>
+    <div class="callout callout-warn">
+      <div class="callout-title">Stage 2 vs Stage 5 차이</div>
+      Stage 2/3는 각 블록 기준으로 co-present 집합을 스냅숏 계산한다.
+      Stage 5는 시간순 재현으로 동일 시각 내 ENTRY/EXIT 순서 위반을 추가로 잡는다.
+      Stage 2/3를 통과해도 Stage 5에서 실패할 수 있다. (솔루션 생성 시 EXIT→ENTRY 순서 보장 필요)
+    </div>
+    <div class="callout callout-tip">
+      <div class="callout-title">솔버 개발 우선순위 가이드</div>
+      <ol style="padding-left:18px;font-size:0.9rem;">
+        <li><strong>Stage 1부터 안정화</strong> — 모든 블록 ENTRY+EXIT 쌍, 타이밍 제약(release/processing) 먼저</li>
+        <li><strong>Stage 2/3</strong> — check_entry/check_exit 통과. 크레인 j≥k 규칙이 핵심</li>
+        <li><strong>Stage 5</strong> — 같은 시각 ops를 EXIT→ENTRY 순으로 정렬</li>
+        <li><strong>Stage 4</strong> — 공간 충돌. Stage 2/3가 통과했다면 보통 통과됨</li>
+        <li>feasible 확정 후 obj1(tardiness), obj3(preference) 최적화</li>
+      </ol>
+    </div>
+
+    <hr class="divider">
+    <strong style="font-size:0.95rem;color:#2d3748;display:block;margin-bottom:8px;">빠른 사용 예시</strong>
+    <div class="sig-box"><span class="kw">import</span> json
+<span class="kw">from</span> utils <span class="kw">import</span> check_feasibility
+
+<span class="kw">with</span> open(<span class="tp">"instance.json"</span>) <span class="kw">as</span> f:
+    prob_info = json.load(f)
+
+solution = algorithm(prob_info, timelimit=60)  <span class="cm"># 솔버 호출</span>
+result = check_feasibility(prob_info, solution)
+
+<span class="kw">if</span> result[<span class="tp">"feasible"</span>]:
+    <span class="kw">print</span>(f<span class="tp">"OK — objective={result['objective']:.2f} "</span>
+          f<span class="tp">"(Z1={result['obj1']}, Z2={result['obj2']}, Z3={result['obj3']})"</span>)
+<span class="kw">else</span>:
+    <span class="kw">print</span>(f<span class="tp">"INFEASIBLE at stage {result['stage']}"</span>)
+    <span class="kw">for</span> v <span class="kw">in</span> result[<span class="tp">"violations"</span>]:
+        <span class="kw">print</span>(<span class="tp">" •"</span>, v)</div>
+  </div>
+
+</div><!-- /section-feasibility -->
+
+
+<footer>
+  OGC 2026 &mdash; utils.py 레퍼런스 &mdash; 2026-06-06 초판 / 2026-06-06 보강판 &mdash; 수정 금지 (평가 서버 정본)
+  <br>보강 내용: 용어 사전, 치트시트, 인라인 SVG 다이어그램 5종, 함수 카드 worked example 및 "이 함수가 푸는 문제" 설명, check_feasibility 5단계 상세 카드, 반환 dict 예시 JSON
+</footer>
+</div><!-- /page-wrap -->
+</body>
+</html>

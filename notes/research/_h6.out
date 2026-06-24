@@ -1,0 +1,46 @@
+inst       feas            obj       z1     z3  wall            ¥Ävs  comp/win
+prob_1     True          60247        2      0   4.4             +0  loss
+prob_2     True           6620        0      0   1.2             +0  WIN
+prob_3     True         611927        1   3771   4.6             +0  loss
+prob_4     True         410470       18      0   7.1        -197262  loss
+prob_5     True         967630       11   5194   2.9         -16000  loss
+prob_6     True        1334630       12   6501   9.4        -118520  loss
+prob_7     True         863552        5   5075   4.1        -160002  loss
+prob_8     True          12412        0      0   1.2             +0  WIN
+prob_9     True         811606       57    244  16.9        -306659  loss
+prob_10    True        1138122        8   7582   3.4         -29090  loss
+prob_11    True        2164455       94      0  16.8        -305232  loss
+prob_12    True        1382341       16   7659   5.0         -43836  loss
+prob_13    True        1815360       32   9105   9.6         -18605  loss
+prob_14    True        2530841       76   8826  18.7        -266670  loss
+prob_15    True        1191655        2   8635   7.7             +0  loss
+prob_16    True         807517       87     38   6.8        -539687  loss
+prob_17    True        1626192        0  12164   8.2             +0  loss
+prob_18    True        1704684       11  11665   8.8         -13333  loss
+prob_19    True        1447171        1  10784   4.8             +0  loss
+prob_20    True        2172112       30  10802  22.9        -480006  loss
+prob_21    True        5634244      368   4761  16.8       -1506629
+prob_22    True        2509474       42   4864   8.1        -266660
+prob_23    True        9018780      615   3306  21.4       -2047409
+prob_24    True        4894362      269   4338  14.6        -986642
+prob_25    True         642166      858   3444  26.5        -116725
+prob_26    True       27913457     2025   6002  19.4       -6826496
+prob_27    True       53911118     3858   6172  27.0       -2973259
+prob_28    True       10945731      699   5412  24.9       -1119972
+prob_29    True        2552682       45   6492   7.7         -66665
+prob_30    True       13213461      925   4380  26.6       -3091040
+prob_31    True       21604295     1358  13074  34.3       -2026616
+prob_32    True        8960212     2644    205  24.4        -843249
+prob_33    True       20695473     2939   7155  38.3       -1653416
+prob_34    True        3531173     1042     66  31.4        -933240
+prob_35    True        8818715      590   6341  36.6       -1053307
+prob_36    True         568495      595  13064  27.8         -84042
+prob_37    True       12346312     2072   9050  36.0        -339966
+prob_38    True       84871783     6161   9079  44.0             +0
+prob_39    True       32828918     2354   9610  35.1       -3959901
+prob_40    True        4924340     7151  11784  40.2        -466900
+----------------------------------------------------------------------
+feasible=40/40  infeasible=none
+total_obj=353444735  wins_vs_competitor(set1 only)=2
+vs h3: improved=32 regressed=0
+[saved] baselines/h6.json

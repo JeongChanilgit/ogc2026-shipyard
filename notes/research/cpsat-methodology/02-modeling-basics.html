@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 모델링 기본기 — CP-SAT Methodology</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html" class="active">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="kicker">CP-SAT Methodology · 02</div>
+    <h1>모델링 기본기<br><span style="color:var(--muted);font-size:1.2rem;font-weight:400">변수 · 제약 · Reification · Channeling</span></h1>
+    <p class="lead">
+      CpModel/CpSolver API 흐름부터 변수 선언, 선형 제약, Boolean 로직, 그리고 CP-SAT에서 가장 강력하고 동시에 가장 오해가 많은 기능인
+      <strong>Reification(OnlyEnforceIf)</strong>과 <strong>Channeling 관용구</strong>까지.
+      OGC 2026 조선소 배정 모델에 직결되는 패턴을 중심으로 정리한다.
+    </p>
+  </div>
+
+  <!-- OGC CALLOUT -->
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 관련성</div>
+    <p style="margin:0">
+      블록 <code>b</code>가 베이 <code>j</code>에 배정됨 ↔ BoolVar <code>assigned[b][j]</code>를 채널링하는 패턴,
+      크레인 수직접근 제약(레이어 <code>j ≥ k</code>)을 <code>AddImplication</code>으로 인코딩하는 방법,
+      그리고 entry/exit 시각 결정에 <code>OnlyEnforceIf</code>를 적용하는 방법이 이 페이지의 핵심이다.
+      현재 <code>src/</code>의 <code>_cpsat_bay_timing_verified</code>와 <code>src/baypack_cp/</code>에서
+      실제로 사용 중인 모든 모델링 관용구의 이론 배경이 여기 있다.
+    </p>
+  </div>
+
+  <!-- ========== 1. API 흐름 ========== -->
+  <h2 id="api-flow">1. CpModel / CpSolver API 흐름</h2>
+  <p>
+    CP-SAT의 Python 인터페이스는 두 클래스 중심이다:
+    <code>CpModel</code>(변수 생성 + 제약 추가 + 목적함수 설정)과
+    <code>CpSolver</code>(탐색 파라미터 + 실행).
+    모든 변수와 제약은 모델 객체에 귀속되며, 변수 자체는 <em>선언</em>일 뿐 값이 아니다 — 값은 <code>solver.Value()</code>로 꺼낸다.
+  </p>
+
+  <pre><code><span class="cmt"># 기본 흐름 (새 snake_case API, or-tools 9.6+)</span>
+from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+
+<span class="cmt"># 1) 변수 선언</span>
+x = model.new_int_var(0, 100, "x")
+y = model.new_int_var(0, 100, "y")
+b = model.new_bool_var("b")
+
+<span class="cmt"># 2) 제약 추가</span>
+model.add(x + 2 * y &lt;= 100)
+model.add(x + y &gt;= 10).only_enforce_if(b)
+
+<span class="cmt"># 3) 목적함수</span>
+model.maximize(3 * x + 5 * y)
+
+<span class="cmt"># 4) 탐색</span>
+solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 30.0
+status = solver.solve(model)
+
+<span class="cmt"># 5) 결과 조회</span>
+if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+    print(f"x={solver.value(x)}, y={solver.value(y)}, b={solver.value(b)}")
+    print(f"obj={solver.objective_value}")</code></pre>
+
+  <div class="tip">
+    <div class="ttl">API 호환성</div>
+    <p style="margin:0">
+      or-tools 9.x 부터 <strong>snake_case</strong> 메서드(<code>new_int_var</code>, <code>add_bool_or</code>, <code>only_enforce_if</code>)가 공식이다.
+      구 PascalCase (<code>NewIntVar</code>, <code>AddBoolOr</code>, <code>OnlyEnforceIf</code>)도 alias로 남아 있지만
+      새 코드에서는 snake_case 사용을 권장한다. 이 문서는 두 표기법 모두 예시한다.
+    </p>
+  </div>
+
+  <!-- ========== 2. 변수 ========== -->
+  <h2 id="variables">2. 변수 선언</h2>
+
+  <h3 id="new-int-var">2.1 NewIntVar — 연속 정수 도메인</h3>
+  <pre><code><span class="cmt"># new_int_var(lb, ub, name) → IntVar</span>
+x = model.new_int_var(0, 10, "x")       <span class="cmt"># 0 ≤ x ≤ 10</span>
+z = model.new_int_var(-100, 100, "z")   <span class="cmt"># 음수 허용</span>
+
+<span class="cmt"># 구 API (PascalCase)</span>
+x_old = model.NewIntVar(0, 10, "x_old")</code></pre>
+
+  <h3 id="new-bool-var">2.2 NewBoolVar — 불리언 (0/1)</h3>
+  <pre><code>b = model.new_bool_var("b")   <span class="cmt"># 도메인 {0, 1}</span>
+
+<span class="cmt"># 부정(Negation): 새 변수를 만들지 않는다, 뷰(view)를 반환한다</span>
+not_b  = ~b          <span class="cmt"># 새 문법</span>
+not_b2 = b.Not()     <span class="cmt"># 구 문법 (동일 객체)</span>
+
+<span class="cmt"># BoolVar는 IntVar의 서브타입 — 산술식에 그대로 쓸 수 있다</span>
+model.add(sum(bool_vars) &lt;= 3)
+model.maximize(sum(bool_vars))</code></pre>
+
+  <h3 id="new-constant">2.3 NewConstant — 상수</h3>
+  <pre><code>c = model.new_constant(42)   <span class="cmt"># domain = {42}, 제약 식에 쓸 수 있는 IntVar</span></code></pre>
+
+  <h3 id="domain-var">2.4 NewIntVarFromDomain — 비연속(Sparse) 도메인</h3>
+  <p>
+    도메인이 연속적이지 않을 때 <code>Domain</code>을 사용한다.
+    내부적으로 CP-SAT는 도메인을 정렬된 구간(interval) 목록으로 관리한다.
+  </p>
+  <pre><code>from ortools.sat.python import cp_model
+
+<span class="cmt"># (a) 이산값 집합</span>
+d1 = cp_model.Domain.from_values([2, 5, 8, 10, 20, 50])
+x  = model.new_int_var_from_domain(d1, "x")
+<span class="cmt"># x ∈ {2, 5, 8, 10, 20, 50}</span>
+
+<span class="cmt"># (b) 구간 목록</span>
+d2 = cp_model.Domain.from_intervals([[1, 3], [7, 9], [15, 20]])
+y  = model.new_int_var_from_domain(d2, "y")
+<span class="cmt"># y ∈ [1,3] ∪ [7,9] ∪ [15,20]</span>
+
+<span class="cmt"># (c) 합집합 연산</span>
+d3 = d1.union_with(d2)
+
+<span class="cmt"># (d) AddLinearExpressionInDomain — 식을 특정 도메인에 제한</span>
+model.add_linear_expression_in_domain(3 * x + 2 * y, d1)
+<span class="cmt"># 3x + 2y ∈ {2, 5, 8, 10, 20, 50}</span>
+
+<span class="cmt"># 구 API</span>
+d_old = cp_model.Domain.FromValues([1, 3, 5])
+x_old = model.NewIntVarFromDomain(d_old, "x_old")</code></pre>
+
+  <div class="tip">
+    <div class="ttl">도메인 변수 활용 시점</div>
+    <p style="margin:0">
+      방향(orientation)이 0° / 90° / 180° / 270° 만 가능한 변수,
+      또는 입항 시각이 사전 정의된 슬롯 집합에서만 선택 가능한 경우 등에 유용하다.
+      CP-SAT는 Order Encoding을 통해 도메인을 내부적으로 Boolean 변수 집합으로 표현하므로,
+      도메인이 작을수록 변수 수가 줄어 효율이 높아진다.
+    </p>
+  </div>
+
+  <!-- ========== 3. 선형 제약 ========== -->
+  <h2 id="linear">3. 선형 제약</h2>
+
+  <h3>3.1 model.Add(...) — 기본 비교</h3>
+  <pre><code><span class="cmt"># 지원되는 연산자: ==, !=, <=, >=, <, ></span>
+model.add(x + y &lt;= 100)
+model.add(x == y + 5)
+model.add(2 * x - 3 * y &gt;= -50)
+model.add(x != y)     <span class="cmt"># disequality: 내부적으로 BoolVar 도입</span>
+
+<span class="cmt"># 대용량 합산 — sum()보다 LinearExpr.sum()이 빠르다</span>
+from ortools.sat.python.cp_model import LinearExpr
+model.add(LinearExpr.sum(xs) &gt;= 1)
+model.minimize(LinearExpr.weighted_sum(xs, weights))</code></pre>
+
+  <h3>3.2 AddLinearConstraint — lb ≤ expr ≤ ub 형식</h3>
+  <pre><code><span class="cmt"># add_linear_constraint(expr, lb, ub)</span>
+model.add_linear_constraint(10 * x + 15 * y, lb=-100, ub=10)
+<span class="cmt"># -100 ≤ 10x + 15y ≤ 10</span></code></pre>
+
+  <h3>3.3 AllDifferent</h3>
+  <pre><code>vars_ = [model.new_int_var(0, n - 1, f"v{i}") for i in range(n)]
+model.add_all_different(vars_)
+
+<span class="cmt"># 오프셋 변형 — 라틴 방진 등에 유용</span>
+model.add_all_different([v + i for i, v in enumerate(vars_)])</code></pre>
+
+  <!-- ========== 4. Boolean 로직 ========== -->
+  <h2 id="boolean">4. Boolean 로직 제약</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>메서드</th>
+        <th>의미</th>
+        <th>동등 선형식</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>add_bool_or([b1, b2, b3])</code></td>
+        <td>b1 ∨ b2 ∨ b3</td>
+        <td>b1+b2+b3 ≥ 1</td>
+      </tr>
+      <tr>
+        <td><code>add_at_least_one([...])</code></td>
+        <td>동일 (별칭)</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>add_bool_and([b1, ~b2, b3])</code></td>
+        <td>b1 ∧ ¬b2 ∧ b3</td>
+        <td>b1=1, b2=0, b3=1</td>
+      </tr>
+      <tr>
+        <td><code>add_at_most_one([b1, b2, b3])</code></td>
+        <td>∑ ≤ 1</td>
+        <td>b1+b2+b3 ≤ 1</td>
+      </tr>
+      <tr>
+        <td><code>add_exactly_one([b1, b2, b3])</code></td>
+        <td>∑ = 1</td>
+        <td>b1+b2+b3 = 1</td>
+      </tr>
+      <tr>
+        <td><code>add_implication(a, b)</code></td>
+        <td>a → b</td>
+        <td>b ≥ a</td>
+      </tr>
+      <tr>
+        <td><code>add_bool_xor([b1, b2, b3])</code></td>
+        <td>홀수 개 true</td>
+        <td>b1+b2+b3 ≡ 1 (mod 2)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre><code>b1 = model.new_bool_var("b1")
+b2 = model.new_bool_var("b2")
+b3 = model.new_bool_var("b3")
+
+<span class="cmt"># OR: 적어도 하나는 true</span>
+model.add_bool_or([b1, b2, b3])
+
+<span class="cmt"># AND with negation: b1=T, b2=F, b3=F</span>
+model.add_bool_and([b1, ~b2, ~b3])
+
+<span class="cmt"># 배타적 선택 (정확히 하나)</span>
+model.add_exactly_one([b1, b2, b3])
+
+<span class="cmt"># 함의: b1이 true이면 b2도 true</span>
+model.add_implication(b1, b2)
+<span class="cmt"># 동등 선형식: model.add(b2 &gt;= b1)</span>
+
+<span class="cmt"># 복합: (b1 AND b2) → b3   ≡   ¬b1 ∨ ¬b2 ∨ b3</span>
+model.add_bool_or([~b1, ~b2, b3])</code></pre>
+
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 — 베이 배정 ExactlyOne</div>
+    <pre style="margin:6px 0 0"><code><span class="cmt"># 블록 b는 정확히 하나의 베이에 배정</span>
+assign = {(blk, bay): model.new_bool_var(f"a_{blk}_{bay}")
+          for blk in blocks for bay in bays}
+
+for blk in blocks:
+    model.add_exactly_one([assign[blk, bay] for bay in bays])
+
+<span class="cmt"># 크레인 j≥k 수직접근 제약: 레이어 j에 블록이 있으면 k&lt;j 레이어도 없어야 함</span>
+<span class="cmt"># "present[b][j]=True → present[b][k]=False" (k &lt; j)</span>
+for blk in blocks:
+    for j in range(num_layers):
+        for k in range(j):           <span class="cmt"># k &lt; j</span>
+            model.add_implication(present[blk][j], ~present[blk][k])</code></pre>
+  </div>
+
+  <!-- ========== 5. Reification ========== -->
+  <h2 id="reification">5. Reification — OnlyEnforceIf</h2>
+
+  <p>
+    <strong>Reification</strong>은 제약의 참/거짓 여부를 Boolean 변수에 연결하는 기법이다.
+    CP-SAT는 <em>full reification</em>을 직접 지원하지 않고,
+    <strong>half-reification(단방향)</strong>인 <code>only_enforce_if</code>를 제공한다.
+  </p>
+
+  <h3>5.1 Half-Reification: OnlyEnforceIf 의미</h3>
+
+  <p>
+    <code>model.add(C).only_enforce_if(b)</code>의 정확한 의미는:
+  </p>
+  <blockquote style="border-left:3px solid var(--accent);padding-left:16px;margin:12px 0;color:var(--muted)">
+    <strong>b = 1 이면 제약 C가 반드시 성립한다.</strong><br>
+    b = 0 이면 제약 C는 무시된다 — C가 성립해도 되고, 성립하지 않아도 된다.
+  </blockquote>
+
+  <pre><code><span class="cmt"># Half-reification: b=1 → x &gt;= 5  (b=0 이면 x는 아무 값도 OK)</span>
+model.add(x &gt;= 5).only_enforce_if(b)
+
+<span class="cmt"># 부정 조건: ~b = 1 (즉 b=0) 이면 x &lt; 5</span>
+model.add(x &lt; 5).only_enforce_if(~b)
+
+<span class="cmt"># 복수 조건 (AND): b1 AND b2 둘 다 true일 때만 제약 강제</span>
+model.add(x + y == 10).only_enforce_if([b1, b2])</code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #1: OnlyEnforceIf는 단방향이다</div>
+    <p>
+      <code>model.add(x &gt;= 5).only_enforce_if(b)</code> 만 추가하면<br>
+      <strong>"b=1 → x≥5"</strong>는 강제되지만,<br>
+      <strong>"x≥5 → b=1"</strong>은 강제되지 않는다.
+    </p>
+    <p>
+      즉, 솔버는 x=7, b=0 을 선택할 수 있다. b가 "x≥5인지 여부"를 정확히 반영해야 한다면
+      반드시 양방향을 모두 걸어야 한다 (아래 §5.2 참고).
+    </p>
+  </div>
+
+  <h3>5.2 Full Reification (양방향 채널링): b ⟺ (x ≥ v)</h3>
+  <pre><code><span class="cmt"># b == (x &gt;= 5) 를 완전히 인코딩하려면 양방향이 필요하다</span>
+b = model.new_bool_var("b_x_ge_5")
+
+model.add(x &gt;= 5).only_enforce_if(b)       <span class="cmt"># b=1 → x≥5</span>
+model.add(x &lt;  5).only_enforce_if(~b)      <span class="cmt"># b=0 → x&lt;5  (역방향)</span>
+<span class="cmt"># 이제 b=1 ↔ x≥5 가 완전히 인코딩됨</span>
+
+<span class="cmt"># 마찬가지로 b == (x == v)</span>
+v = 7
+b_eq = model.new_bool_var("b_x_eq_7")
+
+model.add(x == v).only_enforce_if(b_eq)    <span class="cmt"># b=1 → x=7</span>
+model.add(x != v).only_enforce_if(~b_eq)   <span class="cmt"># b=0 → x≠7</span>
+<span class="cmt"># 주의: model.add(x != v)는 내부적으로 보조 BoolVar를 생성한다</span></code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #2: 등호 제약에 OnlyEnforceIf 직접 사용 시 주의</div>
+    <p>
+      <code>model.add(x == v).only_enforce_if(b)</code>는 동작하지만,
+      CP-SAT 내부에서 <code>x == v</code>는 두 부등식(<code>x≤v</code>, <code>x≥v</code>)으로 분해된다.
+      역방향(<code>b=0 → x≠v</code>)을 추가하지 않으면 솔버가 b=0이더라도 x=v를 선택할 수 있다.
+      반드시 <code>model.add(x != v).only_enforce_if(~b)</code>를 쌍으로 추가하라.
+    </p>
+  </div>
+
+  <h3>5.3 AddBoolAnd + OnlyEnforceIf 조합 (Conditional AND)</h3>
+  <pre><code><span class="cmt"># b=1일 때만 b1=T, b2=T, b3=F 를 강제</span>
+model.add_bool_and([b1, b2, ~b3]).only_enforce_if(b)
+
+<span class="cmt"># 반대: b=0일 때는 위 AND를 강제하지 않음 (half-reification)</span>
+<span class="cmt"># 역방향이 필요하면: b=0 → NOT(b1 AND b2 AND ~b3) = ~b1 OR ~b2 OR b3</span>
+model.add_bool_or([~b1, ~b2, b3]).only_enforce_if(~b)</code></pre>
+
+  <!-- ========== 6. Channeling ========== -->
+  <h2 id="channeling">6. Channeling 관용구</h2>
+
+  <p>
+    <strong>Channeling</strong>은 정수 변수 값과 Boolean 변수 사이의 연결을 만드는 것이다 —
+    예: "변수 x가 베이 j에 배정됨 ↔ assign[x][j]=1".
+    대부분 양방향 half-reification 2줄의 조합으로 구현한다.
+  </p>
+
+  <h3>6.1 기본 if-then 인코딩</h3>
+  <pre><code><span class="cmt"># if b then y = 10 - x, else y = 0</span>
+b = model.new_bool_var("branch")
+
+model.add(y == 10 - x).only_enforce_if(b)
+model.add(y == 0).only_enforce_if(~b)
+
+<span class="cmt"># b의 값을 제약이나 목적함수에서 직접 사용할 수 있다</span>
+model.maximize(b * profit + other_term)   <span class="cmt"># BoolVar × 상수 = OK</span></code></pre>
+
+  <h3>6.2 b ⟺ (x ∈ 집합) — 집합 소속 채널링</h3>
+  <pre><code><span class="cmt"># 'b = (x is in preferred_bays)' 인코딩</span>
+preferred_bays = [2, 3, 5]
+bay_var = model.new_int_var(0, num_bays - 1, "bay")
+b_pref  = model.new_bool_var("in_preferred")
+
+<span class="cmt"># 도메인 기반 채널링</span>
+d_pref = cp_model.Domain.from_values(preferred_bays)
+d_not  = d_pref.complement()
+
+model.add_linear_expression_in_domain(bay_var, d_pref).only_enforce_if(b_pref)
+model.add_linear_expression_in_domain(bay_var, d_not).only_enforce_if(~b_pref)</code></pre>
+
+  <h3>6.3 Boolean → Integer 인덱스 채널링 (Array Element)</h3>
+  <pre><code><span class="cmt"># 베이 배정 bool → 정수 인덱스로 채널링 (AddElement)</span>
+<span class="cmt"># assign[b][j] : 블록 b가 베이 j에 배정됨</span>
+bay_idx = model.new_int_var(0, num_bays - 1, f"bay_idx_{blk}")
+
+<span class="cmt"># 방법 1: AddExactlyOne + 선형식</span>
+model.add_exactly_one([assign[blk][j] for j in range(num_bays)])
+model.add(bay_idx == sum(j * assign[blk][j] for j in range(num_bays)))
+
+<span class="cmt"># 방법 2: AddElement (조회 테이블)</span>
+<span class="cmt"># target = array[index]  →  bay_weight = bay_weights[bay_idx]</span>
+bay_weight_var = model.new_int_var(0, max_weight, f"bw_{blk}")
+model.add_element(bay_weights, bay_idx, bay_weight_var)
+<span class="cmt"># bay_weights는 정수 리스트 또는 IntVar 리스트</span></code></pre>
+
+  <h3>6.4 Implication 체인 — 크레인 j ≥ k 규칙</h3>
+  <pre><code><span class="cmt"># 크레인은 수직접근: 레이어 j에 블록이 있으면 j보다 위 레이어(k &lt; j)가 비어야 함</span>
+<span class="cmt"># (조선소 '위에서 꺼내야 함' 규칙)</span>
+
+occupied = [[model.new_bool_var(f"occ_{blk}_{lay}")
+             for lay in range(num_layers)]
+            for blk in range(num_blocks)]
+
+for blk in range(num_blocks):
+    for j in range(num_layers):
+        for k in range(j):            <span class="cmt"># k &lt; j : k가 j보다 위(크레인 먼저 통과)</span>
+            <span class="cmt"># occupied[blk][j]=T → occupied[blk][k]=F</span>
+            model.add_implication(occupied[blk][j], ~occupied[blk][k])
+
+<span class="cmt"># 동등 선형식 (AddImplication보다 느릴 수 있음)</span>
+<span class="cmt"># model.add(occupied[blk][k] + occupied[blk][j] &lt;= 1)</span></code></pre>
+
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 — 배정 ↔ 정수 타이밍 채널링</div>
+    <pre style="margin:6px 0 0"><code><span class="cmt"># 블록 b를 베이 j에 배정할 때, 그 베이의 처리 파라미터를 entry/exit 타이밍에 반영</span>
+<span class="cmt"># "assign[b][j]=1 이면 entry[b] &gt;= ready_time[b][j]"</span>
+
+entry = {b: model.new_int_var(0, horizon, f"entry_{b}") for b in blocks}
+exit_ = {b: model.new_int_var(0, horizon, f"exit_{b}")  for b in blocks}
+
+for b in blocks:
+    for j in bays:
+        <span class="cmt"># 배정됐을 때만 ready_time 제약 활성화</span>
+        model.add(entry[b] &gt;= ready_time[b][j]).only_enforce_if(assign[b][j])
+        <span class="cmt"># 배정됐을 때만 처리시간 하한 활성화</span>
+        model.add(exit_[b] - entry[b] &gt;= process_time[b][j]).only_enforce_if(assign[b][j])
+
+<span class="cmt"># 역방향(b가 j에 배정되지 않으면 해당 타이밍 제약 없음)은 별도 필요 없음:</span>
+<span class="cmt"># 배정 변수가 ExactlyOne으로 묶여 있으면 다른 베이 제약이 자동으로 비활성화된다.</span></code></pre>
+  </div>
+
+  <!-- ========== 7. Boolean vs Integer ========== -->
+  <h2 id="bool-vs-int">7. Boolean vs Integer 모델링 선택 기준</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>상황</th>
+        <th>권장</th>
+        <th>이유</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>이진 의사결정 (포함/미포함, 배정/비배정)</td>
+        <td><code>NewBoolVar</code></td>
+        <td>도메인={0,1} 최소, 전파 효율 최대</td>
+      </tr>
+      <tr>
+        <td>연속 정수 범위 (시각, 위치)</td>
+        <td><code>NewIntVar</code></td>
+        <td>Order Encoding으로 내부 분기</td>
+      </tr>
+      <tr>
+        <td>비연속 값 집합 (방향: 0/90/180/270)</td>
+        <td><code>NewIntVarFromDomain(FromValues(...))</code></td>
+        <td>도메인 크기를 직접 제한</td>
+      </tr>
+      <tr>
+        <td>배타적 선택 중 정수 인덱스도 필요</td>
+        <td>BoolVar 배열 + ExactlyOne + Element</td>
+        <td>Channeling으로 인덱스 추출</td>
+      </tr>
+      <tr>
+        <td>조건부 제약 (경우에 따라 다른 제약)</td>
+        <td>BoolVar + OnlyEnforceIf (양방향)</td>
+        <td>Full reification 구현</td>
+      </tr>
+      <tr>
+        <td>대칭 그룹 (순열, 컬러링)</td>
+        <td>Integer + AddAllDifferent</td>
+        <td>대칭 파괴 직접 표현 쉬움</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tip">
+    <div class="ttl">Boolean 표현의 전파 우위</div>
+    <p style="margin:0">
+      CP-SAT 내부에서 정수 변수는 Order Encoding(오더 인코딩)을 통해 Boolean 변수의 집합으로 표현된다.
+      BoolVar를 직접 사용하면 그 인코딩 계층이 없어져 전파가 빠르다.
+      특히 <code>AddAtMostOne</code>과 <code>AddExactlyOne</code>은 CP-SAT가 특수 전파 알고리즘을 적용하므로,
+      <code>sum(bools) == 1</code> 선형 제약보다 훨씬 강한 추론이 가능하다.
+    </p>
+  </div>
+
+  <!-- ========== 8. 완전한 채널링 예제 ========== -->
+  <h2 id="full-example">8. 완전한 채널링 예제 — 빈 패킹 (Bin Packing)</h2>
+  <p>빈 패킹은 배정 변수(Bool)↔하중(Int)을 채널링하는 전형적인 예시다.</p>
+  <pre><code>from ortools.sat.python import cp_model
+
+model     = cp_model.CpModel()
+num_items = 5
+num_bins  = 3
+capacity  = 10
+weights   = [3, 5, 2, 4, 6]
+
+<span class="cmt"># item i가 bin j에 배정됨</span>
+assign = {(i, j): model.new_bool_var(f"a_{i}_{j}")
+          for i in range(num_items) for j in range(num_bins)}
+
+<span class="cmt"># 각 아이템은 정확히 하나의 빈에</span>
+for i in range(num_items):
+    model.add_exactly_one([assign[i, j] for j in range(num_bins)])
+
+<span class="cmt"># 각 빈의 하중 = Σ weights[i] * assign[i, j]</span>
+load = [model.new_int_var(0, capacity, f"load_{j}") for j in range(num_bins)]
+for j in range(num_bins):
+    model.add(load[j] == sum(weights[i] * assign[i, j] for i in range(num_items)))
+    model.add(load[j] &lt;= capacity)
+
+<span class="cmt"># 빈 사용 여부 채널링: used[j] ↔ (load[j] &gt; 0)</span>
+used = [model.new_bool_var(f"used_{j}") for j in range(num_bins)]
+for j in range(num_bins):
+    model.add(load[j] &gt;= 1).only_enforce_if(used[j])       <span class="cmt"># used→load&gt;0</span>
+    model.add(load[j] == 0).only_enforce_if(~used[j])      <span class="cmt"># ~used→load=0</span>
+
+model.minimize(sum(used))   <span class="cmt"># 사용 빈 최소화</span>
+
+solver = cp_model.CpSolver()
+status = solver.solve(model)
+if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+    for j in range(num_bins):
+        if solver.value(used[j]):
+            items = [i for i in range(num_items) if solver.value(assign[i, j])]
+            print(f"Bin {j}: items={items}, load={solver.value(load[j])}")</code></pre>
+
+  <!-- ========== 9. 흔한 함정 전용 섹션 ========== -->
+  <h2 id="pitfalls">9. 흔한 함정 모음</h2>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #1: OnlyEnforceIf 단방향 — 역방향 누락</div>
+    <p>
+      <code>model.add(x &gt;= 5).only_enforce_if(b)</code>만 있으면
+      솔버가 x=7, b=0을 선택할 수 있다. "b가 조건을 표현"하려면
+      반드시 <code>model.add(x &lt; 5).only_enforce_if(~b)</code>를 추가해야 한다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #2: AddBoolAnd + OnlyEnforceIf 역방향</div>
+    <p>
+      <code>model.add_bool_and([b1, b2]).only_enforce_if(b)</code>는
+      "b=1 → b1=T AND b2=T" 만 강제한다.
+      "b=0일 때 b1 OR b2 중 하나가 false" 를 원한다면
+      <code>model.add_bool_or([~b1, ~b2]).only_enforce_if(~b)</code>를 추가해야 한다.
+      이를 누락하면 솔버가 b=0 이면서 b1=b2=1인 해를 반환할 수 있다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #3: BoolVar.Not()은 새 변수가 아니라 뷰</div>
+    <p>
+      <code>b.Not()</code> 또는 <code>~b</code>는 새 BoolVar가 아니라 동일 변수의 보수 뷰다.
+      따라서 <code>model.add(x &gt;= 5).only_enforce_if(b.Not())</code>는 완전히 유효하고 효율적이다.
+      이를 <code>nb = model.new_bool_var(...); model.add_implication(nb, b.Not()); ...</code>로
+      불필요하게 확장하면 변수 수가 늘어난다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #4: 제약 없는 BoolVar가 자유롭게 배회</div>
+    <p>
+      Channeling용 BoolVar를 선언만 하고 목적함수에도 제약에도 연결하지 않으면,
+      솔버가 원하는 대로 값을 정한다 — 대개 0.
+      모든 보조 BoolVar는 목적함수의 최소화/최대화 또는 제약을 통해 "압력"을 받아야 의미 있는 채널링이 된다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #5: OnlyEnforceIf 는 모든 제약 유형에 지원되지 않는다</div>
+    <p>
+      <code>only_enforce_if</code>는 선형 제약과 일부 Boolean 제약에만 지원된다.
+      <code>AddAllDifferent</code>, <code>AddNoOverlap</code> 같은 글로벌 제약에는 적용할 수 없다.
+      해당 제약을 조건부로 만들려면 보조 변수나 빅-M 인코딩 없이 분리된 모델 경로를 설계해야 한다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 #6: sum()과 LinearExpr.sum() 성능 차이</div>
+    <p>
+      Python 내장 <code>sum()</code>으로 수백~수천 개의 CP-SAT 변수를 더하면
+      매 단계마다 LinearExpr 중간 객체가 생성되어 매우 느려진다.
+      <code>cp_model.LinearExpr.sum(var_list)</code> 또는 <code>LinearExpr.weighted_sum(vars, coefs)</code>를 사용하라.
+    </p>
+  </div>
+
+  <!-- ========== 10. 논문 ========== -->
+  <h2 id="papers">핵심 논문 · 문서</h2>
+  <ul class="refs">
+    <li>
+      <strong>CP-SAT Primer — Basic Modeling</strong>
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/04_modelling.html</span>
+      <span class="desc">Dominik Krupke (TU Braunschweig). 변수·도메인·Boolean 로직·reification·채널링의 현재 가장 포괄적인 비공식 가이드. CC BY 4.0.</span>
+    </li>
+    <li>
+      <strong>CP-SAT Primer — Advanced Modeling</strong>
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/04B_advanced_modelling.html</span>
+      <span class="desc">Full reification vs half-reification 비교, 고급 채널링 패턴, allowed/forbidden assignments 등.</span>
+    </li>
+    <li>
+      <strong>Google OR-Tools: CP-SAT Python Reference</strong>
+      <span class="meta">https://or-tools.github.io/docs/pdoc/ortools/sat/python/cp_model.html</span>
+      <span class="desc">CpModel/CpSolver 공식 API 레퍼런스. 모든 메서드 시그니처와 파라미터 타입.</span>
+    </li>
+    <li>
+      <strong>OR-Tools CP-SAT — Channeling Constraints (공식 문서)</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/main/ortools/sat/docs/channeling.md</span>
+      <span class="desc">Google 공식 채널링 제약 문서. if-then-else, bin-packing with slack, index-of-first-true 예제.</span>
+    </li>
+    <li>
+      <strong>Laurent Perron &amp; Frédéric Didier — OR-Tools CP-SAT (2023)</strong>
+      <span class="meta">https://developers.google.com/optimization/reference/python/sat/python/cp_model</span>
+      <span class="desc">Google Developers 공식 Python Reference. CpModel, CpSolver, LinearExpr API.</span>
+    </li>
+    <li>
+      <strong>Régin, J.-C. — A Filtering Algorithm for Constraints of Difference (AAAI 1994)</strong>
+      <span class="meta">https://cdn.aaai.org/AAAI/1994/AAAI94-055.pdf</span>
+      <span class="desc">AllDifferent 제약 전파의 원류 논문. CP-SAT의 add_all_different 내부 알고리즘 기반.</span>
+    </li>
+  </ul>
+
+  <!-- ========== GitHub ========== -->
+  <h2 id="repos">GitHub · 자료</h2>
+  <ul class="refs">
+    <li class="repo">
+      <strong>d-krupke/cpsat-primer</strong>
+      <span class="meta">https://github.com/d-krupke/cpsat-primer</span>
+      <span class="desc">CP-SAT 최고의 비공식 입문 가이드. Jupyter notebook 예제 포함. 지속적으로 업데이트 중.</span>
+    </li>
+    <li class="repo">
+      <strong>google/or-tools — sat/python 예제</strong>
+      <span class="meta">https://github.com/google/or-tools/tree/stable/ortools/sat/python</span>
+      <span class="desc">공식 예제 코드: channeling.py, feasibility.py, scheduling 등.</span>
+    </li>
+    <li class="repo">
+      <strong>xiang.es — CP-SAT Recipes</strong>
+      <span class="meta">https://xiang.es/posts/cp-sat/</span>
+      <span class="desc">실용적인 CP-SAT 관용구 모음. Boolean ↔ Integer 채널링, 조건부 목적함수 패턴 포함.</span>
+    </li>
+    <li class="repo">
+      <strong>or-tools GitHub Issues #864 — Half-reification pitfalls</strong>
+      <span class="meta">https://github.com/google/or-tools/issues/864</span>
+      <span class="desc">단방향 OnlyEnforceIf 함정의 실제 예시와 커뮤니티 해법 토론.</span>
+    </li>
+  </ul>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <a href="index.html">← 개요로</a> &nbsp;·&nbsp;
+    <a href="01-fundamentals.html">01 작동원리</a> &nbsp;·&nbsp;
+    <a href="03-scheduling.html">03 스케줄링 →</a>
+    <p style="margin:10px 0 0">
+      CP-SAT Methodology Research · OGC 2026 · 생성: 2026-06-17
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

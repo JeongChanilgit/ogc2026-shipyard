@@ -1,0 +1,66 @@
+{
+  "tag": "BANKED-328M-2026-06-16",
+  "timestamp_kst": "20260616-100051",
+  "zip_filename": "BANKED-328M-2026-06-16-20260616-100051.zip",
+  "zip_size_bytes": 240915,
+  "zip_sha256": "dce3d7536afdd044397d5aee7cfad7598b511823245dbd79806d23da5ae01029",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 87955
+    },
+    {
+      "path": "baypack_cp.py",
+      "bytes": 21259
+    },
+    {
+      "path": "boxsolver.py",
+      "bytes": 81316
+    },
+    {
+      "path": "fastfloor.py",
+      "bytes": 57942
+    },
+    {
+      "path": "geom_kernel.py",
+      "bytes": 4367
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 10447
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 412788
+    },
+    {
+      "path": "packer.py",
+      "bytes": 28694
+    },
+    {
+      "path": "parallel_decode.py",
+      "bytes": 26540
+    },
+    {
+      "path": "rebuild.py",
+      "bytes": 33642
+    },
+    {
+      "path": "regime.py",
+      "bytes": 18316
+    },
+    {
+      "path": "t5_candidates.py",
+      "bytes": 14565
+    },
+    {
+      "path": "uconstruct.py",
+      "bytes": 52225
+    },
+    {
+      "path": "z3race.py",
+      "bytes": 25155
+    }
+  ],
+  "note": ""
+}

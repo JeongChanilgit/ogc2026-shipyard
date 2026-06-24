@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 전략 리서치 2026-06-11</title>
+<style>
+  :root{--bg:#0e1116;--panel:#171b22;--panel2:#1c222b;--line:#2b313c;--ink:#e6edf3;--mut:#9aa6b2;--dim:#6b7682;
+    --good:#3fb950;--bad:#f85149;--warn:#d29922;--acc:#58a6ff;--acc2:#bc8cff;--z1:#f0883e;--z2:#3fb950;--z3:#bc8cff;
+    --p0:#f85149;--p1:#d29922;--p2:#58a6ff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1160px;margin:0 auto;padding:32px 22px 90px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:19px;margin:42px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px}
+  h2 .n{font-size:12px;font-weight:700;color:#0e1116;background:var(--acc);border-radius:6px;padding:2px 9px}
+  h3{font-size:15px;margin:22px 0 8px;color:var(--ink)}
+  .sub{color:var(--mut);margin:0 0 22px;font-size:13px}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .lead{background:linear-gradient(135deg,#172132,#171b22);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:18px 0}
+  .lead b{color:var(--acc)}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;color:#c9d6e3}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  td:first-child,th:first-child{text-align:left}
+  tbody tr:hover{background:#10141a}
+  .totrow td{border-top:2px solid var(--line);font-weight:700;color:var(--ink)}
+  .warn-cell{color:var(--warn);font-weight:700}
+  .bad-cell{color:var(--bad);font-weight:700}
+  .good-cell{color:var(--good);font-weight:700}
+  .dim-cell{color:var(--dim)}
+  .z0-cell{color:var(--dim)}
+  .flip-cell{color:var(--bad);font-weight:700;font-size:11px}
+  /* priority badges */
+  .badge{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 10px;letter-spacing:.3px}
+  .p0{background:#3a0d0c;color:var(--p0);border:1px solid #7a1a17}
+  .p1{background:#2e2104;color:var(--p1);border:1px solid #6b4e0a}
+  .p2{background:#0e2038;color:var(--p2);border:1px solid #1d4b8a}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 10px}
+  .p-ship{background:#11331c;color:var(--good);border:1px solid #1d5b2e}
+  .p-no{background:#3a1416;color:var(--bad);border:1px solid #5b1d1d}
+  .p-hold{background:#2e2104;color:var(--warn);border:1px solid #5a3d08}
+  /* cards row */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center}
+  .card .lab{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .card .big{font-size:20px;font-weight:700;margin-top:3px}
+  /* finding blocks */
+  .finding{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0;position:relative;padding-left:52px}
+  .finding .fnum{position:absolute;left:14px;top:14px;width:26px;height:26px;border-radius:7px;background:#1b2433;color:var(--acc);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .finding .ftitle{font-weight:700;margin-bottom:4px}
+  .finding .fverdict{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:1px 7px;margin-left:8px;vertical-align:middle}
+  .fv-new{background:#102a18;color:var(--good)}
+  .fv-rev{background:#3a0d0c;color:var(--bad)}
+  .fv-confirm{background:#0e2038;color:var(--acc)}
+  .finding p{margin:4px 0;color:var(--mut);font-size:13px}
+  /* track cards */
+  .track{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .track .thead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .track .tcode{font-size:18px;font-weight:700;color:var(--acc);font-family:ui-monospace,Consolas,monospace}
+  .track .tname{font-weight:700;font-size:15px}
+  .track section{margin-top:8px}
+  .track section dt{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+  .track section dd{margin:0 0 8px;color:var(--mut);font-size:13px;line-height:1.55}
+  .track section dd b{color:var(--ink)}
+  .warn-flag{display:inline-block;background:#2e2104;color:var(--warn);border:1px solid #5a3d08;border-radius:4px;font-size:10.5px;font-weight:700;padding:1px 6px;margin:0 2px;white-space:nowrap}
+  .no-flag{display:inline-block;background:#3a1416;color:var(--bad);border:1px solid #5b1d1d;border-radius:4px;font-size:10.5px;font-weight:700;padding:1px 6px;margin:0 2px}
+  /* pipe */
+  .pipe{display:flex;flex-direction:column;gap:7px;margin:14px 0}
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 14px;display:flex;align-items:flex-start;gap:12px}
+  .stage .ord{flex:0 0 26px;height:26px;border-radius:7px;background:#1b2433;color:var(--acc);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .stage .body{flex:1}
+  .stage .nm{font-weight:700} .stage .nm .tag{font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+  .tg-z1{background:#3a2a14;color:var(--z1)} .tg-z3{background:#241c33;color:var(--z3)} .tg-gate{background:#102a18;color:var(--good)} .tg-warn{background:#2e2104;color:var(--warn)}
+  .stage .ds{color:var(--mut);font-size:12.5px;margin-top:2px}
+  .arrow{color:var(--dim);text-align:center;font-size:12px;margin:-1px 0}
+  /* synergy */
+  .srow{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+  .srow .step{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-weight:700;color:var(--acc)}
+  .srow .arr{color:var(--dim);font-size:11px}
+  .srow .desc{color:var(--mut)}
+  .blocked{display:inline-block;background:#3a1416;color:var(--bad);border:1px solid #5b1d1d;border-radius:5px;font-size:11px;font-weight:700;padding:2px 8px;margin:2px}
+  /* diff box */
+  .diffbox{background:#0e1a28;border:1px solid #1d4b8a;border-radius:10px;padding:12px 16px;margin:10px 0;font-size:13px}
+  .diffbox .dt{font-weight:700;color:var(--acc);margin-bottom:6px}
+  .diffbox ul{margin:0;padding-left:18px} .diffbox li{color:var(--mut);margin:3px 0} .diffbox li b{color:var(--ink)}
+  /* misc */
+  ul.t{margin:6px 0;padding-left:18px} ul.t li{margin:5px 0;color:var(--mut)} ul.t li b{color:var(--ink)}
+  .note{color:var(--dim);font-size:12px;margin:6px 0}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .foot{color:var(--dim);font-size:11.5px;margin-top:48px;border-top:1px solid var(--line);padding-top:14px}
+  .small{font-size:11px;color:var(--dim)}
+  @media(max-width:760px){.cards,.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>OGC2026 전략 리서치 2026-06-11</h1>
+<p class="sub">변동·경로·z3 전선의 차기 레버 &nbsp;|&nbsp; 알고리즘 로직맵 + 5대 발견 + 6개 전략 트랙 &nbsp;|&nbsp; 정찰 에이전트 4 + 심층 에이전트 5 통합 리서치</p>
+
+<div class="lead">
+  <b>한 줄 요약.</b> 20/20 feasible · −1 0건 달성. tl=1000 총 obj 1.91M(−43% vs tl=100). 남은 격차 3개: <b>①run-to-run 변동 ±13%</b>(측정·대회 양쪽 침식) · <b>②prob_13 floor-경로 함정</b>(tl=300이 tl=100보다 +34% 악화, 결정적) · <b>③z3 선호도 obj 37~86% 지배</b>인데 현 레버 Front B는 구조 천장 도달. 권고: <b>P0 = T1(Floor Racing, long-tl 전용) + T2(실험 결정화)</b> → <b>P1 = T3(Best-of-N) + T5(패킹 후보)</b> → <b>P2(조건부 kill-test) = T4(z3 lexicographic)</b> → <b>지속 = T6(제출전략)</b>. 실행 순서: <b>T2 → T1 → T3·T5 병행 → (kill-test 통과 시) T4</b>.
+</div>
+
+<!-- ===== 1. 성능 스냅샷 ===== -->
+<h2><span class="n">1</span> 현재 성능 스냅샷</h2>
+<p class="note">전부 N=1 단일런, default config. 변동 ±13% 내외 가능. prob_13 강조값(tl=300/1000)은 3런 동일=결정적.</p>
+
+<div class="cards">
+  <div class="card"><div class="lab">총 obj · tl=100</div><div class="big">3.37M</div></div>
+  <div class="card"><div class="lab">총 obj · tl=300</div><div class="big">2.55M</div></div>
+  <div class="card"><div class="lab">총 obj · tl=1000</div><div class="big">1.91M</div></div>
+  <div class="card"><div class="lab">−43% (100→1000)</div><div class="big good-cell">-43%</div></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>인스턴스</th><th>n</th>
+      <th>z1@100</th><th>obj@100</th>
+      <th>z1@300</th><th>obj@300</th>
+      <th>z1@1000</th><th>obj@1000</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>prob_1</td><td>100</td><td class="dim-cell">0</td><td>3,673</td><td class="dim-cell">0</td><td>3,673</td><td class="dim-cell">0</td><td>3,673</td></tr>
+    <tr><td>prob_2</td><td>100</td><td class="dim-cell">0</td><td>5,030</td><td class="dim-cell">0</td><td>5,030</td><td class="dim-cell">0</td><td>5,030</td></tr>
+    <tr><td>prob_3</td><td>100</td><td class="dim-cell">0</td><td>82,410</td><td class="dim-cell">0</td><td>82,410</td><td class="dim-cell">0</td><td>82,410</td></tr>
+    <tr><td>prob_4</td><td>100</td><td class="warn-cell">1</td><td>154,220</td><td class="dim-cell">0</td><td>110,172</td><td class="dim-cell">0</td><td>110,172</td></tr>
+    <tr><td>prob_5</td><td>150</td><td class="dim-cell">0</td><td>105,924</td><td class="dim-cell">0</td><td>96,822</td><td class="dim-cell">0</td><td>96,822</td></tr>
+    <tr><td>prob_6</td><td>150</td><td class="dim-cell">0</td><td>91,221</td><td class="dim-cell">0</td><td>93,712</td><td class="dim-cell">0</td><td>87,804</td></tr>
+    <tr><td>prob_7</td><td>150</td><td class="dim-cell">0</td><td>117,158</td><td class="dim-cell">0</td><td>115,604</td><td class="dim-cell">0</td><td>115,604</td></tr>
+    <tr><td>prob_8</td><td>150</td><td class="dim-cell">0</td><td>11,252</td><td class="dim-cell">0</td><td>11,252</td><td class="dim-cell">0</td><td>11,252</td></tr>
+    <tr><td>prob_9</td><td>200</td><td class="dim-cell">0</td><td>208,510</td><td class="dim-cell">0</td><td>76,610</td><td class="dim-cell">0</td><td>72,840</td></tr>
+    <tr><td>prob_10</td><td>200</td><td class="dim-cell">0</td><td>100,604</td><td class="dim-cell">0</td><td>80,059</td><td class="dim-cell">0</td><td>80,059</td></tr>
+    <tr><td>prob_11</td><td>200</td><td class="warn-cell">1</td><td>206,376</td><td class="warn-cell">1</td><td>94,278</td><td class="dim-cell">0</td><td>66,185</td></tr>
+    <tr><td>prob_12</td><td>200</td><td class="dim-cell">0</td><td>207,074</td><td class="dim-cell">0</td><td>129,724</td><td class="dim-cell">0</td><td>99,064</td></tr>
+    <tr><td><b>prob_13</b></td><td>250</td><td class="warn-cell">1</td><td>245,705</td><td class="bad-cell">10</td><td class="bad-cell">330,342</td><td class="bad-cell">10</td><td class="bad-cell">330,342</td></tr>
+    <tr><td>prob_14</td><td>250</td><td class="bad-cell">7</td><td>359,749</td><td class="dim-cell">0</td><td>114,116</td><td class="dim-cell">0</td><td>112,678</td></tr>
+    <tr><td>prob_15</td><td>250</td><td class="dim-cell">0</td><td>137,484</td><td class="dim-cell">0</td><td>37,814</td><td class="dim-cell">0</td><td>37,814</td></tr>
+    <tr><td>prob_16</td><td>250</td><td class="dim-cell">0</td><td>147,209</td><td class="dim-cell">0</td><td>96,187</td><td class="dim-cell">0</td><td>96,187</td></tr>
+    <tr><td>prob_17</td><td>300</td><td class="warn-cell">1</td><td>213,946</td><td class="warn-cell">1</td><td>182,223</td><td class="dim-cell">0</td><td>125,412</td></tr>
+    <tr><td>prob_18</td><td>300</td><td class="warn-cell">4</td><td>284,640</td><td class="dim-cell">0</td><td>107,690</td><td class="dim-cell">0</td><td>93,012</td></tr>
+    <tr><td>prob_19</td><td>300</td><td class="dim-cell">0</td><td>95,960</td><td class="dim-cell">0</td><td>93,113</td><td class="dim-cell">0</td><td>76,472</td></tr>
+    <tr><td>prob_20</td><td>300</td><td class="warn-cell">2</td><td>590,583</td><td class="bad-cell">19</td><td class="bad-cell">693,570</td><td class="warn-cell">2</td><td>210,399</td></tr>
+    <tr class="totrow"><td>합계</td><td></td><td></td><td>3,368,728</td><td></td><td>2,554,401</td><td></td><td>1,913,231</td></tr>
+  </tbody>
+</table>
+
+<h3>변동 실측</h3>
+<p class="note">같은 config 독립 2회 실행. CP-SAT num_search_workers=4 + wall-clock 비결정성이 원인.</p>
+<table>
+  <thead>
+    <tr><th>쌍</th><th>prob</th><th>run1</th><th>run2</th><th>변동</th><th>z1 플립</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>vd1/vd2 (default)</td><td>prob_6</td><td>93,712</td><td>93,712</td><td class="dim-cell">0.0%</td><td class="dim-cell">없음</td></tr>
+    <tr><td>vd1/vd2</td><td>prob_12</td><td>140,672</td><td>146,861</td><td class="warn-cell">+4.4%</td><td class="dim-cell">없음</td></tr>
+    <tr><td>vd1/vd2</td><td>prob_19</td><td>94,748</td><td>83,478</td><td class="warn-cell">−11.9%</td><td class="dim-cell">없음</td></tr>
+    <tr><td>vs1/vs2 (strong-FB)</td><td>prob_6</td><td>82,648</td><td>93,712</td><td class="bad-cell">+13.4%</td><td class="dim-cell">없음</td></tr>
+    <tr><td>vs1/vs2</td><td>prob_12</td><td>149,633</td><td>134,113</td><td class="warn-cell">−10.4%</td><td class="dim-cell">없음</td></tr>
+    <tr><td>vs1/vs2</td><td>prob_19</td><td>88,192</td><td>89,154</td><td class="dim-cell">+1.1%</td><td class="dim-cell">없음</td></tr>
+    <tr><td>ms900a/ms900b</td><td>prob_12</td><td>116,649</td><td>101,094</td><td class="bad-cell">−13.3%</td><td class="flip-cell">1→0 플립</td></tr>
+  </tbody>
+</table>
+
+<!-- ===== 2. 알고리즘 로직맵 ===== -->
+<h2><span class="n">2</span> 알고리즘 로직맵</h2>
+<p class="note"><code>src/myalgorithm.py</code> L4578~5802 · <code>src/parallel_decode.py</code> 기준.</p>
+
+<div class="pipe">
+  <div class="stage"><div class="ord">0</div><div class="body">
+    <div class="nm">셋업 — 시간예산 분할</div>
+    <div class="ds"><code>done_by=0.88T</code>, <code>lever_reserve=min(0.40T, max(15s, 0.22T))</code>, <code>hard_stop≈0.97~0.988T−8s</code></div>
+  </div></div>
+  <div class="arrow">▼</div>
+  <div class="stage"><div class="ord">1</div><div class="body">
+    <div class="nm">Trivial floor <span class="tag tg-gate">−1 가드</span></div>
+    <div class="ds">완전 직렬화. 궁극의 feasible 보장. 항상 실행.</div>
+  </div></div>
+  <div class="arrow">▼</div>
+  <div class="stage"><div class="ord">2</div><div class="body">
+    <div class="nm">Greedy baseline floor <span class="tag tg-z1">EDD+Best-Fit</span></div>
+    <div class="ds">adaptive 게이트: <code>1.2e-3·n²&gt;0.4T</code>이면(짧은 tl·큰 n) → raster 충돌검사 + <code>pos_k=3</code> fast floor. 아니면 default. 두 경로는 현재 <b>분기</b>, 경쟁 아님 <span class="warn-flag">T1 표적</span></div>
+  </div></div>
+  <div class="arrow">▼</div>
+  <div class="stage"><div class="ord">3</div><div class="body">
+    <div class="nm">Postprocess 체인 <span class="tag tg-z1">z1</span> <span class="tag tg-z3">z3</span></div>
+    <div class="ds">cum_level(CP-SAT entry 평탄화) → cpsat_timing(재타이밍) → bbox/slab_pack → crossbay_relocate → tardy_reloc(K=16) → <b>Front B</b>(relocate→swap, z3 주력). CP-SAT 6곳 모두 <code>num_search_workers=4 + wall-clock</code> <span class="warn-flag">비결정</span></div>
+  </div></div>
+  <div class="arrow">▼</div>
+  <div class="stage"><div class="ord">4</div><div class="body">
+    <div class="nm">Seed 디코드 · ALNS/병렬 멀티스타트</div>
+    <div class="ds">pref/balanced/cpsat/tardy 시드 재디코드 → ALNS(~0.66T까지). <code>parallel_decode.py:230-234</code> 풀 타임아웃 시 all-or-nothing 폐기 <span class="warn-flag">T3 표적</span></div>
+  </div></div>
+  <div class="arrow">▼</div>
+  <div class="stage" style="border-color:#1d5b2e"><div class="ord" style="background:#102a18;color:var(--good)">✓</div><div class="body">
+    <div class="nm">GATE — <code>consider()</code> full-objective 채택 <span class="tag tg-gate">objective-safe</span></div>
+    <div class="ds">모든 후보를 전체 목적함수 비교. floor보다 나쁜 것 자동 차단 → <b>−1·악화 구조적 불가</b>. gate-postprocess 재실행(이중 실행 구조적 약점).</div>
+  </div></div>
+</div>
+
+<div class="note" style="margin-top:12px">구조 약점 요약: postprocess 이중 실행(floor 경로·게이트 경로 결과 비공유) / ALNS quick_obj가 x,y 미참조로 crane-infeasible 변이 생성 가능(시드 뱅킹 우회 중) / OFF 플래그 ~30개 + 죽은 분기 / 풀 타임아웃 all-or-nothing 결과 폐기</div>
+
+<!-- ===== 3. 5대 발견 ===== -->
+<h2><span class="n">3</span> 5대 발견</h2>
+
+<div class="finding">
+  <div class="fnum">F1</div>
+  <div class="ftitle">prob_13 비단조 원인 = floor 경로 <span class="fverdict fv-rev">기존 가설 기각</span></div>
+  <p>tl=100 전용 adaptive raster floor(발동조건 <code>1.2e-3·n²&gt;0.4T</code> → n=250이면 T&lt;187.5)가 더 좋은 attractor 도달: <b>obj@100=245,705 (z1=1)</b> vs <b>obj@300=obj@1000=330,342 (z1=10, 3런 동일=결정적 함정)</b>.</p>
+  <p>기존 핸드오프 가설("마지막 단계 해 채택 문제, incumbent tracking으로 수정")은 데이터로 기각. consider() 게이트는 obj-단조이므로 문제는 "retention 실패"가 아니라 <b>"도달 실패"</b> — tl≥300 경로는 245K-class 해를 한 번도 본 적이 없다(fast floor 트리거 조건 <code>1.2e-3·n²&gt;0.4T</code>: n=250이면 T&lt;187.5s에서만 발동). "best-full-obj-across-trajectory retention" 가설은 기각. 확정 검증은 OGC_STAGE_TIMING(STAGE_OBJ) 계측 1런이면 충분. 올바른 수정은 <b>floor racing(→T1)</b>: raster floor를 tl 게이트에서 해방해 긴 tl에서도 경쟁시킨다.</p>
+</div>
+
+<div class="finding">
+  <div class="fnum">F2</div>
+  <div class="ftitle">PP_MULTISTART = 기각 재확인 (2026-06-10 확정) <span class="fverdict fv-rev">NEGATIVE 확정 · 재시도 금지</span></div>
+  <p>2026-06-10 세션에서 이미 NEGATIVE 확정, gated OFF 유지. 근본 원인: postprocess가 수렴이 아니라 budget을 fill함 — tl=900에서 1 pass가 ~700~880s 소비 → self-calibrating guard가 2nd pass를 거부 → 재시작이 거의 발동 안 함. 발동해도 chop-vs-variance trade가 인스턴스 의존(prob_6 variance-bound ✓ / prob_19 time-bound ✗) → clean default 불가.</p>
+  <p>이번 재집계도 혼재 재확인: prob_12 ON min 101,094 (OFF 116,564 대비 −13.3%, z1 1→0) / prob_6 동등(87,497) / prob_19 ON 86,252 vs OFF 80,846 (<b>+6.7% 열위</b>). 게다가 plateau600(tl=600) 76,472가 tl=900 OFF보다 좋음 — 시간이 아니라 경로(attractor)가 지배한다는 증거.</p>
+  <p><b>교훈 → T3 설계 제약으로 명시:</b> ① 재시작 단위가 너무 작았다(postprocess만 cold) → 파이프라인 전체 레플리카로 확대 필요. ② pass-단위 self-calibration은 budget-fill과 구조적으로 충돌 → 레플리카별 고정 예산 분할로 교체.</p>
+</div>
+
+<div class="finding">
+  <div class="fnum">F3</div>
+  <div class="ftitle">변동의 메타 비용 <span class="fverdict fv-new">재확인</span></div>
+  <p>쌍별 최대 ±13.4%, z1 0↔1 플립(ms900a/b prob_12). 단일런 A/B로 1~5% 레버 측정 불가. <b>과거 Front B 튜닝 기각(net −1.5%가 노이즈에 묻힘) 등 의사결정 자체를 흐려온 메타 문제.</b></p>
+  <p>모든 후속 트랙의 측정 전제 = T2(실험 결정화). T2 없이 T1~T5 효과 판정 불가.</p>
+</div>
+
+<div class="finding">
+  <div class="fnum">F4</div>
+  <div class="ftitle">전역 재배정 함수 상태 확인 <span class="fverdict fv-new">신규 판정</span></div>
+  <p><code>_temporal_reassign_redecode_verified</code>(myalgorithm.py:3623, AddCumulative 면적-시간 용량 + 배정·entry 동시 변수)는 <b>src 내 호출 0곳=dormant</b>. 기각 이력(notes/z1-toggles.md:53): z1-frame area-balance 버전 — prob_20 921→356 작동하나 cum_level 231에 패배, aggressive 설정에서 z1 폭발 320 vs default 11.</p>
+  <p><b>z3-frame lexicographic 버전(z1 하드 고정 + min z3)은 미평가</b>. 기각 사유(z1 폭발)를 제약으로 차단하는 재설계 가능 → T4.</p>
+</div>
+
+<div class="finding">
+  <div class="fnum">F5</div>
+  <div class="ftitle">기하 갭의 본체 확인 <span class="fverdict fv-new">신규 판정</span></div>
+  <p>충돌 검사는 polygon-exact(Shapely, 공식 체커 동일)인데 <b>후보 (x,y) 생성만 bbox 우상단 모서리 격자</b>(baseline_greedy.py:283-335, myalgorithm.py:1039-1078) → 오목/테이퍼 맞물림 위치가 애초에 제안 안 됨.</p>
+  <p>문헌상 오목 형상 bbox 근사 밀도 손실 15~25% <span class="warn-flag">⚠ 미검증 · 지식기반</span>. Front B 이동 실패(선호 베이 '만원')의 일부는 bbox 후보 부족 artifact → 기하 개선이 z3 개선으로 직결(→T5 시너지).</p>
+</div>
+
+<!-- ===== 4. 전략 트랙 6개 ===== -->
+<h2><span class="n">4</span> 전략 트랙 6개</h2>
+
+<div class="track">
+  <div class="thead">
+    <span class="tcode">T1</span>
+    <span class="badge p0">P0</span>
+    <span class="tname">Floor Portfolio Racing</span>
+  </div>
+  <dl>
+    <dt>무엇</dt><dd><b>raster fast floor와 greedy floor를 tl 게이트에서 해방</b>해 긴 tl에서도 경쟁시키고, quick_obj 우세쪽(또는 둘 다) postprocess 후 best 채택.</dd>
+    <dt>왜</dt><dd>근거: F1(prob_13 즉시 −26% 예상), F2(prob_19 anomaly 설명). 기존 코드 경로 2개 재사용이라 <b>구현 크기 소(~50줄 게이트 수정)</b>.</dd>
+    <dt>어떻게</dt><dd>1단계: raster floor 발동조건 <code>1.2e-3·n²&gt;0.4T</code> 조건을 제거하고 두 floor를 항상 실행. 2단계: quick_obj 비교 후 postprocess 예산 분할 또는 우세쪽만 full postprocess. 3단계: consider() 게이트가 자동 보호.</dd>
+    <dt>검증 게이트</dt><dd>full-20 × tl∈{100,300,1000}, prob_13 개선 + 전체 무회귀(N≥3 per instance).</dd>
+    <dt>스코프</dt><dd><b>long-tl 전용 (≥300s).</b> 짧은 tl(≤100s)에서 best-of-two floor는 2026-06-10에 기각됨: default floor가 좋은 obj 내려면 full ~90s 필요, tl=45 split 시 z1 폭발(prob_9 836·prob_12 2873), 어느 floor가 이길지 예측 불가. 단 긴 tl에서는 fast-floor 경로 전체가 wall ~89s(prob_13 final100 실측)라 race 비용이 예산의 소부분이고, 예측불가성은 obj gate가 흡수 → T1 = <b>long-tl 전용 floor racing</b>.</dd>
+    <dt>리스크</dt><dd>postprocess 예산 분할로 다른 인스턴스 소폭 회귀 가능 → 한쪽만 postprocess하는 변형부터 시작.</dd>
+  </dl>
+</div>
+
+<div class="track">
+  <div class="thead">
+    <span class="tcode">T2</span>
+    <span class="badge p0">P0</span>
+    <span class="tname">실험 결정화 + 판정 규칙</span>
+  </div>
+  <dl>
+    <dt>무엇</dt><dd>dev 빌드에 CP-SAT <code>interleave_search=True</code> + <code>random_seed</code> 고정, 또는 모든 A/B에 <b>N≥3 + paired/min 비교 규칙</b> 의무화. 제출 빌드는 성능 우선(결정화 비적용)으로 분리.</dd>
+    <dt>왜</dt><dd>근거: F3(±13.4% 변동이 의사결정 자체를 흐림). T1~T5 효과 판정의 전제 조건.</dd>
+    <dt>어떻게</dt><dd>or-tools <code>sat_parameters.proto</code>: <code>interleave_search</code>/<code>max_deterministic_time</code>/<code>random_seed</code> 설정 <span class="warn-flag">⚠ 처리량 trade-off 실측 필요</span>. 보류된 PP_MULTISTART 재판정을 이 체계 위에서 수행.</dd>
+    <dt>검증 게이트</dt><dd>결정화 전후 동일 인스턴스 3런 표준편차. 목표: σ/μ &lt; 3%.</dd>
+    <dt>리스크</dt><dd>interleave_search=True + random_seed 고정이 탐색 다양성 제한 → 평균 성능 저하 가능. dev/prod 분리 필수.</dd>
+  </dl>
+</div>
+
+<div class="track">
+  <div class="thead">
+    <span class="tcode">T3</span>
+    <span class="badge p1">P1</span>
+    <span class="tname">In-run Best-of-N 아키텍처 (변동 수확)</span>
+  </div>
+  <dl>
+    <dt>무엇</dt><dd>파이프라인 1회 대신 <b>다양화 레플리카 K개</b>(floor variant × seed × 연산자 가중)를 시간/코어 분할. stagnation 감지(최근 W초 개선율&lt;0.5%) 시 재시작. 글로벌 best 채택.</dd>
+    <dt>왜</dt><dd>근거: F2(경로가 시간보다 지배). 이론 기대: E[min]≈μ−σ√(2lnN), CV 0.08~0.14에서 N=4면 mean 대비 −6~12% <span class="warn-flag">⚠ 문헌 · 지식기반 Luby 1993, Gomes 2001</span>. 관측 변동(메모리 ±27%)과 부합.</dd>
+    <dt>어떻게</dt><dd>설계 규칙: N=⌈T/t_plateau⌉(관측 plateau≈2/3 지점, T=1800이면 N=3~4). warm incumbent + cold search 분리(시드·연산자 가중 리셋, best 해 보존). 4코어 중 1개는 보수적 feasibility-first. <code>parallel_decode.py:230-234</code> 풀 타임아웃 all-or-nothing → <code>imap_unordered</code> 부분 수확으로 교체. CP-SAT: "프로세스별 workers=1 독립 레이스" vs 현행 "단계별 workers=4" A/B로 결정.</dd>
+    <dt>검증 게이트</dt><dd>full-20 × tl=300/1000, min-of-3-run vs single-run 비교. 목표: mean −6% 이상 또는 min 단조 개선.</dd>
+    <dt>리스크</dt><dd>T1의 floor 다양화를 레플리카 차원으로 흡수하는 상위 아키텍처라 구현 중간 규모. T1 선행 후 흡수 권장.</dd>
+  </dl>
+</div>
+
+<div class="track">
+  <div class="thead">
+    <span class="tcode">T4</span>
+    <span class="badge p2">P2</span>
+    <span class="tname">z3 전역 재배정 (lexicographic) — 조건부</span>
+  </div>
+  <dl>
+    <dt>무엇</dt><dd>dormant 함수 <code>_temporal_reassign_redecode_verified</code>를 <b>z3-frame으로 재설계</b>: Phase1 z1≤incumbent 하드 고정 → Phase2 min z3 최적화.</dd>
+    <dt>왜</dt><dd>z3가 obj의 37~86% 지배인데 현 Front B는 구조 천장(증거: §1 저속력 수렴). F4에서 dormant 함수 확인 및 과거 기각 사유 분석 완료.</dd>
+    <dt>어떻게</dt><dd>AddCumulative 면적 용량 α=0.60 시작(불규칙 폴리곤 보수치 <span class="warn-flag">⚠ 실측 필요</span>). 디코드 실패 시 면적 no-good 컷+α 하향 2~3라운드. <b>전 블록 대신 pref-gap 상위 K=10~15% 블록 + 해당 베이만 unfix하는 assignment-LNS</b>로 시작 → 전체 재배정으로 확장. 채택은 consider() 게이트 자동 차단.
+    <br>직접 동형 문헌 <span class="warn-flag">⚠ 지식기반</span>: BAP의 preferred berth deviation 모델(Meisel &amp; Bierwirth 2009; Correcher &amp; Alvarez-Valdes 2017의 cost[v][j]=S_max−S[v][j]는 우리 z3와 수식 동치), LBBD no-good 컷(Hooker 2007).</dd>
+    <dt>검증 게이트</dt><dd>z1≤incumbent 엄수 확인 후 full-20 obj 비교. 목표: z1=0 인스턴스에서 z3 −5% 이상.</dd>
+    <dt>리스크</dt><dd>AddCumulative 면적 근사 오류 시 실제 디코드 실패 → no-good 컷 루프 필요. aggressive 설정 금지(F4 역사에서 z1 폭발 사례).</dd>
+  </dl>
+  <div class="diffbox" style="border-color:#5b1d1d;background:#1a0e0e">
+    <div class="dt" style="color:var(--bad)">CP-SAT 전역 bay 재배정 = NOT WORTH IT (2026-06-10 확정 · 재시도 금지)</div>
+    <ul>
+      <li><b>증거</b> (decode test, notes/_z3_pack_test.py): z3-최적 배정을 실제 디코드하면 z1 폭발 — prob_4 pref(z3=0)→z1=108·obj 2.38M(floor 110K의 21×), prob_12→z1=968·21.3M(180×), prob_14→z1=778·13.9M, prob_18→z1=1180·15.8M; cpsat_s0.1(z3 낮음)도 z1=149~680</li>
+      <li><b>결론</b>: 현 z3는 suboptimal이 아니라 z1=0 유지의 대가(Pareto frontier 근처). z3 LB의 큰 headroom은 packing 무시라 허상</li>
+    </ul>
+  </div>
+  <div class="diffbox">
+    <div class="dt">기각된 극점과 이번의 차이 (중요)</div>
+    <ul>
+      <li><b>기각된 것 ①</b>: area-balance proxy 목적 + z1 목적 → z1 폭발 320, cum_level 231에 패배</li>
+      <li><b>기각된 것 ②</b>: pref seed / <code>_cpsat_assignment</code> — 시간·용량 제약이 전혀 없는 배정 모델; dormant <code>_temporal_reassign</code>도 z1-frame area-balance 버전이었음</li>
+      <li><b>미평가</b>: "AddCumulative 용량 + z1 하드고정(lexicographic) + pref-gap 상위 K 부분 unfix(LNS)" 조합은 한 번도 평가된 적 없음</li>
+    </ul>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line);color:var(--warn);font-size:12px;font-weight:700">재개 조건 (kill-test — src 배선 없이 notes/ 오프라인 probe): prob_4(강화 Front B가 z3 516→344 달성 인스턴스)에서 z1-보호 lexicographic 모델이 z3&lt;344 배정을 디코드-실현해내는지 30분 테스트. <b>실패 → 06-10 판정 최종 확정, 영구 닫음. 성공 → 그때만 confidence-gate 거쳐 빌드.</b></div>
+  </div>
+</div>
+
+<div class="track">
+  <div class="thead">
+    <span class="tcode">T5</span>
+    <span class="badge p1">P1</span>
+    <span class="tname">패킹 후보 업그레이드 (3단계)</span>
+  </div>
+  <dl>
+    <dt>무엇</dt><dd><b>(i)</b> raster column-drop 후보를 bbox 모서리 후보에 병합(~20줄 NumPy, 기존 raster 셀 마스크 재활용, 병합이라 무회귀 설계). <b>(ii)</b> cum_level/bbox_pack의 cumulative demand를 bbox 면적→폴리곤 실면적(또는 raster 셀 수)으로 교체(완화 모델, 최종 폴리곤 검증 게이트가 보호). <b>(iii)</b> 검증 후 NFP 꼭짓점 후보(pyclipper Minkowski, 오목 분해 주의) — tardy/Front B 삽입에 한정 <span class="warn-flag">⚠ 지식기반 Burke 2006/2007, Bennell 2008</span>.</dd>
+    <dt>왜</dt><dd>F5: 오목 형상 bbox 밀도 손실 15~25%. Front B 이동 실패의 일부가 bbox 후보 부족. <b>T4 decode test(CP-SAT 전역 재배정 기각 박스)가 z3 headroom을 packing-blocked로 확정했다면, 남은 z3 레버는 배정 "검색"이 아니라 packing 그 자체다</b> — 후보 다양화로 같은 배정이 더 빽빽하게 실현되면 Front B 이동 성공률과 z1 여유가 동시에 열린다. 기존 분석 도구의 "bbox→polygon 갭 = #1 레버" 판정과 합치. T4 삽입 성공률 피더이자 독립 z3 레버.</dd>
+    <dt>어떻게</dt><dd>배치 함수 O(i³)/block 핫패스 — 후보 증가=검사 비용 직결. 병합+K=80 캡 유지, 디코드 시간 회귀 감시.</dd>
+    <dt>검증 게이트</dt><dd>디코드 시간 +10% 이하 확인 후 z3 비교. 독립 병행 가능(T4 선행 불필요).</dd>
+    <dt>리스크</dt><dd>후보 증가가 전체 시간예산을 잠식 가능 → (i)부터 단계별.</dd>
+  </dl>
+</div>
+
+<div class="track">
+  <div class="thead">
+    <span class="tcode">T6</span>
+    <span class="badge p2">P2</span>
+    <span class="tname">제출·리더보드 전략 (지속)</span>
+  </div>
+  <dl>
+    <dt>무엇</dt><dd>안정 빌드 조기 제출(hourly 집계 반영). 리더보드로 경쟁 밀도 추정 → 분산축소 vs 평균개선 우선순위 동적 조정. 12h 쿨다운 제출 캘린더.</dd>
+    <dt>왜</dt><dd>R−nb 특성: 동점 무손해, −1 비대칭(≈R/2+1 손실). 안정성&gt;최적성 불변. 상위권이면 mean 개선 우선, 중위 밀집이면 min 수확 우선 <span class="warn-flag">⚠ 의사결정이론 · 지식기반</span>.</dd>
+    <dt>검증 게이트</dt><dd>제출 전 tl=60/100 smoke test → −1 0건 확인.</dd>
+    <dt>리스크</dt><dd>12h 쿨다운 제약. 불안정 빌드 제출 = 점수 낭비.</dd>
+  </dl>
+</div>
+
+<!-- ===== 5. 시너지 맵 + 실행 순서 ===== -->
+<h2><span class="n">5</span> 시너지 맵 + 실행 순서</h2>
+
+<div class="srow"><span class="step">T2</span><span class="arr">→</span><span class="desc"><b>[P0]</b> 측정 전제 확립 (모든 트랙의 판정 기반). 첫 번째 실행.</span></div>
+<div class="srow"><span class="step">T1</span><span class="arr">→</span><span class="desc"><b>[P0, long-tl 전용]</b> 싸고 확실, 1~2일급. prob_13 즉시 회수. floor 다양화의 첫 단계.</span></div>
+<div class="srow"><span class="step">T3</span><span class="arr">→</span><span class="desc"><b>[P1]</b> T1의 floor 다양화를 레플리카 차원으로 흡수. 변동 구조적 수확. T5와 병행 가능.</span></div>
+<div class="srow"><span class="step">T5</span><span class="arr">→</span><span class="desc"><b>[P1]</b> T3와 독립 병행 가능. packing-blocked z3의 직접 레버 + T4 삽입 성공률 피더.</span></div>
+<div class="srow"><span class="step">T4</span><span class="arr">→</span><span class="desc"><b>[P2 조건부]</b> kill-test 통과 시에만 빌드. 실패 → 06-10 판정 영구 확정. 실행 순서 최후.</span></div>
+<div class="srow"><span class="step">T6</span><span class="arr">→</span><span class="desc"><b>[지속]</b> 모든 트랙과 병행. 안정 체크포인트마다 제출.</span></div>
+<p class="note" style="margin-top:8px">실행 순서: <b>T2 → T1 → T3·T5 병행 → (kill-test 통과 시) T4</b></p>
+
+<h3>막힌 길 재시도 금지 목록</h3>
+<p class="note">데이터로 이미 기각 또는 구조상 무효 — 다시 시도해도 토큰 낭비.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">
+  <span class="blocked">Front B 파라미터 튜닝 (TRIES=200 등)</span>
+  <span class="blocked">글로벌 raster (긴 tl)</span>
+  <span class="blocked">W3_DAMP / W2_BOOST</span>
+  <span class="blocked">Gurobi timing 포팅</span>
+  <span class="blocked">raster_k2</span>
+  <span class="blocked">dense-raster 위 Front B</span>
+  <span class="blocked">CUMLEVEL_PARALLEL</span>
+  <span class="blocked">용량 제약 없는 순수 배정 CP-SAT</span>
+  <span class="blocked">cum_level→Front B 예산 redirect (z1=0 gate): net +1% 악화, revert됨 — gate 조건이 반대로 발동</span>
+  <span class="blocked">OGC_CUMLEVEL_BUDGET_PCT=40 무조건 캡: 일부 −1~5% 도움이나 gate 불가</span>
+  <span class="blocked">짧은-tl best-of-two floor (≤100s): C3 참조 — long-tl T1과 구분</span>
+  <span class="blocked">max_deterministic_time 재시도: 폐기 이력 있음 → T2에서 interleave_search 검증 우선, 폐기 사유 확인 후에만</span>
+</div>
+
+<!-- ===== 6. 부록 ===== -->
+<h2><span class="n">6</span> 부록</h2>
+
+<h3>핵심 환경변수 (기본 ON 그룹)</h3>
+<table>
+  <thead><tr><th>변수</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>CRANE_SAFE</code></td><td>크레인 수직접근(j≥k) 검사 활성화</td></tr>
+    <tr><td><code>CUMLEVEL</code></td><td>CP-SAT cum_level entry 평탄화 활성화</td></tr>
+    <tr><td><code>CPSAT_TIMING</code></td><td>CP-SAT 재타이밍 활성화</td></tr>
+    <tr><td><code>BBOX_PACK / SLAB_PACK</code></td><td>bbox/slab 재팩 활성화</td></tr>
+    <tr><td><code>CROSSBAY</code></td><td>crossbay_relocate 활성화</td></tr>
+    <tr><td><code>TARDY_RELOC K=16</code></td><td>self-adaptive, deadline-bounded tardy 재배정</td></tr>
+    <tr><td><code>FRONTB</code></td><td>Front B relocate→swap z3 최적화</td></tr>
+    <tr><td><code>GATE_POSTPROCESS</code></td><td>게이트 통과 후 추가 postprocess 실행</td></tr>
+    <tr><td><code>Z1_BAY_DECODE</code></td><td>병렬 클린 재디코드 활성화</td></tr>
+    <tr><td><code>PARALLEL_MS auto</code></td><td>병렬 멀티스타트 자동 스케일</td></tr>
+    <tr><td><code>FLOOR_RASTER</code></td><td>fast-floor 조건 시 raster 충돌검사 전환</td></tr>
+  </tbody>
+</table>
+
+<h3>데이터 재현 위치</h3>
+<ul class="t">
+  <li><b>캡처</b>: <code>results/capture/{final100,final300,final1000,vd1,vd2,vs1,vs2,ms900a,ms900b,off900,plateau600}</code></li>
+  <li><b>집계 스크립트</b>: <code>notes/_cmp_caps.py</code> · <code>notes/_final_table.py</code></li>
+  <li><b>실시간 진단</b>: <code>OGC_STAGE_TIMING=1</code> 환경변수 설정 후 실행</li>
+</ul>
+
+<h3>참고문헌 <span class="warn-flag">⚠ 전체 목록 미검증 (검색장애로 지식기반 인용)</span></h3>
+<table>
+  <thead><tr><th>저자 (연도)</th><th>장소/저널</th><th>관련 트랙</th></tr></thead>
+  <tbody>
+    <tr><td>Luby, Sinclair, Zuckerman (1993)</td><td>IPL</td><td>T3 restart</td></tr>
+    <tr><td>Gomes &amp; Selman (2001)</td><td>AAAI</td><td>T3 portfolio</td></tr>
+    <tr><td>Feo &amp; Resende (1995)</td><td>JOGO</td><td>T3 GRASP</td></tr>
+    <tr><td>Martin, Otto, Felten (1992)</td><td>AAAI</td><td>T3 large-step</td></tr>
+    <tr><td>Bennell &amp; Oliveira (2008)</td><td>EJOR</td><td>T5 NFP tutorial</td></tr>
+    <tr><td>Burke et al. (2006, 2007)</td><td>EJOR / OR</td><td>T5 BLF+NFP</td></tr>
+    <tr><td>Toledo et al. (2013)</td><td>EJOR</td><td>T5 dotted-board</td></tr>
+    <tr><td>Chehrazad et al. (2021)</td><td>EJOR</td><td>T5 semi-discrete BLF</td></tr>
+    <tr><td>Hopper &amp; Turton (2001)</td><td>EJOR</td><td>T5 strip packing</td></tr>
+    <tr><td>Meisel &amp; Bierwirth (2009)</td><td>OR</td><td>T4 BAP preferred berth</td></tr>
+    <tr><td>Correcher &amp; Alvarez-Valdes (2017)</td><td>C&OR</td><td>T4 BAP preferred berth</td></tr>
+    <tr><td>Buhrkal et al. (2011)</td><td>T</td><td>T4 BAP</td></tr>
+    <tr><td>Hooker (2007)</td><td>LNCS</td><td>T4 LBBD no-good</td></tr>
+    <tr><td>Pisinger &amp; Ropke (2007)</td><td>C&OR</td><td>T3 LNS</td></tr>
+    <tr><td>or-tools sat_parameters.proto</td><td>Google OR-Tools docs</td><td>T2 CP-SAT 결정화</td></tr>
+  </tbody>
+</table>
+
+<h3>리서치 방법</h3>
+<p class="note">정찰 4 에이전트(코드 2·데이터 2) + 심층 5 에이전트(로컬 판정 1·문헌 4). 핵심 수치는 메인 세션이 원본 JSON으로 재검증. 지어낸 수치 없음. 브리프 외 수치는 "추정" 또는 ⚠ 플래그 표기.</p>
+
+<div class="foot">
+  OGC 2026 — 전략 리서치 &nbsp;|&nbsp; 생성 2026-06-11 &nbsp;|&nbsp;
+  작업공간 <code>C:\claude-develop\OGC2026</code> &nbsp;|&nbsp;
+  제출 <code>submission@optichallenge.com</code> · 12h 쿨다운
+</div>
+
+</div><!-- /wrap -->
+</body>
+</html>

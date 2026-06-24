@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGC2026 — CP-SAT 개선 진행 리포트 (2026-06-18)</title>
+<style>
+:root{
+  --bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--border:#2a3240;--border2:#39414f;
+  --text:#e6edf3;--muted:#9aa7b4;--dim:#6e7b8a;--accent:#58a6ff;--accent2:#7ee787;
+  --warn:#f0883e;--danger:#ff7b72;--ogc:#d2a8ff;
+  --mono:"SFMono-Regular",Consolas,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b0f15,#0d1117 280px);color:var(--text);
+  font-family:var(--sans);line-height:1.62;font-size:15.5px}
+.container{max-width:1040px;margin:0 auto;padding:0 22px 90px}
+.hero{padding:48px 0 24px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.kicker{font-family:var(--mono);color:var(--accent2);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+h1{font-size:2rem;line-height:1.2;margin:0 0 12px}
+.lead{color:var(--muted);font-size:1.04rem;margin:0;max-width:820px}
+h2{font-size:1.42rem;margin:40px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h3{font-size:1.1rem;margin:24px 0 8px;color:var(--accent)}
+p{margin:11px 0}
+ul,ol{padding-left:22px}li{margin:5px 0}
+strong{color:#fff}
+code{font-family:var(--mono);background:var(--panel2);color:#a8d4ff;padding:2px 6px;border-radius:5px;font-size:.86em}
+a{color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;background:var(--panel)}
+td.n,th.n{text-align:right;font-family:var(--mono)}
+tr:hover td{background:#10151c}
+.win{color:var(--accent2);font-weight:600}
+.reg{color:var(--danger);font-weight:600}
+.noise{color:var(--dim)}
+.zero{color:var(--dim)}
+.callout{border-radius:10px;padding:16px 18px;margin:20px 0;border:1px solid var(--border2);background:var(--panel)}
+.callout .ttl{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px;color:var(--muted)}
+.callout.key{border-color:#5a3a8a;background:linear-gradient(180deg,#1c1530,#161b22)}
+.callout.key .ttl{color:var(--ogc)}
+.callout.good{border-color:#1f4d36;background:#101f18}
+.callout.good .ttl{color:var(--accent2)}
+.callout.warn{border-color:#5a3326;background:#241612}
+.callout.warn .ttl{color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px;margin:18px 0}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.card h4{margin:0 0 6px;font-size:.98rem}
+.card .gate{font-family:var(--mono);font-size:11px;color:var(--accent2)}
+.card .meta{font-size:12.5px;color:var(--muted);margin-top:6px}
+.pill{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;vertical-align:middle}
+.p-adopt{background:#0f2a1b;color:#7ee787;border:1px solid #1f4d36}
+.p-iter{background:#2a2410;color:#ffd479;border:1px solid #5a4a1f}
+.p-test{background:#16263a;color:#a8d4ff;border:1px solid #274b6d}
+.p-on{background:#0f2a1b;color:#7ee787;border:1px solid #1f4d36}
+.p-off{background:#241612;color:#f0883e;border:1px solid #5a3326}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);color:var(--dim);font-size:12.5px}
+.bignum{font-family:var(--mono);font-size:1.5rem;font-weight:700}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-family:var(--mono);font-size:12.5px}
+.flow .step{background:var(--panel2);border:1px solid var(--border2);border-radius:6px;padding:5px 11px}
+.flow .arr{color:var(--dim)}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div class="kicker">CP-SAT 개선 트랙 · 진행 리포트 · 2026-06-18</div>
+    <h1>improvements.html 기반 솔버 개선 — 사이클 1 결과</h1>
+    <p class="lead">감사 문서 <code>notes/research/cpsat-methodology/improvements.html</code>의 제안을
+    구현→측정→판정하는 작업의 1차 결과. <strong>"한 번 실패로 폐기하지 말고 3번 디벨롭"</strong> 원칙 적용.
+    핵심 발견: <strong>측정 인프라의 set2 노이즈가 ±1.3M/인스턴스로 거대</strong>해, 단일 측정의 set2 "승/패"는
+    대부분 노이즈였다. 진짜 신호는 거의 결정적인 <strong>set1</strong>에서 잡혔다.</p>
+  </header>
+
+  <!-- ===== TL;DR ===== -->
+  <div class="callout key">
+    <div class="ttl">한 줄 요약</div>
+    <p>4개 레버(B4·C3·B2·A1)를 게이트로 안전하게 구현. 결합 적용 시 <strong>set1 −73,514 (−5.5%)</strong>의
+    <strong>진짜 이득</strong>(prob_20 −77,916, 노이즈 0 대비), <strong>feasible 40/40 (never−1 유지)</strong>.
+    단 set2는 <strong>측정 노이즈(±1M+/인스턴스)에 가려 단일 측정으로 판정 불가</strong> — 그래서 노이즈 대조 실험으로
+    "어디까지가 신호인가"를 먼저 확정 중. <strong>B4(제출 안전)는 결정적 채택 후보, B3(box 코어 1→4)가 다음.</strong></p>
+  </div>
+
+  <!-- ===== 솔버 맥락 ===== -->
+  <h2>0. 출발점 · 측정 규율</h2>
+  <p>현재 솔버(<code>src/myalgorithm.py</code> 하이브리드: legacy + box-decomp + gassign 의 best-of)는
+  set1 ≈ 1.31M (z1=0 on 19/20), set2 ≈ 329M, feasible 40/40. 감사 문서의 <strong>정직한 판정</strong>:
+  CP-SAT 모델링으로 set1 &lt;1M은 못 뚫는다(패킹 밀도 천장). 이 제안들의 진짜 가치는 두 가지 —
+  <strong>(1) 속도</strong>(같은 z1을 더 빨리 → 남는 예산 재투자), <strong>(2) never−1</strong>(set2 제출 안전 =
+  단일 최대 점수 레버). 판정 기준(사용자 규칙): <strong>full set · 총 obj · never−1 · set1 무회귀</strong>.</p>
+
+  <!-- ===== 구현 레버 ===== -->
+  <h2>1. 구현한 레버 (4개, 전부 게이트 — 기본값에서 baseline과 바이트 동일)</h2>
+  <div class="grid">
+    <div class="card">
+      <h4>B4 · serial-floor 안전바닥 <span class="pill p-on">기본 ON</span></h4>
+      <div class="gate">OGC_SERIAL_FLOOR_SAFETY</div>
+      <div class="meta"><strong>P0 / never−1.</strong> <code>algorithm()</code> 반환 직전, 현재 해가
+      체커 불합격이면 항상-feasible한 <code>_trivial_solution</code>(EDD 베이내 직렬화 = 크레인/충돌 vacuous)으로
+      교체. feasible 인스턴스엔 no-op. 각 −1 회피 ≈ +R/2.</div>
+    </div>
+    <div class="card">
+      <h4>C3 · zero/LB 조기중단 <span class="pill p-off">기본 OFF</span></h4>
+      <div class="gate">OGC_ORACLE_ZERO_STOP</div>
+      <div class="meta"><strong>P1 / 속도.</strong> per-bay 타이밍 오라클이 그 베이의 증명된 tardiness 하한에
+      도달하는 순간 OPTIMAL 증명을 생략하고 중단. 회수 예산을 다른 베이/다운스트림에 재투자.
+      기존 <code>_zero_obj_stopper</code>를 LB 인자로 일반화해 연결.</div>
+    </div>
+    <div class="card">
+      <h4>B2 · 난이도 비례 예산 <span class="pill p-off">기본 OFF</span></h4>
+      <div class="gate">OGC_TIMING_BUDGET_PROP</div>
+      <div class="meta"><strong>P0 / 속도.</strong> per-bay 예산을 균등분할 대신 <em>블록 수 비례</em>로
+      (CP-SAT 난이도 ~ O(n²)). 총예산 불변·남은 wall 클램프. 어려운 베이 timeout↓.</div>
+    </div>
+    <div class="card">
+      <h4>A1 · NoOverlap (clique-edge-cover) <span class="pill p-off">기본 OFF</span></h4>
+      <div class="gate">OGC_ORACLE_NOOVERLAP</div>
+      <div class="meta"><strong>P1 / 속도.</strong> 충돌쌍 시간 비겹침을 hand-rolled big-M BoolOr 대신
+      전용 disjunctive propagator로. <strong>핵심 정정:</strong> 단순 AddNoOverlap(전체)는 비충돌쌍까지
+      과제약 → <em>충돌 그래프의 clique-edge-cover</em>로 정확하게(각 clique=NoOverlap). 크레인 비대칭은
+      BoolOr 유지.</div>
+    </div>
+  </div>
+  <p><small>전부 컴파일 OK + prob_14/prob_28 스모크 feasible(예외 없음). A1의 clique-cover는 공식 체커가 수락 →
+  정확성 확인.</small></p>
+
+  <!-- ===== 사이클 1 결과 ===== -->
+  <h2>2. 사이클 1 — 결합 A/B (C3+B2+A1), ALL40 @120</h2>
+  <p>baseline(게이트 OFF = 현 운영) vs treatment(셋 다 ON), 순차 실행(CPU 오버서브 회피).</p>
+  <table>
+    <thead><tr><th>구간</th><th class="n">baseline</th><th class="n">treatment</th><th class="n">Δ (B−A)</th><th>feasible</th></tr></thead>
+    <tbody>
+      <tr><td>SET1 (prob_1–20)</td><td class="n">1,342,947</td><td class="n">1,269,433</td><td class="n win">−73,514</td><td>20/20 · 20/20</td></tr>
+      <tr><td>SET2 (prob_21–40)</td><td class="n">329,464,765</td><td class="n">329,459,684</td><td class="n noise">−5,081</td><td>20/20 · 20/20</td></tr>
+      <tr><td><strong>ALL40</strong></td><td class="n">330,807,712</td><td class="n">330,729,117</td><td class="n win">−78,595</td><td><strong>40/40 · 40/40 ✓</strong></td></tr>
+    </tbody>
+  </table>
+  <p>겉보기엔 net 개선 + never−1. 하지만 인스턴스별로 보면 <strong>큰 승과 큰 패가 뒤섞임</strong>:
+  prob_20 −77,916, prob_28 −1.41M, prob_30 −1.03M (승) ↔ prob_39 +1.04M, prob_27 +0.92M, prob_26 +0.28M (패).
+  → 이게 진짜 레버 효과인지 의심하고 <strong>per-z 분해 + 노이즈 대조</strong>로 파고듦.</p>
+
+  <!-- ===== 메커니즘 ===== -->
+  <h2>3. per-z 분해 — "개선"이 아니라 "재배치(reshuffle)"</h2>
+  <p>타이밍 오라클은 z1만 건드리고(z2/z3 고정), 게이트는 예산 배분을 바꾼다. 그 결과는 깨끗한 개선이 아니라
+  예산 제약 탐색의 <strong>재배치</strong>였다:</p>
+  <table>
+    <thead><tr><th>인스턴스</th><th>base (z1/z2/z3)</th><th>treat (z1/z2/z3)</th><th>해석</th></tr></thead>
+    <tbody>
+      <tr><td>prob_20 <span class="win">−78K</span></td><td class="n">0 / 2361 / 1336</td><td class="n">0 / 1875 / 736</td><td>z1=0 동일, z2·z3 둘 다 ↓ → 남은 예산이 더 좋은 Pareto 찾음</td></tr>
+      <tr><td>prob_28 <span class="win">−1.4M</span></td><td class="n">743 / 788 / 5412</td><td class="n">637 / 788 / 5412</td><td>z2/z3 동일, z1 ↓ → 오라클이 더 낮은 z1 도달</td></tr>
+      <tr><td>prob_39 <span class="reg">+1.0M</span></td><td class="n">2472 / 384 / 9610</td><td class="n">2550 / 384 / 9610</td><td>z2/z3 동일, z1 ↑ <em>약간</em> (오라클은 z1-단조라 입력 floor가 달라진 것). w1≈13K라 ±78 z1 = ±1M obj</td></tr>
+      <tr><td>prob_6 <span class="reg">+21K</span></td><td class="n">0 / 2212 / 402</td><td class="n">0 / 1624 / 572</td><td>z1=0 동일, 예산 이동이 다운스트림 z2/z3 Pareto를 다른(나쁜) 점으로</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ===== 노이즈 발견 ===== -->
+  <h2>4. ★ 결정적 발견 — 측정 노이즈 바닥 (base 두 번 vs)</h2>
+  <p>같은 config(게이트 OFF)를 <strong>두 번</strong> 돌려 run-to-run 차이를 측정. 게이트를 안 바꿔도 움직이는 양 = 노이즈.</p>
+  <table>
+    <thead><tr><th>인스턴스</th><th class="n">base draw 1</th><th class="n">base draw 2</th><th class="n">노이즈 Δ</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>prob_20</td><td class="n">181,166</td><td class="n">181,166</td><td class="n zero">+0</td><td>결정적</td></tr>
+      <tr><td>prob_14</td><td class="n">89,195</td><td class="n">89,195</td><td class="n zero">+0</td><td>결정적</td></tr>
+      <tr><td>prob_15</td><td class="n">46,751</td><td class="n">46,751</td><td class="n zero">+0</td><td>결정적</td></tr>
+      <tr><td>prob_6</td><td class="n">75,784</td><td class="n">75,458</td><td class="n noise">−326</td><td>거의 결정적</td></tr>
+      <tr><td>prob_12</td><td class="n">140,735</td><td class="n">138,825</td><td class="n noise">−1,910</td><td>작음</td></tr>
+      <tr><td>prob_26</td><td class="n">27,633,464</td><td class="n">27,913,457</td><td class="n reg">+279,993</td><td>= "게이트 효과"로 오해한 값!</td></tr>
+      <tr><td>prob_27</td><td class="n">54,591,101</td><td class="n">55,511,078</td><td class="n reg">+919,977</td><td>= "회귀"로 오해한 값!</td></tr>
+      <tr><td>prob_39</td><td class="n">34,402,212</td><td class="n">35,442,186</td><td class="n reg">+1,039,974</td><td>= "회귀"로 오해한 값!</td></tr>
+      <tr><td>prob_28</td><td class="n">11,532,383</td><td class="n">10,465,743</td><td class="n win">−1,066,640</td><td>= "승"으로 오해할 뻔</td></tr>
+      <tr><td>prob_30</td><td class="n">15,333,408</td><td class="n">14,040,107</td><td class="n win">−1,293,301</td><td>거대 노이즈</td></tr>
+      <tr><td>prob_34</td><td class="n">3,640,614</td><td class="n">3,857,807</td><td class="n reg">+217,193</td><td>노이즈</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="ttl">함의 — 측정의 함정</div>
+    <p>사이클 1에서 set2의 "승(prob_28/30)"과 "패(prob_39/27/26/34)"는 <strong>전부 노이즈</strong>였다 —
+    게이트를 하나도 안 바꾼 baseline 재실행에서 <em>똑같이</em> 나타난다(prob_27 +920K, prob_39 +1.04M 등 자릿수까지 일치).
+    원인: CP-SAT 4-worker 비결정성. set2 인스턴스(10M~80M)는 run-to-run ±1~2% = ±1M+ 진폭.
+    <strong>→ set2는 단일 측정으로 레버를 판정할 수 없다.</strong> 반면 <strong>set1은 거의 결정적</strong>(노이즈 &lt;2K).</p>
+  </div>
+
+  <!-- ===== 재해석 ===== -->
+  <h2>5. 재해석 — set1만이 신뢰 가능한 신호</h2>
+  <p>노이즈 바닥을 알고 나니 set1(결정적)에서의 게이트 효과는 <strong>진짜</strong>다:</p>
+  <table>
+    <thead><tr><th>set1 인스턴스</th><th class="n">결합 Δ</th><th class="n">노이즈 바닥</th><th>판정</th><th>분리 실험(어느 레버?)</th></tr></thead>
+    <tbody>
+      <tr><td>prob_20</td><td class="n win">−77,916</td><td class="n">0</td><td class="win">진짜 승</td><td>단일 게이트=0, <strong>셋 결합에서만</strong> 발현 (시너지)</td></tr>
+      <tr><td>prob_12</td><td class="n win">−25,018</td><td class="n">−1,910</td><td class="win">진짜 승</td><td>C3 −25,018 / B2 −25,018 (C3 또는 B2)</td></tr>
+      <tr><td>prob_6</td><td class="n reg">+21,384</td><td class="n">−326</td><td class="reg">진짜 회귀</td><td>C3 <span class="win">−10,801(도움)</span> / B2 +7,620 / A1 <span class="reg">+24,136</span></td></tr>
+      <tr><td>prob_14</td><td class="n reg">+4,004</td><td class="n">0</td><td class="reg">진짜 회귀(소)</td><td>분리 전부 0 (결합 효과)</td></tr>
+      <tr><td>prob_15</td><td class="n reg">+4,032</td><td class="n">0</td><td class="reg">진짜 회귀(소)</td><td>B2 +4,032</td></tr>
+      <tr><td colspan="2"><strong>SET1 net</strong></td><td class="n win">−73,514</td><td></td><td class="win">진짜 net 이득</td><td></td></tr>
+    </tbody>
+  </table>
+  <p>분리 실험에서 한 가지 흥미로운 점: <strong>prob_6 회귀의 주범은 A1</strong>(+24,136)이고, <strong>C3는 오히려
+  prob_6를 도왔다</strong>(−10,801). 즉 레버마다 인스턴스별 부호가 달라, <strong>다음 사이클의 핵심 질문</strong>은
+  "A1을 빼고 C3+B2만 쓰면 prob_6 회귀 없이 prob_20/12 승을 지키는가?"이다. (3-tries 디벨롭의 방향)</p>
+
+  <!-- ===== 상태 / 다음 ===== -->
+  <h2>6. 현재 상태 · 다음 단계</h2>
+  <div class="grid">
+    <div class="card">
+      <h4>B4 — never−1 안전 <span class="pill p-adopt">채택 후보</span></h4>
+      <div class="meta">결정적·obj 무영향·목표 직결. <code>_trivial_solution</code> ALL40 feasible 검증 +
+      "junk legacy → B4가 구제" 테스트 준비 완료. 노이즈 대조 종료 후 실행.</div>
+    </div>
+    <div class="card">
+      <h4>B3 — box 코어 1→4 <span class="pill p-test">다음 테스트</span></h4>
+      <div class="meta">box-decomp가 set2 승자인데 4코어 중 1코어만 사용(순차 실행이라 4 안전). <strong>코드 수정 없이
+      env로 A/B 가능</strong>(<code>OGC_BD_WORKERS=1 vs 4</code>). 미측정 중 최고 EV 후보.</div>
+    </div>
+    <div class="card">
+      <h4>C3+B2 (A1 제외) <span class="pill p-iter">디벨롭 중</span></h4>
+      <div class="meta">A1이 prob_6 회귀 주범. C3+B2만으로 set1 승 유지되는지 = 사이클 2 가설. (폐기 아님 — 3-tries)</div>
+    </div>
+    <div class="card">
+      <h4>노이즈 대조 <span class="pill p-test">실행 중</span></h4>
+      <div class="meta">base×3 + 결합×2 (15 movers). set2 신호/노이즈 분리 envelope 확정. ~12분 남음.</div>
+    </div>
+  </div>
+
+  <div class="callout good">
+    <div class="ttl">측정 교훈 (다음 사이클부터 적용)</div>
+    <ul style="margin:4px 0">
+      <li><strong>set1으로 판정한다</strong> — 거의 결정적이라 깨끗한 신호. set2는 단일 측정 금지.</li>
+      <li><strong>set2 레버는 다수 draw(≥3) 평균</strong> 또는 within-run diag로만 판정 (감사 문서 권고와 일치).</li>
+      <li>큰 set2 "Δ"에 흥분 금지 — ±1M는 그냥 노이즈다.</li>
+    </ul>
+  </div>
+
+  <div class="foot">
+    OGC2026 CP-SAT 개선 트랙 · 사이클 1 · 2026-06-18 · 원장 <code>notes/research/cpsat-improvements-ledger.md</code> ·
+    근거 감사 <code>notes/research/cpsat-methodology/improvements.html</code> ·
+    데이터 <code>results/capture/{imp_base, imp_c3b2a1, iso_*}/</code>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 패킹·배치 — CP-SAT Methodology</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html" class="active">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+<div class="hero">
+  <div class="kicker">CP-SAT Methodology · Chapter 04</div>
+  <h1>패킹·배치 — Bin Packing, 2D 직교, 이형 폴리곤</h1>
+  <p class="lead">
+    Bin Packing / Multiple Knapsack 부터 <code>AddNoOverlap2D</code> 기반 2D 직교 사각형 패킹, 방향(회전) 처리,
+    Strip Packing, 이형 폴리곤의 격자 근사 전략까지 — CP-SAT로 공간 배치 문제를 모델링하는 완전 가이드.
+    OGC 2026 베이(스트립) 내 블록 배치 문제와 직접 연결된다.
+  </p>
+</div>
+
+<!-- OGC2026 관련성 박스 -->
+<div class="callout ogc">
+  <div class="ttl">★ OGC 2026 관련성</div>
+  <p style="margin:0">
+    <strong>베이 = Strip, 블록 = Rectangle(근사):</strong>
+    각 베이를 고정 폭·높이의 Strip으로 보고 블록을 사각형(또는 박스-분해 사각형 집합)으로 근사하면,
+    <code>AddNoOverlap2D</code>로 공간 충돌을 직접 모델링할 수 있다.
+    방향 <code>o</code>(0°/90°)는 회전 후보 두 사각형 중 하나를 Boolean으로 선택하는 패턴으로 처리한다.
+    크레인 수직접근 규칙 <strong>j ≥ k</strong>(높이 층 j의 블록은 층 k ≤ j 블록보다 먼저 반출)는
+    y축(높이) 인터벌에 추가 선후 관계 제약으로 동형화된다.
+    단, <strong>이형 폴리곤 밀도 측면에서 CP-SAT 박스패커는 Bottom-Left 휴리스틱보다 느릴 수 있다</strong> —
+    박스분해 해상도와 시간 예산을 현실적으로 설정해야 한다.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="bin-packing">1. Bin Packing 모델링</h2>
+
+<p>
+  <strong>Bin Packing 문제</strong>: n개 아이템(무게 w<sub>i</sub>)을 최소 개수의 빈(용량 C)에 배정.
+  OR-Tools는 MIP(SCIP 등)와 CP-SAT 양쪽 모두로 풀 수 있다. 용량 1D 제약만 필요하면 MIP가 일반적으로 빠르지만,
+  공간 제약(2D/3D)이 섞이면 CP-SAT의 interval-based 접근이 유리하다.
+</p>
+
+<h3>1.1 전통적 MIP 공식화</h3>
+<pre><code><span class="cmt"># OR-Tools MIP Bin Packing (SCIP backend)</span>
+from ortools.linear_solver import pywraplp
+
+def solve_bin_packing():
+    weights = [48, 30, 19, 36, 36, 27, 42, 42, 36, 24, 30]
+    n        = len(weights)
+    C        = 100                   <span class="cmt"># bin capacity</span>
+    m        = n                     <span class="cmt"># upper bound on bins (= n)</span>
+
+    solver = pywraplp.Solver.CreateSolver("SCIP")
+
+    <span class="cmt"># x[i,j] = 1  :  item i goes into bin j</span>
+    x = {(i,j): solver.IntVar(0, 1, f"x_{i}_{j}")
+         for i in range(n) for j in range(m)}
+    <span class="cmt"># y[j] = 1  :  bin j is used</span>
+    y = {j: solver.IntVar(0, 1, f"y_{j}") for j in range(m)}
+
+    <span class="cmt"># 제약 1: 각 아이템은 정확히 1개 빈에</span>
+    for i in range(n):
+        solver.Add(sum(x[i,j] for j in range(m)) == 1)
+
+    <span class="cmt"># 제약 2: 빈 용량 — y[j]*C >= 총 무게 (Big-M 대신 용량을 계수로)</span>
+    for j in range(m):
+        solver.Add(
+            sum(x[i,j] * weights[i] for i in range(n)) <= y[j] * C
+        )
+
+    solver.Minimize(solver.Sum(y[j] for j in range(m)))
+    status = solver.Solve()
+
+    if status == pywraplp.Solver.OPTIMAL:
+        print(f"최소 빈 수: {int(sum(y[j].solution_value() for j in range(m)))}")
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">팁 — CP-SAT로 Bin Packing 변환</div>
+  <p style="margin:0">
+    아이템이 2D 공간을 차지하거나 Non-overlap 제약이 필요한 순간, 위 MIP 공식은 쓸 수 없다.
+    그 대신 아래 Section 3의 <code>AddNoOverlap2D</code> 기반 "하나의 큰 스트립" 패턴으로 전환한다.
+  </p>
+</div>
+
+<h3>1.2 CP-SAT Multiple Knapsack</h3>
+<p>
+  <strong>Multiple Knapsack</strong>: 여러 빈(용량이 다를 수 있음)에 아이템을 배정해 총 가치 최대화.
+  각 아이템이 최대 1개 빈에 들어가는 것이 Bin Packing과의 차이.
+</p>
+
+<pre><code>from ortools.sat.python import cp_model
+
+def solve_multiple_knapsack():
+    weights    = [48, 30, 42, 36, 36, 48, 42, 42, 36, 24, 30, 30, 42, 36, 36]
+    values     = [10, 30, 25, 50, 35, 30, 15, 40, 30, 35, 45, 10, 20, 30, 25]
+    capacities = [100, 100, 100, 100, 100]   <span class="cmt"># 5개 빈</span>
+
+    n_items = len(weights)
+    n_bins  = len(capacities)
+    model   = cp_model.CpModel()
+
+    <span class="cmt"># x[i, b] = 1  :  item i is in bin b</span>
+    x = {}
+    for i in range(n_items):
+        for b in range(n_bins):
+            x[i, b] = model.new_bool_var(f"x_{i}_{b}")
+
+    <span class="cmt"># 제약 1: 각 아이템은 최대 1개 빈에 (at most one — 안 담겨도 OK)</span>
+    for i in range(n_items):
+        model.add_at_most_one(x[i, b] for b in range(n_bins))
+
+    <span class="cmt"># 제약 2: 빈 용량</span>
+    for b in range(n_bins):
+        model.add(
+            sum(x[i, b] * weights[i] for i in range(n_items))
+            <= capacities[b]
+        )
+
+    <span class="cmt"># 목적: 총 가치 최대화</span>
+    model.maximize(
+        cp_model.LinearExpr.sum(
+            [cp_model.LinearExpr.term(x[i, b], values[i])
+             for i in range(n_items) for b in range(n_bins)]
+        )
+    )
+
+    solver = cp_model.CpSolver()
+    status = solver.solve(model)
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        for b in range(n_bins):
+            items = [i for i in range(n_items) if solver.value(x[i, b])]
+            print(f"Bin {b}: items={items}, "
+                  f"weight={sum(weights[i] for i in items)}")
+</code></pre>
+
+<div class="callout">
+  <div class="ttl">면적 하한 (Area Lower Bound)</div>
+  <p style="margin:0">
+    2D Knapsack에서 bin 개수 하한을 빠르게 구하려면:
+    <code>lb = ceil(sum(w_i * h_i) / (W * H))</code>.
+    이 값을 초기 빈 개수로 세팅하면 탐색 범위가 크게 줄어든다.
+    CP-SAT에서 <code>model.add(bins_used >= lb)</code>로 주입.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="interval-vars">2. Interval Variables — 4가지 타입</h2>
+
+<p>
+  CP-SAT의 Interval Variable은 <code>start + size == end</code>를 항상 보장하는 특수 제약 객체다.
+  <code>AddNoOverlap</code> / <code>AddNoOverlap2D</code> / <code>AddCumulative</code>에서 인자로 사용된다.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>타입</th>
+      <th>생성 메서드</th>
+      <th>크기</th>
+      <th>Optional?</th>
+      <th>주 용도</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>일반</td>
+      <td><code>new_interval_var(start, size, end, name)</code></td>
+      <td>변수</td>
+      <td>X</td>
+      <td>시작·크기 모두 가변</td>
+    </tr>
+    <tr>
+      <td>고정 크기</td>
+      <td><code>new_fixed_size_interval_var(start, size, name)</code></td>
+      <td>상수</td>
+      <td>X</td>
+      <td>크기 고정, 전파 빠름</td>
+    </tr>
+    <tr>
+      <td>Optional</td>
+      <td><code>new_optional_interval_var(start, size, end, is_present, name)</code></td>
+      <td>변수</td>
+      <td>O (Bool)</td>
+      <td>배치 여부 Boolean 제어</td>
+    </tr>
+    <tr>
+      <td>Optional 고정 크기</td>
+      <td><code>new_optional_fixed_size_interval_var(start, size, is_present, name)</code></td>
+      <td>상수</td>
+      <td>O (Bool)</td>
+      <td>크기 고정 + 배치 여부 가장 효율적</td>
+    </tr>
+  </tbody>
+</table>
+
+<pre><code>from ortools.sat.python import cp_model
+model = cp_model.CpModel()
+W, H = 100, 50   <span class="cmt"># 컨테이너 크기</span>
+w, h = 20, 15    <span class="cmt"># 블록 크기 (고정)</span>
+
+<span class="cmt"># ① 일반 Interval — start·end 모두 변수</span>
+sx = model.new_int_var(0, W - w, "sx")
+ex = model.new_int_var(w, W,     "ex")
+ix = model.new_interval_var(sx, w, ex, "ix")
+
+<span class="cmt"># ② 고정 크기 Interval — 가장 단순, 전파 효율 최고</span>
+sx2 = model.new_int_var(0, W - w, "sx2")
+ix2 = model.new_fixed_size_interval_var(sx2, w, "ix2")
+
+<span class="cmt"># ③ Optional — 배치 여부를 Boolean으로</span>
+placed = model.new_bool_var("placed")
+sx3    = model.new_int_var(0, W - w, "sx3")
+ex3    = model.new_int_var(w, W,     "ex3")
+ix3    = model.new_optional_interval_var(sx3, w, ex3, placed, "ix3")
+
+<span class="cmt"># ④ Optional + 고정 크기 — 2D Knapsack에서 권장</span>
+placed4 = model.new_bool_var("placed4")
+sx4     = model.new_int_var(0, W - w, "sx4")
+ix4     = model.new_optional_fixed_size_interval_var(sx4, w, placed4, "ix4")
+</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">함정 — AddNoOverlap2D 와 Optional</div>
+  <p style="margin:0">
+    <strong><code>AddNoOverlap2D</code>는 Optional Interval을 직접 지원하지 않는다.</strong>
+    Optional interval을 NoOverlap2D에 넘기면 에러가 발생한다.<br>
+    대안: <code>new_optional_fixed_size_interval_var</code>를 사용하면
+    <code>is_present=False</code>인 인터벌을 NoOverlap2D가 무시한다
+    (OR-Tools 9.x 이상에서 지원 — 버전 확인 필수).
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="no-overlap-2d">3. AddNoOverlap2D — 2D 직교 사각형 패킹</h2>
+
+<p>
+  <code>model.add_no_overlap_2d(x_intervals, y_intervals)</code>는
+  동일 인덱스의 (x_interval, y_interval) 쌍을 2D 직사각형으로 해석하고,
+  어떤 두 직사각형도 교차하지 않도록 강제한다.
+  1D NoOverlap보다 훨씬 강력한 LP 완화(projection + cumulative 강화)를 내부에서 자동 생성한다.
+</p>
+
+<h3>3.1 기본 패턴 — 모든 블록 배치 (필수)</h3>
+
+<pre><code>from ortools.sat.python import cp_model
+
+def pack_rectangles(container_w, container_h, rects):
+    """
+    rects: list of (width, height) tuples
+    모든 직사각형을 컨테이너에 배치. 실현불가 시 INFEASIBLE 반환.
+    """
+    model = cp_model.CpModel()
+    n = len(rects)
+
+    x_starts, y_starts = [], []
+    x_intervals, y_intervals = [], []
+
+    for i, (w, h) in enumerate(rects):
+        <span class="cmt"># 좌하단 좌표</span>
+        xs = model.new_int_var(0, container_w - w, f"xs_{i}")
+        ys = model.new_int_var(0, container_h - h, f"ys_{i}")
+        x_starts.append(xs)
+        y_starts.append(ys)
+
+        <span class="cmt"># 고정 크기 Interval — 크기가 이미 결정됐으므로 가장 빠름</span>
+        xi = model.new_fixed_size_interval_var(xs, w, f"xi_{i}")
+        yi = model.new_fixed_size_interval_var(ys, h, f"yi_{i}")
+        x_intervals.append(xi)
+        y_intervals.append(yi)
+
+    <span class="cmt"># 핵심: 2D 비겹침</span>
+    model.add_no_overlap_2d(x_intervals, y_intervals)
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 60.0
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return [(solver.value(x_starts[i]), solver.value(y_starts[i]))
+                for i in range(n)]
+    return None   <span class="cmt"># INFEASIBLE</span>
+</code></pre>
+
+<h3>3.2 Optional Placement — 2D Knapsack</h3>
+<p>
+  모든 블록을 강제로 넣지 않고 가치 합을 최대화하거나, 가능한 것만 배치하는 경우.
+  <code>new_optional_fixed_size_interval_var</code>를 사용한다.
+</p>
+
+<pre><code>def pack_2d_knapsack(container_w, container_h, rects, values):
+    """
+    rects : list of (w, h), values : list of int
+    가능한 직사각형을 선택적으로 배치, 총 가치 최대화.
+    """
+    model = cp_model.CpModel()
+    n = len(rects)
+
+    placed_vars  = []
+    x_intervals, y_intervals = [], []
+
+    for i, (w, h) in enumerate(rects):
+        packed = model.new_bool_var(f"packed_{i}")
+        placed_vars.append(packed)
+
+        <span class="cmt"># 배치 안 된 경우 좌표가 어디든 무방하므로 전체 도메인</span>
+        xs = model.new_int_var(0, container_w - w, f"xs_{i}")
+        ys = model.new_int_var(0, container_h - h, f"ys_{i}")
+
+        <span class="cmt"># Optional + 고정 크기: is_present=packed 이면 NoOverlap2D가 활성 취급</span>
+        xi = model.new_optional_fixed_size_interval_var(xs, w, packed, f"xi_{i}")
+        yi = model.new_optional_fixed_size_interval_var(ys, h, packed, f"yi_{i}")
+        x_intervals.append(xi)
+        y_intervals.append(yi)
+
+    model.add_no_overlap_2d(x_intervals, y_intervals)
+
+    <span class="cmt"># 목적: 총 가치 최대화</span>
+    model.maximize(
+        cp_model.LinearExpr.weighted_sum(placed_vars, values)
+    )
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 120.0
+    status = solver.solve(model)
+
+    results = []
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        for i, (w, h) in enumerate(rects):
+            if solver.value(placed_vars[i]):
+                results.append((i, solver.value(...), solver.value(...)))
+    return results
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">팁 — use_cumulative_in_no_overlap_2d</div>
+  <p style="margin:0">
+    <code>solver.parameters.use_cumulative_in_no_overlap_2d = True</code>(기본 OFF)를 켜면
+    NoOverlap2D에서 각 축(x, y)에 대한 Cumulative 전파를 자동 추가한다.
+    전파가 강해져 불필요한 위치를 더 빨리 잘라내지만, 제약 처리 비용이 늘어날 수 있다.
+    작은 인스턴스에서는 ON, 대형 인스턴스에서는 실험으로 결정한다.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="rotation">4. 방향(회전) 처리 — 0°/90° 선택</h2>
+
+<p>
+  블록을 0° 또는 90° 중 하나로 배치할 수 있을 때, Boolean <code>rotated</code> 변수로
+  폭/높이 중 어느 쪽이 x축·y축 크기인지를 동적으로 결정한다.
+</p>
+
+<h3>4.1 선형 조건부 크기 (d-krupke CP-SAT Primer 패턴)</h3>
+
+<pre><code>from ortools.sat.python import cp_model
+
+def pack_with_rotation(container_w, container_h, rects):
+    """
+    rects: list of (width, height)
+    0° / 90° 회전 허용. width != height 인 경우만 실질적 의미.
+    """
+    model = cp_model.CpModel()
+    n = len(rects)
+
+    xs, ys          = [], []
+    xe, ye          = [], []
+    x_sz, y_sz      = [], []   <span class="cmt"># 실제 배치 크기 (회전에 따라 결정)</span>
+    rotated         = []
+    x_ivals, y_ivals = [], []
+
+    for i, (w, h) in enumerate(rects):
+        rot = model.new_bool_var(f"rot_{i}")
+        rotated.append(rot)
+
+        max_dim = max(w, h)
+        <span class="cmt"># 배치 크기 변수</span>
+        sw = model.new_int_var(min(w,h), max_dim, f"sw_{i}")
+        sh = model.new_int_var(min(w,h), max_dim, f"sh_{i}")
+        x_sz.append(sw); y_sz.append(sh)
+
+        diff = w - h
+        if diff == 0:
+            <span class="cmt"># 정사각형 — 회전 무의미</span>
+            model.add(sw == w)
+            model.add(sh == h)
+        else:
+            <span class="cmt"># rot=0 → sw=w, sh=h  /  rot=1 → sw=h, sh=w</span>
+            model.add(sw == w - rot * diff)
+            model.add(sh == h + rot * diff)
+
+        <span class="cmt"># 좌하단</span>
+        x0 = model.new_int_var(0, container_w - min(w,h), f"x0_{i}")
+        y0 = model.new_int_var(0, container_h - min(w,h), f"y0_{i}")
+        x1 = model.new_int_var(min(w,h), container_w, f"x1_{i}")
+        y1 = model.new_int_var(min(w,h), container_h, f"y1_{i}")
+        xs.append(x0); ys.append(y0)
+        xe.append(x1); ye.append(y1)
+
+        xi = model.new_interval_var(x0, sw, x1, f"xi_{i}")
+        yi = model.new_interval_var(y0, sh, y1, f"yi_{i}")
+        x_ivals.append(xi); y_ivals.append(yi)
+
+        <span class="cmt"># 경계 제약: 상단·우측이 컨테이너를 벗어나지 않도록</span>
+        model.add(x1 <= container_w)
+        model.add(y1 <= container_h)
+
+    model.add_no_overlap_2d(x_ivals, y_ivals)
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 60.0
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return [
+            (solver.value(xs[i]), solver.value(ys[i]),
+             bool(solver.value(rotated[i])))
+            for i in range(n)
+        ]
+    return None
+</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">함정 — 도메인 폭발 (Domain Explosion)</div>
+  <p style="margin:0">
+    <code>x_start</code>의 도메인을 <code>[0, container_w]</code>로 잡으면
+    CP-SAT 내부 비트벡터가 <code>container_w</code>비트를 할당한다.
+    컨테이너 폭이 10,000이면 변수당 10K 비트 → 수천 개 블록에서 수십 MB 메모리,
+    전파 속도 급감. 반드시 <strong><code>[0, container_w - min_block_w]</code></strong>로 상한을 좁힌다.
+    이미 배치된 블록 위치로 도메인을 사전 제거하는 <em>placement point</em> 기법도 효과적.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 — 회전을 0°/90°로만 제한</div>
+  <p style="margin:0">
+    CP-SAT는 기하 개념이 없다. 45°·임의 각도 회전은 직접 모델링 불가.
+    0°/90° 두 후보만 있는 경우 위 패턴이 동작하며,
+    "두 크기 중 하나를 선택"하는 Boolean 선택으로 표현하면 충분하다.
+    그 이상의 각도가 필요하면 전처리로 후보 배치 테이블을 생성하고 CP-SAT는 테이블 선택만 담당.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="strip-packing">5. Strip Packing — 폭 고정, 높이 최소화</h2>
+
+<p>
+  <strong>Strip Packing</strong>: 고정 폭 W인 스트립에 모든 블록을 배치하고 사용 높이(makespan)를 최소화.
+  이 구조는 OGC 2026의 베이(고정 폭·높이)와 직접 대응된다.
+</p>
+
+<h3>5.1 단일 스트립, 높이 최소화</h3>
+
+<pre><code>def strip_packing(strip_w, rects, time_limit=60.0):
+    """
+    rects : list of (w, h)
+    목적 : 배치 높이 상한(strip_h) 최소화
+    """
+    model = cp_model.CpModel()
+    n = len(rects)
+
+    <span class="cmt"># 이론적 상한 = 모든 블록 쌓기</span>
+    h_upper = sum(h for _, h in rects)
+    <span class="cmt"># 이론적 하한 = 총 면적 / 폭</span>
+    import math
+    h_lower = math.ceil(sum(w*h for w,h in rects) / strip_w)
+
+    strip_h = model.new_int_var(h_lower, h_upper, "strip_h")
+
+    x_ivals, y_ivals = [], []
+    for i, (w, h) in enumerate(rects):
+        xs = model.new_int_var(0, strip_w - w, f"xs_{i}")
+        ys = model.new_int_var(0, h_upper - h, f"ys_{i}")
+
+        xi = model.new_fixed_size_interval_var(xs, w, f"xi_{i}")
+        yi = model.new_fixed_size_interval_var(ys, h, f"yi_{i}")
+        x_ivals.append(xi)
+        y_ivals.append(yi)
+
+        <span class="cmt"># 각 블록 상단이 strip_h를 초과하면 안 됨</span>
+        model.add(ys + h <= strip_h)
+
+    model.add_no_overlap_2d(x_ivals, y_ivals)
+    model.minimize(strip_h)
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = time_limit
+    <span class="cmt"># 힌트: 면적 하한을 초기 upper bound로 설정</span>
+    # solver.parameters.solution_pool_solution_count = 5
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return solver.value(strip_h)
+    return None
+</code></pre>
+
+<h3>5.2 다중 빈 → "하나의 큰 스트립" 트릭</h3>
+<p>
+  m개 빈(폭 W, 높이 H)에 분산 배치할 때, 빈 번호를 x축으로 확장해 단일 스트립 <code>m*W × H</code>로 변환.
+  빈 번호 변수 b<sub>i</sub>와 로컬 x좌표 x<sub>i</sub>를 링크해 "어느 빈의 어느 위치"를 동시 결정.
+</p>
+
+<pre><code>def multi_bin_packing(W, H, m, rects):
+    """
+    m개 빈(각 W×H)에 모든 블록 배치, 사용 빈 수 최소화.
+    """
+    model = cp_model.CpModel()
+    n = len(rects)
+
+    <span class="cmt"># 전역 x 좌표 (0 .. m*W-1)</span>
+    xb1 = [model.new_int_var(0, m*W - rects[i][0], f"xb1_{i}") for i in range(n)]
+    xb2 = [model.new_int_var(rects[i][0], m*W,     f"xb2_{i}") for i in range(n)]
+    y1  = [model.new_int_var(0, H - rects[i][1],   f"y1_{i}")  for i in range(n)]
+    y2  = [model.new_int_var(rects[i][1], H,        f"y2_{i}")  for i in range(n)]
+
+    <span class="cmt"># 빈 번호 0..m-1</span>
+    b = [model.new_int_var(0, m-1, f"b_{i}") for i in range(n)]
+    <span class="cmt"># 빈 내 로컬 x 좌표</span>
+    x = [model.new_int_var(0, W - rects[i][0], f"x_{i}") for i in range(n)]
+
+    x_ivals, y_ivals = [], []
+    for i, (w, h) in enumerate(rects):
+        <span class="cmt"># 전역 x = 로컬 x + bin_no * W</span>
+        model.add(xb1[i] == x[i] + b[i] * W)
+        model.add(xb2[i] == xb1[i] + w)
+        model.add(y2[i]  == y1[i] + h)
+
+        xi = model.new_interval_var(xb1[i], w, xb2[i], f"xi_{i}")
+        yi = model.new_interval_var(y1[i],  h, y2[i],  f"yi_{i}")
+        x_ivals.append(xi); y_ivals.append(yi)
+
+    model.add_no_overlap_2d(x_ivals, y_ivals)
+
+    <span class="cmt"># 사용 빈 수 = max(b_i) + 1 → 최소화</span>
+    z = model.new_int_var(0, m-1, "z")
+    model.add_max_equality(z, b)
+    model.minimize(z)
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 120.0
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return [(solver.value(b[i]), solver.value(x[i]), solver.value(y1[i]))
+                for i in range(n)]
+    return None
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">팁 — "하나의 큰 스트립" 패턴의 이점</div>
+  <p style="margin:0">
+    빈 번호별 별도 NoOverlap2D를 만들면 n개 빈 × NoOverlap2D 제약이 생긴다.
+    단일 전역 NoOverlap2D는 <strong>한 번의 propagation</strong>으로 모든 빈 간 충돌도 잡아낸다.
+    블로거(Erwin Kalvelagen, 2021)가 실험으로 확인: 전역 단일 제약이 분리 다중 제약보다
+    유의미하게 빠름.
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="crane-ordering">6. OGC 크레인 j ≥ k 제약의 동형화</h2>
+
+<div class="callout ogc">
+  <div class="ttl">OGC 2026 크레인 수직접근 (j ≥ k)</div>
+  <p style="margin:0">
+    베이 내 블록들이 여러 층(y축 높이)에 쌓일 때, 크레인은 수직으로 내려오므로
+    <strong>위층(y 큰 쪽) 블록이 먼저 반출돼야 아래층 블록에 접근 가능</strong>.
+    이를 CP-SAT로 모델링하는 두 가지 접근:
+  </p>
+</div>
+
+<h3>6.1 접근 A — Exit 시각 순서 제약</h3>
+<p>
+  같은 x 구간에 겹치는 두 블록 i, j에서 블록 i가 블록 j 위에 있으면(<code>y_i &gt; y_j</code>),
+  블록 i의 EXIT 시각이 블록 j의 ENTRY 시각보다 빨라야 한다.
+</p>
+
+<pre><code><span class="cmt"># 블록 i가 블록 j 위에 있으면 exit_i <= entry_j</span>
+<span class="cmt"># "위에 있음"을 CP-SAT로 표현하기 위해 Boolean 보조변수 사용</span>
+
+for i in range(n):
+    for j in range(n):
+        if i == j:
+            continue
+        <span class="cmt"># i가 j 위에 있는가? (y_start[i] > y_start[j] + height[j])</span>
+        above_ij = model.new_bool_var(f"above_{i}_{j}")
+
+        <span class="cmt"># above_ij = 1  iff  ys[i] >= ys[j] + h[j]</span>
+        model.add(ys[i] >= ys[j] + heights[j]).only_enforce_if(above_ij)
+        model.add(ys[i] <  ys[j] + heights[j]).only_enforce_if(above_ij.negated())
+
+        <span class="cmt"># x축 겹침이 있으면서 위에 있으면 exit_i <= entry_j</span>
+        x_overlap = model.new_bool_var(f"xovlp_{i}_{j}")
+        <span class="cmt"># x 겹침 조건 인코딩 생략 (xs[i] < xs[j]+w[j] AND xs[j] < xs[i]+w[i])</span>
+
+        both = model.new_bool_var(f"both_{i}_{j}")
+        model.add_bool_and([above_ij, x_overlap]).only_enforce_if(both)
+
+        model.add(exit_time[i] <= entry_time[j]).only_enforce_if(both)
+</code></pre>
+
+<h3>6.2 접근 B — y 인터벌 순서를 NoOverlap으로 (단순화)</h3>
+<p>
+  같은 x 범위에 공존하는 블록들의 <strong>반출 시각 인터벌</strong>을 1D NoOverlap으로 직렬화.
+  크레인이 한 번에 하나의 블록만 처리할 수 있다는 조건을 쉽게 표현.
+</p>
+
+<pre><code><span class="cmt"># 반출 시각을 "작업"으로 보고 1D NoOverlap</span>
+exit_intervals = [
+    model.new_fixed_size_interval_var(exit_time[i], crane_duration, f"crane_{i}")
+    for i in range(n)
+]
+model.add_no_overlap(exit_intervals)
+<span class="cmt"># 크레인 처리 순서: 위층 블록의 exit가 아래층 entry보다 빠르게</span>
+</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="irregular-polygon">7. 이형 폴리곤 패킹 — CP-SAT의 한계와 근사 전략</h2>
+
+<p>
+  CP-SAT의 NoOverlap2D는 <strong>직사각형(axis-aligned rectangle)만</strong> 지원한다.
+  OGC 2026의 블록은 이형 폴리곤이므로 직접 적용 불가.
+  실용적인 전략 3가지를 비교한다.
+</p>
+
+<h3>7.1 전략 A — 박스 분해 (Box Decomposition)</h3>
+<p>
+  폴리곤을 여러 직사각형 집합 {R₁, R₂, …, Rₖ}의 합집합으로 근사.
+  각 직사각형을 별도의 interval로 등록하되, 같은 폴리곤에 속한 직사각형들은
+  동일 상대 위치를 유지하는 링크 제약을 추가한다.
+</p>
+
+<pre><code><span class="cmt">"""
+폴리곤 i → 박스 분해 { (ox_k, oy_k, bw_k, bh_k) } (k = 0..Ki-1)
+  (ox_k, oy_k) : 앵커 점에서의 오프셋
+  (bw_k, bh_k) : 박스 크기
+anchor = (xs[i], ys[i]) = 폴리곤 i의 기준 좌표
+"""</span>
+from ortools.sat.python import cp_model
+
+def pack_polygons_box_decomp(container_w, container_h, polygons):
+    """
+    polygons : list of list of (ox, oy, bw, bh)
+    """
+    model = cp_model.CpModel()
+    all_x_ivals, all_y_ivals = [], []
+
+    anchor_xs, anchor_ys = [], []
+
+    for i, boxes in enumerate(polygons):
+        <span class="cmt"># 앵커 좌표 (기준점)</span>
+        ax = model.new_int_var(0, container_w, f"ax_{i}")
+        ay = model.new_int_var(0, container_h, f"ay_{i}")
+        anchor_xs.append(ax); anchor_ys.append(ay)
+
+        for k, (ox, oy, bw, bh) in enumerate(boxes):
+            <span class="cmt"># 각 박스의 전역 좌표 = 앵커 + 오프셋</span>
+            bx = model.new_int_var(0, container_w - bw, f"bx_{i}_{k}")
+            by = model.new_int_var(0, container_h - bh, f"by_{i}_{k}")
+            model.add(bx == ax + ox)
+            model.add(by == ay + oy)
+
+            xi = model.new_fixed_size_interval_var(bx, bw, f"xi_{i}_{k}")
+            yi = model.new_fixed_size_interval_var(by, bh, f"yi_{i}_{k}")
+            all_x_ivals.append(xi)
+            all_y_ivals.append(yi)
+
+    <span class="cmt"># 전체 박스(모든 폴리곤의 모든 박스)에 NoOverlap2D</span>
+    model.add_no_overlap_2d(all_x_ivals, all_y_ivals)
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 120.0
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return [(solver.value(anchor_xs[i]), solver.value(anchor_ys[i]))
+                for i in range(len(polygons))]
+    return None
+</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">함정 — 박스 분해 수가 늘면 interval 수 폭발</div>
+  <p style="margin:0">
+    폴리곤 1개를 k개 박스로 분해 + n개 블록 → <strong>n×k개 interval</strong>.
+    NoOverlap2D 내부 쌍 비교는 O((n×k)²) 비례.
+    k=5, n=50이면 250개 interval → 31,125 쌍.
+    박스 분해 정밀도(k)와 실행 시간의 트레이드오프를 현실적으로 설정해야 한다.
+    <br><strong>OGC 관측치</strong>: k≥3인 박스분해 + T=120s → z1이 BL 휴리스틱보다
+    나을 수 있지만 set2 대형 인스턴스에서는 TL 초과 위험이 있다.
+  </p>
+</div>
+
+<h3>7.2 전략 B — 격자 셀 점유 (Raster / Grid Cell)</h3>
+<p>
+  폴리곤을 해상도 Δ의 격자로 이산화해 점유 셀 집합으로 표현.
+  두 폴리곤이 동일 셀을 점유하지 않으면 겹침이 없다는 조건을 Boolean 변수로 인코딩.
+</p>
+
+<pre><code><span class="cmt">"""
+격자 해상도 delta = 1 (정수 스케일링 후)
+cell_occ[i][gx][gy] = 1  if  polygon i occupies cell (gx, gy) at anchor (0,0)
+실제 배치 후: 폴리곤 i의 위치 (ax, ay) → 실제 점유 셀 = (ax+gx, ay+gy)
+"""</span>
+
+def pack_raster(W, H, poly_cells, time_limit=60):
+    """
+    poly_cells : list of frozenset of (gx, gy) — 각 폴리곤의 점유 오프셋 셀
+    """
+    model = cp_model.CpModel()
+    n = len(poly_cells)
+
+    ax = [model.new_int_var(0, W-1, f"ax_{i}") for i in range(n)]
+    ay = [model.new_int_var(0, H-1, f"ay_{i}") for i in range(n)]
+
+    <span class="cmt"># 셀별 점유 제약: 동일 셀에 두 폴리곤이 동시 존재 불가</span>
+    from collections import defaultdict
+    cell_users = defaultdict(list)   <span class="cmt"># (gx, gy) → [(i, offx, offy), ...]</span>
+
+    for i, cells in enumerate(poly_cells):
+        for (gx, gy) in cells:
+            cell_users[(gx, gy)].append((i, gx, gy))
+
+    <span class="cmt"># 위 접근은 실제로는 동적 제약이라 CP-SAT에서 직접 구현 어려움.</span>
+    <span class="cmt"># 현실적 구현: BDD 또는 NFP 테이블 사전 생성 후 금지 위치 제약 추가.</span>
+    <span class="cmt"># 아래는 "모든 쌍 (i,j)에 대해 상대 오프셋이 NFP 내부면 금지" 패턴</span>
+
+    for i in range(n):
+        for j in range(i+1, n):
+            <span class="cmt"># forbidden_offsets = 두 폴리곤의 Minkowski 차이 (NFP 근사)</span>
+            <span class="cmt"># (dx, dy) = (ax[j]-ax[i], ay[j]-ay[i]) 가 forbidden_offsets에 없어야 함</span>
+            pass  <span class="cmt"># 실제 구현은 NFP 계산 라이브러리 필요</span>
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = time_limit
+    status = solver.solve(model)
+    ...
+</code></pre>
+
+<div class="callout">
+  <div class="ttl">격자 해상도 vs 정밀도 트레이드오프</div>
+  <table style="margin:8px 0">
+    <thead><tr><th>해상도 Δ</th><th>격자 셀 수</th><th>겹침 정확도</th><th>CP-SAT 도메인 크기</th></tr></thead>
+    <tbody>
+      <tr><td>큰 값 (거칠게)</td><td>작음</td><td>낮음 (빈 공간 낭비)</td><td>작음 (빠름)</td></tr>
+      <tr><td>작은 값 (세밀하게)</td><td>큼</td><td>높음</td><td>큼 (느림, 메모리↑)</td></tr>
+    </tbody>
+  </table>
+  <p style="margin:4px 0 0">
+    이론: <em>컨테이너를 수축(deflate)하고 블록을 팽창(inflate)해야 feasibility 보장</em> —
+    격자 근사는 항상 보수적으로 공간을 낭비한다. (Frontiers Mech. Eng. 2022)
+  </p>
+</div>
+
+<h3>7.3 전략 C — 후보 위치 사전 생성 + Set Packing</h3>
+<p>
+  이형 폴리곤의 가능한 배치 후보 위치를 사전에 계산하고,
+  각 후보를 Boolean 변수로 표현해 <em>"선택된 후보들이 서로 겹치지 않는다"</em>는
+  Set Packing 문제로 변환. CP-SAT는 배치 탐색 없이 Boolean 선택만 담당.
+</p>
+
+<pre><code><span class="cmt">"""
+pos_candidates[i] = list of (x, y) : 폴리곤 i를 배치할 수 있는 후보 위치
+conflict[i][pi][j][pj] = True : 폴리곤 i의 후보 pi와 폴리곤 j의 후보 pj가 충돌
+"""</span>
+
+def set_packing_placement(polygons, candidates, conflicts):
+    model = cp_model.CpModel()
+    n = len(polygons)
+
+    <span class="cmt"># place[i][p] = 폴리곤 i를 후보 위치 p에 배치</span>
+    place = [
+        [model.new_bool_var(f"place_{i}_{p}") for p in range(len(candidates[i]))]
+        for i in range(n)
+    ]
+
+    <span class="cmt"># 각 폴리곤은 정확히 1개 위치에 배치</span>
+    for i in range(n):
+        model.add_exactly_one(place[i])
+
+    <span class="cmt"># 충돌 쌍 금지: place[i][p] + place[j][q] <= 1</span>
+    for i in range(n):
+        for pi, _ in enumerate(candidates[i]):
+            for j in range(i+1, n):
+                for pj, _ in enumerate(candidates[j]):
+                    if conflicts[i][pi][j][pj]:
+                        model.add(place[i][pi] + place[j][pj] <= 1)
+
+    solver = cp_model.CpSolver()
+    status = solver.solve(model)
+    ...
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">팁 — Set Packing 스케일 제어</div>
+  <p style="margin:0">
+    후보 위치 수 |P_i|가 크면 충돌 제약이 O(|P_i|²·n²)으로 폭발한다.
+    BL 포인트(Bottom-Left Normal Form)처럼 구조적 위치만 후보로 남겨
+    후보 수를 n² 수준으로 줄이는 것이 핵심. (Martello &amp; Toth 1990 "Knapsack Problems" §5)
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="papers">핵심 논문</h2>
+
+<ul class="refs">
+  <li>
+    <strong>Côté, J.-F., Gendreau, M., Potvin, J.-Y. (2014). "An exact algorithm for the two-dimensional orthogonal packing problem with unloading constraints."</strong>
+    <span class="meta">European Journal of Operational Research, 232(2), 325–336.</span>
+    <span class="desc">2D 직교 패킹의 LBBD 분해 + 크레인 접근 제약 동형 문제. OGC 크레인 j≥k 제약과 구조적으로 유사.</span>
+  </li>
+  <li>
+    <strong>Kenmochi, M., et al. (2009). "Exact algorithms for the two-dimensional strip packing problem with and without rotations."</strong>
+    <span class="meta">European Journal of Operational Research, 198(1), 73–83.</span>
+    <span class="desc">Strip packing + 회전 허용 정확해법. 면적 하한, 금지 위치 패턴 기법 포함.</span>
+  </li>
+  <li>
+    <strong>Oliveira, J.F. et al. (2022). "Two-dimensional irregular packing problems: A review."</strong>
+    <span class="meta">Frontiers in Mechanical Engineering, 8, 966691.</span>
+    <span class="desc">이형 폴리곤 패킹 전반 서베이. NFP, 래스터, 메타휴리스틱 비교. 격자 해상도 트레이드오프 정량 분석.</span>
+  </li>
+  <li>
+    <strong>Karabulut, K. &amp; Inceoglu, M.M. (2004). "A hybrid genetic algorithm for packing in 3D with deepest bottom-left-fill method."</strong>
+    <span class="meta">Lecture Notes in Computer Science, 3261.</span>
+    <span class="desc">BL 배치 + 유전자 알고리즘 하이브리드. CP-SAT 박스패커와 BL 휴리스틱 결합 기준 연구.</span>
+  </li>
+  <li>
+    <strong>Côté, J.-F. et al. (2025). "Hierarchical Rectangle Packing Solved by Multi-Level Recursive Logic-based Benders Decomposition."</strong>
+    <span class="meta">arXiv:2512.20239.</span>
+    <span class="desc">CP-SAT interval 기반 LBBD로 계층적 사각형 패킹. 다층 베이 배치에 직접 응용 가능.</span>
+  </li>
+  <li>
+    <strong>Manyà, F. et al. (2026). "Solving the Two-dimensional single stock size Cutting Stock Problem with SAT and MaxSAT."</strong>
+    <span class="meta">arXiv:2604.01732.</span>
+    <span class="desc">SAT/MaxSAT 인코딩으로 2D 절단·패킹. 이접합 절단 인코딩, CP-SAT와 비교 실험 포함.</span>
+  </li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="repos">GitHub · 자료</h2>
+
+<ul class="refs">
+  <li class="repo">
+    <strong><a href="https://github.com/d-krupke/cpsat-primer" target="_blank">d-krupke/cpsat-primer</a></strong>
+    <span class="meta">evaluations/packing/ — packing_with_rotations.py, knapsack_wo_rotations.py</span>
+    <span class="desc">CP-SAT Primer 저자의 2D 패킹 예제 코드. 회전/Optional 패턴 레퍼런스 구현.</span>
+  </li>
+  <li class="repo">
+    <strong><a href="https://github.com/google/or-tools/blob/stable/ortools/sat/samples/multiple_knapsack_sat.py" target="_blank">google/or-tools — multiple_knapsack_sat.py</a></strong>
+    <span class="meta">ortools/sat/samples/</span>
+    <span class="desc">공식 Multiple Knapsack CP-SAT 예제. add_at_most_one 패턴 포함.</span>
+  </li>
+  <li class="repo">
+    <strong><a href="https://github.com/ktnr/BinPacking2D" target="_blank">ktnr/BinPacking2D</a></strong>
+    <span class="meta">packingSolver/BinPacking.py</span>
+    <span class="desc">Branch-and-cut 기반 2D bin packing 정확해법. OR-Tools 연동, 대칭제거·배치점 패턴 포함.</span>
+  </li>
+  <li class="repo">
+    <strong><a href="https://d-krupke.github.io/cpsat-primer/04B_advanced_modelling.html" target="_blank">CP-SAT Primer — Advanced Modelling</a></strong>
+    <span class="meta">d-krupke.github.io/cpsat-primer</span>
+    <span class="desc">2D 패킹 섹션. Optional interval + NoOverlap2D 완전 예제, 성능 팁 포함.</span>
+  </li>
+  <li class="repo">
+    <strong><a href="http://yetanothermathprogrammingconsultant.blogspot.com/2021/02/2d-bin-packing-with-google-or-tools-cp.html" target="_blank">Yet Another Math Programming Consultant — 2D Bin Packing with CP-SAT</a></strong>
+    <span class="meta">Erwin Kalvelagen, 2021</span>
+    <span class="desc">단일 전역 NoOverlap2D로 다중 빈 패킹하는 "하나의 큰 스트립" 트릭. 실제 동작 코드 포함.</span>
+  </li>
+  <li class="repo">
+    <strong><a href="https://github.com/google/or-tools/discussions/5011" target="_blank">or-tools Discussion #5011 — Best approach for 3D packing with rotations</a></strong>
+    <span class="meta">github.com/google/or-tools</span>
+    <span class="desc">Laurent Perron(OR-Tools 개발자) 포함 커뮤니티 논의. CP-SAT 한계 및 휴리스틱 권고 정리.</span>
+  </li>
+  <li class="repo">
+    <strong><a href="https://developers.google.com/optimization/pack/bin_packing" target="_blank">Google OR-Tools 공식 문서 — Bin Packing</a></strong>
+    <span class="meta">developers.google.com/optimization/pack</span>
+    <span class="desc">Bin Packing / Multiple Knapsack 공식 Python 예제 및 모델 설명.</span>
+  </li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="pitfalls">흔한 함정 요약</h2>
+
+<div class="pitfall">
+  <div class="ttl">함정 1 — 도메인 폭발 (좌표 변수)</div>
+  <p style="margin:0">
+    <code>x_start = model.new_int_var(0, 10000, ...)</code> 처럼 큰 도메인을 그냥 쓰면
+    CP-SAT 내부 비트벡터 크기가 폭발한다.
+    항상 <code>container_size - block_size</code>로 상한을 좁히고,
+    BL 포인트 등 구조적 위치 집합으로 도메인을 사전 필터링하라.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 2 — AddNoOverlap2D에 Optional Interval 직접 전달</div>
+  <p style="margin:0">
+    일부 OR-Tools 버전에서 <code>add_no_overlap_2d</code>에 <code>new_optional_interval_var</code>를
+    직접 넘기면 "Enforcement literal not supported" 에러가 발생한다.
+    <code>new_optional_fixed_size_interval_var</code>를 사용하거나, OR-Tools 9.9+ 버전을 확인하라.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 3 — 정밀도-격자 해상도 트레이드오프 무시</div>
+  <p style="margin:0">
+    이형 폴리곤을 격자로 이산화할 때 해상도를 높이면 정확도는 올라가지만
+    도메인 크기가 Δ² 비례로 증가한다. 해상도를 올릴수록 CP-SAT 풀이 시간이 지수적으로 증가할 수 있다.
+    가능하면 박스 분해 후 분해 박스 수(k)를 줄이는 방향이 더 실용적이다.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 4 — 이형 폴리곤 밀도를 CP-SAT로만 달성하려는 시도</div>
+  <p style="margin:0">
+    OR-Tools 커뮤니티(Discussion #5011, Laurent Perron 언급)에 따르면
+    "CP-SAT는 기하를 모르며 NoOverlap 제약만 있다 — 회전이 많으면 변형이 폭발한다."
+    대형 이형 폴리곤 패킹에서는 <strong>Bottom-Left 휴리스틱 또는 NFP 기반 배치를 먼저 실행하고,
+    CP-SAT는 타이밍/배정 최적화에만 사용하는 분리 전략</strong>이 현실적이다.
+    (OGC 현재 구조: fastfloor가 배치, CP-SAT가 타이밍 = 올바른 분리)
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 5 — 빈 수를 과도하게 크게 잡기</div>
+  <p style="margin:0">
+    다중 빈 패킹에서 <code>m=1000</code> 빈을 허용하더라도 성능 저하가 없다는 주장(Kalvelagen 2021)은
+    특정 인스턴스에서의 관찰이다. 빈 수 변수 <code>b[i]</code>의 도메인을 <code>[0, m-1]</code>로 넓히면
+    대칭(bin permutation)이 폭발해 탐색 공간이 실질적으로 커질 수 있다.
+    대칭 제거(bin ordering: 인덱스가 작은 빈을 우선 채움)를 명시적으로 추가하라.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 6 — CP-SAT 실현불가 증명의 어려움</div>
+  <p style="margin:0">
+    CP-SAT는 패킹 문제에서 <em>실현불가(INFEASIBLE) 증명</em>이 특히 느리다.
+    "배치 가능한 해 탐색"에는 강하지만 전체 탐색 공간을 exhaustive하게 증명하는 데는 취약.
+    시간 제한 내에 해를 못 찾았다고 INFEASIBLE이 아님 — 반드시 상태 코드를 확인하라
+    (<code>cp_model.INFEASIBLE</code> vs <code>cp_model.UNKNOWN</code>).
+  </p>
+</div>
+
+<!-- ============================================================ -->
+<div class="footer">
+  <a href="index.html">← 개요로</a>
+  &nbsp;·&nbsp;
+  <a href="03-scheduling.html">← 03 스케줄링</a>
+  &nbsp;·&nbsp;
+  <a href="05-objective.html">05 목적·선형화 →</a>
+  <br><br>
+  CP-SAT Methodology Series · OGC 2026 작업공간
+  · 소스: d-krupke/cpsat-primer, google/or-tools, Frontiers Mech. Eng. 2022, arXiv:2512.20239
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

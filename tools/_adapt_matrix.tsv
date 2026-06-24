@@ -1,0 +1,13 @@
+instance	tl	config	feasible	obj1	obj2	obj3	wall
+prob_1	60	off	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_1	60	adaptive	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_1	300	off	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_1	300	adaptive	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_6	60	off	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_6	60	adaptive	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_6	300	off	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_6	300	adaptive	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_20	60	off	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_20	60	adaptive	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_20	300	off	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-
+prob_20	300	adaptive	PARSE_ERR	Expecting value: line 1 column 1 (char 0)	-	-	-

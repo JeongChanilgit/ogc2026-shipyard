@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>컴포넌트 타이밍 + 시퀀스별 obj 감소 — 모바일</title>
+<style>
+  html{-webkit-text-size-adjust:100%}
+  :root{--bg:#0e1014;--panel:#181b22;--ink:#e9ecf2;--mut:#9aa3b2;--line:#2a2f3a;
+        --cp:#f85149;--shp:#e3b341;--gr:#3fb950;--acc:#6cb0ff;--cy:#3fd0d8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:17px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:18px 15px 70px;max-width:680px;margin:0 auto}
+  h1{font-size:21px;line-height:1.3;margin:4px 0 2px}
+  h2{font-size:18px;margin:28px 0 8px;padding-top:14px;border-top:1px solid var(--line);color:var(--acc)}
+  h3{font-size:15.5px;margin:14px 0 4px;color:var(--cy)}
+  .sub{color:var(--mut);font-size:13px;margin:0 0 14px}
+  p{margin:8px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;font:13px ui-monospace,Consolas,monospace;color:#dbe3ef}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin:11px 0}
+  .key{background:#0f1722;border:1px solid #23414e;border-left:4px solid var(--acc);border-radius:10px;padding:12px 14px;margin:12px 0}
+  .bar{height:22px;border-radius:5px;display:flex;align-items:center;padding-left:8px;font-size:12.5px;color:#06121f;font-weight:700;margin:3px 0;white-space:nowrap}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0}
+  th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{color:var(--mut);font-weight:600}
+  td.n{text-align:right;font-family:ui-monospace,monospace}
+  .mut{color:var(--mut)} b.cp{color:var(--cp)} b.shp{color:var(--shp)} b.gr{color:var(--gr)}
+  ul{margin:6px 0;padding-left:20px} li{margin:5px 0}
+  .red{color:var(--cp)} .grn{color:var(--gr)} .amb{color:var(--shp)}
+</style></head><body>
+
+<h1>컴포넌트 타이밍 + 시퀀스별 목적함수 감소</h1>
+<p class="sub">측정: prob_38 (saturated, 107블록 베이) · greedy + postproc 120s · 제출 config(moveall+AABB) · 2026-06-24 · v7</p>
+
+<div class="key">
+<b>두 줄 결론</b><br>
+① <b>시간의 ~72%가 CP-SAT</b>(solve 42% + 모델빌드 30%) — disjunction 2만개가 좌우. 줄이려면 <b>모델 크기↓</b>(품질 trade-off). shapely 17%는 <b>AABB로 −45%</b>(안전).<br>
+② obj 감소는 <b>postproc txyo가 거의 다</b>(−6.8M), 그중 <b>첫 300s에 −6.1M</b>(앞쪽 집중). moveall +0.35M, cross-bay가 z3 주력.
+</div>
+
+<h2>1. 컴포넌트별 소요시간 (총 198s self-time)</h2>
+<div class="bar" style="width:100%;background:var(--cp)">CP-SAT solve (ortools C++) — 83.7s · 42%</div>
+<div class="bar" style="width:72%;background:#c2503f">CP-SAT 모델빌드+stdlib — 58.8s · 30%</div>
+<div class="bar" style="width:43%;background:var(--shp)">shapely 기하 — 34.5s · 17%</div>
+<div class="bar" style="width:14%;background:#9a7b2c">공식체커 utils — 9.4s · 5%</div>
+<div class="bar" style="width:9%;background:var(--gr)">numpy — 5.5s · 3%</div>
+<div class="bar" style="width:8%;background:#2f7d3c">greedy place/BL — 4.5s · 2%</div>
+<div class="bar" style="width:4%;background:#444">precompute(self)+기타 — ~2s · 1%</div>
+<p class="mut" style="font-size:12.5px">CP-SAT 계열(빨강 2개) = 73%. shapely(노랑 2개)=22%. greedy/numpy(초록)=5%.</p>
+
+<h3>각 컴포넌트 줄이는 법</h3>
+<div class="card">
+<ul>
+<li><b class="cp">CP-SAT solve (42%)</b> — ortools C++, numpy 불가. 레버 = <b>disjunction 수↓</b>(=active 블록·후보 수↓ → 모델 작아짐). ⚠ <b>solve 시간만 자르는 건 역효과</b>(cap_scale=0.3 테스트 → worse plateau −2.36M). 시간이 아니라 <b>모델 크기</b>를 줄여야.</li>
+<li><b class="cp">CP-SAT 모델빌드 (30%)</b> — 2만 disjunction을 Python으로 생성(NewBoolVar·OnlyEnforceIf·AddBoolOr). 역시 <b>disjunction 수↓</b>가 직격. (saturated 베이서 191K combos→21K stored이 원흉.)</li>
+<li><b class="shp">shapely 기하 (17%+5%)</b> — precompute의 충돌/크레인 폴리곤 교차. <b>AABB 사전필터로 precompute −45% 검증</b>(동일출력·안전). 더 줄이려면 <b>비트마스크 래스터 필터</b>(saturated 베이용, 미검증).</li>
+<li><b class="gr">greedy/numpy (5%)</b> — 이미 numpy+FFT. 여지 작음.</li>
+</ul>
+</div>
+
+<div class="key">
+<b>★ 핵심 레버 = active 집합/후보 수 축소</b><br>
+saturated 베이의 all-active 패스(108블록·후보5개 → <b>191K combos · 21K disjunction · solve 11.8s</b>)가 solve+build 둘 다의 원흉. active를 tardy 근처로만 좁히거나 후보를 줄이면 <b>solve+build 동시 감소</b>. 단 검색 범위↓라 <b>품질 trade-off</b> → 15분 A/B 필요. (cap 단축은 이미 실패했으니, 모델 크기로 접근.)
+</div>
+
+<h2>1.5 매 시행(패스)별 Δobj + 소요시간 ★</h2>
+<p class="sub" style="margin-top:0">prob_38, postproc 1라운드 (계측 OGC_PP_PASSLOG). greedy+timing=63.97M에서 시작.</p>
+<table>
+<tr><th>시행</th><th>베이(블록)</th><th>시간</th><th>줄인 obj</th></tr>
+<tr><td>x-pass</td><td>bay2 (112)</td><td class="n red">39.0s</td><td class="n grn">626,651</td></tr>
+<tr><td>y-pass</td><td>bay2 (112)</td><td class="n red">39.6s</td><td class="n grn">466,655</td></tr>
+<tr><td>o-pass</td><td>bay2 (112)</td><td class="n red">39.8s</td><td class="n">66,665</td></tr>
+<tr><td>x-pass</td><td>bay1 (79)</td><td class="n amb">28.1s</td><td class="n grn">333,325</td></tr>
+<tr><td>y-pass</td><td>bay1 (79)</td><td class="n amb">27.2s</td><td class="n">66,665</td></tr>
+<tr><td>o-pass</td><td>bay1 (79)</td><td class="n amb">26.6s</td><td class="n grn">413,323</td></tr>
+<tr><td>x-pass</td><td>bay0 (59)</td><td class="n">20.1s</td><td class="n">253,327</td></tr>
+<tr><td>y-pass</td><td>bay0 (59)</td><td class="n">16.0s</td><td class="n">13,333</td></tr>
+<tr><td>o-pass</td><td>bay0 (59)</td><td class="n">14.8s</td><td class="n">53,332</td></tr>
+<tr><td><b>1라운드 합</b></td><td>9패스</td><td class="n"><b>~250s</b></td><td class="n grn"><b>−2.29M</b></td></tr>
+</table>
+<div class="card">
+<b>패턴</b>
+<ul>
+<li><b>시간 ∝ 베이 블록 수</b>: 112블록 ~39s · 79블록 ~27s · 59블록 ~17s. <b class="cp">큰 베이 패스가 병목</b>(블록↑ → CP-SAT 모델↑).</li>
+<li><b>x-pass가 Δobj 최대</b> 경향(627K·333K·253K). 첫 축이라 가장 많이 깎고, y/o는 가변.</li>
+<li><b>cross-bay/moveall</b>: 1블록 단위라 <b>0.03s/회</b>(초당 수십 번). 이 라운드에선 spatial이 예산 다 먹어 미발동.</li>
+<li>1라운드 ~250s·−2.3M → 300s엔 ~1라운드. 900s≈3라운드로 −6.8M(앞쪽 집중).</li>
+</ul>
+</div>
+
+<h2>2. 시퀀스별 목적함수 감소 (prob_38)</h2>
+<p class="mut" style="font-size:13px">출처: AABB A/B ledger(AABBoff arm) + 컴포넌트 프로파일 + 레버 A/B들.</p>
+
+<h3>파이프라인 단계별</h3>
+<table>
+<tr><th>단계</th><th>obj 후</th><th>Δ</th></tr>
+<tr><td>① raw greedy 배치</td><td class="n">~62.9M</td><td class="n mut">시작</td></tr>
+<tr><td>② + parallel_timing (CP-SAT 타이밍, 위치고정)</td><td class="n">61.4M</td><td class="n grn">−1.5M</td></tr>
+<tr><td>③ + postproc txyo @300s</td><td class="n">55.3M</td><td class="n grn">−6.1M</td></tr>
+<tr><td>④ + postproc txyo @600s</td><td class="n">54.6M</td><td class="n grn">−0.7M</td></tr>
+<tr><td>⑤ + postproc txyo @900s (별도 run)</td><td class="n">~53M</td><td class="n grn">−1.6M</td></tr>
+</table>
+<p class="mut" style="font-size:12.5px">→ <b>obj 감소의 거의 전부가 postproc txyo</b>(②→⑤ −8.4M). 그중 <b>첫 300s에 −6.1M</b>(앞쪽 집중, 이후 diminishing). 그리디 타이밍(②)은 −1.5M.</p>
+
+<h3>postproc 레버별 기여 (A/B 격리, prob_38)</h3>
+<table>
+<tr><th>레버</th><th>Δobj</th><th>판정</th></tr>
+<tr><td><b>cross-bay</b> (tardy→선호베이, z3)</td><td class="n">z3 주력(큰 감소)</td><td class="grn">✅ 기본 in</td></tr>
+<tr><td>SPATIAL x/y/o + 타이밍 (z1)</td><td class="n">txyo 감소의 z1분</td><td class="grn">✅ 기본 in</td></tr>
+<tr><td><b>moveall</b> (tardy→아무베이, z1)</td><td class="n grn">+0.35M</td><td class="grn">✅ 추가(2/2승)</td></tr>
+<tr><td>AABB</td><td class="n">≈0 (동일출력)</td><td class="grn">✅ 속도만</td></tr>
+<tr><td>대각선 d1/d2</td><td class="n red">−0.82M</td><td class="red">❌ 제외(시간희석)</td></tr>
+<tr><td>cap_scale 0.3</td><td class="n red">−2.36M</td><td class="red">❌ 제외(worse plateau)</td></tr>
+</table>
+
+<h2>3. AABB 검증 (사용자 의심 확인)</h2>
+<div class="card">
+<b>AABB는 obj를 안 떨굽니다 — 확인됨.</b>
+<ul>
+<li><b>동일출력 증명</b>: precompute에서 <code>stored</code>(저장된 disjunction 수) AABB off/on <b>완전 동일</b>(20880). 모델이 같으니 해도 같음.</li>
+<li><b>10분 A/B (중단, partial)</b>: prob_38 t=300 AABBoff <b>55.30M</b> ≈ AABBon <b>55.35M</b> (차이 0.05M = CP-SAT 4워커 노이즈). 악화 없음.</li>
+<li>원리: AABB는 떨어진 페어의 shapely만 건너뜀 → 그건 원래 all-False(저장 안 됨) → <b>결과 불변, precompute만 −45%</b>.</li>
+</ul>
+속도 이득은 작음(precompute가 전체의 17%뿐) — but obj 무해하니 켜두면 됨.
+</div>
+
+<h2>4. 결론 — 어디를 줄일까</h2>
+<div class="key">
+<ol>
+<li><b>최대 레버 = CP-SAT 모델 크기</b>(disjunction 2만개 = 시간 73%). active 집합/후보 축소 → solve+build 동시↓. <b>품질 trade-off라 15분 A/B로 검증해야</b>(시간만 자르는 cap은 실패 확인).</li>
+<li><b>안전 속도 = AABB</b>(precompute −45%, obj 불변) — 이미 켬. 추가로 비트마스크 래스터 필터(saturated 베이) 가능(미검증).</li>
+<li><b>obj는 postproc txyo가 다 함</b>(첫 300s 집중). 그리디·타이밍은 −1.5M, 나머지 −6.8M이 txyo. moveall이 +0.35M 보탬.</li>
+<li>greedy·numpy(5%)는 이미 최적, 손댈 가치 작음.</li>
+</ol>
+</div>
+
+<p class="mut" style="font-size:12px;margin-top:22px">데이터: <code>_profcomp.log</code>(컴포넌트 프로파일, __main__가드) · <code>_speedtest_ledger.md</code>(수렴곡선·AABB A/B) · moveall/대각선/cap A/B ledger들 · <code>_passlog.log</code>(per-pass Δobj+시간, OGC_PP_PASSLOG 계측) · 패스타입 시간집계는 <code>_speedtest_full.log</code> 파싱(x/y/o 각 ~26-28s/회·16회, cross-bay/moveall 0.03s/회·1840회).</p>
+
+</body></html>

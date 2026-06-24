@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" -c \"import ast; [ast.parse\\(open\\(p,encoding='utf-8'\\).read\\(\\),p\\) for p in \\('src/myalgorithm.py','src/parallel_decode.py','notes/_t1_probe13.py'\\)]; print\\('syntax-ok'\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" notes\\\\_t1_probe13.py --timelimit 300 --race)",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" -c \"import ast; ast.parse\\(open\\('notes/_t2_devdet_check.py',encoding='utf-8'\\).read\\(\\),'notes/_t2_devdet_check.py'\\); print\\('syntax-ok'\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" -c \"import ast; ast.parse\\(open\\('src/myalgorithm.py',encoding='utf-8'\\).read\\(\\),'src/myalgorithm.py'\\); print\\('syntax-ok'\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" notes\\\\_t1_probe13.py --timelimit 300 --skip-default --skip-raster --race)",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" notes\\\\_t1_batch.py)",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" -c \"import ast; [ast.parse\\(open\\(p,encoding='utf-8'\\).read\\(\\),p\\) for p in \\('src/myalgorithm.py','src/baseline_greedy.py','src/t5_candidates.py','notes/_t1_probe13.py'\\)]; print\\('syntax-ok'\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\peter\\\\anaconda3\\\\envs\\\\ogc2025\\\\python.exe\" notes\\\\_t1_batch2.py)"
+    ]
+  }
+}

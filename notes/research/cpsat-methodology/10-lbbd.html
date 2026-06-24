@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10 LBBD / Branch-and-Check — CP-SAT Methodology</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html" class="active">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="kicker">CP-SAT Methodology · 10</div>
+    <h1>Logic-Based Benders Decomposition<br>
+      <span style="color:var(--muted);font-size:1.1rem;font-weight:400">
+        LBBD · Branch-and-Check · CP-SAT를 서브문제 오라클로
+      </span>
+    </h1>
+    <p class="lead">
+      배정(master) ↔ 스케줄링·패킹(subproblem)을 분리하고, subproblem의 feasibility/optimality 판정을
+      <strong>CP-SAT 오라클</strong>로 위임하는 아키텍처.
+      Hooker &amp; Ottosson(2003)이 정립한 이론부터, <em>no-good cut / Benders cut</em> 생성,
+      branch-and-check 전략, 그리고 Python 의사코드까지 — OGC 2026
+      <code>master_cp ↔ bay_pack_cp</code> 구조에 1:1 대응하는 수준으로 정밀하게 정리한다.
+    </p>
+  </div>
+
+  <!-- OGC 2026 CALLOUT -->
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 관련성 (cp-sat/ 폴더 구조)</div>
+    <p style="margin:0 0 10px">
+      <code>cp-sat/</code> 폴더의 솔버가 정확히 LBBD 구조다.
+      <strong>master_cp.py</strong> = 베이 배정(<code>assign[b][j]</code>)과 완화 스케줄·z2/z3을 CP-SAT로 풀고,
+      <strong>bay_pack_cp.py</strong> = 고정된 배정 하에 per-bay 패킹·타이밍 feasibility를
+      CP-SAT로 검증(oraclee). 서브문제가 <em>infeasible</em>이면 master에 <strong>no-good cut</strong>
+      (해당 배정 조합을 금지하는 <code>AddBoolOr</code> 제약)을 추가하고 master를 재풀이한다.
+      <code>serial_floor</code>는 "항상 feasible한 안전바닥"으로서 LBBD 루프 전에 실행 가능한
+      초기해를 보장 — 이것이 없으면 LBBD 첫 iteration이 -1로 시작할 위험이 있다.
+    </p>
+    <p style="margin:0">
+      이 아키텍처가 <strong>정확히 Hooker(2007)의 planning+scheduling LBBD</strong>
+      (master=배정, subproblem=스케줄링 CP, Benders cut=배정 제약)의 직접 구현이다.
+      Hooker는 MIP 대비 <em>수십~수천 배</em> 속도 향상을 보고했다.
+    </p>
+  </div>
+
+  <!-- =================== 1. 배경 =================== -->
+  <h2 id="background">1. 왜 LBBD인가 — 고전 Benders와의 차이</h2>
+
+  <p>
+    <strong>고전 Benders 분해</strong>(Benders, 1962)는 혼합 정수 프로그램에서 연속 변수를 subproblem으로 내보내고
+    LP 쌍대(dual)로 cut을 생성한다. LP duality에 의존하기 때문에 subproblem이 반드시 LP이어야 한다.
+  </p>
+  <p>
+    <strong>Logic-Based Benders Decomposition(LBBD)</strong>(Hooker &amp; Ottosson, 2003)은 이 제한을 완전히 제거한다.
+    LP dual 대신 <em>inference dual</em> — 즉 "subproblem이 왜 infeasible/suboptimal한지를
+    논리적 추론으로 master에 돌려주는" 방식 — 을 사용한다.
+    subproblem은 <strong>임의의 구조</strong>(CP, MIP, 휴리스틱 ...)여도 된다.
+    이것이 CP-SAT를 오라클로 쓸 수 있는 이론적 근거다.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>항목</th>
+        <th>고전 Benders</th>
+        <th>Logic-Based Benders (LBBD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>subproblem 형태</td>
+        <td>반드시 LP (연속)</td>
+        <td>임의 (CP, MIP, 시뮬레이션 ...)</td>
+      </tr>
+      <tr>
+        <td>cut 근거</td>
+        <td>LP 쌍대 (Farkas / dual ray)</td>
+        <td>논리 추론 (inference dual)</td>
+      </tr>
+      <tr>
+        <td>cut 강도</td>
+        <td>LP 쌍대가 tight ⇒ 강하다</td>
+        <td>no-good(약) → lifted(강): 설계에 따라 다름</td>
+      </tr>
+      <tr>
+        <td>수렴 보장</td>
+        <td>weak조건 하 보장</td>
+        <td>weak조건 하 보장 (유한번 반복)</td>
+      </tr>
+      <tr>
+        <td>실용적 우위 영역</td>
+        <td>연속 혼합 LP 구조</td>
+        <td>배정+스케줄링, 패킹+타이밍 등 2단계 CP 문제</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- =================== 2. 핵심 구조 =================== -->
+  <h2 id="structure">2. LBBD 핵심 구조 — master · subproblem · cut</h2>
+
+  <h3 id="decomposition">2.1 분해 원리</h3>
+  <p>
+    문제 변수를 두 그룹으로 분리한다:
+    <strong>x</strong>(master가 결정, 주로 배정/할당 정수 변수)와
+    <strong>y</strong>(subproblem이 결정, 주로 타이밍/위치/순서).
+    목적은 <code>min f(x) + g(x, y)</code> 형태.
+  </p>
+
+  <pre><code><span class="cmt"># LBBD 분해 개요</span>
+<span class="cmt"># -------------------------------------------</span>
+<span class="cmt"># Master problem:  min  f(x) + η</span>
+<span class="cmt">#                  s.t. x ∈ X (배정 도메인)</span>
+<span class="cmt">#                       η ≥ benders_lower_bound(x)  [optimality cuts]</span>
+<span class="cmt">#                       (x, y) 배제 조합 금지        [feasibility cuts]</span>
+<span class="cmt">#</span>
+<span class="cmt"># Subproblem:      min  g(x̄, y)</span>
+<span class="cmt">#                  s.t. y ∈ Y(x̄)  (x̄ = master 해, 고정)</span>
+<span class="cmt">#   → FEASIBLE  : optimality cut (η 하한 강화)</span>
+<span class="cmt">#   → INFEASIBLE: feasibility cut (해당 x̄ 금지)</span></code></pre>
+
+  <h3 id="algorithm">2.2 LBBD 기본 알고리즘 (Outer-Approximation 루프)</h3>
+
+  <pre><code>from ortools.sat.python import cp_model
+
+def lbbd_solve(blocks, bays, timelimit):
+    <span class="cmt">"""
+    LBBD outer-approximation loop.
+    master  : bay 배정 (CP-SAT)
+    subproblem: per-bay 패킹/타이밍 feasibility (CP-SAT oracle)
+    """</span>
+    UB = float('inf')       <span class="cmt"># 현재 최선 feasible 목적값</span>
+    best_solution = None
+    iteration = 0
+    deadline = time.time() + timelimit
+
+    <span class="cmt"># ---- Master 모델 (배정) 초기 구성 ----</span>
+    master = cp_model.CpModel()
+    assign = {}
+    for b in blocks:
+        for j in bays:
+            assign[b, j] = master.new_bool_var(f"assign_{b}_{j}")
+    <span class="cmt"># 각 블록은 정확히 1 베이</span>
+    for b in blocks:
+        master.add_exactly_one([assign[b, j] for j in bays])
+    <span class="cmt"># η: subproblem 비용 하한 (optimality cut 수신용)</span>
+    eta = master.new_int_var(0, 10_000_000, "eta")
+    master.minimize(linear_master_cost(assign, blocks, bays) + eta)
+
+    master_solver = cp_model.CpSolver()
+
+    while time.time() < deadline:
+        iteration += 1
+        <span class="cmt"># ---- 1) Master 풀기 ----</span>
+        master_solver.parameters.max_time_in_seconds = deadline - time.time()
+        status = master_solver.solve(master)
+        if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            break   <span class="cmt"># 더 이상 새로운 x̄ 없음 → 종료</span>
+
+        LB = master_solver.objective_value
+        if LB >= UB - 1e-6:
+            break   <span class="cmt"># 갭이 닫혔다 → 최적</span>
+
+        <span class="cmt"># ---- 2) 배정 읽기 ----</span>
+        x_bar = {(b, j): master_solver.boolean_value(assign[b, j])
+                 for b in blocks for j in bays}
+        bay_assignment = {b: j for b in blocks
+                          for j in bays if x_bar[b, j]}
+
+        <span class="cmt"># ---- 3) Subproblem 오라클 (CP-SAT) ----</span>
+        sub_status, sub_cost, proof = solve_subproblem(
+            bay_assignment, blocks, bays, deadline - time.time()
+        )
+
+        if sub_status == "INFEASIBLE":
+            <span class="cmt"># --- Feasibility No-Good Cut 추가 ---</span>
+            <span class="cmt"># 이 배정 조합은 infeasible → 적어도 1개 assign은 반전시켜야</span>
+            nogood_lits = []
+            for b in blocks:
+                j = bay_assignment[b]
+                nogood_lits.append(assign[b, j].negated())
+            master.add_bool_or(nogood_lits)
+            <span class="cmt"># (lifted cut이 있다면 proof를 이용해 부분집합으로 강화)</span>
+            if proof:
+                _add_lifted_nogood(master, assign, blocks, proof)
+
+        else:  <span class="cmt"># FEASIBLE</span>
+            <span class="cmt"># --- Optimality Cut 추가 ---</span>
+            <span class="cmt"># η ≥ sub_cost 를 이 배정(x̄)에서 enforce</span>
+            _add_optimality_cut(master, eta, assign, bay_assignment,
+                                blocks, sub_cost)
+            <span class="cmt"># UB 갱신</span>
+            total = master_solver.objective_value - \
+                    master_solver.value(eta) + sub_cost
+            if total < UB:
+                UB = total
+                best_solution = (bay_assignment, sub_cost)
+
+    return best_solution, UB</code></pre>
+
+  <!-- =================== 3. Cut 종류 =================== -->
+  <h2 id="cuts">3. Cut 종류 — 공식과 강화</h2>
+
+  <h3 id="nogood-cut">3.1 Feasibility No-Good Cut (기본)</h3>
+  <p>
+    서브문제가 infeasible일 때 가장 단순한 cut: <em>현재 배정 x̄를 그대로 다시 선택하는 것을 금지</em>.
+    x̄에 해당하는 boolean 변수들 중 적어도 하나는 반전되어야 한다는 조건이다.
+  </p>
+
+  <pre><code><span class="cmt"># 기본 no-good cut:</span>
+<span class="cmt"># NOT (assign[b1,j1]=1 AND assign[b2,j2]=1 AND ...)</span>
+<span class="cmt"># ↔  (assign[b1,j1]=0) OR (assign[b2,j2]=0) OR ...</span>
+<span class="cmt">#</span>
+<span class="cmt"># OR-Tools CP-SAT에서:</span>
+lits_negated = [assign[b, bay_assignment[b]].negated() for b in blocks]
+master.add_bool_or(lits_negated)
+
+<span class="cmt"># 수학적으로: Σ_{b} assign[b, j_b] ≤ |blocks| - 1</span>
+<span class="cmt"># (동치이지만 AddBoolOr가 CP-SAT 내부에서 더 효율적)</span></code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">함정: 약한 no-good cut만 쓰면 수렴이 느리다</div>
+    <p style="margin:0">
+      기본 no-good cut은 <em>오직 해당 배정만</em> 제거한다. 블록이 N개이면 최악의 경우 2^N번 반복이 필요할 수 있다.
+      infeasibility의 근본 원인(어떤 블록들의 어떤 조합이 충돌하는가)을 파악해
+      <strong>minimal infeasible subset</strong>으로 cut을 강화해야 수렴이 빠르다.
+    </p>
+  </div>
+
+  <h3 id="lifted-cut">3.2 Lifted / Strengthened No-Good Cut</h3>
+  <p>
+    서브문제가 infeasible일 때, <strong>infeasibility의 원인이 되는 블록 부분집합(minimal infeasible subset, MIS)</strong>을 찾아서
+    그 부분집합만으로 cut을 구성한다.
+    MIS가 {b1, b2, b3}이면 이 세 블록의 현재 베이 배정을 동시에 유지하는 것은 불가능하다는 강한 cut이 된다.
+  </p>
+
+  <pre><code>def _add_lifted_nogood(master, assign, blocks, proof):
+    <span class="cmt">"""
+    proof = 서브문제가 반환한 infeasibility 원인 블록 집합.
+    예: 베이 j의 capacity overflow를 일으킨 블록 집합.
+    기본 no-good보다 강한 cut — 더 많은 배정 조합을 동시에 차단.
+    """</span>
+    conflict_blocks = proof['conflict_blocks']  <span class="cmt"># e.g. [b2, b5, b11]</span>
+    conflict_bay    = proof['conflict_bay']      <span class="cmt"># e.g. j=3</span>
+
+    <span class="cmt"># 이 블록들이 모두 같은 베이에 들어가는 것을 금지</span>
+    lits = [assign[b, conflict_bay].negated() for b in conflict_blocks]
+    master.add_bool_or(lits)
+    <span class="cmt"># 원래 no-good보다 훨씬 강함:</span>
+    <span class="cmt"># conflict_blocks의 어떤 부분집합도 이 베이에 동시 배정 불가</span>
+
+
+<span class="cmt"># 크레인 j≥k 충돌 예시:</span>
+def crane_conflict_cut(master, assign, b_high, b_low, j):
+    <span class="cmt">"""
+    블록 b_high가 레이어 k에, b_low가 레이어 j(j < k)에 있으면
+    크레인이 b_high를 진입/퇴출하는 동안 b_low가 경로를 막는다.
+    → b_high를 베이 j에 배정하는 것과 b_low를 같은 베이에
+      동시 배정하는 것을 금지.
+    """</span>
+    master.add_bool_or([
+        assign[b_high, j].negated(),
+        assign[b_low, j].negated()
+    ])</code></pre>
+
+  <h3 id="optimality-cut">3.3 Optimality Cut</h3>
+  <p>
+    서브문제가 <em>feasible</em>이고 비용 <code>v*</code>를 반환할 때,
+    "이 배정에서 서브문제 비용은 적어도 v*"라는 하한을 master의 eta에 부과한다.
+  </p>
+
+  <pre><code>def _add_optimality_cut(master, eta, assign, bay_assignment, blocks, sub_cost):
+    <span class="cmt">"""
+    현재 배정 x̄에서 서브문제 최적값이 sub_cost임을 master에 알린다.
+
+    가장 단순한 형태: 현재 배정일 때만 유효한 조건부 하한.
+      (assign 전부 현재값 유지) → η ≥ sub_cost
+
+    Big-M 방식:
+      η ≥ sub_cost - M * (1 - ∑ [assign == x̄])
+
+    CP-SAT에서는 BoolVar로 조건부 제약을 표현:
+    """</span>
+    <span class="cmt"># "현재 배정과 동일" 여부를 나타내는 Bool</span>
+    same_assign_lits = [assign[b, bay_assignment[b]] for b in blocks]
+    <span class="cmt"># 모두 동일할 때만 enforce (OnlyEnforceIf 조합)</span>
+    <span class="cmt"># CP-SAT에서는 reification + linear 조합으로:</span>
+    all_same = master.new_bool_var(f"all_same_{id(sub_cost)}")
+    master.add_bool_and(same_assign_lits).only_enforce_if(all_same)
+    master.add_bool_or([l.negated() for l in same_assign_lits] + [all_same])
+    master.add(eta >= int(sub_cost)).only_enforce_if(all_same)
+
+    <span class="cmt"># 더 단순한 대안: LP Benders cut 스타일</span>
+    <span class="cmt"># η ≥ sub_cost - M*(|blocks| - Σ assign[b,j_b])</span>
+    M = int(sub_cost) + 1
+    assigned_sum = sum(assign[b, bay_assignment[b]] for b in blocks)
+    master.add(eta * 1 >= int(sub_cost) - M * (len(blocks) - assigned_sum))</code></pre>
+
+  <!-- =================== 4. Branch-and-Check =================== -->
+  <h2 id="branch-and-check">4. Branch-and-Check — LBBD의 고속 변형</h2>
+
+  <p>
+    Outer-approximation은 master를 매 iteration마다 <em>처음부터 재풀이</em>한다.
+    <strong>Branch-and-Check</strong>(Thorsteinsson, 2001; Hooker, 2000)는 이보다 훨씬 효율적이다:
+    master의 <strong>branch-and-bound 트리를 한 번만 실행</strong>하면서,
+    정수 해가 발견될 때마다 서브문제를 호출해 cut을 생성하고 그 자리에서 트리에 추가한다.
+    재탐색(backtrack) 비용이 크게 줄어든다.
+  </p>
+
+  <div class="tip">
+    <div class="ttl">Branch-and-Check의 핵심 관찰 (Hooker, 2000)</div>
+    <p style="margin:0">
+      "master 문제를 단 한 번만 풀면 된다 — 모든 정수 후보 해마다 서브문제 cut을 즉시 주입하면."
+      이것이 lazy constraint callback 기반 구현의 이론적 근거다.
+    </p>
+  </div>
+
+  <p>
+    CP-SAT는 현재 <strong>solve 중 외부 cut 주입 콜백(lazy constraint callback)을 직접 지원하지 않는다</strong>.
+    그러나 실제로는 두 가지 방식으로 branch-and-check에 근접하거나 대체할 수 있다:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>방식</th><th>설명</th><th>CP-SAT 적합성</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Outer loop (기본)</strong></td>
+        <td>master solve → sub check → cut 추가 → master 재solve 반복</td>
+        <td>완전 지원. 이 문서의 메인 패턴.</td>
+      </tr>
+      <tr>
+        <td><strong>SolutionCallback 기반</strong></td>
+        <td>master solve 중 중간 해마다 sub 호출, 실패 시 <code>StopSearch()</code>+cut 추가 후 재solve</td>
+        <td>부분 지원. on_solution_callback 내에서 서브문제 호출 가능하나 cut 주입은 재solve 필요.</td>
+      </tr>
+      <tr>
+        <td><strong>Assumptions 기반</strong></td>
+        <td><code>AddAssumptions</code>로 배정 고정 → sub solve → infeasible 시 <code>SufficientAssumptionsForInfeasibility()</code>로 MIS 추출</td>
+        <td>강력. MIS 기반 lifted cut 생성에 최적.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 id="assumptions">4.1 Assumptions로 MIS(Minimal Infeasible Subset) 추출</h3>
+  <p>
+    CP-SAT의 <code>AddAssumptions</code> + <code>SufficientAssumptionsForInfeasibility()</code>는
+    LBBD lifted cut 생성에 강력한 도구다.
+    서브문제에 배정을 assumption으로 고정하면, infeasible일 때 <em>어떤 assumption의 부분집합이 충돌 원인인지</em>를 반환한다.
+  </p>
+
+  <pre><code>def solve_subproblem_with_mis(bay_assignment, blocks, bays, timelimit):
+    <span class="cmt">"""
+    CP-SAT Assumptions로 서브문제 풀기 + MIS 추출.
+    반환: (status, cost, mis_assignments)
+      status: "FEASIBLE" | "INFEASIBLE"
+      mis_assignments: infeasible이면 충돌 원인 (b, j) 쌍 집합
+    """</span>
+    sub = cp_model.CpModel()
+
+    <span class="cmt"># 베이별 타이밍/패킹 변수</span>
+    entry = {b: sub.new_int_var(0, T_MAX, f"entry_{b}") for b in blocks}
+    exit_ = {b: sub.new_int_var(0, T_MAX, f"exit_{b}") for b in blocks}
+
+    <span class="cmt"># assumption 변수: assign[b][j]를 boolean으로 인코딩</span>
+    a_vars = {}
+    for b in blocks:
+        j = bay_assignment[b]
+        a_vars[b] = sub.new_bool_var(f"a_{b}_{j}")
+
+    <span class="cmt"># 배정에 따른 제약: a_vars[b]=True 가정 → 해당 베이 제약 활성화</span>
+    for b in blocks:
+        j = bay_assignment[b]
+        <span class="cmt"># entry ≥ release[b], exit - entry ≥ process[b]</span>
+        sub.add(entry[b] >= RELEASE[b]).only_enforce_if(a_vars[b])
+        sub.add(exit_[b] - entry[b] >= PROCESS[b]).only_enforce_if(a_vars[b])
+        <span class="cmt"># 크레인 접근 제약: j ≥ k 규칙 (같은 베이 내 레이어)</span>
+        for b2 in blocks:
+            if b2 != b and bay_assignment[b2] == j:
+                layer_b  = LAYER[b]
+                layer_b2 = LAYER[b2]
+                if layer_b > layer_b2:   <span class="cmt"># b가 위에 있어야 먼저 빠져야</span>
+                    sub.add(exit_[b] <= entry[b2]).only_enforce_if(
+                        sub.new_bool_var(f"crane_{b}_{b2}")
+                    )
+
+    <span class="cmt"># Assumptions: 모든 a_vars를 True로 가정</span>
+    assumptions = list(a_vars.values())
+    sub.add_assumptions(assumptions)
+    sub.minimize(sum(max(0, exit_[b] - DUE[b]) for b in blocks))
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = timelimit
+    status = solver.solve(sub)
+
+    if status == cp_model.INFEASIBLE:
+        <span class="cmt"># MIS: 충돌 원인 assumption만 추출</span>
+        mis_indices = solver.sufficient_assumptions_for_infeasibility()
+        mis_bvars   = [assumptions[i] for i in mis_indices]
+        mis_blocks  = [b for b, av in a_vars.items() if av in mis_bvars]
+        return "INFEASIBLE", None, {
+            'conflict_blocks': mis_blocks,
+            'conflict_bay': bay_assignment[mis_blocks[0]]
+        }
+    elif status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        cost = solver.objective_value
+        return "FEASIBLE", cost, None
+    else:
+        <span class="cmt"># UNKNOWN/timeout: 보수적으로 feasible로 취급 (안전바닥 fallback)</span>
+        return "UNKNOWN", None, None</code></pre>
+
+  <!-- =================== 5. 전체 루프 완성판 =================== -->
+  <h2 id="full-loop">5. 완성된 LBBD 루프 — serial_floor 안전바닥 포함</h2>
+
+  <pre><code>import time
+from ortools.sat.python import cp_model
+
+def full_lbbd(prob_info: dict, timelimit: float) -> dict:
+    <span class="cmt">"""
+    OGC 2026 스타일 LBBD:
+      - serial_floor: 항상 feasible한 탐욕적 초기해 (안전바닥)
+      - master_cp: 베이 배정 + relaxed 스케줄 (CP-SAT)
+      - bay_pack_cp: per-bay 패킹·타이밍 검증 (CP-SAT oracle)
+      - no-good / lifted / optimality cut 루프
+    """</span>
+    blocks = prob_info['blocks']
+    bays   = prob_info['bays']
+    deadline = time.time() + timelimit
+
+    <span class="cmt"># ① 안전바닥: 항상 feasible한 greedy 초기해</span>
+    best_sol = serial_floor(prob_info)         <span class="cmt"># never returns None</span>
+    best_obj = evaluate(best_sol, prob_info)
+    print(f"[LBBD] serial_floor UB = {best_obj:,.0f}")
+
+    <span class="cmt"># ② Master CP-SAT 모델 초기화</span>
+    master, assign, eta = build_master(blocks, bays)
+    master_solver = cp_model.CpSolver()
+
+    cut_count = 0
+    for it in range(1, 500):
+        remaining = deadline - time.time()
+        if remaining < 2:
+            break
+
+        <span class="cmt"># ③ Master 풀기</span>
+        master_solver.parameters.max_time_in_seconds = min(remaining * 0.4, 60)
+        m_status = master_solver.solve(master)
+        if m_status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            break
+
+        LB = master_solver.objective_value
+        if LB >= best_obj - 0.5:
+            print(f"[LBBD] iter {it}: gap closed (LB={LB:.0f}, UB={best_obj:.0f})")
+            break
+
+        <span class="cmt"># ④ 배정 추출</span>
+        bay_asgn = {b: j for b in blocks for j in bays
+                    if master_solver.boolean_value(assign[b, j])}
+
+        <span class="cmt"># ⑤ Subproblem oracle</span>
+        sub_status, sub_cost, proof = solve_subproblem_with_mis(
+            bay_asgn, blocks, bays,
+            timelimit=min(remaining * 0.5, 120)
+        )
+
+        if sub_status == "INFEASIBLE":
+            <span class="cmt"># 기본 no-good cut</span>
+            lits = [assign[b, bay_asgn[b]].negated() for b in blocks]
+            master.add_bool_or(lits)
+            <span class="cmt"># lifted cut (MIS 기반)</span>
+            if proof:
+                cb = proof['conflict_blocks']
+                cj = proof['conflict_bay']
+                master.add_bool_or([assign[b, cj].negated() for b in cb])
+            cut_count += 1
+            print(f"[LBBD] iter {it}: INFEASIBLE → cut #{cut_count} added")
+
+        elif sub_status == "FEASIBLE":
+            <span class="cmt"># Optimality cut</span>
+            _add_optimality_cut(master, eta, assign, bay_asgn, blocks, sub_cost)
+            <span class="cmt"># UB 갱신</span>
+            m_cost = (master_solver.objective_value
+                      - master_solver.value(eta))
+            total  = m_cost + sub_cost
+            if total < best_obj:
+                best_obj = total
+                best_sol = reconstruct_solution(bay_asgn, prob_info)
+                print(f"[LBBD] iter {it}: UB ↓ {best_obj:,.0f} (sub={sub_cost:.0f})")
+            cut_count += 1
+
+        else:  <span class="cmt"># UNKNOWN: sub timed out</span>
+            <span class="cmt"># 안전 처리: no-good만 추가하고 계속</span>
+            lits = [assign[b, bay_asgn[b]].negated() for b in blocks]
+            master.add_bool_or(lits)
+
+    print(f"[LBBD] done: {it} iter, {cut_count} cuts, UB={best_obj:,.0f}")
+    return best_sol</code></pre>
+
+  <div class="tip">
+    <div class="ttl">serial_floor 안전바닥이 LBBD에서 결정적인 이유</div>
+    <p style="margin:0">
+      LBBD는 master가 infeasible이 되면 루프가 끝난다.
+      그런데 master가 제공하는 배정이 아직 한 번도 feasible을 달성하지 못한 채 UB=∞이면,
+      서버 타임아웃이 올 때 반환할 해가 없어 <strong>-1이 된다</strong>.
+      <code>serial_floor</code>는 루프 진입 전에 항상 feasible한 해를 확보해두는 안전장치다.
+      LBBD 루프 전체가 timeout되어도 best_sol에 초기 탐욕해가 남아 있어 -1 회피가 보장된다.
+    </p>
+  </div>
+
+  <!-- =================== 6. 수렴/종료 =================== -->
+  <h2 id="convergence">6. 수렴 · 종료 조건</h2>
+
+  <p>
+    LBBD는 다음 세 조건 중 하나에서 종료된다:
+  </p>
+  <ol>
+    <li><strong>최적성 gap 닫힘</strong>: LB(master) ≥ UB - ε → 현재 best_sol이 최적</li>
+    <li><strong>Master infeasible</strong>: 더 이상 새로운 배정이 없음 → 현재 best_sol이 최적</li>
+    <li><strong>시간 초과</strong>: 가장 최근 feasible best_sol 반환 (UB 기준)</li>
+  </ol>
+
+  <div class="callout">
+    <div class="ttl">유한 수렴 보장 (Hooker &amp; Ottosson, 2003)</div>
+    <p style="margin:0">
+      배정 공간 X가 유한하고 매 iteration마다 최소 1개의 배정이 cut으로 제거된다면,
+      LBBD는 유한 번의 반복 이후 반드시 종료된다.
+      기본 no-good cut은 매 iteration에서 정확히 1개 배정을 제거하므로 이 조건을 충족한다.
+      lifted cut은 한 번에 여러 배정을 제거해 수렴이 더 빠르다.
+    </p>
+  </div>
+
+  <h3 id="convergence-tips">6.1 수렴 가속 기법</h3>
+  <table>
+    <thead>
+      <tr><th>기법</th><th>설명</th><th>효과</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Lifted no-good (MIS)</td>
+        <td>infeasibility 최소 원인 집합만으로 cut 구성</td>
+        <td>iteration 수 대폭 감소</td>
+      </tr>
+      <tr>
+        <td>Pareto-optimal cut</td>
+        <td>Magnanti-Wong: core point를 이용해 가장 강한 optimality cut 선택</td>
+        <td>LB 빠르게 상승</td>
+      </tr>
+      <tr>
+        <td>다중 cut per iteration</td>
+        <td>1번의 subproblem에서 여러 개의 cut 동시 생성</td>
+        <td>master 재풀이 횟수 감소</td>
+      </tr>
+      <tr>
+        <td>UB 전달 (objective bound)</td>
+        <td>master에 η ≤ UB 제약 추가 → master 탐색 공간 축소</td>
+        <td>master solve 시간 단축</td>
+      </tr>
+      <tr>
+        <td>warm start / hint</td>
+        <td>이전 best_sol을 master에 hint로 제공</td>
+        <td>master 초기해 품질 향상</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- =================== 7. CP-SAT 오라클 설계 =================== -->
+  <h2 id="cpsat-oracle">7. CP-SAT를 Subproblem 오라클로 설계하는 방법</h2>
+
+  <h3 id="oracle-design">7.1 오라클 인터페이스</h3>
+  <p>
+    서브문제 오라클은 세 가지 답 중 하나를 반환해야 한다:
+    <strong>FEASIBLE(비용 포함)</strong>, <strong>INFEASIBLE(증명 포함)</strong>, <strong>UNKNOWN(timeout)</strong>.
+    UNKNOWN을 최소화하기 위해 시간 예산 관리가 중요하다.
+  </p>
+
+  <pre><code><span class="cmt"># CP-SAT 서브문제 오라클 골격</span>
+def oracle(fixed_assignment: dict, timelimit: float):
+    model = cp_model.CpModel()
+
+    <span class="cmt"># 고정된 배정에 따라 per-bay 변수 생성</span>
+    ...
+
+    <span class="cmt"># CP-SAT 검증 파라미터</span>
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = timelimit
+    solver.parameters.num_search_workers  = 4   <span class="cmt"># 병렬화</span>
+    solver.parameters.cp_model_presolve   = True
+    <span class="cmt"># feasibility 우선 탐색: 최적화보다 빠르게 feasibility 확인</span>
+    solver.parameters.optimize_with_core  = True
+
+    status = solver.solve(model)
+
+    if status == cp_model.INFEASIBLE:
+        mis = solver.sufficient_assumptions_for_infeasibility()
+        return {"status": "INFEASIBLE", "mis": mis}
+    elif status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return {"status": "FEASIBLE",
+                "cost":   solver.objective_value,
+                "values": {v: solver.value(v) for v in ...}}
+    else:
+        return {"status": "UNKNOWN"}
+
+
+<span class="cmt"># Master에서도 CP-SAT 사용 가능 (MIP 대신)</span>
+<span class="cmt"># Legault et al. (2025): CP master가 MIP master보다 빠른 경우가 많다</span>
+<span class="cmt"># 특히 배정 제약이 combinatorial한 경우 (크레인·레이어 제약 등)</span></code></pre>
+
+  <h3 id="oracle-feasibility-vs-opt">7.2 Feasibility oracle vs Optimization oracle</h3>
+  <p>
+    서브문제를 <em>feasibility 체크만</em> 할 것인지, <em>최적화도</em> 할 것인지에 따라
+    cut의 종류와 수렴 속도가 달라진다.
+  </p>
+  <table>
+    <thead>
+      <tr><th>모드</th><th>cut 종류</th><th>UB 개선</th><th>속도</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Feasibility only</td>
+        <td>no-good/lifted cut만</td>
+        <td>없음 (별도 해 평가 필요)</td>
+        <td>빠름</td>
+      </tr>
+      <tr>
+        <td>Optimization</td>
+        <td>feasibility + optimality cut</td>
+        <td>직접 UB 개선</td>
+        <td>느리지만 수렴 빠름</td>
+      </tr>
+      <tr>
+        <td>혼합 (권장)</td>
+        <td>feasibility 체크 후 feasible이면 최적화</td>
+        <td>UB 개선</td>
+        <td>균형</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- =================== 8. OGC 2026 상세 매핑 =================== -->
+  <h2 id="ogc-mapping">8. OGC 2026 master_cp ↔ bay_pack_cp 상세 매핑</h2>
+
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 cp-sat/ 폴더 구조와 LBBD 이론의 1:1 대응</div>
+    <table style="margin:12px 0 0">
+      <thead>
+        <tr><th>LBBD 이론 요소</th><th>OGC 2026 구현</th><th>파일</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Master problem</td>
+          <td>베이 배정 <code>assign[b][j]</code> + 완화 스케줄 + z2/z3 목적</td>
+          <td><code>cp-sat/master_cp.py</code></td>
+        </tr>
+        <tr>
+          <td>Subproblem oracle</td>
+          <td>per-bay 패킹(후보 set-packing) + 타이밍(NoOverlap + 크레인 j≥k)</td>
+          <td><code>cp-sat/bay_pack_cp.py</code></td>
+        </tr>
+        <tr>
+          <td>No-good cut</td>
+          <td>infeasible bay의 블록 배정 조합 금지 → AddBoolOr</td>
+          <td>master_cp.py 루프</td>
+        </tr>
+        <tr>
+          <td>Lifted cut</td>
+          <td>크레인 충돌 쌍(b_high, b_low) 직접 cut</td>
+          <td>bay_pack_cp.py proof 반환</td>
+        </tr>
+        <tr>
+          <td>Optimality cut</td>
+          <td>eta ≥ z1_sub (per-bay tardiness 하한)</td>
+          <td>master_cp.py 루프</td>
+        </tr>
+        <tr>
+          <td>Serial floor (안전바닥)</td>
+          <td>greedy EDD 배정 → 항상 feasible한 초기해</td>
+          <td><code>cp-sat/solver.py</code></td>
+        </tr>
+        <tr>
+          <td>Branch-and-check</td>
+          <td>outer loop (master solve → sub check → cut → repeat)</td>
+          <td><code>cp-sat/solver.py</code> main loop</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin:14px 0 0">
+      <strong>크레인 j≥k 제약</strong>이 이 아키텍처에서 가장 강한 no-good cut 소스다.
+      레이어 위치상 위에 있는 블록이 아래 블록보다 먼저 퇴출되어야 하는 제약은
+      per-bay 패킹·타이밍 feasibility에서 직접 위반을 탐지할 수 있고,
+      위반 쌍 (b_high, b_low, bay) 를 proof로 반환해 master에 강한 lifted cut을 추가한다.
+    </p>
+  </div>
+
+  <!-- =================== 9. 핵심 논문 =================== -->
+  <h2 id="papers">핵심 논문</h2>
+
+  <ul class="refs">
+    <li>
+      <strong>Hooker, J.N. &amp; Ottosson, G. (2003)</strong> —
+      Logic-based Benders decomposition.
+      <em>Mathematical Programming</em>, 96(1), 33–60.
+      <span class="meta">DOI: 10.1007/s10107-003-0375-9</span>
+      <span class="desc">LBBD의 창시 논문. LP dual → inference dual 일반화, 수렴 증명, no-good cut 이론.
+      "subproblem은 임의의 형태여도 된다"는 핵심 통찰.</span>
+    </li>
+    <li>
+      <strong>Hooker, J.N. (2007)</strong> —
+      Planning and Scheduling by Logic-Based Benders Decomposition.
+      <em>Operations Research</em>, 55(3), 588–602.
+      <span class="meta">https://pubsonline.informs.org/doi/10.1287/opre.1060.0371</span>
+      <span class="desc">배정(MILP master) + 스케줄링(CP subproblem) 분해의 완성판.
+      tardiness·makespan·비용 목적별 실험. MIP/CP 단독 대비 수십~수천배 속도 향상 보고.
+      OGC 2026 아키텍처의 직접 이론 선례.</span>
+    </li>
+    <li>
+      <strong>Thorsteinsson, E.S. (2001)</strong> —
+      Branch-and-Check: A Hybrid Framework Integrating MIP and CLP.
+      <em>Proc. 7th Int. Conf. Principles and Practice of Constraint Programming (CP 2001)</em>, LNCS 2239, 16–30.
+      <span class="meta">https://dl.acm.org/doi/10.5555/647488.726832</span>
+      <span class="desc">branch-and-check의 실용적 구현. MIP B&amp;B 트리 한 번에 CP subproblem 콜백.
+      Hooker의 이론을 처음으로 완전히 구현해 검증.</span>
+    </li>
+    <li>
+      <strong>Codato, G. &amp; Fischetti, M. (2006)</strong> —
+      Combinatorial Benders' Cuts for Mixed-Integer Linear Programming.
+      <em>Operations Research</em>, 54(4), 756–766.
+      <span class="meta">https://pubsonline.informs.org/doi/abs/10.1287/opre.1060.0286</span>
+      <span class="desc">Big-M 제약을 포함한 MIP에 combinatorial cut 적용.
+      no-good cut의 이론적 기반을 MIP에서 정립. lifted cut의 수학적 기초.</span>
+    </li>
+    <li>
+      <strong>Hooker, J.N. (2019)</strong> —
+      Logic-Based Benders Decomposition for Large-Scale Optimization.
+      <em>In: Large Scale Optimization in Supply Chains and Smart Manufacturing</em>, Springer.
+      <span class="meta">https://johnhooker.tepper.cmu.edu/LBBDbookChapter.pdf</span>
+      <span class="desc">대규모 문제용 LBBD 총론. 최신 cut 강화 기법, 병렬화, 시뮬레이션 subproblem 통합까지.</span>
+    </li>
+    <li>
+      <strong>Legault, R. et al. (2025)</strong> —
+      Solving LBBD Master Problems with Constraint Programming and Domain-Independent Dynamic Programming.
+      <em>Constraints</em> (Springer), 2025.
+      <span class="meta">https://link.springer.com/article/10.1007/s10601-025-09382-1</span>
+      <span class="desc">Master를 CP로 푸는 최신 연구 (CP-LBBD). MIP master보다 빠른 사례 보고.
+      OGC 2026 master_cp의 이론적 최신 근거.</span>
+    </li>
+    <li>
+      <strong>Ciré, A.A., Çoban, E., &amp; Hooker, J.N. (2016)</strong> —
+      Logic-based Benders decomposition for planning and scheduling: a computational analysis.
+      <em>Knowledge Engineering Review</em>, Cambridge Core.
+      <span class="meta">https://www.cambridge.org/core/journals/knowledge-engineering-review/article/abs/logicbased-benders-decomposition-for-planning-and-scheduling-a-computational-analysis/70EE77BFAE516C56F3363A90A3786D84</span>
+      <span class="desc">Hooker 2007 후속. MIP/CP/LBBD 계산 비교 분석. cut 품질이 수렴에 미치는 영향 실험.</span>
+    </li>
+  </ul>
+
+  <!-- =================== 10. GitHub · 자료 =================== -->
+  <h2 id="repos">GitHub · 자료</h2>
+
+  <ul class="refs">
+    <li class="repo">
+      <strong>google/or-tools — CP-SAT Primer (d-krupke)</strong>
+      <span class="meta">https://github.com/d-krupke/cpsat-primer</span>
+      <span class="desc">CP-SAT 공식 비공식 교과서. 고급 모델링 패턴, Assumptions, SolutionCallback.
+      LBBD outer loop 패턴에 필요한 CP-SAT API 레퍼런스.</span>
+    </li>
+    <li class="repo">
+      <strong>OR-Tools 공식 문서 — CP-SAT Solver</strong>
+      <span class="meta">https://developers.google.com/optimization/cp/cp_solver</span>
+      <span class="desc">CpModel, CpSolver, AddAssumptions, SufficientAssumptionsForInfeasibility API 레퍼런스.
+      LBBD MIS 추출에 핵심적인 Assumptions 기능 설명.</span>
+    </li>
+    <li class="repo">
+      <strong>Hooker 홈페이지 — LBBD 논문 모음</strong>
+      <span class="meta">https://johnhooker.tepper.cmu.edu/</span>
+      <span class="desc">LBBD 창시자의 모든 논문 PDF 무료 공개. planning2.pdf, LBBDbookChapter.pdf, bendersCOPLAS.pdf 포함.</span>
+    </li>
+    <li class="repo">
+      <strong>arthur.maheo.net — Modern Benders in Python</strong>
+      <span class="meta">https://arthur.maheo.net/modern-benders-in-python/</span>
+      <span class="desc">Benders decomposition 실용적 Python 구현. master/subproblem loop, cut 생성 패턴.
+      logic-based 확장의 기본 뼈대 이해에 유용.</span>
+    </li>
+    <li class="repo">
+      <strong>논문 아카이브: Logic-based Benders for Wildfire Suppression</strong>
+      <span class="meta">https://arxiv.org/abs/2209.01371</span>
+      <span class="desc">실용적 LBBD 구현 예시. master(MIP) + subproblem(CP) + no-good cut 루프.
+      50회 미만의 cut으로 수렴하는 실험 결과 포함.</span>
+    </li>
+    <li class="repo">
+      <strong>CP 2024 논문: LBBD Master with CP (Dagstuhl LIPIcs)</strong>
+      <span class="meta">https://drops.dagstuhl.de/storage/00lipics/lipics-vol307-cp2024/LIPIcs.CP.2024.32/LIPIcs.CP.2024.32.pdf</span>
+      <span class="desc">CP-LBBD 최신 구현. Master를 CP-SAT로 푸는 패턴의 최신 학술 레퍼런스.
+      feasibility cut 인코딩 전략, CP vs MIP master 비교.</span>
+    </li>
+  </ul>
+
+  <!-- =================== 11. 흔한 함정 =================== -->
+  <h2 id="pitfalls">흔한 함정</h2>
+
+  <div class="pitfall">
+    <div class="ttl">함정 1: 약한 no-good cut만 → 지수 반복</div>
+    <p style="margin:0">
+      기본 no-good cut은 매 iteration에서 배정 조합 1개만 제거한다. 블록 N개이면 최악 2^N iteration.
+      <strong>해결</strong>: subproblem에서 infeasibility proof(MIS)를 반드시 추출하고 lifted cut을 사용.
+      CP-SAT의 <code>sufficient_assumptions_for_infeasibility()</code>가 MIS를 반환한다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 2: Master와 Subproblem의 목적함수 불일치</div>
+    <p style="margin:0">
+      Master가 z1+z2+z3을 최소화하는데 subproblem이 z1만 보고 비용을 반환하면,
+      optimality cut(η ≥ sub_cost)이 master의 목적과 맞지 않아 UB가 잘못된다.
+      <strong>해결</strong>: eta가 subproblem이 반환하는 것과 정확히 같은 비용 구성을 측정하도록 설계.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 3: 안전바닥 없이 LBBD 시작 → timeout시 -1</div>
+    <p style="margin:0">
+      LBBD 루프가 시작 전 feasible 해를 확보하지 않으면, 서버 TL 안에 루프가 convergence하지 않을 경우
+      반환할 해가 없어 -1을 리턴하게 된다.
+      <strong>해결</strong>: 루프 전에 serial_floor(EDD greedy) 같은 "항상 feasible" 탐욕해를 실행.
+      이것이 best_sol의 초기값이자 최악의 경우 반환값이 된다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 4: CP-SAT에 solve 중 외부 cut 주입 시도</div>
+    <p style="margin:0">
+      Gurobi/CPLEX는 lazy constraint callback으로 solve 중에 cut을 추가할 수 있다.
+      CP-SAT는 이를 지원하지 않는다.
+      <strong>해결</strong>: outer loop 방식 (master를 재solve) 사용. 또는
+      <code>SolutionCallback.stop_search()</code>로 중단 후 cut 추가 → 재solve 패턴.
+      성능 차이는 대부분 무시 가능하다 (CP-SAT의 presolve/clause learning이 보완).
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 5: Subproblem timeout을 FEASIBLE로 오해</div>
+    <p style="margin:0">
+      CP-SAT가 UNKNOWN(timeout)을 반환했을 때 feasible로 취급하면,
+      실제로 infeasible한 배정에 optimality cut을 추가해 UB가 잘못된다.
+      <strong>해결</strong>: UNKNOWN은 별도 처리 — no-good cut만 추가하고 다음 iteration으로.
+      또는 timeout 발생 시 서브문제 시간 예산을 늘리는 adaptive 전략.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 6: 무한루프 — cut이 추가되지 않는 iteration</div>
+    <p style="margin:0">
+      subproblem이 UNKNOWN을 반환하면서 no-good cut도 추가되지 않으면 master가 같은 해를 반복한다.
+      <strong>해결</strong>: UNKNOWN일 때도 반드시 현재 배정에 대한 no-good cut은 추가.
+      iteration 카운터와 cut 카운터를 별도로 추적해 "cut 추가 없이 k회 반복" 시 강제 종료.
+    </p>
+  </div>
+
+  <div class="tip">
+    <div class="ttl">베스트프랙티스 요약</div>
+    <ul style="margin:0;padding-left:18px">
+      <li>항상 serial_floor로 안전바닥을 확보한 뒤 LBBD 루프 진입</li>
+      <li>subproblem에서 MIS(minimal infeasible subset) 추출 → lifted cut 사용</li>
+      <li>매 iteration에서 UB bound를 master에 전달 (<code>eta ≤ UB</code>) → master 탐색 가속</li>
+      <li>subproblem 시간 예산은 전체 TL의 40~60%로 dynamic하게 배분</li>
+      <li>cut 수가 수백 개를 넘으면 master solve 시간이 증가 → 오래된/약한 cut pruning 고려</li>
+      <li>convergence 판정: LB ≥ UB - ε, 또는 master가 INFEASIBLE 반환</li>
+    </ul>
+  </div>
+
+  <!-- footer -->
+  <div class="footer">
+    CP-SAT Methodology · 10 LBBD &nbsp;|&nbsp;
+    참조: Hooker &amp; Ottosson (2003) · Hooker (2007) · Thorsteinsson (2001) · Codato &amp; Fischetti (2006)
+    &nbsp;|&nbsp; <a href="index.html">← 개요로</a>
+  </div>
+
+</div>
+</body>
+</html>

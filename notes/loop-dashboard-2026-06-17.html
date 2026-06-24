@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP-SAT 정리 루프 — 현황 & 다음 결정 (2026-06-17)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--ink:#e6edf3;--muted:#9aa7b4;
+    --line:#2d3744;--accent:#58a6ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--chip:#21314a;--chipink:#9ecbff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',-apple-system,'Malgun Gothic',sans-serif;line-height:1.6;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:30px 26px 80px}
+  h1{font-size:26px;margin:0 0 6px}
+  h2{font-size:20px;margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h3{font-size:16px;margin:20px 0 8px;color:var(--accent)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 22px}
+  p{margin:9px 0}
+  code{background:#0b1220;padding:1px 6px;border-radius:5px;font-size:13px;color:#ffd9a0;font-family:Consolas,monospace}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:16px 0}
+  .tldr{background:linear-gradient(135deg,#16213a,#161b22);border:1px solid #2b4a78}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#cfe0f0;font-weight:600}
+  tr:nth-child(even) td{background:#11161f}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .good{color:var(--good);font-weight:600}.warn{color:var(--warn);font-weight:600}.bad{color:var(--bad);font-weight:600}
+  .pill{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin:12px 0}
+  .pill.good{border-color:var(--good)}.pill.warn{border-color:var(--warn)}.pill.bad{border-color:var(--bad)}
+  ul{margin:8px 0;padding-left:22px}li{margin:5px 0}
+  .small{font-size:13px;color:var(--muted)}
+  .tag{display:inline-block;border-radius:20px;padding:1px 10px;font-size:12px;margin:1px 3px 1px 0}
+  .done{background:#13371f;color:#6ee7a0}.wip{background:#3a2f12;color:#f3cd6b}.plan{background:#1d2b45;color:#9ecbff}
+  .flow{font-family:Consolas,monospace;background:#0b1220;border:1px solid #30445f;border-radius:8px;padding:14px 16px;white-space:pre;overflow-x:auto;font-size:13px;color:#cfe0f0;line-height:1.5}
+  .rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#07101f;font-weight:700;margin-right:7px;font-size:13px}
+  .q{background:#1a1430;border:1px solid #4a3b78;border-radius:10px;padding:14px 18px;margin:16px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>CP-SAT 정리 루프 — 현황 &amp; 다음 결정</h1>
+<p class="sub">OGC 2026 · 2026-06-17 · 모드: <b>매 루프마다 대화 + HTML</b> · 목표: 쓸데없는 단계 제거 + CP-SAT 적극 활용 · 판정 = full set 총obj · never −1 · set1 무회귀</p>
+
+<div class="panel tldr">
+  <h3 style="margin-top:0">지금 한 줄</h3>
+  <p>실측으로 <b>레거시(벽시계 45%)가 set2에서 결과 항상 폐기 + obj 감소는 전부 CP-SAT</b>임을 확인. → (C1) box∥gassign <b>병렬</b>로 굶주림 해소(prob_39 경쟁자 격파), (C3) 레거시를 <b>린 CP-SAT</b>(배정+타이밍)으로 적출(z3 강·z1 약, gassign 보완). 다음 큰 레버 = <b>z3-aware 벤더스 컷</b>(경쟁자 잔여 갭=z3 직격).</p>
+</div>
+
+<!-- 1 -->
+<h2>1. 파이프라인 구조 (실측 프로파일)</h2>
+<div class="flow">하이브리드 = 후보 best-of:
+  ① legacy   ~130s (45% 벽시계)  →  set2서 결과 <span style="color:#f85149">항상 폐기</span>
+  ② box      ~74s   (CP-SAT 2D)  →  legacy를 −86~95% 격파
+  ③ gassign  ~67s   (CP-SAT LBBD)→  추가 −21~27% (자주 최종 승자)
+  ④ perbay   ~20s   (CP-SAT)     →  가끔 승자(prob_38)
+  obj 감소는 <span style="color:#3fb950">전부 CP-SAT</span>. 그리디(레거시 floor 65s)는 나쁜 출발점만.</div>
+
+<!-- 2 -->
+<h2>2. 이번 루프에 한 것</h2>
+
+<h3><span class="tag done">DONE</span> C1 — 병렬 후보 실행 (<code>parcand.py</code>, <code>OGC_PARALLEL_CANDS</code>)</h3>
+<p>레거시 순차 유지(set1 안전) + box∥gassign을 별도 프로세스 병렬 → 각자 풀예산(67/74s → ~130s). −1-safe(실패→레거시 fallback).</p>
+<table>
+<tr><th>인스턴스</th><th class="num">순차 @300</th><th class="num">병렬 @300</th><th>판정</th></tr>
+<tr><td>prob_39</td><td class="num">31.77M</td><td class="num good">27.64M</td><td class="good">−4.13M, 경쟁자(29.74M) 격파!</td></tr>
+<tr><td>prob_30</td><td class="num">10.51M</td><td class="num">10.51M</td><td>동일</td></tr>
+<tr><td>prob_26</td><td class="num">21.96M</td><td class="num">23.76M</td><td class="small">+1.8M = 노이즈(워커수 무관 확인)</td></tr>
+</table>
+<p class="small">부분 검증(set2 6/20)에서 전부 feasible·wall≤292s. 사용자 판단: 경쟁자 추월 확인, 만족.</p>
+
+<h3><span class="tag wip">WIP</span> C3 — 레거시 적출 → 린 CP-SAT (<code>OGC_LEGACY_LEAN</code>)</h3>
+<p>"초기 베이배정 빠른 CP-SAT + 타이밍 오라클"만 남기고 나머지(그리디 floor·cum_level·cheaper_steps·crossbay·bbox·z1_repair·ALNS·ban-race·multistart) 제거. 실패 시 trivial 폴백(never −1). 버짓 캡 min(0.40T,60s) → <b>prob_14 48.3s</b>(캡 작동).</p>
+<div class="flow">린 레거시 = _cpsat_assignment(z2+z3)  →  fixed-time decode(크레인)  →  _cpsat_bay_timing_verified  →  return
+            └ gassign과 같은 LBBD 골격, 배정 목적만 다름(z1-aware 대신 z3-focus)</div>
+<table>
+<tr><th>인스턴스</th><th class="num">린 (z1/z2/z3)</th><th class="num">풀 레거시 (z1/z2/z3)</th><th>관찰</th></tr>
+<tr><td>prob_22</td><td class="num">19.46M (1454/.../<b>104</b>)</td><td class="num">0.88M (0/.../2186)</td><td class="small">린 z3 탁월, z1 약</td></tr>
+<tr><td>prob_26</td><td class="num good">65M (4874/.../<b>18</b>)</td><td class="num bad">342M (25656/...)</td><td class="good">린 5× 우월(풀 floor 폭발)</td></tr>
+<tr><td>prob_38</td><td class="num">162.7M</td><td class="num">147.3M</td><td class="small">린 약간 열세</td></tr>
+</table>
+<div class="pill good"><b>핵심</b>: 린 레거시 = <b>z3 탁월(104/18=거의 완벽 선호) · z1 약(z1-blind)</b>. box(z1/밀도)+gassign(z1-aware)의 <b>z3-focus 보완재</b>. 풀 레거시는 set2서 불안정(prob_26 342M).</div>
+<div class="pill warn"><b>리스크(당신께 공유)</b>: 풀 레거시는 <b>set1 승자</b>(후처리로 z1=0). 린으로 교체 시 set1 회귀 가능 → set1+set2 검증 필수.</div>
+
+<!-- 3 -->
+<h2>3. 벤더스 / LBBD (요청하신 개념)</h2>
+<div class="flow">  ┌─ MASTER (쉬운/완화) ─┐   배정 제안    ┌─ SUBPROBLEM (진짜) ─┐
+  │ CP-SAT 베이 배정      │ ───────────▶ │ per-bay 패킹+크레인  │
+  │ (면적-시간 완화)      │ ◀─────────── │ +타이밍 (실제 j≥k)   │
+  └──────────────────────┘   컷(피드백)   └──────────────────────┘</div>
+<p>마스터가 "면적 되니 이 블록들 이 베이에"라 하면, 서브문제가 진짜로 패킹/스케줄해보고 실패하면 <b>컷</b>(=논리적 피드백 제약)을 돌려줌:</p>
+<ul>
+<li><b>No-good 컷</b>: "이 집합 전부는 베이 j에 불가" → <code>Σx[b,j] ≤ |집합|−1</code></li>
+<li><b>Tardy cardinality 컷</b>: "동시존재 클리크 중 최대 k개만" → <code>Σx[clique,j] ≤ k</code></li>
+</ul>
+<p>마스터가 컷 추가해 재풀이 → 반복. <b>전체를 한 모델로 풀면 폭발</b>(perbay_t3 K² 폭발이 증거)하지만, LBBD는 분해 + 컷으로 잇는다. <b>gassign이 이미 이걸 씀</b> — "CP-SAT 적극 활용"의 정석.</p>
+
+<!-- 4 -->
+<h2>4. CP-SAT 로드맵 (다음 레버 후보)</h2>
+<table>
+<tr><th>레버</th><th>내용</th><th>기대</th><th>난도</th></tr>
+<tr><td class="good"><b>C4 z3-aware 벤더스 컷</b></td><td>gassign 마스터가 z3-spill을 보게(현재 z3-blind) → 과스필 직격</td><td class="good">경쟁자 잔여 갭=z3 직결 (prob_39 z3 9924 vs 59)</td><td>중</td></tr>
+<tr><td>C3 린레거시 통합</td><td>풀 레거시 → 린으로 교체 + box∥gassign 병렬</td><td>시간 절감 + z3 후보 추가</td><td>중(set1 검증)</td></tr>
+<tr><td>서브문제 병렬</td><td>per-bay 디코드를 4코어 병렬</td><td>LBBD iter당 시간↓</td><td>중</td></tr>
+<tr><td>마스터 증분/warm-start</td><td>LBBD 재풀이마다 rebuild→증분+hint</td><td>수렴 가속</td><td>중</td></tr>
+<tr><td>C2 3-way 병렬</td><td>legacy∥box∥gassign 각 FULL TL</td><td>각 후보 최대 품질</td><td>중상</td></tr>
+</table>
+
+<!-- 5 -->
+<div class="q">
+<h3 style="margin-top:0">5. 다음 루프 — 어디로 갈까요?</h3>
+<p>제 추천 순서:</p>
+<ol>
+<li><span class="rank">1</span><b>C4 z3-aware 벤더스 컷</b> — 경쟁자와의 잔여 갭이 z3라 점수 직결. CP-SAT 적극 활용의 정석. (gassign 마스터에 z3-spill 페널티/컷 추가)</li>
+<li><span class="rank">2</span><b>C3 린레거시 통합 + 검증</b> — 레거시 적출 마무리(set1 안전 확인 후 default).</li>
+<li><span class="rank">3</span><b>서브문제 병렬 / 마스터 warm-start</b> — 속도.</li>
+</ol>
+<p class="small">한 번에 하나씩, 각 루프 끝에 HTML + 대화로 방향 확인하겠습니다.</p>
+</div>
+
+<hr>
+<p class="small">원장 <code>notes/research/perbay-loop-ledger.md</code> (CI-1~7, C1~C4) · 코드 <code>src/parcand.py</code>·<code>gassign.py</code>·<code>myalgorithm.py</code>(린레거시) · 게이트 전부 default OFF(banked 보존). 생성 2026-06-17.</p>
+
+</div>
+</body>
+</html>

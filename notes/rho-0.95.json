@@ -1,0 +1,46 @@
+{
+  "config": {
+    "instances_spec": "prob_39",
+    "timelimit": 120.0,
+    "tag": "rho-0.95",
+    "generated": "2026-06-17 18:38:30"
+  },
+  "totals": {
+    "instances_spec": "prob_39",
+    "timelimit": 120.0,
+    "n_instances": 1,
+    "n_feasible": 1,
+    "n_infeasible": 0,
+    "n_win": 0,
+    "n_lose": 1,
+    "max_wall": 118.31200000003446,
+    "sum_gassign_obj": null,
+    "sum_prod_obj": null,
+    "total_delta": null,
+    "sum_competitor_obj": 29735938.93,
+    "sum_gassign_obj_with_comp": 28838773.0
+  },
+  "instances": [
+    {
+      "instance": "prob_39",
+      "n_blocks": 250,
+      "n_bays": 3,
+      "w1": 13333,
+      "w2": 4,
+      "w3": 150,
+      "gassign_obj": 28838773.0,
+      "gassign_z1": 2055.0,
+      "gassign_z2": 802,
+      "gassign_z3": 9575.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 118.31200000003446,
+      "prod_obj": null,
+      "delta": null,
+      "competitor_obj": 29735938.93,
+      "baseline_obj": 41290004.0,
+      "verdict": "lose"
+    }
+  ]
+}

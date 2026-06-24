@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 — 세션 마무리 2026-06-10</title>
+<style>
+  :root{--bg:#0e1116;--panel:#171b22;--line:#2b313c;--ink:#e6edf3;--mut:#9aa6b2;--dim:#6b7682;
+    --good:#3fb950;--bad:#f85149;--warn:#d29922;--acc:#58a6ff;--acc2:#bc8cff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  h1{font-size:25px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:18px;margin:34px 0 12px;display:flex;align-items:center;gap:9px}
+  h2 .n{font-size:11px;font-weight:700;color:#0e1116;background:var(--acc);border-radius:6px;padding:2px 8px}
+  .sub{color:var(--mut);margin:0 0 18px;font-size:13px}
+  .lead{background:linear-gradient(135deg,#172132,#171b22);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:18px 0}
+  .lead b{color:var(--acc)}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:center}
+  .card .lab{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .card .big{font-size:24px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .card .note{color:var(--mut);font-size:12px;margin-top:4px}
+  .arrow{color:var(--good)}
+  table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  td:first-child,th:first-child{text-align:left}
+  tbody tr:hover{background:#10141a}
+  .z1{color:var(--bad);font-weight:700}
+  .z0{color:var(--dim)}
+  .gain{color:var(--good);font-weight:700}
+  .flat{color:var(--dim)}
+  .worse{color:var(--bad);font-weight:700}
+  .bar{display:inline-block;height:9px;border-radius:5px;background:linear-gradient(90deg,#bc8cff,#58a6ff)}
+  .totrow td{border-top:2px solid var(--line);font-weight:700;color:var(--ink)}
+  ul.t{margin:8px 0;padding-left:18px}
+  ul.t li{margin:5px 0;color:var(--mut)}
+  ul.t li b{color:var(--ink)}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 10px}
+  .p-ship{background:#11331c;color:var(--good);border:1px solid #1d5b2e}
+  .p-no{background:#3a1416;color:var(--bad);border:1px solid #5b1d1d}
+  .p-next{background:#1b2433;color:var(--acc);border:1px solid #21364e}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .foot{color:var(--dim);font-size:11.5px;margin-top:36px;border-top:1px solid var(--line);padding-top:14px}
+  .small{font-size:11px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OGC 2026 — 세션 마무리</h1>
+  <p class="sub">2026-06-10 · 현재 배포 설정(adaptive raster 게이트, 기본 env) · 전 20개 × tl=100/300/1000초 · conc 2</p>
+
+  <div class="cards">
+    <div class="card"><div class="lab">총 obj @100s</div><div class="big">3.37M</div><div class="note">짧은 평가시간</div></div>
+    <div class="card"><div class="lab">@300s <span class="arrow">↓24%</span></div><div class="big">2.55M</div><div class="note">중간</div></div>
+    <div class="card"><div class="lab">@1000s <span class="arrow">↓43%</span></div><div class="big">1.91M</div><div class="note">eval 긴 예산 근사</div></div>
+  </div>
+
+  <div class="lead">
+    <b>한 줄.</b> 세 tl 모두 <b>전부 feasible · −1 0건</b>. 알고리즘이 <b>시간을 잘 써서</b> 100→1000초에 총 obj −43%, 1000초에서 19/20이 z1≤2.
+    유일한 예외는 <b>prob_13</b> — 시간을 더 줄수록 오히려 나빠지는(z1 1→10) 결정적 비단조 현상으로, 다음 세션의 가장 유망한 레버다.
+  </div>
+
+  <!-- benchmark table -->
+  <h2><span class="n">표</span> 인스턴스별 z1 / obj (tl=100 / 300 / 1000)</h2>
+  <table>
+    <thead><tr><th>인스턴스</th><th>z1@100</th><th>obj@100</th><th>z1@300</th><th>obj@300</th><th>z1@1000</th><th>obj@1000</th><th>1000 vs 100</th></tr></thead>
+    <tbody>
+      <tr><td>prob_1</td><td class="z0">0</td><td>3,673</td><td class="z0">0</td><td>3,673</td><td class="z0">0</td><td>3,673</td><td class="flat">flat</td></tr>
+      <tr><td>prob_2</td><td class="z0">0</td><td>5,030</td><td class="z0">0</td><td>5,030</td><td class="z0">0</td><td>5,030</td><td class="flat">flat</td></tr>
+      <tr><td>prob_3</td><td class="z0">0</td><td>82,410</td><td class="z0">0</td><td>82,410</td><td class="z0">0</td><td>82,410</td><td class="flat">flat</td></tr>
+      <tr><td>prob_4</td><td class="z1">1</td><td>154,220</td><td class="z0">0</td><td>110,172</td><td class="z0">0</td><td>110,172</td><td class="gain">−29%</td></tr>
+      <tr><td>prob_5</td><td class="z0">0</td><td>105,924</td><td class="z0">0</td><td>96,822</td><td class="z0">0</td><td>96,822</td><td class="gain">−9%</td></tr>
+      <tr><td>prob_6</td><td class="z0">0</td><td>91,221</td><td class="z0">0</td><td>93,712</td><td class="z0">0</td><td>87,804</td><td class="gain">−4%</td></tr>
+      <tr><td>prob_7</td><td class="z0">0</td><td>117,158</td><td class="z0">0</td><td>115,604</td><td class="z0">0</td><td>115,604</td><td class="flat">−1%</td></tr>
+      <tr><td>prob_8</td><td class="z0">0</td><td>11,252</td><td class="z0">0</td><td>11,252</td><td class="z0">0</td><td>11,252</td><td class="flat">flat</td></tr>
+      <tr><td>prob_9</td><td class="z0">0</td><td>208,510</td><td class="z0">0</td><td>76,610</td><td class="z0">0</td><td>72,840</td><td class="gain">−65%</td></tr>
+      <tr><td>prob_10</td><td class="z0">0</td><td>100,604</td><td class="z0">0</td><td>80,059</td><td class="z0">0</td><td>80,059</td><td class="gain">−20%</td></tr>
+      <tr><td>prob_11</td><td class="z1">1</td><td>206,376</td><td class="z1">1</td><td>94,278</td><td class="z0">0</td><td>66,185</td><td class="gain">−68%</td></tr>
+      <tr><td>prob_12</td><td class="z0">0</td><td>207,074</td><td class="z0">0</td><td>129,724</td><td class="z0">0</td><td>99,064</td><td class="gain">−52%</td></tr>
+      <tr style="background:#1f1518"><td>prob_13 ⚠</td><td class="z1">1</td><td>245,705</td><td class="z1">10</td><td>330,342</td><td class="z1">10</td><td>330,342</td><td class="worse">+34%</td></tr>
+      <tr><td>prob_14</td><td class="z1">7</td><td>359,749</td><td class="z0">0</td><td>114,116</td><td class="z0">0</td><td>112,678</td><td class="gain">−69%</td></tr>
+      <tr><td>prob_15</td><td class="z0">0</td><td>137,484</td><td class="z0">0</td><td>37,814</td><td class="z0">0</td><td>37,814</td><td class="gain">−73%</td></tr>
+      <tr><td>prob_16</td><td class="z0">0</td><td>147,209</td><td class="z0">0</td><td>96,187</td><td class="z0">0</td><td>96,187</td><td class="gain">−35%</td></tr>
+      <tr><td>prob_17</td><td class="z1">1</td><td>213,946</td><td class="z1">1</td><td>182,223</td><td class="z0">0</td><td>125,412</td><td class="gain">−41%</td></tr>
+      <tr><td>prob_18</td><td class="z1">4</td><td>284,640</td><td class="z0">0</td><td>107,690</td><td class="z0">0</td><td>93,012</td><td class="gain">−67%</td></tr>
+      <tr><td>prob_19</td><td class="z0">0</td><td>95,960</td><td class="z0">0</td><td>93,113</td><td class="z0">0</td><td>76,472</td><td class="gain">−20%</td></tr>
+      <tr><td>prob_20</td><td class="z1">2</td><td>590,583</td><td class="z1">19</td><td>693,570</td><td class="z1">2</td><td>210,399</td><td class="gain">−64%</td></tr>
+      <tr class="totrow"><td>합계</td><td></td><td>3,368,728</td><td></td><td>2,554,401</td><td></td><td>1,913,231</td><td class="gain">−43%</td></tr>
+    </tbody>
+  </table>
+  <p class="small">⚠ prob_13: tl=300·1000(×3런) 모두 정확히 동일(330,342) = 결정적(변동 아님). z1 = 빨강(>0), 회색(=0).</p>
+
+  <!-- prob_13 finding -->
+  <h2><span class="n">발견</span> prob_13 — 비단조 postprocess (다음 세션 레버)</h2>
+  <ul class="t">
+    <li>tl=100서 <b>z1=1 / obj 245,705</b> 인데, tl=300·1000서 <b>z1=10 / 330,342</b> 로 <b>시간 줄수록 악화</b>(idle 아님 — cum_level 529s + bbox_pack 427s, 986s 다 씀).</li>
+    <li>긴 postprocess가 z1을 1→10으로 올리며(−167K) z3만 약간 낮춤(+83K) → <b>net obj 더 나쁨인데 그걸 채택</b>. 초반 통과한 더 좋은 해(z1=1)를 <b>retain 안 함</b>.</li>
+    <li><b>best-of-N(OGC_PP_MULTISTART)은 무효</b> — postprocess가 예산을 꽉 채워 restart 자리 없음(ON==OFF 동일).</li>
+    <li><span class="pill p-next">레버</span> <b>postprocess 궤적 전체에서 best full-obj 유지</b> 또는 스케줄 개선 → prob_13 ~26% 개선(330K→245K), 일반 fix일 가능성. z3 레버(고갈)보다 유망. 단 stage별 obj 계측 필요 → 집중 작업.</li>
+  </ul>
+
+  <!-- session outcomes -->
+  <h2><span class="n">세션</span> 채택 / 기각 요약</h2>
+  <ul class="t">
+    <li><span class="pill p-ship">SHIP</span> <b>Adaptive raster floor 게이트</b> — 짧은-tl z1 catastrophe(obj 6.5M~46M) 제거, 긴-tl 무영향. v08 번들(미제출).</li>
+    <li><span class="pill p-no">기각</span> <b>CP-SAT z3 재배정</b> — z3는 packing-blocked(z1↔z3 Pareto). 선호 베이로 몰면 z1 20~180배 폭발. 이미 존재하는 seed가 옳게 거부됨.</li>
+    <li><span class="pill p-no">기각</span> <b>Front B 튜닝 · best-of-N</b> — 노이즈 수준/비일관. gated OFF.</li>
+    <li><span class="pill p-ship">인증</span> <b>−1 / 타임아웃 견고</b> — tl=60(eval 바닥 아래)에서도 실패 0.</li>
+    <li><span class="pill p-no">gated</span> <b>floor budget cap</b>(OGC_FLOOR_BUDGET_PCT) — 짧은-tl 소형 catastrophe(prob_1 z1=172→0) 완화하나 대형 trade-off로 default OFF.</li>
+  </ul>
+
+  <div class="foot">
+    데이터: <span class="mono">results/capture/{final100,final300,final1000}</span> · 표 재생성 <span class="mono">notes/_final_table.py</span> ·
+    아카이브 <span class="mono">archive/2026-06-10-session/</span> · 제출본(미제출) <span class="mono">submissions/v08-adaptive-raster-*.zip</span> ·
+    메모리: adaptive-raster-2026-06-09, z3-variance-2026-06-10, shorttl-robustness-2026-06-09.
+  </div>
+</div>
+</body>
+</html>

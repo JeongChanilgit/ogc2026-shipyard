@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 알고리즘 전체 아키텍처 — 2026-06-18</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--p2:#1c2230;--ink:#e6edf3;--mut:#8b98a8;
+    --acc:#4cc2ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--line:#2a3340;
+    --gas:#a371f7;--leg:#6e7681;--box:#db6d28;--z1:#f0883e;--z2:#58a6ff;--z3:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1140px;margin:0 auto;padding:30px 22px 90px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.02em}
+  h2{font-size:20px;margin:42px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h3{font-size:15px;margin:18px 0 7px;color:var(--acc)}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:16px}
+  code{background:#0b0f14;padding:1px 6px;border-radius:5px;font-family:"Cascadia Code",Consolas,monospace;font-size:12px;color:#c9d6e3}
+  .pill{display:inline-block;padding:1px 9px;border-radius:20px;font-size:11px;font-weight:600;vertical-align:middle}
+  .p-gas{background:rgba(163,113,247,.18);color:#c9a6ff;border:1px solid #553a82}
+  .p-leg{background:rgba(110,118,129,.18);color:#aab4c0;border:1px solid #41484f}
+  .p-box{background:rgba(219,109,40,.18);color:#f0a36b;border:1px solid #7a4420}
+  .p-good{background:rgba(63,185,80,.16);color:#56d364;border:1px solid #2a6b34}
+  .p-warn{background:rgba(210,153,34,.16);color:#e3b341;border:1px solid #7a5a18}
+  .p-bad{background:rgba(248,81,73,.15);color:#ff8a82;border:1px solid #7a2520}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:13px 0}
+  /* flow */
+  .flow{display:flex;flex-direction:column;gap:0}
+  .step{position:relative;background:var(--p2);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;padding:12px 16px;margin:7px 0}
+  .step .n{position:absolute;left:-13px;top:14px;width:25px;height:25px;border-radius:50%;background:var(--acc);color:#04121c;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .step.gas{border-left-color:var(--gas)} .step.gas .n{background:var(--gas);color:#1a0d2e}
+  .step.leg{border-left-color:var(--leg)} .step.leg .n{background:var(--leg)}
+  .step.box{border-left-color:var(--box)} .step.box .n{background:var(--box);color:#1a0d04}
+  .step.safe{border-left-color:var(--good)} .step.safe .n{background:var(--good);color:#04140a}
+  .step h4{margin:0 0 3px;font-size:14.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .step .loc{margin-left:auto;font-family:Consolas,monospace;font-size:11px;color:var(--mut)}
+  .step p{margin:3px 0;color:#c4cdd8;font-size:12.8px}
+  .arrow{text-align:center;color:var(--mut);font-size:15px;margin:-2px 0}
+  .branch{display:flex;gap:14px;flex-wrap:wrap;margin:7px 0}
+  .branch>div{flex:1;min-width:280px}
+  table{width:100%;border-collapse:collapse;margin:9px 0;font-size:12.5px}
+  th,td{padding:6px 9px;border:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:#10161e;color:var(--mut)}
+  .num{text-align:right;font-family:Consolas,monospace}
+  .win{color:var(--good);font-weight:600}.lose{color:var(--bad);font-weight:600}
+  ul{margin:5px 0;padding-left:20px}li{margin:3px 0;color:#c4cdd8;font-size:13px}
+  .note{background:rgba(76,194,255,.07);border:1px solid #1f3a4d;border-radius:9px;padding:11px 15px;margin:11px 0;font-size:12.8px}
+  .note.g{background:rgba(63,185,80,.07);border-color:#235029}
+  .note.w{background:rgba(210,153,34,.08);border-color:#5a4516}
+  .note.b{background:rgba(248,81,73,.08);border-color:#5a2520}
+  .eng{border-radius:12px;padding:14px 16px;border:1px solid var(--line)}
+  .eng.g{background:linear-gradient(180deg,rgba(163,113,247,.10),transparent)}
+  .eng.l{background:linear-gradient(180deg,rgba(110,118,129,.10),transparent)}
+  .eng.b{background:linear-gradient(180deg,rgba(219,109,40,.10),transparent)}
+  .zbar{display:flex;height:26px;border-radius:6px;overflow:hidden;margin:6px 0;font-size:11px;font-weight:600}
+  .zbar div{display:flex;align-items:center;justify-content:center;color:#0b0f14}
+  .mono{font-family:Consolas,monospace;font-size:12px;color:#9fb0c0}
+  .legend{display:flex;gap:13px;flex-wrap:wrap;margin:6px 0;font-size:11.5px;color:var(--mut)}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0}
+  .kpi>div{flex:1;min-width:150px;background:#10161e;border:1px solid var(--line);border-radius:9px;padding:10px 13px}
+  .kpi .v{font-size:19px;font-weight:700;font-family:Consolas,monospace}
+  .kpi .l{font-size:11px;color:var(--mut)}
+</style></head>
+<body><div class="wrap">
+
+<h1>OGC2026 — 알고리즘 전체 아키텍처</h1>
+<div class="sub">2026-06-18 현재 상태 · 진입 <code>src/myalgorithm.py → algorithm(prob_info, timelimit)</code> · 모든 레이어가 무슨 일을 하는지</div>
+
+<div class="legend">
+  <span><span class="pill p-gas">gassign</span> 주 엔진 (set2/고-TL)</span>
+  <span><span class="pill p-leg">legacy</span> set1/저-TL 챔피언</span>
+  <span><span class="pill p-box">box</span> best-of 후보</span>
+  <span><span class="pill p-good">safe</span> never −1</span>
+  <span><b style="color:var(--z1)">z1</b>=지연 · <b style="color:var(--z2)">z2</b>=부하불균형 · <b style="color:var(--z3)">z3</b>=선호</span>
+</div>
+
+<!-- ========================= 0. 문제 ========================= -->
+<h2>0. 문제와 목적함수 (무엇을 푸는가)</h2>
+<div class="card">
+<b>The Grand Shipyard Puzzle.</b> 조선소 블록을 베이에 배치·스케줄. <b>블록당 5D 동시 결정</b>:
+① 베이 j · ② 위치 (x,y) · ③ 방향 o · ④ ENTRY 시각 · ⑤ EXIT 시각 (=ENTRY+처리시간 P, WLOG).
+<div style="margin-top:8px"><b>제약</b>: 모든 블록 정확히 1 베이 · ENTRY≥release · EXIT−ENTRY≥P · 베이 경계 · 동일층 충돌금지 ·
+<b>크레인 수직접근(j≥k)</b> = 시간 겹치는 두 블록은 footprint 비겹침.</div>
+<div style="margin-top:10px"><b>목적함수</b> (가중합 최소화):</div>
+<div class="zbar"><div style="flex:11;background:var(--z1)">w1·z1 (tardiness, 지배적)</div><div style="flex:1;background:var(--z2)">w2·z2</div><div style="flex:4;background:var(--z3)">w3·z3 (preference)</div></div>
+<div class="mono">z1 = Σ tardiness · z2 = max 부하 불균형 · z3 = Σ(선호편차) · 가중치는 인스턴스마다 자릿수 단위로 다름 (w1 667~29,600) → weight-adaptive 필수</div>
+<div class="note" style="margin-top:8px"><b>점수</b>: infeasible/timeout/crash → <b>−1</b> (평균 −R/2, 최대 손실). feasible → <b>R − nb</b> (엄밀히 더 나은 팀 수). ⇒ <b>never −1이 1순위</b>, 그다음 총 obj.</div>
+</div>
+
+<!-- ========================= 1. 최상위 흐름 ========================= -->
+<h2>1. 최상위 흐름 — <code>algorithm()</code></h2>
+<div class="card flow">
+  <div class="step"><span class="n">1</span><h4>진입 · 예산/게이트 계산 <span class="loc">myalgorithm.py:7773+</span></h4>
+    <p><code>T=timelimit</code>. 게이트 읽기: <code>OGC_GASSIGN_FIRST</code>(ON), <code>OGC_GASSIGN_MIN_T=200</code>, <code>OGC_HYBRID</code>(ON). 예산 분배 산출(아래 §4).</p></div>
+  <div class="arrow">▼ <span class="mono">라우팅: T ≥ 200 ?</span></div>
+
+  <div class="branch">
+    <div class="step gas"><span class="n">2a</span><h4>gassign-first (PURE) <span class="pill p-gas">T≥200 = set2 서버</span></h4>
+      <p><code>gassign.algorithm(0.80·T)</code> 단독. <b>레거시 미실행.</b> z1-aware 배정으로 set2 거대 지연 직격(§2·§3).</p></div>
+    <div class="step leg"><span class="n">2b</span><h4>legacy-first <span class="pill p-leg">T&lt;200 = 운영/set1</span></h4>
+      <p><code>_legacy_algorithm(_leg_budget)</code>. 옛 다중모듈 챔피언. 운영 TL=120·set1에선 이 경로.</p></div>
+  </div>
+  <div class="arrow">▼</div>
+
+  <div class="step box"><span class="n">3</span><h4>box best-of 후보 <span class="loc">:7989+</span></h4>
+    <p><code>reserve≥20</code>이면 <code>boxsolver.algorithm(reserve)</code> → feasible &amp; <b>총 obj 더 낮으면 채택</b>(official checker). gassign 실패 시 feasibility net.</p></div>
+  <div class="arrow">▼</div>
+
+  <div class="step safe"><span class="n">4</span><h4>perbay 폴리시 <span class="loc">:8050+ · OGC_PERBAY</span></h4>
+    <p>남은 wall로 per-bay 타이밍 개선. strict-improvement 게이트(더 나쁘면 폐기). 순수 z1 추가 감소.</p></div>
+  <div class="arrow">▼</div>
+
+  <div class="step safe"><span class="n">5</span><h4>B4 serial-floor 안전망 <span class="loc">:8108 · 기본 ON</span> <span class="pill p-good">never −1</span></h4>
+    <p>최종 sol이 infeasible이면 즉시 <code>_trivial_solution</code>(솔버 없는 serial-EDD) 스왑. feasible이면 no-op.</p></div>
+  <div class="arrow">▼</div>
+  <div class="step"><span class="n">6</span><h4>return <code>sol</code></h4></div>
+</div>
+
+<!-- ========================= 2. 세 엔진 ========================= -->
+<h2>2. 세 엔진 (누가 무엇을 푸는가)</h2>
+<div class="branch">
+  <div class="eng g"><span class="pill p-gas">gassign</span> <b>주 엔진</b> · <code>src/gassign.py</code>
+    <ul><li><b>철학</b>: <b>배정 자체를 z1-aware</b>로 (어느 블록을 어느 베이에)</li>
+    <li>구조: B1 배정 ↔ LBBD ↔ B2 배치 → B3 타이밍 (§3)</li>
+    <li><b>이기는 곳</b>: w1 큰 congested set2 (z1 대폭↓)</li>
+    <li>실적: set2 −95.7% (vs 옛 레거시-only)</li></ul></div>
+  <div class="eng l"><span class="pill p-leg">legacy</span> <b>set1 챔피언</b> · <code>myalgorithm._legacy_algorithm</code>
+    <ul><li><b>철학</b>: z1-blind 배정 + 강력한 floor + 타이밍, 多모듈</li>
+    <li>모듈: fastfloor·baseline_greedy·uconstruct·rebuild·regime·z3race…</li>
+    <li><b>이기는 곳</b>: 작고 congested한 set1 (z1=0 19/20)</li>
+    <li>저-TL/운영 경로. set1에서 gassign보다 강함</li></ul></div>
+  <div class="eng b"><span class="pill p-box">box</span> <b>best-of 후보</b> · <code>src/boxsolver.py</code>
+    <ul><li><b>철학</b>: 선호배정 고정(z3≈0) + 시간-확장 co-presence 패킹</li>
+    <li>Phase1 배정 → Phase2 box-decomp CP-SAT → reassign/feasspill</li>
+    <li><b>이기는 곳</b>: w3 큰 less-congested (낮은 z3로 z1=0)</li>
+    <li>항상 best-of로 안전 합류 (회귀 불가)</li></ul></div>
+</div>
+
+<!-- ========================= 3. gassign 심층 ========================= -->
+<h2>3. gassign 내부 — B1 → B2 → B3 + LBBD <span class="pill p-gas">주 엔진 심층</span></h2>
+<div class="sub">"decoupling" 기법: 배정 → 위치고정 → 1D 타이밍. 각 단계가 5D 결정의 일부를 담당.</div>
+<div class="card flow">
+  <div class="step gas"><span class="n">B1</span><h4>z1-aware 전역 배정 (CP-SAT master) <span class="loc">gassign.py:177 _solve_master</span></h4>
+    <p>변수 x[b,j](배정)·entry·tard. <b>면적-시간 cumulative 완화</b>(동시존재 면적합 ≤ 베이용량)로 시간적 과포화 베이 prune. 목적 = 체커와 단위일치 <code>c1·z1 + c2·z2 + c3·z3</code>.</p>
+    <p><b style="color:var(--good)">★ 이번 세션 핵심 레버 (C3_MULT=2.0)</b>: <code>c3 = round(w3 × 2.0)</code>. master가 area-time 완화라 "spill하면 z1 준다"를 <b>과대평가</b>→과-스필. z3 가중치를 ×2로 올려 master가 블록별로 spill을 더 엄격히 판단 → <b>z1 비용 없이 z3 −16%</b>. <span class="loc">gassign.py:362</span></p></div>
+  <div class="arrow">▼ <span class="mono">T6 LBBD: 완화해를 기하로 검증</span></div>
+  <div class="step gas"><span class="n">B2</span><h4>crane-aware BL 배치 (위치·방향 고정) <span class="loc">fastfloor._fixed_time_decode</span></h4>
+    <p>각 베이의 배정 집합을 entry=R 기준 Bottom-Left로 배치, 방향 선택, crane j≥k 만족. <b>위치(x,y,o)를 고정</b>해 다음을 1D 문제로 만듦. 자리 없으면 delay→serialize.</p></div>
+  <div class="arrow">▼ <span class="mono">실패→no-good cut / tardy→cardinality cut → master 재풀이</span></div>
+  <div class="step gas"><span class="n">B3</span><h4>per-bay CP-SAT 타이밍 오라클 <span class="loc">myalgorithm._cpsat_bay_timing_verified</span></h4>
+    <p>위치 고정 → crane/충돌이 시간 무관 → 타이밍이 <b>1-D disjunctive tardiness</b>로 환원 → 베이별 <b>최적</b> entry/exit를 CP-SAT로. (footprint 겹치는 쌍만 시간분리.)</p></div>
+  <div class="note" style="margin-top:4px"><b>LBBD 루프</b>: master(완화)가 z1-aware 배정 제안 → B2 디코더가 기하로 검증 → 실패/tardy면 cut으로 master에 "실제로 가능한 것"을 가르침 → best TRUE z1 채택. <b>base-first depgroup race</b>로 z3 tie-break(never-worse).</div>
+</div>
+
+<!-- ========================= 4. 예산·게이트 ========================= -->
+<h2>4. 예산 분배 &amp; 게이트</h2>
+<table>
+<tr><th>게이트 / 노브</th><th>기본값</th><th>역할</th></tr>
+<tr><td><code>OGC_GASSIGN_FIRST</code></td><td>ON</td><td>gassign-first PURE 경로 활성 (레거시 backstop 제거). =0 → 옛 하이브리드</td></tr>
+<tr><td><code>OGC_GASSIGN_MIN_T</code></td><td>200</td><td>gassign 활성 임계 TL. T&lt;200 → legacy-first (운영 TL=120·set1 보호)</td></tr>
+<tr><td>gassign 예산</td><td>0.80·T</td><td>gassign이 우선 예산 (레거시 제거로 흡수)</td></tr>
+<tr><td>box reserve</td><td>~0.15·T</td><td>box best-of 슬라이스 (cap 0.95T)</td></tr>
+<tr><td class="win"><code>OGC_GASSIGN_C3_MULT</code></td><td class="win">2.0 ★</td><td class="win">master z3 가중 ×2 → 과-스필 억제. 이번 세션 채택, set2 경쟁자 추월</td></tr>
+<tr><td><code>OGC_SERIAL_FLOOR_SAFETY</code></td><td>ON</td><td>B4 최종 안전망 (never −1)</td></tr>
+</table>
+
+<!-- ========================= 5. 안전 레이어 ========================= -->
+<h2>5. 안전 레이어 (never −1)</h2>
+<div class="card"><ul>
+<li><b>best-of 게이트</b>: 모든 후보(box·gassign)는 <code>utils.check_feasibility</code>(공식) + 총 obj로 채택 → <b>회귀 불가</b>.</li>
+<li><b>wall-margin 클램프</b>: gassign+box 순차 합 ≤ T−margin 보장 → 타임아웃 −1 차단.</li>
+<li><b>B4 serial-floor</b>: 최종 sol infeasible이면 즉시 trivial 해 스왑 → 어떤 경우도 feasible.</li>
+</ul></div>
+
+<!-- ========================= 6. 어디서 이기고 지는가 ========================= -->
+<h2>6. 경쟁자 대비 — 어디서 이기고 지는가 (set2 분해)</h2>
+<div class="kpi">
+  <div><div class="v win">−11.1M</div><div class="l">z1 (우리 승)</div></div>
+  <div><div class="v lose">+14.0M</div><div class="l">z3 (우리 패, 과-스필)</div></div>
+  <div><div class="v" style="color:var(--good)">−7.9M</div><div class="l">C3_MULT 후 경쟁자 대비 (추월)</div></div>
+</div>
+<p class="sub">우리는 z1-aware 배정으로 <b>지연(z1)을 11M 이기지만</b>, 선호 베이에서 과-스필해 <b>z3를 14M 진다</b> → 기존엔 net +2.8M 뒤짐. <b>C3_MULT=2.0</b>이 과-스필을 억제(z3 −16%, z1 무손실) → set2 <b>271.9M, 경쟁자(279.8M) 7.9M 추월.</b></p>
+
+<!-- ========================= 7. 세션 결과 + 리스크 ========================= -->
+<h2>7. 이번 세션 결과 &amp; 알려진 리스크</h2>
+<table>
+<tr><th>변경/발견</th><th>결과</th><th>상태</th></tr>
+<tr><td><b>gassign-first PURE</b> (레거시 backstop 제거)</td><td>set2 −95.7% (z1-aware 배정)</td><td><span class="pill p-good">채택</span></td></tr>
+<tr><td><b>C3_MULT=2.0</b> (master z3-bias)</td><td>set2 −3.79%, <b>경쟁자 7.89M 추월</b>; set1 −1.96%; never −1</td><td><span class="pill p-good">채택 ★</span></td></tr>
+<tr><td>per-bay 패커 (COVERT·ALNS)</td><td>per-bay z1 −1~19%이나 <b>instance로 전이 안 됨</b> (LBBD 결합+노이즈)</td><td><span class="pill p-bad">기각</span></td></tr>
+<tr><td>밀도(rho)·depgroup 노브</td><td>rho +0.5%·dep −0.0% (z3↔z1 나쁜 거래)</td><td><span class="pill p-bad">기각</span></td></tr>
+<tr><td>⚠ gassign-first가 set1에서 나쁨</td><td>set1 @고-TL = 3.3M vs 레거시 1.31M (2.5×↑)</td><td><span class="pill p-warn">리스크</span></td></tr>
+</table>
+<div class="note w"><b>⚠ 미해결 리스크.</b> gassign-first PURE가 set1에선 레거시보다 2.5× 나쁨. <b>운영 TL=120에선 안전</b>(gassign OFF→set1은 레거시). 하지만 서버가 set1에 ≥200s를 주면 set1이 gassign(3.3M)으로 떨어짐 → <b>−2M+ 위험</b>. 다음 = <b>gassign-first를 size-gate</b>(set2-류만, set1은 TL 무관 항상 레거시).</div>
+<div class="note g"><b>한 줄 요약.</b> 운영의 핵심은 <b>set2=gassign-first+C3_MULT(경쟁자 추월), set1=legacy(챔피언)</b>. 모든 후보는 official-checker + 총 obj로 게이트되어 회귀 불가, B4로 never −1. 세션 최대 레버 = <b>C3_MULT=2.0</b>(master 과-스필 교정).</div>
+
+<div class="sub" style="margin-top:24px">파일: <code>notes/algorithm-architecture-2026-06-18.html</code> · 코드: <code>src/myalgorithm.py</code>(entry), <code>src/gassign.py</code>(B1+master+C3_MULT), <code>src/fastfloor.py</code>(B2), <code>src/boxsolver.py</code>(box) · 원장: <code>notes/research/assignment-z3-ledger.md</code>, <code>notes/research/perbay/LEDGER.md</code></div>
+
+</div></body></html>

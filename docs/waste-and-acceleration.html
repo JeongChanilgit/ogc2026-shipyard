@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC2026 — 낭비 분석 · 가속 · 단계별 Z1</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430; --line:#30363d;
+    --fg:#e6edf3; --muted:#9aa6b2; --accent:#58a6ff; --good:#3fb950;
+    --warn:#d29922; --bad:#f85149; --slab:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:15px/1.6 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  h1{font-size:26px;margin:0 0 6px}
+  h2{font-size:20px;margin:38px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--accent)}
+  .sub{color:var(--muted);margin:0 0 8px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px;margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600}
+  tr:hover td{background:#1b2230}
+  .z0{color:var(--good)} .znz{color:var(--warn);font-weight:600}
+  .bad{color:var(--bad)} .good{color:var(--good)} .accent{color:var(--accent)}
+  .slabc{color:var(--slab)}
+  .bar{height:22px;border-radius:4px;display:inline-block;vertical-align:middle}
+  .barrow{display:flex;align-items:center;gap:10px;margin:4px 0}
+  .barrow .lab{width:140px;color:var(--muted);font-size:13px;text-align:right}
+  .barrow .val{width:70px;font-size:13px}
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;
+    border:1px solid var(--line)}
+  .tag-good{background:rgba(63,185,80,.12);color:var(--good);border-color:#22612f}
+  .tag-bad{background:rgba(248,81,73,.12);color:var(--bad);border-color:#7d2a26}
+  .tag-warn{background:rgba(210,153,34,.12);color:var(--warn);border-color:#7a5b18}
+  code{background:#0a0e14;padding:1px 5px;border-radius:4px;font-size:13px;color:#c9d1d9}
+  .big{font-size:30px;font-weight:700}
+  .kpi{text-align:center;padding:14px}
+  .kpi .lab{color:var(--muted);font-size:12px}
+  ul{margin:6px 0 6px 2px;padding-left:20px} li{margin:4px 0}
+  .step{display:flex;align-items:center;gap:0;margin:10px 0;flex-wrap:wrap}
+  .stepbox{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:8px 11px;text-align:center;min-width:96px}
+  .stepbox .s{font-size:12px;color:var(--muted)}
+  .stepbox .z{font-size:18px;font-weight:700}
+  .arrow{color:var(--muted);padding:0 7px;font-size:18px}
+  .note{color:var(--muted);font-size:13px}
+  .hl{background:rgba(248,81,73,.10);border-left:3px solid var(--bad);
+    padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+  .hlg{background:rgba(63,185,80,.08);border-left:3px solid var(--good);
+    padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>OGC2026 — 낭비 분석 · 시간 가속 · 단계별 Z1</h1>
+<p class="sub">작업공간 자체 분석 툴킷(<code>tools/collect_trace.py</code> + 인알고 <code>[STAGE_TIMING]/[STAGE_OBJ]</code> 계측, 공식 <code>check_feasibility</code> 채점)으로 측정. 모든 수치는 <b>solo 1프로세스·4코어·300초</b> 기준 (평가서버 조건과 동일). 작성 2026-06-07.</p>
+
+<div class="panel grid2" style="text-align:center">
+  <div class="kpi"><div class="big accent">178s</div><div class="lab">prob_20에서 <code>seeds_decode</code> 1단계가 쓰는 시간 (전체 296s의 60%)</div></div>
+  <div class="kpi"><div class="big good">~130s</div><div class="lab">그 단계를 4코어 병렬화하면 회수 가능한 예산 (→ Goal 1 레버 재원)</div></div>
+</div>
+
+<!-- ============================================================= -->
+<h2>1. 현재 상태 — 6개 난제 인스턴스의 Z1/Z2/Z3</h2>
+<p class="sub">나머지 14개(prob_1~10,16~19)는 Z1=0. 아래는 0에 못 닿는 6개 (proven baseline, slab OFF).</p>
+<div class="panel">
+<table>
+<thead><tr><th>인스턴스</th><th>블록</th><th>베이</th><th>Z1</th><th>Z2</th><th>Z3</th><th>지배 성분</th></tr></thead>
+<tbody>
+<tr><td>prob_11</td><td>200</td><td>4</td><td class="znz">1</td><td>342</td><td>519</td><td><span class="pill tag-warn">Z3 73%</span></td></tr>
+<tr><td>prob_12</td><td>200</td><td>4</td><td class="znz">11</td><td>2291</td><td>1046</td><td><span class="pill">Z1/Z3</span></td></tr>
+<tr><td>prob_13</td><td>250</td><td>4</td><td class="znz">10</td><td>1886</td><td>1014</td><td><span class="pill">Z1 56%</span></td></tr>
+<tr><td>prob_14</td><td>250</td><td>4</td><td class="znz">4</td><td>297</td><td>908</td><td><span class="pill tag-warn">Z3</span></td></tr>
+<tr><td>prob_15</td><td>250</td><td>4</td><td class="znz">2</td><td>3859</td><td>214</td><td><span class="pill">Z1/Z2</span></td></tr>
+<tr><td>prob_20</td><td>300</td><td>5</td><td class="znz">17</td><td>672</td><td>10400</td><td><span class="pill tag-warn">Z3 80%</span></td></tr>
+</tbody>
+</table>
+<p class="note">주의: prob_11/12/13/20은 <b>실행마다 ±크게 흔들림</b>(멀티스레드 CP-SAT + 벽시계 예산결정). 같은 prob_20이 한 번은 10, 한 번은 17, 한 번은 530으로도 나옴 → 단일 실행 비교는 신뢰 불가, 검증은 반드시 여러 번/solo.</p>
+</div>
+
+<!-- ============================================================= -->
+<h2>2. 시간은 어디로 가는가 — prob_20 단계별 벽시계 (300s)</h2>
+<p class="sub">가장 큰 인스턴스. 한 단계(<code>seeds_decode</code>)가 예산의 60%를 먹는다.</p>
+<div class="panel" id="timingbars"></div>
+<div class="hl">
+<b>핵심 낭비:</b> <code>seeds_decode</code> 178초는 <b>여러 개의 독립적인 "씨앗 배정(seed)"을 1개 코어에서 순차로</b> crane-safe 디코드하는 시간이다 (300블록 한 베이 디코드 ≈ 30~40초 × 약 5개 씨앗). 이 단계가 만드는 incumbent는 <b>Z1=424</b> — 형편없다. 그 뒤 postprocess(cum_level 등)가 그걸 <b>Z1≈10</b>으로 고친다. 즉 <b>178초 단일코어 디코드가 만든 베이스를 postprocess가 거의 갈아엎는다.</b>
+</div>
+
+<!-- ============================================================= -->
+<h2>3. 단계별 Z1 추적 — Z1이 어느 단계에서 떨어지나</h2>
+<p class="sub">파이프라인을 따라 Z1(=Σ tardiness)이 어떻게 줄어드는지. (gated: 각 단계는 목적함수를 악화시키지 못함)</p>
+<div id="trajectories"></div>
+<div class="hlg">
+<b>읽는 법:</b> search(seeds_decode 포함)가 <b>높은 Z1</b>을 오랜 시간 들여 만들고, <b>cum_level + bbox_pack + cross-bay</b>가 실제로 Z1을 끌어내린다. 즉 <b>무거운 search 단계의 한계효용이 낮다</b> — 시간을 거기서 빼서 (a) 병렬화로 회수하거나 (b) Z1을 실제로 내리는 레버에 재배치하면 이득.
+</div>
+
+<!-- ============================================================= -->
+<h2>4. 낭비를 어떻게 손대나 + 시간 가속</h2>
+<div class="grid2">
+  <div class="panel">
+    <h3>① seed 디코드 4코어 병렬화 <span class="pill tag-good">최대·최안전</span></h3>
+    <p>지금 <code>seeds_decode</code>는 독립적인 씨앗들을 <b>1코어 순차</b> 디코드(178s). 평가서버는 <b>4코어</b>. 이미 인프라 존재(<code>parallel_decode.py</code>, <code>run_parallel_multistart</code>). 씨앗 디코드를 4코어로 fan-out → <b>178s → ~45s</b>.</p>
+    <p class="note">→ ~130초 회수. gate가 정답을 소유하므로 순수 speedup(회귀 위험 0). 회수한 예산은 곧 Goal 1의 무거운 레버(slab) 재원.</p>
+  </div>
+  <div class="panel">
+    <h3>② 저가치 씨앗 가지치기 / 디코드 시간 캡</h3>
+    <p>5개 씨앗을 다 풀디코드하지 말고, incumbent를 못 이길 씨앗은 짧은 캡으로 끊거나 건너뛴다. <code>cum_level</code>이 어차피 incumbent를 재디코드하므로, 초기 씨앗 품질의 한계효용이 낮다.</p>
+    <p class="note">위험: 일부 regime에서 특정 씨앗이 feasibility 보강용 → 캡은 보수적으로.</p>
+  </div>
+  <div class="panel">
+    <h3>③ seeds_decode를 병렬 multistart에 흡수</h3>
+    <p>이미 <code>run_parallel_multistart</code>가 4코어에서 씨앗들을 디코드+로컬서치한다(현재 17s). 순차 <code>seeds_decode</code>(178s)는 그와 <b>일부 중복</b> — 인큐번트 선택을 병렬쪽으로 합치면 178s 단계를 통째로 제거 가능.</p>
+  </div>
+  <div class="panel">
+    <h3>④ cum_level 예산 캡 (70%→적정)</h3>
+    <p><code>cum_level</code>은 70초 쓰지만 수렴 후 한계효용 체감. STAGE_OBJ로 "개선 멈춘 시각"을 재서 조기종료 → 추가 예산 회수. (수렴추적은 트레이스에 이미 있음)</p>
+  </div>
+</div>
+<div class="hlg"><b>종합:</b> ①+③만으로 prob_20 기준 <b>~130초</b>를 안전하게 회수. 이는 (a) <b>속도 자체</b> 개선이고, 동시에 (b) Goal 1의 막힌 케이스를 풀 <b>예산</b>이 된다.</div>
+
+<!-- ============================================================= -->
+<h2>5. 왜 이게 Goal 1과 직결되나 — slab 패커의 교훈</h2>
+<div class="panel">
+<p><b>발견:</b> tardy 블록은 전부 <b>bbox(직사각) 낭비 97~136%</b>인 베이에 몰린다. 폴리곤에 밀착하는 <b>slab cover 패킹</b>으로 공간을 회수하면 동시 적재가 늘어 조기 진입 → Z1↓.</p>
+<p><b>오프라인 증명(노이즈 없음):</b> <span class="good">prob_15 bay2 2→0 (최적 증명)</span>, prob_13 bay3 9→1.</p>
+<div class="hl"><b>그러나 엔드투엔드 실패:</b> slab CP-SAT가 큰 베이에서 <b>느려서</b>, 검증된 cross-bay·cum_level이 쓸 <b>예산을 잡아먹음</b>. prob_13: slab-ON 258 vs slab-OFF 10 (150s). gate가 스테이지별 회귀는 막지만 <b>다른 레버에서 뺏긴 예산은 못 막는다.</b> → <code>OGC_SLAB_PACK</code> 기본 OFF로 안전 복원(코드는 opt-in 보존), 51개 테스트 통과.</div>
+<p class="accent"><b>결론:</b> slab의 발목을 잡은 건 capability가 아니라 <b>예산 부족</b>이다. §4의 가속으로 예산을 비우면 slab(및 다른 Z1 레버)이 다시 viable 해진다. <b>그래서 "낭비 정리/가속"이 Goal 1의 열쇠다.</b></p>
+</div>
+
+<!-- ============================================================= -->
+<h2>6. 세 목표는 분리돼 있지 않다</h2>
+<div class="panel">
+<div class="step">
+  <div class="stepbox"><div class="s">Goal 2</div><div class="z good">예산 확보</div></div>
+  <span class="arrow">→</span>
+  <div class="stepbox"><div class="s">Goal 1</div><div class="z accent">Z1=0 레버 감당</div></div>
+  <span class="arrow">+</span>
+  <div class="stepbox"><div class="s">분산↓</div><div class="z">결과 안정</div></div>
+  <span class="arrow">→</span>
+  <div class="stepbox"><div class="s">Goal 3</div><div class="z slabc">Z2·Z3 여유</div></div>
+</div>
+<ul>
+<li><b>Goal 2(가속)</b>가 낭비 178s를 회수 → Goal 1의 무거운 레버 재원 + search 분산 축소로 결과 안정.</li>
+<li><b>Goal 1</b>이 Z1 floor에 닿으면, <b>Goal 3</b>(특히 prob_20 Z3=10400, 목적의 80%)가 <code>nb</code> 순위를 가른다.</li>
+</ul>
+<p class="accent"><b>권장 수순: ① seed 디코드 병렬화(가속·예산확보) → ② 그 예산으로 slab 등 Z1 레버 재투입 → ③ Z3 정리.</b></p>
+</div>
+
+<p class="note" style="margin-top:30px">생성: 자체 분석 툴킷 · 공식 <code>check_feasibility</code> 채점 · solo 4core 300s. 데이터 출처 <code>results/z1_trajectory.json</code>, <code>results/trace_*.json</code>.</p>
+
+</div>
+
+<script>
+const TIMING = { // prob_20, slab-OFF, 300s
+  total: 296.1,
+  stages: [
+    {name:"seeds_decode", t:178.2, kind:"waste", note:"독립 씨앗 5개 1코어 순차 디코드"},
+    {name:"cum_level",    t:70.2, kind:"lever", note:"수요평탄화 재디코드 (Z1 주력 레버)"},
+    {name:"search",       t:17.0, kind:"ok",    note:"4코어 병렬 multistart"},
+    {name:"crossbay_relocate", t:15.0, kind:"lever", note:"과부하 베이 재배정"},
+    {name:"bbox_pack",    t:10.7, kind:"lever", note:"per-bay 2D CP-SAT"},
+    {name:"bbox_pack2",   t:3.5, kind:"lever",  note:"재배정 후 재패킹"},
+    {name:"cpsat_timing", t:0.8, kind:"ok",     note:"고정레이아웃 최적 타이밍"},
+    {name:"cpsat_seed",   t:0.6, kind:"ok",     note:""},
+  ]
+};
+// Per-stage Z1 trajectory. prob_20 from measured STAGE_OBJ (weighted-obj chain +
+// Z1 endpoints). prob_13/14 injected from results/z1_trajectory.json when ready.
+let TRAJ = {
+  "prob_20  (300블록·5베이)": {z1:[
+    {stage:"search incumbent", z1:424, t:"196s"},
+    {stage:"cum_level", z1:246, t:"+70s"},
+    {stage:"cpsat_timing", z1:231, t:"+1s"},
+    {stage:"bbox_pack", z1:71,  t:"+11s"},
+    {stage:"cross-bay", z1:15,  t:"+15s"},
+    {stage:"bbox_pack2", z1:11, t:"+4s"},
+    {stage:"final", z1:11, t:""},
+  ], note:"낭비 명확: seeds_decode 178s가 형편없는 Z1=424를 만들고, 그 뒤 Z1 레버 100s가 11까지 내림. 178s가 핵심 낭비 → 이번에 fold 대상."},
+  "prob_13  (250블록·4베이)": {z1:[
+    {stage:"search incumbent", z1:2859, t:""},
+    {stage:"cum_level", z1:25, t:"+188s"},
+    {stage:"bbox_pack", z1:10, t:"+80s"},
+    {stage:"final", z1:10, t:""},
+  ], note:"여기선 seeds_decode≈0. 대신 cum_level이 188s 써서 2859→25로 끌어내리는 주력 레버. bbox_pack 80s가 10까지. 시간이 Z1 레버에 잘 쓰임(낭비 아님)."},
+  "prob_14  (250블록·4베이)": {z1:[
+    {stage:"search incumbent", z1:5222, t:""},
+    {stage:"cum_level", z1:17, t:"+178s"},
+    {stage:"bbox_pack", z1:11, t:"+9s"},
+    {stage:"cross-bay", z1:4, t:"+4s"},
+    {stage:"final", z1:4, t:""},
+  ], note:"prob_13과 동일 패턴: cum_level 178s가 5222→17 주력, bbox_pack+cross-bay가 4까지."}
+};
+
+function renderTiming(){
+  const el=document.getElementById('timingbars');
+  const max=Math.max(...TIMING.stages.map(s=>s.t));
+  const col={waste:'var(--bad)',lever:'var(--good)',ok:'var(--accent)'};
+  el.innerHTML = TIMING.stages.map(s=>{
+    const w=Math.max(2,(s.t/max)*640);
+    return `<div class="barrow"><span class="lab">${s.name}</span>`+
+      `<span class="bar" style="width:${w}px;background:${col[s.kind]}"></span>`+
+      `<span class="val">${s.t}s</span>`+
+      `<span class="note">${s.note}</span></div>`;
+  }).join('') +
+  `<p class="note" style="margin-top:8px">합계 ${TIMING.total}s · <span style="color:var(--bad)">■</span> 낭비후보 <span style="color:var(--good)">■</span> Z1 레버 <span style="color:var(--accent)">■</span> 기타</p>`;
+}
+function renderTraj(){
+  const el=document.getElementById('trajectories');
+  el.innerHTML = Object.entries(TRAJ).map(([inst,d])=>{
+    const steps = d.z1.map((s,i)=>{
+      const cls = s.z1===0?'good':(i===d.z1.length-1?'znz':'');
+      return (i?`<span class="arrow">→</span>`:'')+
+        `<div class="stepbox"><div class="s">${s.stage}${s.t?'<br><span style="opacity:.6">'+s.t+'</span>':''}</div>`+
+        `<div class="z ${cls}">Z1=${s.z1}</div></div>`;
+    }).join('');
+    return `<div class="panel"><h3>${inst}</h3><div class="step">${steps}</div>`+
+      `<p class="note">${d.note}</p></div>`;
+  }).join('');
+}
+renderTiming(); renderTraj();
+</script>
+</body>
+</html>

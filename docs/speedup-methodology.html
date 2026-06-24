@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC2026 — 계산 효율화 방법론 (600s → 100s, 6× 가속)</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--panel2:#1c2430;--line:#30363d;
+    --fg:#e6edf3;--muted:#9aa6b2;--accent:#58a6ff;--good:#3fb950;
+    --warn:#d29922;--bad:#f85149;--p1:#bc8cff;--p2:#39c5cf;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:15px/1.65 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:34px 24px 90px}
+  h1{font-size:27px;margin:0 0 4px}
+  h2{font-size:21px;margin:42px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+  h3{font-size:17px;margin:20px 0 6px}
+  .sub{color:var(--muted);margin:0 0 6px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600}
+  code{background:#0a0e14;padding:1px 5px;border-radius:4px;font-size:12.5px;color:#c9d1d9}
+  .kpi{text-align:center;padding:10px}
+  .kpi .big{font-size:30px;font-weight:700}
+  .kpi .lab{color:var(--muted);font-size:12px}
+  ul{margin:6px 0 8px 2px;padding-left:20px} li{margin:5px 0}
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11.5px;border:1px solid var(--line)}
+  .s5{background:rgba(63,185,80,.14);color:var(--good);border-color:#22612f}
+  .s4{background:rgba(57,197,207,.13);color:var(--p2);border-color:#176b71}
+  .s3{background:rgba(210,153,34,.13);color:var(--warn);border-color:#7a5b18}
+  .s2{background:rgba(188,140,255,.13);color:var(--p1);border-color:#5a3b8a}
+  .bad{color:var(--bad)} .good{color:var(--good)} .accent{color:var(--accent)} .warn{color:var(--warn)}
+  .meth{border-left:3px solid var(--accent);background:var(--panel2);border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0}
+  .meth.top{border-left-color:var(--good)}
+  .meth h3{margin-top:0}
+  .tags{margin:6px 0}
+  .tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:5px;background:#0a0e14;border:1px solid var(--line);margin-right:5px;color:var(--muted)}
+  .barwrap{background:#0a0e14;border-radius:5px;height:20px;position:relative;margin:3px 0}
+  .bar{height:20px;border-radius:5px;position:absolute;left:0;top:0}
+  .hl{background:rgba(248,81,73,.10);border-left:3px solid var(--bad);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+  .hlg{background:rgba(63,185,80,.08);border-left:3px solid var(--good);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+  .note{color:var(--muted);font-size:13px}
+  .roadmap{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:10px 0}
+  .rstep{flex:1;min-width:150px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .rstep .x{font-size:22px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>계산 효율화 방법론 — 600초 성능을 100초 이내로</h1>
+<p class="sub">OGC2026 조선소 패킹·스케줄링 솔버 가속 설계. 모든 진단은 자체 계측(<code>[STAGE_TIMING]/[STAGE_OBJ]</code>)으로 측정한 실측치 기반. 목표 = <b>6× 가속</b> (벽시계 600s 품질 → ~100s). 작성 2026-06-07.</p>
+
+<div class="panel grid2">
+  <div class="kpi"><div class="big accent">6×</div><div class="lab">목표 가속 (600s → 100s)</div></div>
+  <div class="kpi"><div class="big good">디코드</div><div class="lab">최대 레버 — 앞단계 178s이자 cum_level/bbox 내부 엔진</div></div>
+</div>
+
+<!-- ============================================================ -->
+<h2>1. 시간은 어디로 가나 (prob_20, 300블록·5베이, 측정)</h2>
+<div class="panel">
+<table>
+<thead><tr><th>단계</th><th>시간(s)</th><th>무엇</th><th>비용 성질</th></tr></thead>
+<tbody>
+<tr><td>seeds_decode</td><td class="bad">178</td><td>씨앗 배정의 crane-safe 디코드 (예산한도까지 채움)</td><td>per-bay O(k³) 기하반복</td></tr>
+<tr><td>cum_level</td><td class="warn">70~188</td><td>per-bay 수요평탄화 CP-SAT + 그리디 재디코드 (주력 Z1 레버)</td><td>CP-SAT + 디코드</td></tr>
+<tr><td>bbox_pack</td><td>11~80</td><td>per-bay 2D 패킹 CP-SAT</td><td>CP-SAT</td></tr>
+<tr><td>cross-bay</td><td>15</td><td>과부하 베이 재배정 + 재디코드</td><td>디코드</td></tr>
+<tr><td>search(병렬)</td><td>17</td><td>4코어 multistart (로컬서치)</td><td>병렬 디코드+서치</td></tr>
+</tbody>
+</table>
+<p class="note">두 가지 시간 패턴: <b>prob_20</b>=디코드(seeds 178s)가 압도 / <b>prob_13·14</b>=seeds≈0, 대신 <b>cum_level 178~188s</b>가 압도. <b>공통 분모 = "crane-safe 디코드"가 모든 무거운 단계의 엔진</b>이다.</p>
+</div>
+
+<div class="hl"><b>측정된 함정 (반드시 피할 것):</b> 앞 디코드를 무작정 줄이면 망한다. 예산을 앞60s/뒤240s로 극단배분하니 prob_20 Z1=<b class="bad">320</b> (정상 11). 디코드가 "쓸만한 출발점"을 만들 최소 시간이 필요. 또 씨앗을 단순 제거(fold)해도 시간 안 줄었음(178→174s) — 한 개의 bounded 디코드가 창을 채우기 때문. <b>= 진짜 레버는 "디코드 자체를 빠르게"이지 "디코드를 건너뛰기"가 아니다.</b></p></div>
+
+<!-- ============================================================ -->
+<h2>2. 가속 방법론 (영향순)</h2>
+
+<!-- METHOD 1 -->
+<div class="meth top">
+<h3>① crane-safe 디코드 엔진 가속 <span class="pill s5">최대 레버 · 2~4× 단독</span></h3>
+<div class="tags"><span class="tag">영향: ★★★★★</span><span class="tag">난이도: 중~상</span><span class="tag">리스크: 기하 정밀도</span></div>
+<p>디코드는 <b>앞단계 178s이자 cum_level·cross-bay 재디코드의 내부 엔진</b>이다. 한 번 5~10× 빨라지면 파이프라인 전체가 연쇄 가속된다. 현재 디코드는 베이마다 블록쌍에 대해 <code>check_entry/check_exit</code>(shapely 기하)를 <b>매 디코드마다 새로</b> 호출 → per-bay ≈ O(k³) (k=베이당 블록수).</p>
+<p><b>(a) 시간독립 기하 precompute.</b> 두 블록의 crane(j≥k) 관계·충돌은 <b>위치(x,y,orient)에만 의존하고 시간과 무관</b>하다. 지금은 디코드 루프 안에서 매번 shapely로 재계산. <b>레이아웃당 쌍별 관계행렬(5 boolean: obs_entry/obs_exit/retro_entry/retro_exit/collide)을 1회 precompute</b>하면, per-bay 스케줄링이 순수 정수 interval 로직이 되어 루프에서 shapely가 사라진다. (메모리 <code>z1-feasibility-floor</code>에 이미 지적된 구조 — 미구현.)</p>
+<p><b>(b) 증분 재디코드.</b> cum_level·cross-bay는 <b>소수 베이만</b> 건드린다. 5개 베이 전부 재디코드 말고 바뀐 베이만. <code>_decode_cached</code> 골격이 이미 있음 → 확장.</p>
+<p><b>(c) 기하 prefilter.</b> shapely Polygon 연산은 느리다. <b>bbox 겹침 STRtree prefilter</b> → bbox가 겹치는 쌍에만 shapely 호출. resolved 폴리곤 캐시.</p>
+<p class="good">예상: 디코드 5~10× → seeds 178s→~25s, cum_level 재디코드 동일비율. <b>단독 전체 2~4×.</b></p>
+</div>
+
+<!-- METHOD 2 -->
+<div class="meth top">
+<h3>② per-bay 서브문제 4코어 병렬화 <span class="pill s4">1.5~3× · 인프라 존재</span></h3>
+<div class="tags"><span class="tag">영향: ★★★★</span><span class="tag">난이도: 중</span><span class="tag">리스크: 오버서브스크립션</span></div>
+<p>cum_level·bbox_pack은 베이별로 <b>독립</b> CP-SAT인데 <b>순차</b> 실행. 평가서버 4코어 → 5베이를 4코어에 fan-out하면 그 단계가 ~4×. <code>run_parallel_cumlevel</code> 인프라가 이미 있으나 폐기 상태 → ①의 빠른 디코드와 함께 부활.</p>
+<p class="warn">주의: 베이별 CP-SAT를 <b>1-thread</b>로 두고 4베이 병렬(=4코어)해야 함. 현재처럼 베이별 4-thread CP-SAT를 또 병렬하면 16-way 오버서브스크립션 → 역효과.</p>
+<p class="good">예상: cum_level 70~188s→~25~50s, bbox 80s→~25s.</p>
+</div>
+
+<!-- METHOD 3 -->
+<div class="meth">
+<h3>③ CP-SAT 조기종료 + 타이트 캡 <span class="pill s4">1.3~2× · 저위험</span></h3>
+<div class="tags"><span class="tag">영향: ★★★★</span><span class="tag">난이도: 하~중</span><span class="tag">리스크: 과조기종료시 품질↓</span></div>
+<p>현재 per-bay CP-SAT는 부여된 시간 캡까지 돈다. (a) <b>OPTIMAL 증명 즉시 종료</b>(CP-SAT status), (b) <b>개선정체 N초면 중단</b>(stop_after_no_improvement), (c) <b>현재 레이아웃으로 강한 warm-start</b> → 빠른 수렴, (d) 더 많은 변수 고정(이미 풀린 베이는 동결). tardiness=0은 Z1의 전역최소라 도달 즉시 그 베이 종료.</p>
+<p class="good">예상: CP-SAT 단계들 30~50% 절감 (대부분 일찍 수렴).</p>
+</div>
+
+<!-- METHOD 4 -->
+<div class="meth">
+<h3>④ 수렴 기반 조기종료 (단계 레벨) <span class="pill s4">1.5~3× on cum_level</span></h3>
+<div class="tags"><span class="tag">영향: ★★★★</span><span class="tag">난이도: 중</span><span class="tag">리스크: 수렴추적 정확도</span></div>
+<p>측정: cum_level은 <b>초반에 대부분의 일</b>을 한다 (prob_14: Z1 5222→17). 후반은 한계효용 급감. <b>개선율(ΔZ1/Δt)이 임계 아래로 떨어지면 다음 단계로</b>. + 이미 구현한 <b><code>OGC_EXIT_ON_Z1_ZERO</code></b>(Z1=0 도달 즉시 남은 레버 스킵·반환) — 평가서버 timeout=−1 위험도 동시 감소.</p>
+<p class="good">예상: cum_level 188s→~60s (작업의 80%가 앞 1/3에서 발생).</p>
+</div>
+
+<!-- METHOD 5 -->
+<div class="meth">
+<h3>⑤ 실행분산 제거 (결정화) <span class="pill s3">실효속도 · 신뢰성</span></h3>
+<div class="tags"><span class="tag">영향: ★★★</span><span class="tag">난이도: 중</span><span class="tag">리스크: 결정모드는 더 느릴 수도</span></div>
+<p>모든 CP-SAT가 <code>num_search_workers=4</code> → <b>멀티스레드 비결정성</b>. 같은 prob_20이 실행마다 {2,8,11,17,20,320,530}로 진동. 결과: (1) 제출이 도박, (2) 조기종료 신뢰 불가. 대안: CP-SAT <code>random_seed</code> 고정 + 결정모드, 또는 <b>독립basin 포트폴리오 keep-best</b>(이미 일부 존재). 분산이 줄면 "운 나쁜 긴 런"이 사라져 실효 속도·안정성↑.</p>
+</div>
+
+<!-- METHOD 6 -->
+<div class="meth">
+<h3>⑥ 예산 재배분 — 단, 균형점 <span class="pill s3">측정 완료</span></h3>
+<div class="tags"><span class="tag">영향: ★★★</span><span class="tag">난이도: 하 (knob)</span><span class="tag">리스크: 극단배분 금지</span></div>
+<p>측정(prob_20 @300s): 앞/뒤 시간 배분에 <b>스위트 스팟</b>이 있다.</p>
+<table style="margin-top:6px">
+<thead><tr><th>배분</th><th>앞(디코드)</th><th>뒤(레버)</th><th>Z1</th></tr></thead>
+<tbody>
+<tr><td>default</td><td>197s</td><td>101s</td><td>11</td></tr>
+<tr><td>mid</td><td>143s</td><td>155s</td><td class="good">8 ✅</td></tr>
+<tr><td>aggr</td><td>60s</td><td>238s</td><td class="bad">320 ❌</td></tr>
+</tbody>
+</table>
+<p>뒤에 더 주면 좋아지나(11→8), 앞을 60s로 굶기면 출발점이 망가져 폭망(320). <b>=① 디코드를 빠르게 만들면 같은 앞-품질을 더 짧은 시간에 얻어 이 스위트 스팟이 통째로 왼쪽으로 이동</b>(핵심 시너지).</p>
+</div>
+
+<!-- METHOD 7 -->
+<div class="meth">
+<h3>⑦ 구현 레벨 (Python 핫루프) <span class="pill s2">10~30%</span></h3>
+<div class="tags"><span class="tag">영향: ★★</span><span class="tag">난이도: 중</span></div>
+<p>디코드/체크가 순수 Python. (a) numpy 벡터화(bbox 겹침·면적), (b) <code>_results_from_solution</code> 라운드트립(솔루션 dict↔내부구조 왕복) 제거, (c) 폴리곤·면적 캐시(블록당 1회), (d) 불필요한 재채점 제거.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. 누적 로드맵 — 어떻게 6×에 도달하나</h2>
+<p class="sub">곱셈적 효과. ①이 모든 디코드를 빠르게 → ②가 병렬로 → ③④가 일찍 끊음. 보수적 추정:</p>
+<div class="roadmap">
+  <div class="rstep"><div class="x good">2~4×</div>① 디코드 엔진<br><span class="note">precompute+증분+prefilter</span></div>
+  <div class="rstep"><div class="x" style="color:var(--p2)">×1.5~2×</div>② per-bay 병렬<br><span class="note">cum_level·bbox 4코어</span></div>
+  <div class="rstep"><div class="x warn">×1.3~1.5×</div>③④ CP-SAT/수렴 조기종료<br><span class="note">정체·OPTIMAL·Z1=0</span></div>
+  <div class="rstep"><div class="x" style="color:var(--p1)">품질</div>⑤⑥ 분산↓·배분<br><span class="note">스위트 스팟 좌이동</span></div>
+</div>
+<div class="hlg"><b>보수적 곱:</b> 3× × 1.7× × 1.4× ≈ <b>7×</b> → 600s급 품질을 <b>~85s</b>에. ①②만 제대로 해도 4~5× (120~150s)로 평가서버 단일 인스턴스 예산 안에 600s급 진입.</div>
+
+<!-- ============================================================ -->
+<h2>4. 권장 실행 순서</h2>
+<div class="panel">
+<ol>
+<li><b>①(a) 시간독립 기하 precompute부터.</b> 단일 최대 레버이고, ②④의 효과까지 키운다. 먼저 디코드를 격리 벤치(인스턴스 1개, 기하 정밀도를 공식 <code>check_feasibility</code>로 대조)해 5~10× 확인 후 통합.</li>
+<li><b>②(per-bay 병렬)</b>를 빠른 디코드 위에 부활 — <code>run_parallel_cumlevel</code>을 1-thread CP-SAT로.</li>
+<li><b>③④(조기종료)</b> — 저위험. <code>OGC_EXIT_ON_Z1_ZERO</code>는 구현됨, 수렴캡 추가.</li>
+<li><b>⑥(배분)</b>은 ① 이후 재측정 (스위트 스팟이 이동하므로).</li>
+<li><b>⑤(결정화)</b>는 마지막 — 정확한 벤치를 위한 기반(분산 제거가 측정 신뢰도도 올림).</li>
+</ol>
+<p class="note">전 과정 게이트(<code>check_feasibility</code> + strict-improve) 유지 → 가속이 정답을 바꾸지 못함(−1·회귀 불가). 각 변경은 격리 A/B + <b>solo</b> 측정(멀티런 평균, 분산 때문).</p>
+</div>
+
+<p class="note" style="margin-top:28px">근거 데이터: <code>results/z1_trajectory.json</code>, <code>results/_realloc.log</code>, <code>[STAGE_TIMING]/[STAGE_OBJ]</code> 계측. 코드 앵커: 디코드 <code>src/myalgorithm.py:378~437</code>(쌍별 crane check), CP-SAT <code>num_search_workers=4</code>(1411/2372/2468/3012), per-bay 루프 <code>_decode_assignment:1473</code>.</p>
+
+</div>
+</body>
+</html>

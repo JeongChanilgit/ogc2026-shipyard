@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overnight moveall-lever experiments — 2026-06-24</title>
+<style>
+  :root{--bg:#0f1115;--panel:#181b22;--ink:#e6e9ef;--muted:#9aa3b2;--line:#2a2f3a;
+        --win:#3fb950;--bad:#f85149;--neut:#d29922;--accent:#58a6ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  h1{font-size:25px;margin:0 0 4px} h2{font-size:18px;margin:34px 0 10px;color:var(--accent)}
+  .sub{color:var(--muted);margin:0 0 22px}
+  .verdict{background:#1d130f;border:1px solid #6e2b21;border-radius:12px;padding:18px 20px;margin:18px 0}
+  .verdict b{color:var(--bad)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0}
+  th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600;border-bottom:1px solid #3a4150}
+  .win{color:var(--win)} .bad{color:var(--bad)} .neut{color:var(--neut)} .mut{color:var(--muted)}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .H{font-weight:700} .ok{color:var(--win)} .no{color:var(--bad)} .meh{color:var(--neut)}
+  ul{margin:6px 0 6px 0;padding-left:20px} li{margin:3px 0}
+  code{background:#11141a;padding:1px 5px;border-radius:5px;font-size:12.5px}
+</style></head><body><div class="wrap">
+
+<h1>Overnight moveall-lever experiments</h1>
+<p class="sub">2026-06-24 01:23→02:45 · set2 FULL=38·33·30 (full matrix) + GEN=29·25 · CONV_TL=500s · 격리 testbed (모든 게이트 기본 OFF, 프로덕션 무영향)</p>
+
+<div class="verdict">
+<b>판정: moveall 강화 전부 falsified — moveall은 천장. 피벗 권고.</b><br>
+수렴해(CONV = 인라인 moveall 이미 돈 프로덕션 동치) 위에서 어떤 강화도 baseline을
+robust하게 못 넘었다. destretime이 baseline=0인 곳에서만 ~5K(set2 271.93M의 <b>0.002%</b>, CP-SAT
+노이즈 ±130K보다 작음) 깎고, baseline이 생산적인 prob_38에선 209K→79K로 <b>오히려 더 나쁨</b>.
+pref·ordering·예산증가는 효과 0. → moveall 미세튜닝 종료, per-bay 밀도 / never−1 검증으로 피벗.
+</div>
+
+<h2>1. 중심 질문에 대한 답</h2>
+<div class="card"><b>Q. moveall 계열에 수렴해 위에서 총 obj를 robust하게 깎는 강화가 있는가?</b>
+<br><b class="no">A. 없다.</b> 강화가 baseline을 이기는 유일한 경우는 baseline=0(이미 saturated)인 곳뿐이고,
+그 이득은 ~5K(노이즈 이하). baseline이 일하는 곳(prob_38)에선 강화가 더 적게 찾는다.</div>
+
+<h2>2. CONV (수렴해) 결과 — 의사결정 지점</h2>
+<table>
+<tr><th>인스턴스</th><th>CONV obj</th><th>baseline</th><th>+pref</th><th>+destretime</th><th>order area/copres</th><th>+dr @120/180s</th><th>+dr ×3 누적</th></tr>
+<tr><td>prob_38</td><td class="mono">56,009,936</td><td class="mono win">Δ209,732 (3)</td><td class="mono mut">=209,732</td><td class="mono bad">79,567 (1)</td><td class="mono mut">=209,732</td><td class="mono mut">79,567</td><td class="mono mut">79,567 (1패스)</td></tr>
+<tr><td>prob_33 <span class="tag">완전포화</span></td><td class="mono">10,421,024</td><td class="mono mut">0</td><td class="mono mut">0</td><td class="mono mut">0</td><td class="mono mut">0</td><td class="mono mut">0</td><td class="mono mut">0</td></tr>
+<tr><td>prob_30</td><td class="mono">5,327,228</td><td class="mono mut">0</td><td class="mono mut">0</td><td class="mono win">5,654 (1)</td><td class="mono mut">0</td><td class="mono mut">5,654</td><td class="mono mut">5,654 (1패스)</td></tr>
+<tr><td>prob_29 <span class="tag">z1≈0</span></td><td class="mono">523,104</td><td class="mono mut">0</td><td class="mono mut">—</td><td class="mono mut">0</td><td class="mono mut">—</td><td class="mono mut">—</td><td class="mono mut">—</td></tr>
+<tr><td>prob_25</td><td class="mono">389,465</td><td class="mono mut">0</td><td class="mono mut">0</td><td class="mono win">5,399 (1)</td><td class="mono mut">—</td><td class="mono mut">—</td><td class="mono mut">—</td></tr>
+</table>
+<p class="mut" style="font-size:12.5px">괄호=accepts. destretime net vs baseline: prob_38 <span class="bad">−130K</span>, prob_30 <span class="win">+5.6K</span>, prob_25 <span class="win">+5.4K</span>, 나머지 0 →
+교체 시 <b class="bad">−119K</b>, 가산 시 <b class="meh">+11K</b>(노이즈 이하).</p>
+
+<h2>3. 가설 판정</h2>
+<div class="card">
+<ul>
+<li><span class="H">H1 destretime saturation-break</span> — <span class="meh">PARTIAL/약함</span>: baseline=0인 곳에서만 ~5K, baseline 생산적인 곳선 더 나쁨. robust win 아님.</li>
+<li><span class="H">H2 pref (선호베이 우선)</span> — <span class="no">FALSIFIED</span>: 모든 인스턴스에서 baseline과 <b>완전 동일</b>(효과 0).</li>
+<li><span class="H">H3 ordering (area/copres)</span> — <span class="no">FALSIFIED</span>: tardy 순서와 결과 동일(효과 0). worst-tardy-first가 이미 충분.</li>
+<li><span class="H">H4 budget 민감도</span> — <span class="no">FALSIFIED</span>: 60→120→180s 추가이득 0. destretime은 예산기아 아니라 saturation-bound.</li>
+<li><span class="H">H5 loop/saturation (반복)</span> — <span class="no">no compounding</span>: +destretime이 정확히 1패스 후 0(iter2/3=0). in-loop 가치 = 1샷 ~5K.</li>
+<li><span class="H">H6 density floor (피벗 진단)</span> — <span class="ok">확인</span>: 병목 베이 util ≥100%(bbox) = 진짜 패킹밀도 한계.</li>
+</ul></div>
+
+<h2>4. 밀도 진단 (CONV, peak concurrent bbox area ÷ bay area)</h2>
+<table>
+<tr><th>인스턴스</th><th>bay util (병목 굵게)</th><th>해석</th></tr>
+<tr><td>prob_38</td><td class="mono">100% / <b>112%</b> / 109%</td><td class="mut">전 베이 포화 → 크로스베이·moveall 갈 데 없음</td></tr>
+<tr><td>prob_33</td><td class="mono"><b>109%</b> / 96% / <b>109%</b></td><td class="mut">완전포화 (모든 변형 0)</td></tr>
+<tr><td>prob_30</td><td class="mono"><b>110%</b> / 104%</td><td class="mut">포화 (destretime 1무브만)</td></tr>
+<tr><td>prob_29</td><td class="mono">95% / 62% / 76%</td><td class="mut">여유 있으나 z1≈0 (고칠 지각 없음)</td></tr>
+<tr><td>prob_25</td><td class="mono">92% / <b>118%</b></td><td class="mut">bay1 포화, bay0 여유</td></tr>
+</table>
+<p class="mut" style="font-size:12.5px">util>100% = 폴리곤 인터록(bbox 중첩)으로 이미 빽빽. 병목 베이는 peak concurrent footprint가 베이 면적에 도달/초과 = <b>구조적 패킹밀도 한계</b>. z1이 큰 곳은 전부 포화 베이, 여유 있는 곳(29 bay1/2)은 이미 z1≈0.</p>
+
+<h2>5. 부가 발견 (액션 아님)</h2>
+<div class="card">prob_38 baseline이 500s-수렴해에서도 209K를 추가로 깎음 → CONV가 moveall 고정점이 <b>아님</b>.
+이건 새 레버가 아니라 "arsenal 루프를 더 오래 돌리면 스스로 찾음"일 뿐(운영 TL이 길수록 자동 회수).
+moveall 알고리즘 자체는 멀쩡하고 <b>루프 예산</b>에만 묶임. 강화 대상 아님.</div>
+
+<h2>6. 권고 (아침 결정용)</h2>
+<div class="card">
+<ul>
+<li><b>moveall 강화 트랙 종료.</b> pref/ordering/destretime/budget 게이트 <b>전부 OFF 유지</b>(이미 기본 OFF, dormant). 프로덕션 무변경. 재시도 금지.</li>
+<li><b>벽 = per-bay 패킹밀도</b> 재확인(util ≥100%). 직전 세션 크로스베이 falsified와 일관. 밀도는 root 레버지만 우리 패커 이미 경쟁력(메모리: 27 vs 천장 33), NFP 폴리곤 네스팅 난도 높음.</li>
+<li><b>진짜 점수 게임 = never−1</b>(≈+R/2, 메모리 z1-localization). 프로덕션은 set2 271.93M(경쟁자 +7.89M), feasible 40/40. → 권고 다음 작업: <b>ALL40 운영/짧은 TL never−1 검증 + 제출 굳히기</b> (obj 미세개선이 아니라).</li>
+</ul></div>
+
+<p class="mut" style="font-size:12px;margin-top:30px">데이터: <code>_overnight_ledger.md</code> · 상세 로그 <code>_overnight.log</code> · 계획 <code>_overnight_plan.md</code> · 러너 <code>_overnight_runner.py</code></p>
+</div></body></html>

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 CP-SAT 작동원리·아키텍처 — CP-SAT Methodology</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html" class="active">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <div class="kicker">CP-SAT Methodology · Chapter 01</div>
+    <h1>CP-SAT 작동원리 &amp; 아키텍처</h1>
+    <p class="lead">
+      Google OR-Tools의 CP-SAT는 <strong>SAT 기반 Constraint Programming</strong> 솔버다.
+      Lazy Clause Generation(LCG), LP relaxation, 병렬 포트폴리오, 완전 정수 도메인을 결합해
+      MiniZinc Challenge 2024 전 부문 금메달을 석권했다. 이 페이지는 솔버의 내부 구조를 단계별로 해부한다.
+    </p>
+  </header>
+
+  <!-- ===== OGC2026 callout ===== -->
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 — 조선소 블록 배치 관련성</div>
+    <p>
+      OGC 2026 문제는 <strong>2D 이형 폴리곤 패킹 + 단일머신 지연(tardiness) 최소화 + 베이 배정 + 크레인 수직접근(j ≥ k) 제약</strong>이 결합된 NP-hard 복합 문제다.
+      평가 서버 환경(4 CPU 코어, 16 GB, 수 분~30분 벽시계)은 CP-SAT의 병렬 포트폴리오가 직접 매핑되는 환경이다.
+    </p>
+    <ul>
+      <li><strong>타이밍 서브문제</strong>: 위치를 고정한 뒤 블록별 ENTRY/EXIT 시각을 최적화하는 1-D 비겹침 스케줄링 문제는 CP-SAT <code>NoOverlap</code> + <code>IntervalVar</code>로 정확하게 표현되며, LP relaxation이 bounds를 빠르게 조인다.</li>
+      <li><strong>크레인 제약(j ≥ k)</strong>: 동일 베이 내 스택된 블록은 위에 있는 블록이 먼저 출고되어야 한다는 우선순위 제약 — CP-SAT의 precedence constraint(<code>model.Add(exit_j &lt;= entry_k)</code>)로 정확히 모델링 가능하다.</li>
+      <li><strong>4-코어 병렬 활용</strong>: <code>solver.parameters.num_workers = 4</code>로 설정하면 CP search / LP / LNS 워커를 동시 활용한다. <code>src/baypack_cp.py</code>의 per-bay CP-SAT timing oracle이 이 구조다.</li>
+      <li><strong>정수 스케일링</strong>: 시각(부동소수)을 분 또는 초 단위 정수로 미리 변환해야 CP-SAT 도메인에 입력 가능하다.</li>
+    </ul>
+  </div>
+
+  <!-- ===== 1. CP-SAT란 무엇인가 ===== -->
+  <h2>1. CP-SAT란 무엇인가</h2>
+  <p>
+    CP-SAT는 <strong>Constraint Programming(CP)과 Boolean SAT solver를 융합</strong>한 하이브리드 최적화 엔진이다.
+    2011년 Laurent Perron(Google)이 OR-Tools의 일부로 개발했으며, 2017년부터 MiniZinc Challenge에서 최상위권을 유지하고 있다.
+    2024년에는 Fixed / Free / Parallel / Open / Local Search 전 부문에서 금메달을 획득했다.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="num">LAYER 01</div>
+      <h3>SAT Core (CDCL)</h3>
+      <p>Boolean Conflict-Driven Clause Learning. 충돌 분석을 통해 학습된 절(clause)을 축적하며 탐색 공간을 지수적으로 줄인다.</p>
+    </div>
+    <div class="card">
+      <div class="num">LAYER 02</div>
+      <h3>CP Propagators</h3>
+      <p>도메인 기반 제약 전파기(NoOverlap, Cumulative, AllDiff, Circuit…). 각 전파기는 SAT core에 설명 절(explanation clause)을 제공한다.</p>
+    </div>
+    <div class="card">
+      <div class="num">LAYER 03</div>
+      <h3>LP Relaxation (GLOP)</h3>
+      <p>선형 완화 + cutting plane. 정수 최적값의 lower bound를 강화하고, reduced cost fixing으로 변수 도메인을 축소한다.</p>
+    </div>
+    <div class="card">
+      <div class="num">LAYER 04</div>
+      <h3>LNS / ViolationLS</h3>
+      <p>Large Neighborhood Search와 위반 기반 로컬 서치. 현재 최적해를 부분적으로 해제하고 재최적화해 빠른 개선을 이끈다.</p>
+    </div>
+  </div>
+
+  <h3>고전 CP / MIP과의 차이</h3>
+  <table>
+    <thead>
+      <tr><th>관점</th><th>고전 CP</th><th>고전 MIP</th><th>CP-SAT</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>변수 도메인</td>
+        <td>정수, 유한 도메인</td>
+        <td>실수(부동소수) 포함</td>
+        <td><strong>정수 전용</strong> (실수 → 스케일링 필요)</td>
+      </tr>
+      <tr>
+        <td>경계 개선</td>
+        <td>제약 전파만</td>
+        <td>LP relaxation 중심</td>
+        <td>LCG 절 학습 + LP 동시</td>
+      </tr>
+      <tr>
+        <td>학습 기능</td>
+        <td>없음</td>
+        <td>Gomory cut 등 제한적</td>
+        <td>CDCL 절 학습 + 공유</td>
+      </tr>
+      <tr>
+        <td>논리 제약</td>
+        <td>매우 강함</td>
+        <td>Big-M 우회 필요</td>
+        <td>Boolean reification 네이티브</td>
+      </tr>
+      <tr>
+        <td>병렬화</td>
+        <td>솔버마다 다름</td>
+        <td>branch-and-bound 분할</td>
+        <td>포트폴리오(이종 워커 동시 실행)</td>
+      </tr>
+      <tr>
+        <td>스케줄링</td>
+        <td>NoOverlap 전통적 강점</td>
+        <td>Disjunctive 모델 번잡</td>
+        <td>IntervalVar + NoOverlap 최적화</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== 2. Lazy Clause Generation (LCG) ===== -->
+  <h2>2. Lazy Clause Generation (LCG)</h2>
+  <p>
+    LCG는 Peter Stuckey(호주 Melbourne 대학)가 제안한 핵심 기법이다.
+    CP-SAT 마스코트가 오리너구리(platypus)인 이유가 바로 호주 출신 기술이기 때문이다.
+  </p>
+
+  <h3>2.1 Integer Variable의 Boolean 인코딩</h3>
+  <p>
+    CP-SAT는 모든 정수 변수 <code>x ∈ [lb, ub]</code>를 내부적으로 두 종류의 Boolean 리터럴로 인코딩한다:
+  </p>
+  <ul>
+    <li><code>[x == v]</code> — x가 정확히 v인가</li>
+    <li><code>[x ≤ v]</code> — x가 v 이하인가</li>
+  </ul>
+  <p>
+    이 인코딩 덕분에 CP 전파기가 생성하는 도메인 축소를 SAT 절(clause)로 자연스럽게 표현할 수 있다.
+  </p>
+
+  <h3>2.2 전파기의 설명 절 (Explanation Clause)</h3>
+  <p>
+    CP-SAT의 각 전파기(예: NoOverlap)는 왜 도메인을 축소했는지 <strong>설명(explanation)</strong>을 SAT core에 제공한다.
+    예를 들어 <code>[x ≤ 2]</code>와 <code>x ≥ y</code> 제약이 있으면, 전파기는 다음 절을 생성한다:
+  </p>
+  <pre><code>[x ≤ 2] → [y ≤ 2]</code></pre>
+  <p>
+    이 절은 SAT core의 절 데이터베이스에 추가된다. 이후 동일하거나 유사한 부분 배정이 나타나면
+    SAT engine이 CP 전파기를 다시 호출하지 않고도 즉시 추론할 수 있다.
+    이것이 "Lazy"한 이유 — 클라우즈가 <em>필요할 때만</em> 생성된다.
+  </p>
+
+  <h3>2.3 CDCL과의 결합</h3>
+  <p>
+    LCG는 SAT solver의 CDCL(Conflict-Driven Clause Learning) 루프 안에서 동작한다.
+    충돌이 발생하면 CDCL은 설명 절들을 역추적하여 <strong>충돌 절(conflict clause)</strong>을 학습하고,
+    비연대적 역추적(non-chronological backjumping)으로 탐색을 효율화한다.
+    CP-SAT는 SAT VSIDS 휴리스틱으로 Boolean 변수 선택 순서를 결정하며,
+    정수 변수 탐색(분기 방향 결정)은 그 위에서 별도의 CP 탐색 휴리스틱이 담당한다.
+  </p>
+
+  <div class="tip">
+    <div class="ttl">핵심 직관</div>
+    <p>LCG는 "CP 전파기가 SAT 증명기에게 논리적 의미를 설명해 주는 번역기"다.
+    덕분에 CP 솔버가 오랫동안 약했던 lower bound 개선 능력을 SAT의 절 학습이 보완한다.
+    이것이 CP-SAT가 단순 CP보다 탐색 노드를 <strong>1~2 자릿수 수준으로 줄이는</strong> 원리다.</p>
+  </div>
+
+  <!-- ===== 3. 병렬 워커 포트폴리오 ===== -->
+  <h2>3. 병렬 워커 포트폴리오</h2>
+  <p>
+    CP-SAT는 <code>num_workers</code> 파라미터로 병렬 워커 수를 제어하는 <strong>포트폴리오 솔버</strong>다.
+    워커는 서로 독립적으로 동작하지만 <em>공유 메모리</em>를 통해 정보를 교환한다.
+    솔루션의 어떤 부분도 워커 간에 분할하지 않는다 — 각 워커는 <em>전체 문제 공간</em>을 탐색한다.
+  </p>
+
+  <h3>3.1 워커 분류</h3>
+
+  <h4>Full Problem Subsolvers (완전 탐색)</h4>
+  <table>
+    <thead>
+      <tr><th>이름</th><th>역할</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>default_lp</code></td><td>기본 LP linearization + LCG 탐색</td></tr>
+      <tr><td><code>max_lp</code></td><td>최대 LP linearization (더 강한 bounds, 느림)</td></tr>
+      <tr><td><code>no_lp</code></td><td>LP 없이 순수 LCG (LP overhead 없이 빠른 탐색)</td></tr>
+      <tr><td><code>core</code></td><td>UNSAT core 기반 lower bound 향상</td></tr>
+      <tr><td><code>lb_tree_search</code></td><td>lower bound 트리 탐색, 최적성 증명 집중</td></tr>
+      <tr><td><code>pseudo_costs</code></td><td>Pseudo-cost branching (MIP 스타일)</td></tr>
+      <tr><td><code>reduced_costs</code></td><td>LP reduced cost 기반 분기</td></tr>
+      <tr><td><code>objective_lb_search</code></td><td>목적함수 lower bound 집중 탐색</td></tr>
+      <tr><td><code>probing</code></td><td>변수 고정 후 전파 — 강한 presolve 효과</td></tr>
+      <tr><td><code>quick_restart</code></td><td>빈번 재시작으로 다양성 확보</td></tr>
+      <tr><td><code>quick_restart_no_lp</code></td><td>LP 없는 quick restart 변형</td></tr>
+    </tbody>
+  </table>
+
+  <h4>First Solution Subsolvers (초기해 탐색)</h4>
+  <table>
+    <thead>
+      <tr><th>이름</th><th>역할</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>fj_long_default</code></td><td>Feasibility Jump (긴 스텝, 기본 설정)</td></tr>
+      <tr><td><code>fj_short_default</code></td><td>Feasibility Jump (짧은 스텝)</td></tr>
+      <tr><td><code>fs_random</code></td><td>랜덤 초기해 탐색</td></tr>
+      <tr><td><code>fs_random_quick_restart</code></td><td>랜덤 + quick restart 조합</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Incomplete / Heuristic Subsolvers (국소 탐색)</h4>
+  <table>
+    <thead>
+      <tr><th>이름</th><th>역할</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>feasibility_pump</code></td><td>LP 해를 정수해에 근접시키는 펌프 휴리스틱</td></tr>
+      <tr><td><code>rins/rens</code></td><td>Relaxation Induced / Enforced Neighborhood Search</td></tr>
+      <tr><td><code>graph_arc_lns</code></td><td>그래프 아크 기반 LNS neighborhood</td></tr>
+      <tr><td><code>graph_cst_lns</code></td><td>제약 그래프 기반 LNS</td></tr>
+      <tr><td><code>graph_dec_lns</code></td><td>분해 기반 LNS</td></tr>
+      <tr><td><code>graph_var_lns</code></td><td>변수 그래프 기반 LNS</td></tr>
+      <tr><td><code>rnd_cst_lns</code></td><td>랜덤 제약 LNS</td></tr>
+      <tr><td><code>rnd_var_lns</code></td><td>랜덤 변수 LNS</td></tr>
+      <tr><td><code>violation_ls</code></td><td>위반 기반 로컬 서치 (ViolationLS, 2024 신규)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 워커 간 정보 공유 메커니즘</h3>
+  <p>워커들은 공유 메모리의 세 채널을 통해 실시간으로 정보를 교환한다:</p>
+  <ul>
+    <li><strong>SharedClausesManager</strong>: 학습된 Boolean 절(clause)을 공유. 한 워커의 충돌 학습이 다른 워커의 탐색을 즉시 가속.</li>
+    <li><strong>Integer Bound Updates</strong>: 어느 워커든 변수 bound를 좁히면 전체 워커에 전파. 강력한 도메인 축소.</li>
+    <li><strong>Solution Incumbents</strong>: 가능해를 발견하면 전체 워커의 upper bound가 갱신. branch-and-bound pruning 효과 공유.</li>
+  </ul>
+
+  <div class="tip">
+    <div class="ttl">워커 수 지침 (OGC 서버 기준: 4코어)</div>
+    <p>
+      <code>num_workers = 4</code> 설정 시: 워커 2개부터 LNS(heuristic)가 활성화, 5개부터 first-solution solver 별도 추가.
+      4코어 환경에서는 <code>default_lp</code> + <code>no_lp</code> + LNS 2개가 균형 잡힌 포트폴리오를 형성한다.
+      OGC 2026 타이밍 oracle에서는 <code>num_workers = 4</code>가 실제 측정 최적값이었다.
+    </p>
+  </div>
+
+  <h3>3.3 워커 수에 따른 활성 솔버 변화</h3>
+  <pre><code class="python"># num_workers에 따라 활성 워커가 달라진다
+from ortools.sat.python import cp_model
+
+solver = cp_model.CpSolver()
+solver.parameters.num_workers = 4  <span class="cmt"># OGC 서버 = 4코어</span>
+
+# 1 worker  : default_lp 단독 (LP+LCG)
+# 2 workers : + LNS 워커 1개 추가
+# 5 workers : + first-solution 전용 워커
+# 8 workers : + core, max_lp, lb_tree_search 등 추가
+# 32 workers: 전체 15개 full subsolver 모두 활성</code></pre>
+
+  <!-- ===== 4. Presolve ===== -->
+  <h2>4. Presolve</h2>
+  <p>
+    CP-SAT는 실제 탐색 전에 <code>CpModelPresolver</code>를 통한 강력한 사전 단순화를 수행한다.
+    Presolve는 <code>cp_model_presolve = true</code>(기본값)로 항상 활성화된다.
+  </p>
+
+  <h3>4.1 주요 Presolve 단계</h3>
+  <ol>
+    <li><strong>도메인 축소</strong>: 제약 전파로 변수 도메인 초기 축소. <code>[x ∈ [0,10]]</code>가 <code>[x ∈ [3,7]]</code>로 줄어들 수 있음.</li>
+    <li><strong>변수 대체 (Variable Substitution)</strong>: <code>y = 2x + 3</code> 형태의 어파인 관계를 발견하면 변수 하나를 제거.</li>
+    <li><strong>제약 단순화</strong>: 자동 참(tautology) 또는 도메인 내 항등 제약 제거.</li>
+    <li><strong>Probing</strong>: Boolean 변수를 0 또는 1로 임시 고정 후 전파. 묵시적 implication을 발견.</li>
+    <li><strong>이중(Dual) 감소</strong>: 목적함수 관점에서 단방향으로만 영향을 주는 변수를 최적화 방향으로 고정.</li>
+    <li><strong>SAT Presolve</strong>: <code>cp_model_use_sat_presolve = true</code>로 SAT-level simplification 추가 적용.</li>
+  </ol>
+
+  <div class="pitfall">
+    <div class="ttl">Presolve 함정: 변수가 사라질 수 있다</div>
+    <p>
+      Presolve 후 원래 모델의 변수가 내부적으로 병합/제거될 수 있다.
+      <code>AddHint(var, value)</code>를 사용할 때 presolve 이후에 해당 변수가 제거되면 힌트가 <strong>소리 없이 무시된다</strong>.
+      힌트가 전체 변수 커버리지를 갖추지 못하거나 presolve와 충돌하면 효과가 없다.
+    </p>
+  </div>
+
+  <h3>4.2 Presolve 설정</h3>
+  <pre><code class="python">solver.parameters.cp_model_presolve = True         <span class="cmt"># 기본값, 항상 켜두기</span>
+solver.parameters.cp_model_use_sat_presolve = True  <span class="cmt"># SAT 레벨 단순화</span>
+solver.parameters.max_presolve_iterations = 3       <span class="cmt"># 반복 횟수 (기본 3)</span>
+solver.parameters.use_sat_inprocessing = True       <span class="cmt"># 재시작 시점 인처리</span></code></pre>
+
+  <!-- ===== 5. LP Relaxation & Cut Generation ===== -->
+  <h2>5. LP Relaxation &amp; Cut 생성</h2>
+  <p>
+    CP-SAT 2023년부터 <strong>CP-SAT-LP</strong>라는 이름으로 LP 통합이 공식화됐다 (Laurent Perron &amp; Frédéric Didier, CP 2023).
+    내부 LP 솔버는 Google의 <strong>GLOP</strong>이다.
+  </p>
+
+  <h3>5.1 LP가 하는 일</h3>
+  <ul>
+    <li><strong>Lower bound 강화</strong>: 정수 제약을 완화한 연속 LP를 풀어 목적함수 하한을 얻는다.</li>
+    <li><strong>Cut 생성</strong>: <code>CutGenerator</code> 클래스들이 다양한 cutting plane(Chvátal-Gomory, Lift-and-project, Cover cut 등)을 생성해 LP polyhedron을 정수 hull에 근접시킨다.</li>
+    <li><strong>Reduced Cost Fixing</strong>: LP reduced cost를 이용해 특정 값이 최적해에 등장할 수 없음을 증명하고 도메인을 줄인다.</li>
+    <li><strong>Branch 가이드</strong>: LP 분수해를 분기점 선택의 힌트로 사용.</li>
+  </ul>
+
+  <h3>5.2 linearization_level 설정</h3>
+  <pre><code class="python">solver.parameters.linearization_level = 1   <span class="cmt"># 0=LP 없음, 1=기본(default), 2=최대</span>
+<span class="cmt"># max_lp 워커는 linearization_level=2로 자동 설정됨</span>
+<span class="cmt"># 스케줄링 문제에서는 level=2가 z1 lower bound를 크게 강화한다</span></code></pre>
+
+  <!-- ===== 6. 정수 전용 도메인 ===== -->
+  <h2>6. 정수 전용 도메인 &amp; 스케일링</h2>
+  <p>
+    CP-SAT는 <strong>부동소수점 변수를 지원하지 않는다.</strong>
+    모든 변수는 64비트 정수(<code>int64</code>)여야 하며,
+    실수 계수나 상수는 반드시 사전에 정수로 스케일링해야 한다.
+  </p>
+
+  <h3>6.1 스케일링 패턴</h3>
+  <pre><code class="python">from ortools.sat.python import cp_model
+
+SCALE = 1000  <span class="cmt"># 소수점 3자리 → 정수 변환</span>
+
+model = cp_model.CpModel()
+
+# 실수 계수 0.5를 정수 계수 500 (SCALE 적용)으로 변환
+x = model.new_int_var(0, 10 * SCALE, 'x')
+y = model.new_int_var(0, 10 * SCALE, 'y')
+
+# 0.5*x + 1.5*y <= 8.0  →  500*x + 1500*y <= 8000
+model.add(500 * x + 1500 * y <= 8 * SCALE)
+
+<span class="cmt"># OGC: 시각은 분 단위 정수 → 직접 사용 가능</span>
+entry = model.new_int_var(0, 10000, 'entry_time')  <span class="cmt"># 분 단위</span></code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">오버플로우 함정: SCALE 크기 주의</div>
+    <p>
+      변수 도메인 최대값 × SCALE이 <code>int64</code> 범위(<code>~9.2 × 10¹⁸</code>)를 넘으면 안 된다.
+      또한 제약 계수끼리 곱해지는 경우(빅-M 표현 등)도 오버플로우 위험이 있다.
+      CP-SAT는 입력 시 <code>MODEL_INVALID</code>로 이를 탐지하지만, 조용히 잘못된 결과를 내는 경우도 있으므로
+      <strong>최대 도메인 × 최대 계수 &lt; 10¹⁵</strong>를 실용 가이드라인으로 삼는다.
+    </p>
+  </div>
+
+  <!-- ===== 7. 결과 상태와 최적성 증명 ===== -->
+  <h2>7. 결과 상태 코드 &amp; 최적성 증명</h2>
+  <p>
+    <code>solver.Solve(model)</code>는 다섯 가지 상태 중 하나를 반환한다.
+  </p>
+
+  <pre><code class="python">from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+solver = cp_model.CpSolver()
+
+# ... 모델 구성 ...
+
+status = solver.Solve(model)
+
+if status == cp_model.OPTIMAL:
+    print(f"최적해 확정: {solver.objective_value}")
+    print(f"  → lower bound = upper bound = {solver.best_objective_bound}")
+elif status == cp_model.FEASIBLE:
+    gap = abs(solver.objective_value - solver.best_objective_bound)
+    rel_gap = gap / max(1e-10, abs(solver.objective_value))
+    print(f"실현가능해 (gap {rel_gap:.2%}): {solver.objective_value}")
+    print(f"  proven bound: {solver.best_objective_bound}")
+elif status == cp_model.INFEASIBLE:
+    print("제약을 만족하는 해 없음 (증명됨)")
+elif status == cp_model.MODEL_INVALID:
+    print("모델 오류:", model.validate())  <span class="cmt"># 오류 메시지 출력</span>
+elif status == cp_model.UNKNOWN:
+    print("시간/자원 초과 — 해 미발견, 하한도 미개선")</code></pre>
+
+  <h3>7.1 상태별 의미</h3>
+  <table>
+    <thead>
+      <tr><th>상태</th><th>의미</th><th>OGC 대응</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>OPTIMAL</strong></td>
+        <td>최적해 발견 + 최적성 증명 완료. <code>objective_value == best_objective_bound</code></td>
+        <td>타이밍 oracle이 per-bay 최적 보장</td>
+      </tr>
+      <tr>
+        <td><strong>FEASIBLE</strong></td>
+        <td>가능해 존재, 최적성 미증명. gap = (obj − bound)/obj 확인 필요</td>
+        <td>시간 제한 내 최선해 채택</td>
+      </tr>
+      <tr>
+        <td><strong>INFEASIBLE</strong></td>
+        <td>모든 제약을 동시에 만족하는 배정 없음. 모델 검토 필요</td>
+        <td>크레인/베이 제약 과도 → 완화 필요</td>
+      </tr>
+      <tr>
+        <td><strong>MODEL_INVALID</strong></td>
+        <td>정수 오버플로우, 미정의 변수 참조 등 모델 에러</td>
+        <td><code>model.validate()</code>로 즉시 진단</td>
+      </tr>
+      <tr>
+        <td><strong>UNKNOWN</strong></td>
+        <td>시간/메모리 한계 도달. 가능해도 하한도 없음</td>
+        <td>타임아웃 — 베이스라인 해 사용</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 Gap과 best_objective_bound</h3>
+  <p>
+    CP-SAT는 탐색 중 항상 두 가지 경계를 유지한다:
+  </p>
+  <ul>
+    <li><strong>Upper Bound (incumbent)</strong>: 지금까지 발견된 최선 가능해의 목적함수 값</li>
+    <li><strong>Lower Bound (best_objective_bound)</strong>: LP relaxation + 절 학습으로 증명된 최소 목적함수 값</li>
+  </ul>
+  <p>
+    두 경계가 수렴하면 <code>OPTIMAL</code>이 선언된다.
+    Gap = <code>(UB − LB) / UB × 100%</code>가 작을수록 현재 해가 최적에 가깝다.
+  </p>
+
+  <div class="callout">
+    <div class="ttl">로그에서 Gap 읽기</div>
+    <p>
+      CP-SAT 로그에는 <code>best:XXX next:[LB, UB]</code> 형태로 현재 상태가 출력된다.
+      <code>best</code>는 최선 incumbent, <code>next</code>의 범위가 좁아질수록 최적성에 근접.
+      <code>solver.parameters.log_search_progress = True</code>로 활성화 가능.
+    </p>
+  </div>
+
+  <!-- ===== 8. 결정론(Determinism) ===== -->
+  <h2>8. 결정론(Determinism)</h2>
+  <p>
+    CP-SAT는 기본적으로 <strong>비결정론적</strong>이다 — 같은 문제를 두 번 실행해도 동일한 해를 보장하지 않는다.
+    이는 병렬 워커 간 타이밍 경쟁, 운영체제 스케줄링 등의 영향을 받기 때문이다.
+  </p>
+
+  <h3>8.1 결정론 강제 방법</h3>
+  <pre><code class="python">solver.parameters.random_seed = 42         <span class="cmt"># 동일 시드로 재현성 향상 (완전 보장 아님)</span>
+solver.parameters.num_workers = 1          <span class="cmt"># 단일 워커 → 실질적 결정론 (속도 희생)</span>
+solver.parameters.max_deterministic_time = 60.0  <span class="cmt"># 결정론적 시간 한계</span>
+solver.parameters.interleave_search = True <span class="cmt"># 다양한 전략을 결정론적 방식으로 인터리빙</span></code></pre>
+
+  <div class="tip">
+    <div class="ttl">OGC 시사점: CP-SAT 노이즈 ±130K</div>
+    <p>
+      OGC 2026 세션 기록에 따르면 CP-SAT 결과의 변동폭이 <strong>±130K</strong>에 달한다.
+      비교 실험은 반드시 동일 시드 + 동일 워커 수로 paired 테스트(×2 이상)를 수행해야 한다.
+      <code>random_seed</code>만으로는 병렬 환경에서 완전한 결정론이 보장되지 않는다.
+    </p>
+  </div>
+
+  <!-- ===== 9. MiniZinc Challenge 우승 이력 ===== -->
+  <h2>9. MiniZinc Challenge 우승 이력</h2>
+  <p>
+    MiniZinc Challenge는 국제 CP 솔버 경쟁 대회로, 매년 최고의 제약 최적화 솔버를 가린다.
+    CP-SAT는 2017년 첫 참가 이후 일관되게 최상위를 유지하고 있다.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>연도</th><th>성과</th><th>비고</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>2017</td><td>첫 참가, 상위권 진입</td><td>LCG 기반 CP-SAT 데뷔</td></tr>
+      <tr><td>2020~2022</td><td>다수 부문 금메달</td><td>LP relaxation 통합 강화</td></tr>
+      <tr><td>2023</td><td>다수 부문 금메달</td><td>CP-SAT-LP 공식 발표 (CP 2023)</td></tr>
+      <tr><td><strong>2024</strong></td><td><strong>전 부문(Fixed/Free/Parallel/Open/LS) 금메달</strong></td><td>역대 최초 전 부문 석권</td></tr>
+      <tr><td>2025</td><td>결과 발표 예정</td><td>CP 2025 (이후 발표)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ===== 10. 기본 API 사용 패턴 ===== -->
+  <h2>10. 기본 API 사용 패턴</h2>
+  <p>
+    <code>ortools.sat.python.cp_model</code> 모듈의 핵심 API 관용구를 정리한다.
+    <span class="tag api">API</span>
+  </p>
+
+  <h3>10.1 최소 작동 예제</h3>
+  <pre><code class="python">from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+solver = cp_model.CpSolver()
+
+# 변수 선언
+x = model.new_int_var(0, 100, 'x')
+y = model.new_int_var(0, 100, 'y')
+
+# 제약
+model.add(x + y <= 50)
+model.add(x >= 10)
+
+# 목적함수 (최소화)
+model.minimize(3 * x + 2 * y)
+
+# 파라미터 설정
+solver.parameters.max_time_in_seconds = 30.0
+solver.parameters.num_workers = 4
+solver.parameters.log_search_progress = True
+
+# 풀기
+status = solver.Solve(model)
+
+if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+    print(f"x={solver.value(x)}, y={solver.value(y)}")
+    print(f"obj={solver.objective_value:.1f}, bound={solver.best_objective_bound:.1f}")
+    gap_pct = (solver.objective_value - solver.best_objective_bound) / max(1e-9, solver.objective_value) * 100
+    print(f"gap={gap_pct:.2f}%")</code></pre>
+
+  <h3>10.2 Boolean 변수와 리파이케이션</h3>
+  <pre><code class="python"># Boolean 변수
+b = model.new_bool_var('active')
+
+# OnlyEnforceIf: 조건부 제약 (Big-M 없이!)
+model.add(x >= 20).only_enforce_if(b)
+model.add(x <= 5).only_enforce_if(b.negated())
+
+# Boolean 표현식
+model.add_bool_or([b, model.new_bool_var('c')])  <span class="cmt"># b OR c</span>
+model.add_bool_and([b])                           <span class="cmt"># b가 True여야 함</span>
+
+# 변수값을 bool로 참조
+model.add(b == 1).only_enforce_if(x > 0)  <span class="cmt"># 주의: CP-SAT는 이 구문 미지원 → intermediate var 사용</span></code></pre>
+
+  <h3>10.3 스케줄링 인터벌 변수 (OGC 핵심)</h3>
+  <pre><code class="python"># OGC 베이 타이밍 모델 예시
+blocks = ['B1', 'B2', 'B3']
+ready = {'B1': 10, 'B2': 0, 'B3': 25}   <span class="cmt"># R_i: 최조 ENTRY 가능 시각</span>
+proc  = {'B1': 15, 'B2': 20, 'B3': 10}  <span class="cmt"># P_i: 최소 작업 기간</span>
+due   = {'B1': 30, 'B2': 50, 'B3': 40}  <span class="cmt"># D_i: 마감</span>
+HORIZON = 200
+
+model = cp_model.CpModel()
+
+entry, exit_, tardiness, intervals = {}, {}, {}, {}
+for b in blocks:
+    entry[b] = model.new_int_var(ready[b], HORIZON, f'entry_{b}')
+    exit_[b] = model.new_int_var(ready[b] + proc[b], HORIZON, f'exit_{b}')
+    dur      = model.new_int_var(proc[b], HORIZON, f'dur_{b}')
+    intervals[b] = model.new_interval_var(entry[b], dur, exit_[b], f'iv_{b}')
+
+    # P_i 보장: EXIT - ENTRY >= P_i
+    model.add(exit_[b] - entry[b] >= proc[b])
+
+    # tardiness = max(0, EXIT - D_i)
+    tardiness[b] = model.new_int_var(0, HORIZON, f'tard_{b}')
+    model.add_max_equality(tardiness[b], [exit_[b] - due[b], model.new_constant(0)])
+
+# NoOverlap: 동일 베이에서 블록 겹침 금지
+model.add_no_overlap(list(intervals.values()))
+
+# 크레인 j>=k 예시: B1이 B3 위에 있으면 B1 먼저 출고
+model.add(exit_['B1'] <= entry['B3'])   <span class="cmt"># B3는 B1 출고 후 입고</span>
+
+model.minimize(sum(tardiness.values()))
+
+solver = cp_model.CpSolver()
+solver.parameters.num_workers = 4
+solver.parameters.max_time_in_seconds = 30.0
+status = solver.Solve(model)</code></pre>
+
+  <!-- ===== 참고문헌 ===== -->
+  <h2>핵심 논문</h2>
+  <ul class="refs">
+    <li>
+      <strong>The CP-SAT-LP Solver (Invited Talk)</strong>
+      — Laurent Perron &amp; Frédéric Didier, CP 2023
+      <span class="meta"><a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.CP.2023.3" target="_blank">drops.dagstuhl.de/entities/document/10.4230/LIPIcs.CP.2023.3</a></span>
+      <span class="desc">CP-SAT에 LP relaxation(GLOP), cut 생성, presolve, dual reduction을 통합한 CP-SAT-LP 아키텍처를 공식 발표한 초청 강연 논문. LP 통합 전후의 성능 비교 포함.</span>
+    </li>
+    <li>
+      <strong>ViolationLS: Constraint-Based Local Search in CP-SAT</strong>
+      — Laurent Perron et al., CPAIOR 2024
+      <span class="meta"><a href="https://dl.acm.org/doi/10.1007/978-3-031-60597-0_16" target="_blank">dl.acm.org/doi/10.1007/978-3-031-60597-0_16</a></span>
+      <span class="desc">violation_ls 워커의 이론적 배경. 목적함수 위반을 최소화하는 방향의 로컬 서치를 CP-SAT 포트폴리오에 통합한 방법론.</span>
+    </li>
+    <li>
+      <strong>Unsatisfiable Cores and Lower Bounding for Constraint Programming</strong>
+      — 2015, arXiv:1508.06096
+      <span class="meta"><a href="https://arxiv.org/abs/1508.06096" target="_blank">arxiv.org/abs/1508.06096</a></span>
+      <span class="desc">CP-SAT의 <code>core</code> 워커 기반 기술. UNSAT core를 이용한 최소화 문제 lower bound 강화 방법론의 원류 논문.</span>
+    </li>
+    <li>
+      <strong>Towards Modern and Modular SAT for LCG</strong>
+      — CP 2025 (LIPIcs Vol.340)
+      <span class="meta"><a href="https://drops.dagstuhl.de/storage/00lipics/lipics-vol340-cp2025/html/LIPIcs.CP.2025.42/LIPIcs.CP.2025.42.html" target="_blank">drops.dagstuhl.de · LIPIcs.CP.2025.42</a></span>
+      <span class="desc">LCG 솔버의 현대화 방향 탐구. 새 오픈소스 LCG 솔버 Huub를 CaDiCal 2.1.3 기반으로 구현하고 CP-SAT와 비교 벤치마킹.</span>
+    </li>
+    <li>
+      <strong>OR-Tools and CP-SAT (Guest Lecture)</strong>
+      — Laurent Perron, UPenn CIS 1921, 2025
+      <span class="meta"><a href="https://www.engineering.upenn.edu/~cis1921/files25s/guestlecture.pdf" target="_blank">engineering.upenn.edu/~cis1921/files25s/guestlecture.pdf</a></span>
+      <span class="desc">LP perron이 직접 정리한 CP-SAT 전체 아키텍처 강의 슬라이드. 포트폴리오 워커, MiniZinc 우승 이력, 실전 팁 포함.</span>
+    </li>
+    <li>
+      <strong>MIP Aspects of OR-Tools CP-SAT Solver</strong>
+      — Frédéric Didier, EUROMIP 2025
+      <span class="meta"><a href="https://www.mixedinteger.org/EUROMIP/2025/slides/frederic-didier.pdf" target="_blank">mixedinteger.org/EUROMIP/2025/slides/frederic-didier.pdf</a></span>
+      <span class="desc">MIP 관점에서 CP-SAT의 LP relaxation, cutting plane, reduced cost fixing, presolve dual reduction을 설명하는 최신(2025) 발표 자료.</span>
+    </li>
+  </ul>
+
+  <h2>GitHub · 자료</h2>
+  <ul class="refs">
+    <li class="repo">
+      <strong>google/or-tools</strong>
+      <span class="meta"><a href="https://github.com/google/or-tools" target="_blank">github.com/google/or-tools</a></span>
+      <span class="desc">CP-SAT 공식 구현 소스. <code>ortools/sat/</code> 폴더에 CP-SAT 핵심 코드, <code>sat_parameters.proto</code>에 모든 파라미터 문서화.</span>
+    </li>
+    <li class="repo">
+      <strong>d-krupke/cpsat-primer</strong>
+      <span class="meta"><a href="https://d-krupke.github.io/cpsat-primer/" target="_blank">d-krupke.github.io/cpsat-primer/</a></span>
+      <span class="desc">CP-SAT Primer — 모델링 기초부터 고급 패턴, 로그 해석, 성능 튜닝까지 망라한 가장 완성도 높은 비공식 가이드. 코드 예제 풍부.</span>
+    </li>
+    <li class="repo">
+      <strong>CP-SAT Under the Hood</strong>
+      <span class="meta"><a href="https://d-krupke.github.io/cpsat-primer/07_under_the_hood.html" target="_blank">d-krupke.github.io/cpsat-primer/07_under_the_hood.html</a></span>
+      <span class="desc">Primer의 아키텍처 심화 챕터. 포트폴리오 워커 분류, 정보 공유 채널, LP 역할을 다이어그램과 함께 설명.</span>
+    </li>
+    <li class="repo">
+      <strong>구글 공식 CP-SAT 문서</strong>
+      <span class="meta"><a href="https://developers.google.com/optimization/cp" target="_blank">developers.google.com/optimization/cp</a></span>
+      <span class="desc">OR-Tools 공식 CP-SAT 튜토리얼 및 API 레퍼런스. Python/C++/Java/C# 예제 제공.</span>
+    </li>
+    <li class="repo">
+      <strong>sat_parameters.proto (공식 파라미터 전체 목록)</strong>
+      <span class="meta"><a href="https://github.com/google/or-tools/blob/stable/ortools/sat/sat_parameters.proto" target="_blank">github.com/google/or-tools/blob/stable/ortools/sat/sat_parameters.proto</a></span>
+      <span class="desc">모든 CP-SAT 파라미터의 공식 정의와 기본값. 문서화되지 않은 파라미터도 여기서 직접 확인 가능. 실전 튜닝 시 필수 참고.</span>
+    </li>
+    <li class="repo">
+      <strong>MiniZinc Challenge 2024 Results</strong>
+      <span class="meta"><a href="https://www.minizinc.org/challenge/2024/results/" target="_blank">minizinc.org/challenge/2024/results/</a></span>
+      <span class="desc">CP-SAT가 Fixed/Free/Parallel/Open/LS 전 부문 금메달을 획득한 공식 결과 페이지.</span>
+    </li>
+    <li class="repo">
+      <strong>DeepWiki: CP-SAT Constraint Programming Solver</strong>
+      <span class="meta"><a href="https://deepwiki.com/google/or-tools/4.1-cp-sat-constraint-programming-solver" target="_blank">deepwiki.com/google/or-tools/4.1-cp-sat-constraint-programming-solver</a></span>
+      <span class="desc">OR-Tools 소스코드 기반 자동 생성 위키. SubSolver 클래스 계층, SharedClausesManager, CpModelPresolver 구현 세부 설명.</span>
+    </li>
+  </ul>
+
+  <!-- ===== 흔한 함정 ===== -->
+  <h2>흔한 함정 (Anti-Patterns)</h2>
+
+  <div class="pitfall">
+    <div class="ttl">안티패턴 1: 부동소수 변수 직접 사용</div>
+    <p>
+      <code>model.new_int_var(0, 1.5, 'x')</code> — CP-SAT는 부동소수 도메인을 허용하지 않는다.
+      실수 계수가 필요하면 <strong>미리 정수로 스케일링</strong>해야 한다.
+      묵시적 형변환 없이 <code>MODEL_INVALID</code>가 반환된다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">안티패턴 2: Big-M 과도 사용</div>
+    <p>
+      <code>model.add(x <= M * b)</code> 형태의 Big-M은 LP relaxation을 크게 약화시킨다.
+      M이 크면 LP bound가 의미 없어지고 branch-and-bound가 폭발한다.
+      대신 <code>only_enforce_if(b)</code>를 사용하거나, 도메인 구간을 직접 설정해 M을 최소화한다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">안티패턴 3: num_workers = 1 고집</div>
+    <p>
+      단일 워커는 LNS, LP 병렬 실행 등 CP-SAT의 핵심 강점을 버리는 것과 같다.
+      재현성이 필요하면 <code>random_seed</code> 고정 + 충분한 paired 테스트로 변동을 통계적으로 흡수하는 것이 낫다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">안티패턴 4: AddHint를 warm-start로 오해</div>
+    <p>
+      <code>model.add_hint(var, value)</code>는 솔버에 초기 탐색 방향을 제안할 뿐이다.
+      모든 변수를 커버하지 않으면 힌트가 소리 없이 무시된다.
+      Presolve 후 변수가 제거되면 해당 변수에 대한 힌트도 사라진다.
+      MIP solver의 warm-start와 달리, 힌트가 feasible 해를 직접 주입하지 않는다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">안티패턴 5: FEASIBLE을 실패로 해석</div>
+    <p>
+      시간 제한으로 인해 <code>FEASIBLE</code>이 반환되더라도 매우 좋은 해일 수 있다.
+      <code>solver.best_objective_bound</code>로 gap을 계산해 해의 품질을 판단해야 한다.
+      OGC에서 TL=120s 내 FEASIBLE 해도 경쟁자와 비교 가능한 수준일 수 있다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">안티패턴 6: 너무 크거나 중복된 도메인</div>
+    <p>
+      변수 도메인을 <code>[0, 10^9]</code>로 막연하게 잡으면 CP-SAT presolve와 LP bound 생성에 악영향을 준다.
+      사전에 인스턴스 데이터로 도메인 상한을 빡빡하게 조여주면 탐색 속도가 크게 향상된다.
+      OGC에서 HORIZON은 스케줄 최대 길이(max(D_i) + 여유)로 정확히 계산해 설정한다.
+    </p>
+  </div>
+
+  <div class="footer">
+    <p>CP-SAT Methodology Research · OGC 2026 준비 세션 · 2026-06-17</p>
+    <p>
+      <a href="index.html">← 개요로</a> &nbsp;|&nbsp;
+      <a href="02-modeling-basics.html">02 모델링기본 →</a>
+    </p>
+  </div>
+
+</div><!-- /container -->
+</body>
+</html>

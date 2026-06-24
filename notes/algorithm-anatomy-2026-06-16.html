@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 솔버 해부 — 컴포넌트·시간·z1/z2/z3 기여</title>
+<style>
+:root{--bg:#0e1116;--card:#181d26;--card2:#1f2632;--ink:#e6edf3;--mut:#9aa7b4;--line:#2b333f;
+--z1:#ff7a59;--z2:#56c2ff;--z3:#9d7bff;--ok:#3fb950;--warn:#d29922;--accent:#58a6ff;}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.55 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+h1{font-size:26px;margin:0 0 6px}h2{font-size:19px;margin:34px 0 12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.sub{color:var(--mut);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi .v{font-size:22px;font-weight:700}.kpi .l{color:var(--mut);font-size:12px;margin-top:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;margin-right:3px}
+.t1{background:rgba(255,122,89,.16);color:var(--z1)}.t2{background:rgba(86,194,255,.16);color:var(--z2)}
+.t3{background:rgba(157,123,255,.16);color:var(--z3)}.tbase{background:#283041;color:var(--mut)}
+.bar{height:13px;border-radius:7px;background:linear-gradient(90deg,var(--accent),#7ee787);display:inline-block;vertical-align:middle}
+.barwrap{display:flex;align-items:center;gap:8px}.barwrap small{color:var(--mut);min-width:46px;text-align:right}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 2px}
+.node{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px}
+.node b{color:var(--accent)}.arrow{color:var(--mut)}
+.note{color:var(--mut);font-size:12.5px;margin-top:8px}
+.legend{font-size:12.5px;color:var(--mut);margin:6px 0 0}
+.hl{color:#ffd596}
+.small{font-size:12px;color:var(--mut)}
+code{background:#0b0e13;padding:1px 5px;border-radius:5px;font-size:12.5px;color:#c9d4e0}
+</style></head>
+<body><div class="wrap">
+
+<h1>OGC2026 솔버 해부도</h1>
+<p class="sub">컴포넌트별 역할 · 시간 소모 · z1/z2/z3 감소 기여 — 실측(13개 대표 인스턴스, <code>OGC_STAGE_TIMING</code>, TL=120s) + 아키텍처 분석 · 2026-06-16</p>
+
+<div class="grid">
+  <div class="kpi"><div class="v">~329M</div><div class="l">ALL40 총 obj (경쟁자 280.8M의 1.17×)</div></div>
+  <div class="kpi"><div class="v">40/40</div><div class="l">feasible · never −1</div></div>
+  <div class="kpi"><div class="v">12.9×</div><div class="l">직전 대비 개선 (4.24B→329M)</div></div>
+  <div class="kpi"><div class="v">≤113s</div><div class="l">max wall (TL=120 이내)</div></div>
+</div>
+
+<div class="card">
+<b>최상위 구조 — HYBRID best-of</b>
+<div class="flow">
+  <div class="node"><b>algorithm()</b> T=120s</div><span class="arrow">→</span>
+  <div class="node">LEGACY 엔진 <b>@84s</b></div><span class="arrow">+</span>
+  <div class="node">BOX 엔진 <b>@36s</b></div><span class="arrow">→</span>
+  <div class="node">공식 체커로 <b>best-of</b> (낮은 obj 채택)</div>
+</div>
+<p class="note">2026-06-15 핵심 수정: <code>OGC_HYBRID_MIN_T</code> 150→100. set2 엔진(box-decomp)이 운영 TL=120(&lt;150)에서 게이트 OFF였던 것을 켜서 set2 z1 파국(4.24B)을 해소. best-of라 legacy 밑으로 회귀 불가(→ never worse, never −1).</p>
+</div>
+
+<h2>① 시간 소모 (LEGACY 엔진 내부, ~72s 기준)</h2>
+<div class="card">
+<table>
+<tr><th>단계</th><th class="r">시간</th><th>시간 분포</th><th>비고</th></tr>
+<tr><td><b>floor</b> = 배정 + fast-floor decode + cumulative targets + spill + xbay</td><td class="r">62%</td>
+  <td><div class="barwrap"><span class="bar" style="width:62%"></span><small>62%</small></div></td>
+  <td>해(layout+timing)의 <b>기반</b>을 만든다. 이후 단계는 이 위에서 다듬을 뿐.</td></tr>
+<tr><td>cum_level (재-디코드, demand-flatten)</td><td class="r">6.5%</td><td><div class="barwrap"><span class="bar" style="width:6.5%"></span><small>6.5%</small></div></td><td>floor가 z1을 남길 때 발동하는 강한 z1 레버</td></tr>
+<tr><td>crossbay_relocate</td><td class="r">4.0%</td><td><div class="barwrap"><span class="bar" style="width:4%"></span><small>4.0%</small></div></td><td>tardy 블록 베이 간 재배치</td></tr>
+<tr><td>bbox_pack (위치+시간 공동 재패킹, CP-SAT)</td><td class="r">2.2%</td><td><div class="barwrap"><span class="bar" style="width:2.2%"></span><small>2.2%</small></div></td><td>obj 감소 기여 1위(아래)</td></tr>
+<tr><td>cpsat_timing (베이별 최적 재타이밍)</td><td class="r">1.1%</td><td><div class="barwrap"><span class="bar" style="width:1.1%"></span><small>1.1%</small></div></td><td>고정 layout 위 z1 최적화</td></tr>
+<tr><td>z1_repair / Front B(fb_*) / cheaper_steps</td><td class="r">&lt;1%씩</td><td><div class="barwrap"><span class="bar" style="width:2%"></span><small>~2%</small></div></td><td>잔여 z1 / z3 미세조정</td></tr>
+</table>
+<p class="note">+ <b>BOX 엔진 @36s</b>는 별도(legacy stage timer에 미포함): 4코어 병렬 spec 풀 + reassign. 합쳐 wall ≤113s.</p>
+<p class="note hl">⚑ 가장 큰 시사점: 시간의 <b>62%가 floor</b>(특히 crane-aware decode)에 쓰이고, 이것이 z1의 발생원이자 모든 후속 레버의 입력. 경쟁자와의 격차도 여기(패킹 밀도)에서 난다.</p>
+</div>
+
+<h2>② obj 감소 기여 (채택된 개선량 Σdelta, 13개 합산)</h2>
+<div class="card">
+<table>
+<tr><th>레버</th><th class="r">Σ obj 감소</th><th>기여 분포</th><th>주 타깃</th><th class="r">채택수</th></tr>
+<tr><td>bbox_pack</td><td class="r">3,966,276</td><td><div class="barwrap"><span class="bar" style="width:58%"></span><small>58%</small></div></td><td><span class="tag t1">z1</span></td><td class="r">6</td></tr>
+<tr><td>cpsat_timing</td><td class="r">2,866,595</td><td><div class="barwrap"><span class="bar" style="width:42%"></span><small>42%</small></div></td><td><span class="tag t1">z1</span></td><td class="r">2</td></tr>
+<tr><td>crossbay_relocate</td><td class="r">232,996</td><td><div class="barwrap"><span class="bar" style="width:3.4%"></span><small>3.4%</small></div></td><td><span class="tag t1">z1</span> <span class="tag t3">z3↑비용</span></td><td class="r">3</td></tr>
+<tr><td>single_move / multi_reschedule</td><td class="r">154,591</td><td><div class="barwrap"><span class="bar" style="width:2.3%"></span><small>2.3%</small></div></td><td><span class="tag t1">z1</span></td><td class="r">1</td></tr>
+<tr><td>fb_relocate (Front B)</td><td class="r">123,948</td><td><div class="barwrap"><span class="bar" style="width:1.8%"></span><small>1.8%</small></div></td><td><span class="tag t3">z3</span></td><td class="r">19</td></tr>
+<tr><td>bbox_pack_slab</td><td class="r">26,667</td><td><div class="barwrap"><span class="bar" style="width:0.4%"></span><small>0.4%</small></div></td><td><span class="tag t1">z1</span></td><td class="r">1</td></tr>
+<tr><td>cum_level</td><td class="r">22,857</td><td><div class="barwrap"><span class="bar" style="width:0.3%"></span><small>0.3%</small></div></td><td><span class="tag t1">z1</span></td><td class="r">1</td></tr>
+</table>
+<p class="note">※ 절대 Σdelta는 <b>대형 set2 인스턴스(prob_31/38 등)에 편향</b>됨(obj 자릿수가 큼). cum_level의 낮은 값은 "약함"이 아니라, 이 샘플에선 floor가 이미 z1을 잡아 발동 여지가 적었던 것(floor가 실패하는 인스턴스에선 cum_level이 주력). 채택수 많은 fb_relocate(19회)는 set1 z3를 꾸준히 깎는 일꾼.</p>
+</div>
+
+<h2>③ 컴포넌트별 상세 — 무엇을 / z1·z2·z3 어디에 기여</h2>
+<div class="card">
+<p class="legend"><span class="tag t1">z1</span> tardiness(지연, w1 큰 set2에서 지배) &nbsp; <span class="tag t2">z2</span> workload 불균형 &nbsp; <span class="tag t3">z3</span> 베이 선호도 편차(set1에서 지배) &nbsp; <span class="tag tbase">base</span> 기반 확립</p>
+<table>
+<tr><th>컴포넌트</th><th>하는 일</th><th>시간</th><th>기여</th></tr>
+<tr><td><b>HYBRID best-of</b></td><td>legacy·box 두 해 중 공식 체커로 낮은 obj 채택. set2 엔진 활성화의 키.</td><td>오케스트레이션 + 체크 2회</td><td><span class="tag tbase">엔진 선택</span></td></tr>
+<tr><td><b>Assignment</b> <code>_cpsat_assignment</code></td><td>블록→베이 배정. <code>min w2·z2 + w3·z3</code> + area-time 용량캡. 기하 무시.</td><td>~3s (0.15·T 캡)</td><td><span class="tag t2">z2</span><span class="tag t3">z3</span> 기준선 설정</td></tr>
+<tr><td><b>Fast-floor decode</b> (F0–F3 race)</td><td>crane-aware bottom-left 배치 at 고정 시간(entry=R, exit=R+P). 공간 없으면 delayed→forced.</td><td>floor의 대부분(62%)</td><td><span class="tag t1">z1</span> <b>발생원</b>(delayed/forced=tardiness)</td></tr>
+<tr><td><b>Cumulative targets + 스필</b></td><td>진입시각 분산(동시존재 완화), 과포화 베이 블록 스필.</td><td>floor 내</td><td><span class="tag t1">z1↓</span> <span class="tag t3">z3↑</span>(스필 비용)</td></tr>
+<tr><td><b>cum_level</b></td><td>incumbent를 demand-flatten으로 재-디코드. floor가 z1을 남긴 인스턴스의 주력 z1 레버.</td><td>6.5%</td><td><span class="tag t1">z1</span></td></tr>
+<tr><td><b>cpsat_timing</b></td><td>고정 layout 위에서 베이별 CP-SAT로 entry/exit를 최적 재배치(crane disjunctive).</td><td>1.1%</td><td><span class="tag t1">z1</span> (2.87M)</td></tr>
+<tr><td><b>bbox_pack</b></td><td>tardy 베이의 위치+시간을 CP-SAT로 공동 재패킹(면적을 시간슬랙에 펼침).</td><td>2.2%</td><td><span class="tag t1">z1</span> <b>최대 기여(3.97M)</b></td></tr>
+<tr><td><b>crossbay_relocate</b></td><td>아직 tardy인 블록을 다른 feasible 베이로 이동(빈자리가 다음 체인 허용).</td><td>4.0%</td><td><span class="tag t1">z1↓</span> <span class="tag t3">z3↑</span></td></tr>
+<tr><td><b>z1_repair 루프</b></td><td>z1 타깃 retime/repack/reloc/swap/xbay 반복(잔여 tardy 공략).</td><td>&lt;1%(예산 기아 시 미발동)</td><td><span class="tag t1">z1</span></td></tr>
+<tr><td><b>Front B</b> <code>fb_redecode/relocate/swap</code></td><td>배정을 z1=0 유지하며 재최적화 — 블록을 선호 베이로 되돌려 z3 회수.</td><td>&lt;1% (채택 19회)</td><td><span class="tag t3">z3</span></td></tr>
+<tr><td><b>BOX 엔진</b> <code>boxsolver</code></td><td>preferred/capped × {bbox,cells,boxdecomp} spec 풀(4코어 병렬, packing-by-scheduling) + z3-aware reassign. legacy와 best-of.</td><td>@36s 별도</td><td><span class="tag t1">z1</span><span class="tag t3">z3</span> (set2·prob_3/4/18에서 승)</td></tr>
+</table>
+</div>
+
+<h2>④ z1 / z2 / z3 책임 맵 (누가 무엇을 결정하나)</h2>
+<div class="card grid" style="grid-template-columns:repeat(3,1fr)">
+  <div class="kpi" style="border-left:3px solid var(--z1)"><div class="v" style="color:var(--z1)">z1 · 지연</div>
+    <div class="l" style="margin-top:8px;line-height:1.7"><b>발생</b>: floor decode(delayed/forced)<br><b>감소</b>: bbox_pack ≫ cpsat_timing &gt; crossbay &gt; cum_level &gt; z1_repair<br><b>지배</b>: set2(w1 수천~3만)</div></div>
+  <div class="kpi" style="border-left:3px solid var(--z2)"><div class="v" style="color:var(--z2)">z2 · 부하불균형</div>
+    <div class="l" style="margin-top:8px;line-height:1.7"><b>결정</b>: 거의 전적으로 Assignment(목적함수에 직접)<br><b>후처리</b>: crossbay가 약간 건드림<br>대개 obj에서 가장 작은 항</div></div>
+  <div class="kpi" style="border-left:3px solid var(--z3)"><div class="v" style="color:var(--z3)">z3 · 선호도</div>
+    <div class="l" style="margin-top:8px;line-height:1.7"><b>기준선</b>: Assignment(선호 존중)<br><b>증가</b>: 스필(crane 완화 위해 비선호 베이로)<br><b>회수</b>: Front B(fb_relocate/swap)<br><b>지배</b>: set1(w3~133)</div></div>
+</div>
+
+<h2>⑤ 경쟁자 격차의 위치</h2>
+<div class="card">
+<p>총 obj는 <b>set2가 99.97%</b>(set1은 0.03%). 경쟁자 대비 잔여 갭(set2 ~55M)은 <span class="tag t1">z1</span>·<span class="tag t3">z3</span> 혼재이며, 근본 원인은 <b>per-bay 패킹 밀도</b>: 우리 패커(BL/box-decomp)는 이형 폴리곤을 ~80% 효율로 채워, peak 동시존재 시 블록이 못 들어가 delayed→z1. 경쟁자는 ~95% 효율로 채워 적게 스필(낮은 z3)하고 z1도 낮춤. 시간의 62%를 쓰는 <b>floor의 패킹 알고리즘</b>이 다음 개선의 핵심 지점이다. (대규모 리서치: <code>notes/research/z1z3-lowering-2026-06-16.html/.md</code>)</p>
+</div>
+
+<p class="small">출처: <code>OGC_STAGE_TIMING</code> 실측(prob_5/8/11/13/14/17/20/24/29/30/31/35/38, TL=120, 4코어 affinity) + <code>src/myalgorithm.py</code>·<code>src/fastfloor.py</code>·<code>src/boxsolver.py</code> 아키텍처. Σdelta는 채택된 개선만 누적(대형 인스턴스 편향 주의). 생성: 2026-06-16.</p>
+
+</div></body></html>

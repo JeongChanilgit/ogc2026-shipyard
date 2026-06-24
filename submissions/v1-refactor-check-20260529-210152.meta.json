@@ -1,0 +1,18 @@
+{
+  "tag": "v1-refactor-check",
+  "timestamp_kst": "20260529-210152",
+  "zip_filename": "v1-refactor-check-20260529-210152.zip",
+  "zip_size_bytes": 18493,
+  "zip_sha256": "b2c1f14960c1d1b97735212b3ca87f00ba9a0ab467e635b0b50d22da3dbe2dbc",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 43751
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 22811
+    }
+  ],
+  "note": ""
+}

@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="60">
+<title>v5 개발 로그 — 수정사항 & 측정</title>
+<style>
+ body{margin:0;background:#0e1014;color:#e8ebf1;font:13px/1.5 Segoe UI,sans-serif}
+ .wrap{max-width:1280px;margin:0 auto;padding:24px}
+ h1{font-size:20px;margin:0 0 2px} .sub{color:#8b93a3;font-size:11px}
+ table{border-collapse:collapse;width:100%;margin-top:14px;font-variant-numeric:tabular-nums}
+ th,td{padding:7px 9px;text-align:right;border-bottom:1px solid #232833;vertical-align:top}
+ th{color:#9aa3b2;position:sticky;top:0;background:#0e1014;font-size:12px}
+ td.l,th.l{text-align:left;max-width:260px}
+ .good{color:#7ee787} .warn{color:#f0c674} .bad{color:#ff6b6b} .mut{color:#8b93a3}
+ .best{color:#7ee787;font-weight:700}
+ .sub{color:#8b93a3;font-size:10.5px;font-weight:400}
+ .note{background:#161a21;border:1px solid #232833;border-radius:8px;padding:12px 15px;margin:12px 0;font-size:12.5px}
+ b{color:#5ad1c7}
+</style></head><body><div class="wrap">
+<h1>v5 개발 로그 <span class="sub">— 매 수정의 내용·방법·측정 (자동 갱신, 60s)</span></h1>
+<div class="note">
+ <b>v5 구조</b>: STEP1 z2+z3 배정(CP-SAT) → greedy 초기배치(place_one) → STEP2 베이별 xyo CP-SAT 정제(t 동시최적) → STEP3 tardy 적출·재배정·greedy → loop.<br>
+ <b>측정셋</b>: prob_4(저혼잡·v5최적), 12(중), 20(혼잡 set1), 21·38(혼잡 set2). <b>* = 경쟁자 obj 기준</b>(prob_4 16,916 / 12 71,509 / 20 80,848). 색: 초록=경쟁자 1.05×내, 노랑=2×내, 빨강=2×↑.<br>
+ <b>판정</b>: full-set 총 obj · feasible. 아래는 최신이 위.
+</div>
+<table><thead><tr><th class="l">변경 (label / note / env)</th><th>prob_4 *</th><th>prob_12 *</th><th>prob_20 *</th><th>prob_21</th><th>prob_38</th><th>총합</th></tr>
+<tr><td class="l mut">경쟁자(set1 ref)</td><td>16,916</td><td>71,509</td><td>80,848</td><td class='mut'>-</td><td class='mut'>-</td><td class="mut">-</td></tr>
+</thead><tbody><tr><td class='l'><b>v5-bestinit+freeall</b><div class='sub'>best-of init(z2z3 vs v2, STEP2정제 후 더 나은것) + free-all everywhere(FREEALL_MAX=999, prob_4 zero-tardy 회복) + _pass_cap시간 + tardy-only + worstK10 + neverworse.  [OGC_V5_INIT=best OGC_V5_FREEALL_MAX=999 OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1]</div></td><td class='bad'>38,834<div class='sub'>z1=1.0 z3=8.0</div></td><td class='bad'>235,138<div class='sub'>z1=1.0 z3=1560.0</div></td><td class='bad'>323,268<div class='sub'>z1=3.0 z3=1881.0</div></td><td class=''>2,440,895<div class='sub'>z1=145.0 z3=3284.0</div></td><td class=''>78,188,047<div class='sub'>z1=5709.0 z3=6883.0</div></td><td class=''>81,226,182<div class='sub'>feas 5/5 · 648s</div></td></tr><tr><td class='l'><b>v4-v2init+v3fastStep2</b><div class='sub'>STEP2를 제출본 v3 구조로: tardy베이만+window-only+_pass_cap적응시간+K5. +v2-init(z1-aware 초기해로 tardy줄임)+worstK10+neverworse. 작은베이 free-all 유지(FREEALL_MAX=45).  [OGC_V5_INIT=v2 OGC_V5_FREEALL_MAX=45 OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1]</div></td><td class='bad'>123,796<div class='sub'>z1=0.0 z3=590.0</div></td><td class='bad'>235,138<div class='sub'>z1=1.0 z3=1560.0</div></td><td class='bad'>236,571<div class='sub'>z1=0.0 z3=1827.0</div></td><td class=''>2,574,225<div class='sub'>z1=155.0 z3=3284.0</div></td><td class=''>69,308,269<div class='sub'>z1=5043.0 z3=6883.0</div></td><td class='best'>72,477,999<div class='sub'>feas 5/5 · 558s</div></td></tr><tr><td class='l'><b>v2-tightcap(ATLOOSE1.0)</b><div class='sub'>v1 위에 STEP1/STEP3 배정 용량제약 강화(area-time 1.15->1.0): 베이 과포화 줄여 초기 z1 하강 목적.  [OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1 OGC_GUIDE_ATLOOSE=1.0]</div></td><td class='bad'>59,782<div class='sub'>z1=2.0 z3=0.0</div></td><td class='bad'>403,425<div class='sub'>z1=15.0 z3=486.0</div></td><td class='bad'>1,902,602<div class='sub'>z1=69.0 z3=385.0</div></td><td class=''>7,522,576<div class='sub'>z1=552.0 z3=896.0</div></td><td class=''>74,720,977<div class='sub'>z1=5599.0 z3=193.0</div></td><td class=''>84,609,362<div class='sub'>feas 5/5 · 720s</div></td></tr><tr><td class='l'><b>v1-worstK+neverworse</b><div class='sub'>STEP3: 전체-tardy 대신 최악 K=10개만 회전이동(작은 섭동)+악화라운드 best복귀. 고혼잡서 mass-reshuffle 파괴 방지 목적.  [OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1]</div></td><td class='good'>16,916<div class='sub'>z1=0.0 z3=8.0</div></td><td class='bad'>285,427<div class='sub'>z1=9.0 z3=577.0</div></td><td class='bad'>978,525<div class='sub'>z1=34.0 z3=483.0</div></td><td class=''>4,787,542<div class='sub'>z1=344.0 z3=1244.0</div></td><td class=''>67,877,094<div class='sub'>z1=5080.0 z3=460.0</div></td><td class=''>73,945,504<div class='sub'>feas 5/5 · 580s</div></td></tr><tr><td class='l'><b>v0-baseline (xyo x3)</b><div class='sub'>STEP2=축별 xyoxyoxyo(iters=3) ts10. STEP3=전체-tardy 갈아엎기+drift허용(현행).</div></td><td class='good'>16,916<div class='sub'>z1=0.0 z3=8.0</div></td><td class='bad'>241,591<div class='sub'>z1=7.0 z3=577.0</div></td><td class='bad'>1,218,528<div class='sub'>z1=43.0 z3=483.0</div></td><td class=''>4,787,542<div class='sub'>z1=344.0 z3=1244.0</div></td><td class=''>70,997,016<div class='sub'>z1=5314.0 z3=460.0</div></td><td class=''>77,261,593<div class='sub'>feas 5/5 · 582s</div></td></tr></tbody></table>
+</div></body></html>

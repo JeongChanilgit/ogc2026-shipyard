@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Per-bay 패커 해법 리서치 — OGC2026, 2026-06-18</title>
+<style>
+  :root{--bg:#0f1419;--panel:#171d26;--p2:#1d2530;--ink:#e6edf3;--mut:#8b98a8;--acc:#4cc2ff;
+    --good:#3fb950;--warn:#d29922;--bad:#f85149;--line:#2d3848;--gas:#a371f7;--box:#db6d28;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:30px 22px 80px}
+  h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:34px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  h3{font-size:14.5px;margin:16px 0 6px;color:var(--acc)}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:14px}
+  code{background:#0b0f14;padding:1px 6px;border-radius:5px;font-family:Consolas,monospace;font-size:12.5px;color:#c9d6e3}
+  a{color:#6cb6ff;text-decoration:none}a:hover{text-decoration:underline}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+  th,td{padding:6px 9px;border:1px solid var(--line);text-align:left;vertical-align:top}
+  th{background:#10161e;color:var(--mut)}
+  .num{text-align:right;font-family:Consolas,monospace}
+  .win{color:var(--good);font-weight:600}.bad{color:var(--bad)}.warn{color:var(--warn)}
+  .pill{display:inline-block;padding:1px 8px;border-radius:12px;font-size:11px;font-weight:600}
+  .p-go{background:rgba(63,185,80,.16);color:#56d364}.p-no{background:rgba(248,81,73,.14);color:#ff8a82}
+  .p-mb{background:rgba(210,153,34,.14);color:#e3b341}
+  ul{margin:5px 0;padding-left:20px}li{margin:3px 0;font-size:13.5px;color:#c4cdd8}
+  .ref{font-size:11.5px;color:var(--mut)}
+  .note{background:rgba(76,194,255,.07);border:1px solid #1f3a4d;border-radius:9px;padding:11px 15px;margin:11px 0;font-size:13px}
+  .note.g{background:rgba(63,185,80,.07);border-color:#235029}
+</style></head>
+<body><div class="wrap">
+
+<h1>Per-bay 패커 해법 리서치 + 벤치마크</h1>
+<div class="sub">OGC2026 · 2026-06-18 · web-researcher 4병렬 + 격리 벤치마크 실측 · 원장 <code>LEDGER.md</code></div>
+
+<div class="note g">
+<b>문제.</b> 고정 W×H 컨테이너에 N 아이템(이형 footprint+소수 방향, release R·duration P·due D) 배치.
+결정=(x,y,방향,entry≥R), exit=entry+P. <b>제약</b>=시간 겹치는 두 아이템은 footprint 비겹침(crane j≥k).
+<b>목적</b>=Σ tardiness 최소. <b>빠른 방법</b> 필요(~100 아이템, 수초). = B1(gassign LBBD)의 per-bay decoder.
+</div>
+
+<h2>1. 이 문제는 무엇인가 (재구성)</h2>
+<div class="card">
+<ul>
+<li><b>3D 직교 스트립 패킹</b>: footprint를 시간축으로 P만큼 extrude → 3D 박스. (x,y,t) 비겹침 = 우리 제약. 시간축=strip, tardiness=박스 상단이 D 초과량.</li>
+<li><b>Dynamic Storage Allocation (DSA)</b>: 수명 있는 메모리 블록을 주소공간에 비겹침 배치 = 우리의 1D(주소) 축퇴. 2D-DSA가 우리 문제. 단 DSA는 <b>시작시각 고정</b>(우리는 지연 가능+tardiness).</li>
+<li><b>조선소 spatial scheduling</b> ← <b>가장 근접</b>(이형 블록·R·D·P·2D 베이·tardiness). 표준 = 우선순위규칙+BL배치, GA/SA/Q-learning.</li>
+</ul>
+<div class="note"><b>중요.</b> 우리의 "greedy floor → CP-SAT timing oracle" 분리는 DSA 문헌이 <b>이론적으로 옳다고 인정하는 구조</b>("Algorithm C"). 우리가 틀린 게 아니라, 개선 레버는 ① 배치 휴리스틱 ② 정렬 ③ 메타휴리스틱 ④ 회전.</div>
+</div>
+
+<h2>2. 빠른 배치(constructive) 방법</h2>
+<table>
+<tr><th>방법</th><th>핵심</th><th>속도(n=100)</th><th>참조</th></tr>
+<tr><td><b>Extreme Point (EP)</b></td><td>배치마다 3D extreme point 3개 생성, 최소-t EP에 배치. corner보다 촘촘+빠름</td><td class="num">&lt;50ms</td><td class="ref">Crainic, Perboli, Tadei, INFORMS JoC 2008</td></tr>
+<tr><td><b>Empty Maximal Space</b></td><td>남은 maximal 빈 박스 유지, 최소-t 공간에 배치 (MaxRects 3D)</td><td class="num">&lt;100ms</td><td class="ref">Lai &amp; Chan 1997; GOPT 2024</td></tr>
+<tr><td><b>Time-axis Skyline</b> ★</td><td>각 (x,y) 셀의 "최소 가용 시각" profile; max-over-cells+R 최소 위치에 배치 = <b>우리 fastfloor 구조</b></td><td class="num">&lt;10ms</td><td class="ref">EJOR 2011; C&amp;OR 2017</td></tr>
+<tr><td><b>Semi-discrete BLF</b></td><td>폴리곤을 수직 slice로 분해, 정수 x-구간 비교로 overlap → NFP 없이 <b>~100×</b> 빠름</td><td class="num">&lt;50ms</td><td class="ref">Oliveira et al., EJOR 2021 (arXiv 2103.08739)</td></tr>
+<tr><td><b>ROMA raster</b></td><td>NFP를 격자에 사전 래스터화 → 침투깊이 O(1) 조회, 4방향 맵</td><td class="num">전처리+O(1)</td><td class="ref">Toledo et al., EJOR 2019</td></tr>
+</table>
+<div class="sub">우리 셀-기반 footprint와 가장 잘 맞는 건 <b>EP / EMS</b>(정수 셀 비겹침). skyline=현 구조. 모두 crane j≥k를 overlap-check에 셀-비겹침으로 넣으면 됨.</div>
+
+<h2>3. 정렬(ordering) — tardiness dispatching</h2>
+<table>
+<tr><th>규칙</th><th>공식 (베이 내 w 동일 → w/p=1/p)</th><th>참조</th></tr>
+<tr><td>EDD</td><td class="num">key = D (오름차순) — 현 디코더 F0 계열</td><td class="ref">Lawler</td></tr>
+<tr><td><b>ATC</b></td><td class="num">(1/p)·exp(−slack/(k·p̄)), slack=max(0,D−P−t), k≈2</td><td class="ref">Morton &amp; Rachamadugu 1982</td></tr>
+<tr><td><b>COVERT</b> ★</td><td class="num">(1/p)·max(0, 1−slack/(k·p)), k≈2</td><td class="ref">Carroll 1965</td></tr>
+<tr><td>TCI×RCI</td><td class="num">시간임계도×자원임계도 (조선소 전용)</td><td class="ref">IJPR 2018</td></tr>
+</table>
+
+<h2>4. 메타휴리스틱</h2>
+<div class="card">
+<ul>
+<li><b>SWO (Squeaky Wheel)</b>: 우선순위 구축 → <b>tardy 블록 blame</b> → 앞으로 당김 → 재구성. CP-SAT 불필요, 싸게 local-optimum 탈출. <span class="ref">Joslin &amp; Clements, JAIR 1999</span></li>
+<li><b>ALNS</b> destroy-repair (most-tardy/window/adjacent + regret-insert), 수용=SA/Record-to-Record. <span class="ref">Santini 2018</span></li>
+<li><b>GLS overlap-allowed</b>: 충돌 허용→가중치로 반복 해소. 현 SOTA <b>Sparrow</b>(Rust, 2.4M샘플/s). <span class="ref">Egeblad 2007; Gardeyn 2025</span></li>
+</ul>
+</div>
+
+<h2>5. 우리가 실제로 시도한 결과 (격리 벤치마크)</h2>
+<div class="sub">baseline = 현 디코더(greedy floor + B3 CP-SAT timing). 판정 = per-bay z1(tardiness), never-infeasible.</div>
+<table>
+<tr><th>방법</th><th>prob_26 b1<br>(59블록, base 575)</th><th>prob_39 b0<br>(80블록, base 766)</th><th>prob_27 b1<br>(102블록, base 2549)</th><th>판정</th></tr>
+<tr><td>dense-greedy (LCA/contact)</td><td colspan=3 class="num">전부 baseline보다 나쁨+2.6× 느림</td><td><span class="pill p-no">✗</span></td></tr>
+<tr><td>whole-bay joint CP-SAT</td><td class="num bad">1,106</td><td class="num">—</td><td class="num bad">2,484~3,292</td><td><span class="pill p-no">✗ 모델 폭발, greedy도 못 이김</span></td></tr>
+<tr><td>windowed rolling CP-SAT</td><td class="num">694</td><td class="num">—</td><td class="num">2,484(K30)</td><td><span class="pill p-mb">≈ myopic</span></td></tr>
+<tr><td>ALNS 폴리시 (fixed-orient)</td><td class="num">569</td><td class="num win">646 (−15.7%)</td><td class="num win">2,457 (−3.6%)</td><td><span class="pill p-go">✓ never-worse</span></td></tr>
+<tr><td>ALNS 4D (방향 포함)</td><td class="num">575</td><td class="num win">633 (−17.4%)</td><td class="num">2,549 (큰베이 0%)</td><td><span class="pill p-mb">✓ 중간베이만</span></td></tr>
+<tr><td><b>COVERT 정렬</b> (greedy-only)</td><td class="num win">642</td><td class="num">839</td><td class="num win">2,524 (B3없이 baseline 격파)</td><td><span class="pill p-go">✓ 거의 공짜</span></td></tr>
+<tr><td>SWO (blame 재정렬)</td><td class="num">700</td><td class="num">749</td><td class="num">2,588</td><td><span class="pill p-mb">≈ EDD개선&lt;COVERT</span></td></tr>
+<tr><td>area-cumulative LB</td><td class="num">~6</td><td class="num">~27</td><td class="num">~605</td><td class="ref">area floor(기하 도달불가)</td></tr>
+</table>
+
+<div class="note">
+<b>핵심 결론.</b> ① greedy(B2)는 이미 강함 — joint CP-SAT는 스케일에서 greedy조차 못 이김(모델 폭발). ② area-relax floor는 기하적으로 도달 불가(2D 이형 패킹 근본 난도). ③ <b>실제 레버 셋</b>: <b>COVERT 정렬</b>(거의 공짜, prob_27 B3없이 격파) + <b>ALNS 폴리시</b>(never-worse −1~17%, bay-의존) + <b>방향(4D)</b>(중간베이). ④ 개선폭 modest+noisy(CP-SAT 비결정성).
+</div>
+
+<h2>6. 구현 로드맵 (권장 순서)</h2>
+<div class="card"><ul>
+<li><b>① 정렬 레이스 (즉시, 거의 공짜)</b>: 디코더가 {EDD, COVERT, slack, release, ATC} 그리디를 돌려 best-of → B3. 현 <code>_fixed_time_decode</code>가 explicit order 지원 → COVERT/ATC만 카탈로그에 추가. gassign <code>_decode_bay</code>에 배선.</li>
+<li><b>② EP/EMS 배치 휴리스틱</b>: plain BL → extreme-point/maximal-space로 교체(셀-비겹침 유지) → 더 dense.</li>
+<li><b>③ ALNS 폴리시</b>: leftover-wall에서 {fixed,4D}×{greedy,SA} portfolio take-best (현 perbay 스테이지 자리).</li>
+<li><b>④ 인스턴스-레벨 A/B</b>: ①~③를 파이프라인에 꽂아 <b>full-instance obj(=B1 목표)</b>가 실제로 내려가는지 확인 — per-bay z1 감소가 instance로 전이되는지가 최종 판정.</li>
+</ul></div>
+<div class="sub">참조 전체·세부 공식은 원장 C12 + 각 셀 인용. 다음 실험 큐도 LEDGER.md 하단.</div>
+
+</div></body></html>

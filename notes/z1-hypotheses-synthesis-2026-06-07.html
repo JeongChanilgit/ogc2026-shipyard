@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC 2026 — Z1 감소 &amp; 시간단축 가설 총정리 (2026-06-07)</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--card2:#1d212b;--ink:#e7ebf0;--mut:#9aa4b2;
+    --line:#2a2f3a;--accent:#4da3ff;--good:#37c871;--warn:#ffb13b;--bad:#ff5d5d;--pur:#b07bff;--teal:#2dd4bf;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.62 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1140px;margin:0 auto;padding:32px 22px 90px}
+  h1{font-size:25px;margin:0 0 4px}
+  .sub{color:var(--mut);margin:0 0 22px;font-size:14px}
+  h2{font-size:19px;margin:36px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-weight:700;margin-right:8px}
+  h3{font-size:15.5px;margin:18px 0 8px;color:#cfe0f5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+  .grid{display:grid;gap:12px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;margin:6px 0;font-size:13.5px}
+  th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid transparent;white-space:nowrap}
+  .t-good{background:rgba(55,200,113,.13);color:var(--good);border-color:rgba(55,200,113,.3)}
+  .t-bad{background:rgba(255,93,93,.13);color:var(--bad);border-color:rgba(255,93,93,.3)}
+  .t-warn{background:rgba(255,177,59,.13);color:var(--warn);border-color:rgba(255,177,59,.3)}
+  .t-mut{background:rgba(154,164,178,.12);color:var(--mut);border-color:rgba(154,164,178,.3)}
+  .t-acc{background:rgba(77,163,255,.13);color:var(--accent);border-color:rgba(77,163,255,.3)}
+  .t-pur{background:rgba(176,123,255,.13);color:var(--pur);border-color:rgba(176,123,255,.3)}
+  code{background:#11141a;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font:12.5px/1.4 'JetBrains Mono',Consolas,monospace;color:#cdd6e3}
+  pre{background:#0c0e13;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;font:12.5px/1.5 'JetBrains Mono',Consolas,monospace;color:#cdd6e3;margin:8px 0}
+  .mut{color:var(--mut)}.small{font-size:12.5px}
+  .hl{border-left:3px solid var(--accent);padding-left:12px}
+  .hl.bad{border-color:var(--bad)}.hl.good{border-color:var(--good)}.hl.warn{border-color:var(--warn)}
+  .lead{font-size:15.5px}
+  .h-id{font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace}
+  .risk-lo{color:var(--good);font-weight:600}.risk-md{color:var(--warn);font-weight:600}.risk-hi{color:var(--bad);font-weight:600}
+  .footer{margin-top:42px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+  .trace{font:12.5px/1.7 'JetBrains Mono',Consolas,monospace}
+  .trace .b{color:var(--mut)} .trace .c{color:var(--accent)} .trace .w{color:var(--bad)} .trace .x{color:var(--good)}
+  ul{margin:6px 0}
+  .pri{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--accent);font-weight:700;font-size:12px;text-align:center;line-height:21px;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Z1 감소 &amp; 시간단축 — 가설 총정리</h1>
+  <p class="sub">모든 실험 증거(이번 세션 + 과거 147편 문헌리뷰 + toggle 실험사) 종합 · 2026-06-07</p>
+
+  <div class="card hl good">
+    <span class="lead"><b>TL;DR — 가장 안전·효과 큰 3수</b></span>
+    <ol style="margin:8px 0 0">
+      <li><b class="h-id">T-A</b> cum_level <b>stall-abort</b> (개선 멈추면 중단) — prob_1에서 <b>94초 헛돎</b> 제거, 품질 불변. <span class="tag t-good">위험 낮음</span></li>
+      <li><b class="h-id">T-B</b> <b>z1=0 조기종료</b>(<code>OGC_EXIT_ON_Z1_ZERO</code>) 켜기 — 제출 기본은 OFF라 z1=0 후에도 풀타임 소모. <span class="tag t-warn">z2/z3 폴리시 포기</span></li>
+      <li><b class="h-id">Z-A</b> <b>assignment 레벨 공격</b>(Z1-proxy 재배정/LBBD) — 남은 8개의 진짜 벽인 <b>2D 패킹 floor</b>를 깸. <span class="tag t-bad">위험 높음·고효과</span></li>
+    </ol>
+  </div>
+
+  <!-- EVIDENCE -->
+  <h2><span class="n">§A</span>증거 베이스 (모든 추론의 근거)</h2>
+
+  <div class="card">
+    <h3>A·1 &nbsp;핵심 사실 (다중 출처 수렴)</h3>
+    <table>
+      <thead><tr><th>사실</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td><b>z1=0은 원리상 전 인스턴스 달성 가능</b> — 내재(단일머신·cumulative-area) tardiness LB=0 (모든 베이 OPTIMAL, α≥0.9)</td><td>z1-toggles, z1-feasibility-floor 메모, crane_headroom.py (99.9% 감소가능)</td></tr>
+        <tr><td><b>tardiness 원인 = 크레인 j≥k 직렬화 + greedy enter-ASAP 피크 + 2D 패킹 단편화</b>. 용량 아님(tardy 블록은 베이 75~94% 빈 채 대기)</td><td>packing_z1_analysis.py (area 포화 기여 0%), crane_headroom.py</td></tr>
+        <tr><td><b>진짜 벽 = 2D 비정형 packing-over-time 조정.</b> 타이밍만/수요평탄화만으론 패킹 floor에 막힘</td><td>greedy 레이아웃 최적타이밍 floor=883 ≫ 풀서치 309; 4×4 더해도 prob_14 27→25(정체)</td></tr>
+        <tr><td><b>현 파이프라인 승자 4종은 전부 "고정 배정" 위에서 재타이밍/재패킹</b> (cum_level·cpsat_timing·bbox_pack), cross-bay만 1블록 이동. 남은 floor는 <b>배정 자체</b>가 한계 (prob_20: 현배정 bbox floor 68 vs LB 0)</td><td>code map + z1-toggles prob_20 분석</td></tr>
+        <tr><td><b>±20× 비결정성</b>: cum_level CP-SAT 비결정 → 같은 인스턴스가 39s/0 또는 197s/우회. 분산이 시간·품질 둘 다 흔듦</td><td>이번 세션 prob_3 솔로39s vs 경합197s</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card hl bad">
+    <h3 style="margin-top:0">A·2 &nbsp;⏱️ 핵심 실측 — prob_1 솔로 트레이스 (시간 낭비의 정체)</h3>
+    <div class="trace">
+      <span class="b">t=61.7s  baseline   z1=153</span><br>
+      <span class="c">t=80.9s  cum_level  z1=69</span><br>
+      <span class="c">t=99.4s  cum_level  z1=59</span><br>
+      <span class="c">t=113s   cum_level  z1=5</span><br>
+      <span class="c">t=128s   cum_level  z1=1</span> &nbsp;← 사실상 여기서 끝<br>
+      <span class="w">t=128~222s          ▓▓▓▓▓▓▓▓ cum_level이 94초간 z1=1에서 헛돎 (예산 스핀)</span><br>
+      <span class="x">t=223s   bbox_pack  z1=0</span> &nbsp;← <b>1초 만에 해결</b>
+    </div>
+    <p class="small" style="margin:10px 0 0">
+      단계시간: baseline 61.7s · <b>cum_level 160s</b> · cpsat_timing 0.3s · <b>bbox_pack 1.0s</b>. &nbsp;
+      <b>→ cum_level이 70% 예산(160s)을 다 쓰지만 유용한 일은 128s에 끝났고, 진짜 마무리는 bbox_pack 1초.</b>
+      (주의: 이 측정은 <code>OGC_CUMLEVEL_PARALLEL=1</code> 강제 — 부모가 가장 느린 워커의 예산 스핀을 대기. 이 설정은 <b>제출 기본 OFF·과거 폐기(worse)</b>라 오염원.)
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>A·3 &nbsp;이번 세션에서 새로 확정</h3>
+    <ul>
+      <li><b>baseline 제거 불가</b> — A/B: 제거 시 z1 0→1만~3만 (2,800배). cum_level이 재타이밍할 토대.</li>
+      <li><b>cum_level 탐색폭(α×order)은 wall에 영향 0</b> — 솔로 full 3×3=222.2s vs lean 1×1=223.0s. "탐색폭 줄이기" 가설 <span class="tag t-bad">기각</span>. 시간은 <b>예산 스핀</b>에 묶임(A·2).</li>
+      <li><b>order-level break 버그픽스</b> 완료 — 베이가 LB 도달 후 추가 재디코드 중단 (prob_3 64.7→39.3s). 단 <b>전역 z1=0이 아닌 per-bay LB</b> 기준이라, 병렬 부모는 여전히 느린 워커 대기(A·2).</li>
+      <li><b>greedy byte-identical 재구성은 2~4× 느려서 폐기</b> — greedy 비용은 "호출당 후보수"가 아니라 "포지션 호출수(O(n²))".</li>
+    </ul>
+  </div>
+
+  <!-- REQ 1 -->
+  <h2><span class="n">§1</span>요구사항 1 — z1 값을 더 줄이기 <span class="mut small">(잔여 8개: 4·13·16=1, 9·15=2, 12=20, 20=18, 14=35)</span></h2>
+  <p class="small mut">남은 floor의 정체 = <b>고정 배정 위 2D packing-over-time 한계</b>. 현 승자들은 배정을 안 바꾼다 → 레버는 ① 패킹 자체를 더 잘 / ② 배정을 바꿔 패킹 여지 확보 / ③ 작은 베이 exact.</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>가설</th><th>메커니즘</th><th>예상 효과</th><th>위험</th><th>근거 / 상태</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b class="h-id">Z-A</b><br>배정-레벨 공격<br><span class="small mut">(Z1-proxy 재배정 / LBBD)</span></td>
+          <td>현 파이프라인은 배정 고정. 배정 master에 <b>Z1 proxy</b>(temporal_load·due_pressure·crane_pressure) 넣어 패킹 여지 큰 배정 탐색. LBBD: master=배정+크레인순서, sub=크레인-안전 패킹 feasibility → no-good cut.</td>
+          <td>잔여 <b>하드 인스턴스(12·14·20)</b>의 패킹 floor 돌파. prob_20=배정-한계라 가장 직접적.</td>
+          <td><span class="risk-hi">높음</span><br><span class="small">배정 변경→Z2/Z3 이동, 복잡, timeout</span></td>
+          <td>P5·④(LBBD); prob_20 bbox68 vs LB0. <span class="tag t-warn">미구현</span> <br>⚠ <code>temporal_reassign</code>는 <b>area-balance proxy로 실패</b>(폐기) → Z1-proxy로 재설계 필수</td>
+        </tr>
+        <tr>
+          <td><b class="h-id">Z-B</b><br>anticipatory 배치<br><span class="small mut">(deadline-aware ③)</span></td>
+          <td>배치 시 미래 인출순서 고려 — 긴급(slack 작은) 블록을 크레인 닿는 통로/상단에, 여유 블록은 깊이. <code>_candidate_positions</code>에 크레인압력을 1급 결정으로.</td>
+          <td>크레인 자기-차단 회피 → <b>floor 자체를 낮춤</b>(진짜 벽 직격).</td>
+          <td><span class="risk-hi">중~높음</span><br><span class="small">geometry 변경→Z2/Z3, greedy 회귀 위험</span></td>
+          <td>③, root-cause=크레인직렬화. <span class="tag t-warn">미구현(Wave 2)</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">Z-C</b><br>작은 베이 CP-SAT exact<br><span class="small mut">(⑤)</span></td>
+          <td>≤~20블록 베이를 2D no_overlap + 크레인 j≥k 정밀 인코딩으로 <b>정확히 0/LB</b>까지. 큰 베이는 size-gate로 제외.</td>
+          <td>z1≤2 인스턴스(4·9·13·15·16) 깔끔히 0으로 마무리 유망. <b>4코어 CPU에 이상적</b>.</td>
+          <td><span class="risk-md">중간</span><br><span class="small">size-gate 필수(큰 베이 폭발)</span></td>
+          <td>⑤; cum_level/bbox가 이미 CP-SAT 기반(인프라 있음). <span class="tag t-warn">부분(bbox가 근접)</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">Z-D</b><br>크레인-클러스터 ALNS<br><span class="small mut">(⑥)</span></td>
+          <td>destroy=최악-tardy 블록+그 크레인-차단자들 / 수직 스택 통째 제거, repair=regret-k. 증분 Z1 캐시로 같은 예산에 ~10× 반복.</td>
+          <td>혼잡 베이의 패킹 local-min 탈출.</td>
+          <td><span class="risk-md">중~높음</span><br><span class="small">증분 delta 정확성</span></td>
+          <td>⑥; 현 ALNS는 배정-레벨(크레인-클러스터 아님). <span class="tag t-warn">미구현(Wave 3)</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">Z-E</b><br>bbox_pack 강화<br><span class="small mut">(best-of / 예산↑)</span></td>
+          <td>bbox_pack이 최강·최속 패킹 레버(prob_1 z1=1→0 in 1s, prob_15 23→0). 더 많은 시도/방향/슬랩 best-of, 더 이른 예산.</td>
+          <td>중간 난이도 인스턴스 추가 0 가능.</td>
+          <td><span class="risk-lo">낮음</span><br><span class="small">이미 ON, 예산만</span></td>
+          <td>이번 트레이스 = bbox 히어로. 단 4×4류는 floor(~24-26) 못 깸. <span class="tag t-good">저위험 우선</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="small mut" style="margin:8px 0 0"><b>재시도 금지(폐기 증거):</b> temporal_reassign(area-balance=나쁜 proxy), xbay_batch(prob_18 50→102), cumlevel_exhaustive(prob_17 26→120), 4α×4order(정체), m4_cut(0-improvement), parallel_ms(0-improvement), atcr_seed(소형 회귀).</p>
+  </div>
+
+  <!-- REQ 2 -->
+  <h2><span class="n">§2</span>요구사항 2 — z1 줄이는 데 드는 시간 단축</h2>
+  <p class="small mut">핵심 관찰: 제출 기본은 <b>z1=0 후에도 풀타임 소모</b>(early-exit OFF) + <b>cum_level이 유용한 일 끝난 뒤 예산까지 스핀</b>(prob_1 94초 낭비). 시간 레버 대부분은 이 둘을 친다.</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>가설</th><th>메커니즘</th><th>예상 효과</th><th>위험</th><th>근거 / 상태</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b class="h-id">T-A</b><br>cum_level <b>stall-abort</b></td>
+          <td>cum_level이 X초/Y시도 동안 전역 z1 개선 없으면 즉시 중단하고 다음 레버로. (현재는 per-bay LB break만 있어 "1에 막힌 베이"는 예산까지 스핀.)</td>
+          <td><b>prob_1 223→~135s (~1.7×)</b>. 슬로 인스턴스 전반의 cum_level 꼬리 절단. 마무리는 bbox_pack 1초가 함.</td>
+          <td><span class="risk-lo">낮음</span><br><span class="small">스핀 구간은 산출 0 → objective-neutral, 게이트가 검증</span></td>
+          <td>A·2 트레이스(128→222 평탄). <span class="tag t-good">미구현·최우선</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">T-B</b><br>z1=0 <b>조기종료</b></td>
+          <td><code>OGC_EXIT_ON_Z1_ZERO</code> 켜기 (현 default OFF → 제출은 z1=0 후에도 모든 레버·search 풀타임).</td>
+          <td>z1=0을 일찍 잡는 인스턴스 즉시 반환. easy 다수 대폭↓.</td>
+          <td><span class="risk-md">중간</span><br><span class="small">z1=0 후 z2/z3 폴리시 포기 → R−nb 동점깨기서 손해 가능. w1 지배라 obj는 거의 불변</span></td>
+          <td>이미 구현됨(플래그만). <span class="tag t-warn">정책 결정 필요</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">T-C</b><br>postprocess <b>재정렬</b><br><span class="small mut">(bbox_pack 먼저/인터리브)</span></td>
+          <td>bbox_pack(1s, 강력)을 cum_level 앞이나 사이에. bbox가 먼저 0 잡으면 cum_level 스핀 자체를 건너뜀.</td>
+          <td>bbox가 푸는 인스턴스서 큰 시간↓ (T-A와 시너지).</td>
+          <td><span class="risk-md">중간</span><br><span class="small">과거 cum_level-last가 prob_15 starve→순서 민감. A/B 필수</span></td>
+          <td>A·2(bbox 1s 마무리). <span class="tag t-warn">미구현·A/B</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">T-D</b><br><code>CUMLEVEL_PARALLEL</code> 끄기</td>
+          <td>병렬 cum_level은 부모가 <b>가장 느린 워커의 예산 스핀</b>을 대기. 제출 기본(순차)이 이미 더 나음.</td>
+          <td>부모-블로킹 스핀 제거. (내 실험 오염 제거)</td>
+          <td><span class="risk-lo">없음</span><br><span class="small">제출은 이미 OFF·과거 worse 판정</span></td>
+          <td>code map(2596 default OFF), z1-toggles(prob_14 538 bad). <span class="tag t-good">실험 설정만 수정</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">T-E</b><br>cum_level 예산 적응 캡</td>
+          <td>70% 고정 예산을 수렴기반으로 축소. (T-A의 단순판 — stall-abort가 더 똑똑하므로 T-A에 흡수 권장.)</td>
+          <td>스핀 시간↓.</td>
+          <td><span class="risk-md">중간</span><br><span class="small">하드 인스턴스는 예산 필요(reserve↑가 prob_20 악화 전례)</span></td>
+          <td>z1-toggles(reserve 35%→prob_20 507→552). <span class="tag t-mut">T-A로 대체</span></td>
+        </tr>
+        <tr>
+          <td><b class="h-id">T-F</b><br>baseline 가속</td>
+          <td>greedy O(n²) 포지션 탐색 단축. placed-block <code>bounding_rect</code> 캐시(정확) 등.</td>
+          <td>baseline 비중(prob_1 28%)만큼. cum_level보다 작음.</td>
+          <td><span class="risk-hi">높음</span><br><span class="small">포지션 가지치기=floor 품질. byte-id 재구성은 느림(폐기)</span></td>
+          <td>이번 프로파일. <span class="tag t-mut">후순위</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PRIORITY -->
+  <h2><span class="n">§3</span>권장 실행 순서 <span class="mut small">(저위험·고확실 → 고효과·고위험)</span></h2>
+  <div class="card">
+    <p><span class="pri">0</span><b>실험 베이스라인 정정</b> — <b class="h-id">T-D</b>: <code>CUMLEVEL_PARALLEL=1</code> 빼고, <b>제출 실제 config(순차)로 20개 재측정</b>. 지금까지 수치는 오염 가능. (싸고 필수)</p>
+    <p><span class="pri">1</span><b>안전한 시간 절감</b> — <b class="h-id">T-A</b>(cum_level stall-abort, objective-neutral) → 효과 확인 후 <b class="h-id">T-C</b>(bbox 재정렬) A/B. 둘 다 z1 유지하며 슬로 인스턴스 대폭 단축 기대.</p>
+    <p><span class="pri">2</span><b>정책 결정</b> — <b class="h-id">T-B</b>(z1=0 조기종료): z2/z3 폴리시 vs 시간 트레이드. 대회 R−nb 동점깨기 영향 확인 후 on/off.</p>
+    <p><span class="pri">3</span><b>z1 추가 감소(저위험 먼저)</b> — <b class="h-id">Z-E</b>(bbox 강화) → <b class="h-id">Z-C</b>(작은 베이 CP-SAT exact)로 z1≤2 5개 마무리 시도.</p>
+    <p><span class="pri">4</span><b>하드 인스턴스 돌파(고위험)</b> — <b class="h-id">Z-A</b>(Z1-proxy 배정/LBBD) 또는 <b class="h-id">Z-B</b>(anticipatory 배치)로 12·14·20의 패킹 floor 공략. 비용·위험 큼 → 별도 트랙.</p>
+  </div>
+
+  <div class="card hl warn">
+    <b>교차 주의점</b>
+    <ul style="margin:8px 0 0">
+      <li><b>±20× 비결정성</b> — 단일 실행 측정은 신뢰 낮음. 모든 A/B는 <b>다중 시드/반복</b>으로. 분산 축소(시드 고정·multistart) 자체가 "빠른 수렴 안정화" 레버.</li>
+      <li><b>모든 변경은 official checker 게이트 통과</b> — Z1↓라도 weighted-obj가 incumbent보다 나쁘면 채택 안 함(−1·회귀 방지). 새 레버는 게이트 뒤에서만.</li>
+      <li><b>평가서버 = 인스턴스당 4코어 단독</b> — 측정은 솔로(또는 ≤2 동시)로. 4동시 경합 수치는 부풀려짐.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    근거 출처: 이번 세션 실험(baseline 제거 A/B·greedy byte-id·프로파일·단계타이밍·cum_level breadth·prob_1 트레이스) +
+    <code>notes/z1-toggles.md</code>(최종 레버맵) · <code>milestone-status.md</code> · <code>z1-recovery-strategy-2026-06-06.html</code> ·
+    <code>z1-insights-visual-2026-06-06.html</code>(147편 문헌 8 인사이트) · 코드 맵(<code>myalgorithm.py</code>/<code>parallel_decode.py</code>).
+    생성 2026-06-07 · 관련: <code>notes/speed-investigation-2026-06-07.html</code>
+  </div>
+</div>
+</body>
+</html>

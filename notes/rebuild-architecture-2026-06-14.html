@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>구조적 재설계 — z3-aware Realizable Assignment (LBBD) · 2026-06-14</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #1f2937;
+    --border:   #30363d;
+    --accent:   #58a6ff;
+    --accent2:  #3fb950;
+    --warn:     #f0883e;
+    --danger:   #f85149;
+    --muted:    #8b949e;
+    --text:     #e6edf3;
+    --text2:    #b1bac4;
+    --purple:   #a371f7;
+    --yellow:   #d29922;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 28px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin: 32px 0 14px;
+    letter-spacing: -0.2px;
+  }
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent2);
+    margin: 16px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  p { color: var(--text2); margin-bottom: 10px; }
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--text);
+    overflow-x: auto;
+    margin-bottom: 12px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .card-row { display: flex; gap: 14px; margin-bottom: 14px; }
+  .card-row .card { flex: 1; margin-bottom: 0; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 6px;
+    letter-spacing: 0.3px;
+  }
+  .tag-ok    { background: rgba(63,185,80,.18); color: var(--accent2); border: 1px solid rgba(63,185,80,.35); }
+  .tag-warn  { background: rgba(240,136,62,.18); color: var(--warn);   border: 1px solid rgba(240,136,62,.35); }
+  .tag-bad   { background: rgba(248,81,73,.18);  color: var(--danger); border: 1px solid rgba(248,81,73,.35); }
+  .tag-info  { background: rgba(88,166,255,.18); color: var(--accent); border: 1px solid rgba(88,166,255,.35); }
+  .tag-purple{ background: rgba(163,113,247,.18);color: var(--purple); border: 1px solid rgba(163,113,247,.35); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+  .mono { font-family: 'Cascadia Code','Fira Code','Consolas',monospace; font-size: 12px; color: var(--accent); }
+  .text-ok   { color: var(--accent2); font-weight: 600; }
+  .text-warn { color: var(--warn); font-weight: 600; }
+  .text-bad  { color: var(--danger); font-weight: 600; }
+  .text-muted{ color: var(--muted); }
+  ul { color: var(--text2); padding-left: 20px; margin-bottom: 10px; }
+  ul li { margin-bottom: 4px; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .kv-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: baseline; }
+  .kv-key { color: var(--muted); font-size: 12px; min-width: 160px; }
+  .kv-val { color: var(--text); font-size: 13px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .section-number {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  /* LBBD Flow Diagram */
+  .flow-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 20px 16px;
+    overflow-x: auto;
+  }
+  /* Wave colors */
+  .w1 { background: rgba(63,185,80,.14); border-color: rgba(63,185,80,.4); }
+  .w2 { background: rgba(88,166,255,.12); border-color: rgba(88,166,255,.4); }
+  .w3 { background: rgba(163,113,247,.12); border-color: rgba(163,113,247,.4); }
+  .w4 { background: rgba(240,136,62,.12); border-color: rgba(240,136,62,.4); }
+</style>
+</head>
+<body>
+
+<h1>구조적 재설계 — z3-aware Realizable Assignment (LBBD)</h1>
+<div class="subtitle">OGC 2026 Shipyard-Packing Solver &nbsp;·&nbsp; Reference Architecture &nbsp;·&nbsp; 2026-06-14</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §1 목표 -->
+<h2><span class="section-number">1</span>목표 — 새로운 성능 타깃</h2>
+
+<div class="card-row">
+  <div class="card">
+    <h3>시간대별 목표</h3>
+    <div class="kv-row"><span class="kv-key">≤ 100 s</span><span class="kv-val">합리적 목적함수 (good feasible, z1 = 0)</span></div>
+    <div class="kv-row"><span class="kv-key">≤ 300 s</span><span class="kv-val">최선의 해 수렴 (z1 = 0 + low z3)</span></div>
+    <div class="kv-row"><span class="kv-key">≤ 600 s</span><span class="kv-val">경쟁자 대비 승수 극대화</span></div>
+  </div>
+  <div class="card">
+    <h3>승률 목표</h3>
+    <div class="kv-row"><span class="kv-key">현재 @600</span><span class="kv-val text-warn">9 / 20 승</span></div>
+    <div class="kv-row"><span class="kv-key">목표</span><span class="kv-val text-ok">13 + / 20 (≥ 65%)</span></div>
+    <div class="kv-row"><span class="kv-key">경쟁자 증거</span><span class="kv-val">z1 = 0 + low z3 → 5 ~ 47 s 달성 (attainable)</span></div>
+    <div class="kv-row"><span class="kv-key">총 obj 갭</span><span class="kv-val">1.64 M (ours) vs 1.14 M (comp) → −0.50 M 필요</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §2 진단 -->
+<h2><span class="section-number">2</span>진단 — 왜 현재 구조로는 안 되나</h2>
+
+<div class="card">
+  <h3>배정 단계 목적함수 (현재)</h3>
+  <pre><code>_cpsat_assignment  (myalgorithm.py : 1675)
+  min  c2·z2  +  c3·1000·Σpref           ← z3-dominant
+  ⚠ z1 은 목적함수에 없음 (z1-blind)</code></pre>
+  <p>z1 = 0 달성은 배정 이후 디코드 + 타이밍이 <em>사후(post-hoc)</em> realize. 막히면 ban-rebuild가 블록을 선호 베이에서 추방 → <strong>z3를 되돌려 토해냄</strong>.</p>
+</div>
+
+<div class="card-row">
+  <div class="card">
+    <h3>z3 갭의 본질</h3>
+    <p><strong>낮은-z3 배정이 z1 = 0으로 realize 안 됨 = realize barrier</strong></p>
+    <ul>
+      <li>마스터가 z3-최적 배정을 산출</li>
+      <li>디코더(crane j≥k) 통과 못 함 → z1 폭발</li>
+      <li>ban-rebuild: 블록을 선호베이서 추방 → z3 급등</li>
+      <li>z3 + z1 둘 다 나쁜 해로 수렴</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>이전 z3-race가 실패한 이유</h3>
+    <ul>
+      <li class="text-bad">z1을 마스터 목적에 미포함</li>
+      <li class="text-bad">cut이 약함 (블록-베이 ban만)</li>
+      <li class="text-bad">완화(area-cap proxy)만 조임 — 충분조건 아님</li>
+      <li class="text-bad">realize barrier를 제거하지 않고 우회만 시도</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §3 Benders 갭 -->
+<h2><span class="section-number">3</span>realize barrier = Benders Relaxation Gap</h2>
+
+<div class="card">
+  <div class="badge-row">
+    <span class="tag tag-warn">핵심 통찰</span>
+    <span class="tag tag-info">문헌 근거: #115 #121 #145 #146</span>
+  </div>
+  <p>
+    우리의 <code>AddCumulative</code> area-time proxy는 <strong>필요조건이지 충분조건이 아니다.</strong><br>
+    낮은-z3 마스터 최적해가 완화 영역엔 있지만 <em>realizable 영역 밖</em> → 디코드 시 z1 폭발.
+  </p>
+  <div class="card-row" style="margin-top:12px; margin-bottom:0;">
+    <div class="card" style="background:var(--surface2);">
+      <h3>잘못된 접근 (현재)</h3>
+      <p>완화를 더 강하게 조이기 → proxy 정밀도 향상 시도</p>
+      <p class="text-bad">→ 조여도 충분조건은 안 됨. NP-hard gap.</p>
+    </div>
+    <div class="card" style="background:var(--surface2);">
+      <h3>올바른 접근 (LBBD)</h3>
+      <p>진짜 디코더를 <strong>feasibility 오라클</strong>로 사용</p>
+      <p class="text-ok">→ realize 안 되는 배정을 no-good cut으로 제거</p>
+    </div>
+  </div>
+  <p style="margin-top:12px; margin-bottom:0; font-size:12px; color:var(--muted);">
+    근거: Nascimento 2024 EJOR (#145) · Zipfel 2024 (#146) · Hooker et al. (#115, #121) — LBBD / branch-and-check 패러다임
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §4 아키텍처 -->
+<h2><span class="section-number">4</span>아키텍처</h2>
+
+<h3>LBBD 루프 플로우</h3>
+<div class="flow-wrap">
+  <svg viewBox="0 0 960 320" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block; min-width:720px;">
+    <defs>
+      <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#58a6ff"/>
+      </marker>
+      <marker id="arr-ok" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#3fb950"/>
+      </marker>
+      <marker id="arr-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="#f85149"/>
+      </marker>
+    </defs>
+
+    <!-- MASTER box -->
+    <rect x="30" y="110" width="220" height="100" rx="8" fill="#1f2937" stroke="#58a6ff" stroke-width="2"/>
+    <text x="140" y="138" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="13" font-weight="700" fill="#58a6ff">MASTER (CP-SAT)</text>
+    <text x="140" y="158" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#e6edf3">min w1·z1 + w2·z2 + w3·z3</text>
+    <text x="140" y="176" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#b1bac4">배정 + 타이밍 + 진짜 목적</text>
+    <text x="140" y="196" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#b1bac4">z1-aware &amp; z3-aware</text>
+
+    <!-- arrow master → candidate -->
+    <line x1="250" y1="160" x2="338" y2="160" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="294" y="153" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#8b949e">후보 배정</text>
+
+    <!-- CANDIDATE box -->
+    <rect x="340" y="130" width="160" height="60" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    <text x="420" y="155" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#e6edf3">assignment</text>
+    <text x="420" y="173" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a371f7">{block → bay, timing}</text>
+
+    <!-- arrow candidate → decoder -->
+    <line x1="500" y1="160" x2="588" y2="160" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+    <text x="543" y="153" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#8b949e">realize 시도</text>
+
+    <!-- DECODER box -->
+    <rect x="590" y="100" width="210" height="120" rx="8" fill="#1f2937" stroke="#a371f7" stroke-width="2"/>
+    <text x="695" y="128" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="13" font-weight="700" fill="#a371f7">DECODER ORACLE</text>
+    <text x="695" y="147" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#b1bac4">2D pack: _decode_bay</text>
+    <text x="695" y="164" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#b1bac4">crane j≥k 직렬화</text>
+    <text x="695" y="181" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#b1bac4">timing: _cpsat_bay_timing</text>
+    <text x="695" y="200" text-anchor="middle" font-family="Consolas,monospace" font-size="11" fill="#a371f7">realizability oracle</text>
+
+    <!-- ACCEPT path -->
+    <line x1="800" y1="140" x2="900" y2="110" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr-ok)"/>
+    <rect x="900" y="80" width="50" height="60" rx="6" fill="#1a3a1f" stroke="#3fb950" stroke-width="1.5"/>
+    <text x="925" y="108" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#3fb950">ACCEPT</text>
+    <text x="925" y="126" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#3fb950">z1=0</text>
+    <text x="865" y="104" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="10" fill="#3fb950">realize OK</text>
+
+    <!-- REJECT path → no-good cut -->
+    <line x1="800" y1="180" x2="880" y2="230" stroke="#f85149" stroke-width="1.5" marker-end="url(#arr-red)"/>
+    <rect x="880" y="215" width="70" height="50" rx="6" fill="#3a1a1a" stroke="#f85149" stroke-width="1.5"/>
+    <text x="915" y="237" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#f85149">no-good</text>
+    <text x="915" y="252" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#f85149">cut</text>
+    <text x="840" y="228" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="10" fill="#f85149">slip / z1 &gt; 0</text>
+
+    <!-- cut back to master -->
+    <path d="M880,250 Q420,310 250,210" fill="none" stroke="#f85149" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr-red)"/>
+    <text x="500" y="302" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#f85149">master 재최적 (lazy cut)</text>
+
+    <!-- budget gate note -->
+    <rect x="30" y="245" width="240" height="45" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+    <text x="150" y="265" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#d29922">⏱ budget gate</text>
+    <text x="150" y="281" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#8b949e">lazy cut → 100s/300s 예산 준수</text>
+
+    <!-- labels -->
+    <text x="140" y="80" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#58a6ff">PRIMARY</text>
+    <text x="695" y="68" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#a371f7">SUBPROBLEM</text>
+    <text x="695" y="84" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="11" fill="#8b949e">(branch-and-check)</text>
+  </svg>
+</div>
+
+<div class="card-row" style="margin-top:14px;">
+  <div class="card">
+    <h3>PRIMARY — LBBD / branch-and-check</h3>
+    <ul>
+      <li>마스터: 배정 + 타이밍, <strong>진짜 w1·z1 + w2·z2 + w3·z3 목적</strong></li>
+      <li>서브: crane-aware 디코더 = realizability 오라클</li>
+      <li>realize 실패 시 → no-good 부분집합 cut 생성 → 마스터 재최적</li>
+      <li>lazy cut(branch-and-check)으로 100s/300s 예산 준수</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>FALLBACK — z3-aware Constructive + ALNS</h3>
+    <ul>
+      <li>z3-aware constructive seed (crane-anticipatory insertion)</li>
+      <li>tardiness/z3-타깃 ALNS (디코더-in-loop repair)</li>
+      <li>PRIMARY 서브문제와 <strong>동일 코드패스</strong> 공유</li>
+      <li>PRIMARY timeout 또는 초기해 부재 시 fallback</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="badge-row">
+    <span class="tag tag-info">격리 원칙</span>
+  </div>
+  <p>재설계는 <strong>새 모듈 + 플래그 <code>OGC_REBUILD</code></strong>로 격리. 기존 파이프라인(gate200_v2, banrace, fastfloor) 완전 보존. 롤백 가능.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ §5 Wave 로드맵 -->
+<h2><span class="section-number">5</span>Wave 로드맵 (각 독립 shippable · 가역 · checker 게이트)</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Wave</th>
+      <th>내용</th>
+      <th>기대 효과</th>
+      <th>위험</th>
+      <th>플래그</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tag tag-ok">W1</span></td>
+      <td>
+        <strong>ATC/Emmons seed</strong> + per-bay 정확 타이밍 (기존 CP-SAT 재사용) + SA<br>
+        <span class="text-muted">z1 견고화; deadline-ordered 초기 배정</span>
+      </td>
+      <td class="text-ok">z1=0 안정화 (낮은 위험)</td>
+      <td class="text-muted">낮음 — 기존 타이밍 재사용</td>
+      <td><code>OGC_W1</code></td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-info">W2</span></td>
+      <td>
+        <strong>z3-aware crane-anticipatory placement</strong><br>
+        <span class="text-muted">삽입 시점부터 z3 + crane 동시 고려 — realize barrier 첫 이동</span>
+      </td>
+      <td class="text-ok">z3 첫 감소 (중간 위험)</td>
+      <td class="text-warn">중간 — 새 플레이스먼트 로직</td>
+      <td><code>OGC_W2</code></td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-purple">W3</span></td>
+      <td>
+        <strong>소형 베이 CP-SAT exact</strong> + z3·tardiness-타깃 ALNS (디코더-in-loop)<br>
+        <span class="text-muted">서브문제 정확 해 + 반복 수리</span>
+      </td>
+      <td class="text-ok">z3 주요 감소 + z1 robust (중간)</td>
+      <td class="text-warn">중간 — ALNS 예산 제어 필요</td>
+      <td><code>OGC_W3</code></td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-warn">W4</span></td>
+      <td>
+        <strong>디코더를 LBBD cut 오라클로 감쌈 — branch-and-check</strong><br>
+        <span class="text-muted">마스터 목적에 z1 통합 + no-good cut 루프</span>
+      </td>
+      <td class="text-ok">z3 본 이동 — realize barrier 제거 (높은 위험)</td>
+      <td class="text-bad">높음 — 전체 구조 변경</td>
+      <td><code>OGC_W4</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p style="color:var(--muted); font-size:12px;">각 Wave는 full-20 paired 게이트 통과 후 default ON 승격. 이전 Wave가 rollback-safe여야 다음 Wave 진입.</p>
+
+<!-- ═══════════════════════════════════════════════════════════ §6 재사용 primitive -->
+<h2><span class="section-number">6</span>재사용 Primitive (블랙박스)</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Primitive</th>
+      <th>위치</th>
+      <th>역할</th>
+      <th>LBBD 사용처</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>_decode_bay</code></td>
+      <td class="mono">myalgorithm.py : 1115</td>
+      <td>per-bay crane-safe 2D 패킹 (j≥k 직렬화 포함)</td>
+      <td>LBBD 서브 — 오라클 핵심</td>
+    </tr>
+    <tr>
+      <td><code>_cpsat_bay_timing_verified</code></td>
+      <td class="mono">myalgorithm.py : 2596</td>
+      <td>per-bay z1-최적 타이밍 (z2/z3 불변)</td>
+      <td>W1 재사용, W3 서브문제</td>
+    </tr>
+    <tr>
+      <td><code>_objective</code></td>
+      <td class="mono">myalgorithm.py : 1437</td>
+      <td>목적함수 평가 (w1z1 + w2z2 + w3z3)</td>
+      <td>마스터 목적 + 채택 비교</td>
+    </tr>
+    <tr>
+      <td><code>_components_from_solution</code></td>
+      <td class="mono">myalgorithm.py : 2431</td>
+      <td>해에서 z1/z2/z3 컴포넌트 분해</td>
+      <td>cut 생성 시 slip 진단</td>
+    </tr>
+    <tr>
+      <td><code>check_feasibility</code></td>
+      <td class="mono">utils.py (수정 금지)</td>
+      <td>5단계 공식 feasibility 검사기</td>
+      <td>게이트 통과 최종 검증</td>
+    </tr>
+    <tr>
+      <td><code>_build_operations</code></td>
+      <td class="mono">myalgorithm.py</td>
+      <td>solution dict 조립 → <code>{"operations": ...}</code></td>
+      <td>마스터 결과 패키징</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ §7 측정 -->
+<h2><span class="section-number">7</span>측정 — 게이트</h2>
+
+<div class="card-row">
+  <div class="card">
+    <h3>검증 하니스</h3>
+    <div class="kv-row"><span class="kv-key">캡처 스크립트</span><span class="kv-val mono">notes/_capture20_aff.py</span></div>
+    <div class="kv-row"><span class="kv-key">인스턴스 수</span><span class="kv-val">full-20 (prob_1 ~ prob_20)</span></div>
+    <div class="kv-row"><span class="kv-key">채택 기준</span><span class="kv-val text-ok">full-20 paired × 2 (사용자 규칙)</span></div>
+    <div class="kv-row"><span class="kv-key">경쟁자 기준</span><span class="kv-val mono">notes/competitor-2026-06-11.json</span></div>
+    <div class="kv-row"><span class="kv-key">비교 예산</span><span class="kv-val">@100s + @300s vs competitor</span></div>
+  </div>
+  <div class="card">
+    <h3>현재 기준선 (gate200_v2 · 2026-06-13)</h3>
+    <div class="kv-row"><span class="kv-key">@600 승수</span><span class="kv-val text-warn">9 / 20</span></div>
+    <div class="kv-row"><span class="kv-key">총 obj (ours)</span><span class="kv-val">1.64 M</span></div>
+    <div class="kv-row"><span class="kv-key">총 obj (comp)</span><span class="kv-val text-ok">1.14 M</span></div>
+    <div class="kv-row"><span class="kv-key">z1 = 0</span><span class="kv-val">19 / 20 @200s</span></div>
+    <div class="kv-row"><span class="kv-key">주요 손실원</span><span class="kv-val text-bad">prob_20 z1 구조 (+338K) + z3 클러스터</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>미니게이트 (fail-fast, 채택 아님)</h3>
+  <p>신규 Wave 실험 시: <strong>prob_14 + prob_20</strong> 으로 실패 조기 탐지 → PASS 시에만 full-20 진행. 채택 판정은 반드시 full-20 paired.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ footer -->
+<hr>
+<p style="color:var(--muted); font-size:12px; text-align:center;">
+  OGC 2026 — 구조적 재설계 레퍼런스 &nbsp;·&nbsp; 2026-06-14 &nbsp;·&nbsp;
+  기존 파이프라인: <code>src/myalgorithm.py</code> · <code>src/fastfloor.py</code> &nbsp;|&nbsp;
+  신규 모듈: <code>OGC_REBUILD</code> 플래그로 격리
+</p>
+
+</body>
+</html>

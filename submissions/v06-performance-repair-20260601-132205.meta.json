@@ -1,0 +1,38 @@
+{
+  "tag": "v06-performance-repair",
+  "timestamp_kst": "20260601-132205",
+  "zip_filename": "v06-performance-repair-20260601-132205.zip",
+  "zip_size_bytes": 69614,
+  "zip_sha256": "b510c21fb5c62c804ec7cd8f0260bdce0a41ad7f40f9abdb63f512f9c281f0d2",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 44225
+    },
+    {
+      "path": "geom_kernel.py",
+      "bytes": 4367
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 5790
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 93065
+    },
+    {
+      "path": "parallel_decode.py",
+      "bytes": 12148
+    },
+    {
+      "path": "regime.py",
+      "bytes": 18316
+    },
+    {
+      "path": "utils.py.v1.0bak",
+      "bytes": 63832
+    }
+  ],
+  "note": ""
+}

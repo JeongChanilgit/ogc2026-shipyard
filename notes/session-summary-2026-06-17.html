@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC2026 세션 요약 — 2026-06-17</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2330;
+    --bg4: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --orange: #e3823d;
+    --purple: #bc8cff;
+    --mono: 'Consolas', 'Courier New', monospace;
+    --sans: 'Segoe UI', system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      -45deg, transparent, transparent 20px,
+      rgba(88,166,255,0.02) 20px, rgba(88,166,255,0.02) 21px
+    );
+    pointer-events: none;
+  }
+  .header-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(88,166,255,0.12);
+    border: 1px solid rgba(88,166,255,0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px; font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  .header-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  h1 {
+    font-size: 26px; font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .header-sub { color: var(--muted); font-size: 13px; }
+  .header-meta {
+    display: flex; gap: 24px; margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .meta-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .meta-pill span { color: var(--muted); }
+  .meta-pill strong { color: var(--text); font-family: var(--mono); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+  .section {
+    margin-top: 36px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-icon {
+    width: 20px; height: 20px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .section-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .section-body { padding: 20px; }
+
+  /* ── CONTEXT BLOCK ── */
+  .context-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  @media (max-width: 700px) { .context-grid { grid-template-columns: 1fr; } }
+  .context-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .context-card h4 { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px; }
+  .context-card p { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .context-card .tag {
+    display: inline-block;
+    background: rgba(88,166,255,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(88,166,255,0.25);
+    border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+    padding: 1px 6px; margin-right: 4px; margin-bottom: 4px;
+  }
+  .target-row {
+    display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .target-item {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    text-align: center;
+    flex: 1; min-width: 140px;
+  }
+  .target-item .label { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+  .target-item .value { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--yellow); margin-top: 2px; }
+
+  /* ── ENGINE CARDS ── */
+  .engine-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .engine-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+  }
+  .engine-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; border-radius: 8px 8px 0 0;
+  }
+  .engine-card.c1::before { background: linear-gradient(90deg, #58a6ff, #bc8cff); }
+  .engine-card.c2::before { background: linear-gradient(90deg, #3fb950, #58a6ff); }
+  .engine-card.c3::before { background: linear-gradient(90deg, #d29922, #e3823d); }
+  .engine-card.c4::before { background: linear-gradient(90deg, #f85149, #bc8cff); }
+  .engine-name {
+    font-family: var(--mono); font-size: 15px; font-weight: 700;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .engine-role { font-size: 12px; color: var(--muted); margin-bottom: 12px; line-height: 1.4; }
+  .engine-result {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 12px; color: var(--text);
+    line-height: 1.5;
+  }
+  .engine-result .star { color: var(--yellow); font-size: 13px; }
+  .mono { font-family: var(--mono); }
+
+  /* ── PROGRESSION BARS ── */
+  .prog-list { display: flex; flex-direction: column; gap: 10px; }
+  .prog-item { display: flex; align-items: center; gap: 10px; }
+  .prog-label {
+    width: 230px; flex-shrink: 0;
+    font-size: 12px; color: var(--text);
+    line-height: 1.3;
+  }
+  .prog-bar-wrap {
+    flex: 1;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    height: 22px;
+    position: relative; overflow: hidden;
+  }
+  .prog-bar {
+    height: 100%;
+    border-radius: 4px;
+    display: flex; align-items: center;
+    padding: 0 6px;
+    transition: width 0.4s ease;
+    position: relative;
+  }
+  .prog-val {
+    width: 160px; flex-shrink: 0;
+    font-family: var(--mono); font-size: 12px;
+    text-align: right; color: var(--muted);
+  }
+  .prog-val.highlight { color: var(--accent); font-weight: 700; }
+  .prog-val.competitor { color: var(--green); font-weight: 700; }
+  .prog-val.goal { color: var(--purple); }
+  .prog-caption {
+    margin-top: 12px;
+    font-size: 12px; color: var(--muted);
+    border-left: 3px solid var(--accent);
+    padding-left: 10px; line-height: 1.5;
+  }
+
+  /* ── TABLE ── */
+  .data-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px;
+  }
+  .data-table th {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: right;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .data-table th:first-child { text-align: left; }
+  .data-table td {
+    border: 1px solid var(--border);
+    padding: 7px 10px;
+    text-align: right;
+    font-family: var(--mono);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .data-table td:first-child {
+    text-align: left; font-family: var(--sans);
+    font-weight: 600; color: var(--accent);
+  }
+  .data-table tr.win td { background: rgba(63,185,80,0.06); }
+  .data-table tr.win td:first-child { color: var(--green); }
+  .data-table tr.lose-big td { background: rgba(248,81,73,0.05); }
+  .data-table tr.total td {
+    background: var(--bg4);
+    font-weight: 700; color: var(--text);
+    border-top: 2px solid var(--border);
+  }
+  .data-table tr.total td:first-child { color: var(--text); }
+  .badge-win {
+    background: rgba(63,185,80,0.15);
+    color: var(--green); border: 1px solid rgba(63,185,80,0.3);
+    border-radius: 3px; padding: 1px 5px; font-size: 10px; font-weight: 700;
+    font-family: var(--sans);
+  }
+  .badge-lose {
+    background: rgba(248,81,73,0.1);
+    color: var(--red); border: 1px solid rgba(248,81,73,0.2);
+    border-radius: 3px; padding: 1px 5px; font-size: 10px; font-weight: 700;
+    font-family: var(--sans);
+  }
+  .num-pos { color: var(--green); }
+  .num-neg { color: var(--red); }
+
+  /* ── EVIDENCE TABLE ── */
+  .ev-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  .ev-table th {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left; color: var(--muted);
+    font-weight: 600; font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+  .ev-table td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    color: var(--text);
+    vertical-align: top;
+  }
+  .ev-table td:nth-child(2) { font-family: var(--mono); text-align: right; width: 140px; }
+  .ev-table td:nth-child(3) { color: var(--muted); font-size: 11px; }
+  .ev-table tr.floor-confirmed td { background: rgba(248,81,73,0.06); }
+  .ev-table tr.floor-confirmed td:first-child { color: var(--red); font-weight: 700; }
+  .ev-table tr.comp-row td { background: rgba(63,185,80,0.05); }
+  .ev-table tr.comp-row td:first-child { color: var(--green); }
+
+  /* ── GAP DECOMP ── */
+  .gap-grid { display: flex; flex-direction: column; gap: 10px; }
+  .gap-row { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .gap-inst {
+    width: 80px; flex-shrink: 0;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px;
+    font-weight: 700; color: var(--accent);
+    border-right: 1px solid var(--border);
+    padding: 6px;
+  }
+  .gap-bars { flex: 1; padding: 8px 12px; display: flex; flex-direction: column; gap: 5px; }
+  .gap-bar-row { display: flex; align-items: center; gap: 8px; }
+  .gap-bar-label { width: 32px; font-size: 10px; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .gap-bar-outer { flex: 1; height: 12px; background: var(--bg4); border-radius: 3px; overflow: hidden; position: relative; }
+  .gap-bar-fill { height: 100%; border-radius: 3px; }
+  .gap-bar-fill.z1 { background: linear-gradient(90deg, #f85149, #e3823d); }
+  .gap-bar-fill.z1.neg { background: linear-gradient(90deg, #3fb950, #58a6ff); }
+  .gap-bar-fill.z3 { background: linear-gradient(90deg, #bc8cff, #58a6ff); }
+  .gap-bar-val { width: 80px; font-family: var(--mono); font-size: 11px; text-align: right; flex-shrink: 0; }
+  .gap-caption {
+    font-size: 11px; color: var(--muted);
+    padding: 6px 12px; background: var(--bg3);
+    border-left: 3px solid var(--purple);
+    border-radius: 0 0 4px 4px;
+    margin-top: 4px;
+  }
+  .gap-note {
+    font-size: 10px; color: var(--muted);
+    width: 120px; flex-shrink: 0;
+    display: flex; align-items: center;
+    padding: 0 8px;
+    border-left: 1px solid var(--border);
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    border-left: 4px solid;
+  }
+  .callout.success { background: rgba(63,185,80,0.07); border-color: var(--green); }
+  .callout.warning { background: rgba(248,81,73,0.07); border-color: var(--red); }
+  .callout.info { background: rgba(88,166,255,0.07); border-color: var(--accent); }
+  .callout h4 {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .callout.success h4 { color: var(--green); }
+  .callout.warning h4 { color: var(--red); }
+  .callout.info h4 { color: var(--accent); }
+  .callout ul { padding-left: 16px; }
+  .callout li { font-size: 13px; color: var(--text); margin-bottom: 5px; line-height: 1.5; }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 40px;
+    border-top: 1px solid var(--border);
+    padding: 16px 40px;
+    font-size: 11px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── UTIL ── */
+  .tag-z1 { color: var(--orange); font-family: var(--mono); font-weight: 700; }
+  .tag-z2 { color: var(--yellow); font-family: var(--mono); font-weight: 700; }
+  .tag-z3 { color: var(--purple); font-family: var(--mono); font-weight: 700; }
+  .highlight-val { color: var(--accent); font-weight: 700; font-family: var(--mono); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="site-header">
+  <div class="container">
+    <div class="header-badge"><span class="header-dot"></span>OGC 2026 세션 리포트</div>
+    <h1>Grand Shipyard Puzzle — 세션 요약</h1>
+    <div class="header-sub">CP-SAT 엔진 4종 구축 · gassign 채택 · set2 경쟁자 갭 50M→13.3M 압축</div>
+    <div class="header-meta">
+      <div class="meta-pill"><span>날짜</span> <strong>2026-06-17</strong></div>
+      <div class="meta-pill"><span>set1 경쟁자</span> <strong>931,465</strong></div>
+      <div class="meta-pill"><span>set2 경쟁자</span> <strong>279,824,051</strong></div>
+      <div class="meta-pill"><span>ALL40 경쟁자</span> <strong>280,755,516</strong></div>
+      <div class="meta-pill"><span>우리 best-of set2</span> <strong style="color:var(--accent)">293,105,364</strong></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ── CONTEXT ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(88,166,255,0.15);color:var(--accent);">01</div>
+    <div class="section-title">문제 & 세션 개요</div>
+  </div>
+  <div class="section-body">
+    <div class="context-grid">
+      <div class="context-card">
+        <h4>문제 정의</h4>
+        <p>조선소 블록의 베이 배정·위치·방향·입출고 시각을 동시에 결정하여 가중합 최소화.</p>
+        <div style="margin-top:10px;">
+          <span class="tag">Z1</span>지연(tardiness)<br>
+          <span class="tag">Z2</span>작업부하 불균형<br>
+          <span class="tag">Z3</span>선호도 편차
+        </div>
+        <p style="margin-top:8px;font-size:12px;color:var(--muted);">NP-hard 3중 결합: 2D 비정형 폴리곤 패킹 + 스케줄링 + 배정. 크레인 수직접근 규칙 (j≥k) 추가.</p>
+      </div>
+      <div class="context-card">
+        <h4>세션 흐름</h4>
+        <p style="font-size:13px;">CP-SAT 모델 유형 브레인스토밍 → 전역 배정·per-bay 배치·라스터 패킹·ALNS 엔진 4종 구축 → 야간 가설→검증→개선 루프 → gassign 채택 확정.</p>
+        <hr class="divider">
+        <h4>경쟁자 타깃</h4>
+        <div class="target-row">
+          <div class="target-item"><div class="label">set1</div><div class="value">931,465</div></div>
+          <div class="target-item"><div class="label">set2</div><div class="value">279,824,051</div></div>
+          <div class="target-item"><div class="label">ALL40</div><div class="value">280,755,516</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ENGINES ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(63,185,80,0.15);color:var(--green);">02</div>
+    <div class="section-title">무엇을 만들었나 — 엔진 4종</div>
+  </div>
+  <div class="section-body">
+    <div class="engine-grid">
+      <div class="engine-card c1">
+        <div class="engine-name">gassign.py</div>
+        <div class="engine-role">전역 베이 배정 (CP-SAT: cumulative area-time 마스터 "T2" + LBBD "T6")</div>
+        <div class="engine-result">
+          <div><span class="star">★</span> 세션 최대 성과</div>
+          <div style="margin-top:6px;font-size:11px;color:var(--muted);">핵심 버그수정: z1항이 z2 대비 <span class="mono">1000×</span> 저평가 → 정정</div>
+          <div style="margin-top:6px;font-size:12px;">
+            set2: <span class="mono" style="color:var(--red);">4.24B</span>
+            → <span class="mono" style="color:var(--yellow);">303M</span>
+            → <span class="mono" style="color:var(--green);">293M</span> (box best-of)
+          </div>
+        </div>
+      </div>
+      <div class="engine-card c2">
+        <div class="engine-name">perbay.py</div>
+        <div class="engine-role">per-bay 조인트 CP-SAT (위치 x,y·방향·entry/exit 동시 결정, bbox 3D no-overlap + 크레인)</div>
+        <div class="engine-result">
+          <div style="font-size:12px;">
+            set1 <span class="mono">prob_14</span>: obj <span class="mono num-pos">−35%</span><br>
+            set1 <span class="mono">prob_20</span>: obj <span class="mono num-pos">−23%</span>
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--muted);">잔여 z1 소량 인스턴스에서 큰 이득. default ON · gated · never−1.</div>
+        </div>
+      </div>
+      <div class="engine-card c3">
+        <div class="engine-name">rasterpack.py</div>
+        <div class="engine-role">진폴리곤 라스터 BLF 촘촘 패킹 + 크레인 수직적층 (v2)</div>
+        <div class="engine-result">
+          <div style="font-size:12px;">
+            <span class="mono">prob_38</span> bay0 z1 <span class="mono num-pos">−738</span> (소형 베이)
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--muted);">혼잡 베이 NOOP. 크레인 적층 후보의 <span class="mono">99.8%</span>를 실제 체커가 거부 → 재반증.</div>
+        </div>
+      </div>
+      <div class="engine-card c4">
+        <div class="engine-name">lns.py</div>
+        <div class="engine-role">ALNS destroy-repair 메타휴리스틱 (43× 벡터화 + SA + time-shift 백트래킹)</div>
+        <div class="engine-result">
+          <div style="font-size:12px;">
+            <span class="mono">prob_14</span> z1: <span class="mono">21→18</span> (소형 베이)
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--muted);">혼잡 <span class="mono">prob_38</span>: 19,682 iters에서 Δ=0. floor 확인.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROGRESSION ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(210,153,34,0.15);color:var(--yellow);">03</div>
+    <div class="section-title">핵심 성과 — set2 총 obj 추이 (경쟁자 갭 좁히기)</div>
+  </div>
+  <div class="section-body">
+    <div style="margin-bottom:14px;font-size:12px;color:var(--muted);">낮을수록 좋음. 막대 너비 = 로그 스케일 상대 비율.</div>
+    <div class="prog-list" id="prog-list"></div>
+    <div class="prog-caption" style="margin-top:16px;">
+      gassign이 경쟁자와의 갭을 <strong>~50M → 13.3M</strong>으로 압축. 8/20 인스턴스에서 경쟁자 격파.
+    </div>
+  </div>
+</div>
+
+<!-- ── PER-INSTANCE TABLE ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(188,140,255,0.15);color:var(--purple);">04</div>
+    <div class="section-title">set2 인스턴스별 결과 — best-of vs 경쟁자</div>
+  </div>
+  <div class="section-body" style="overflow-x:auto;">
+    <table class="data-table" id="inst-table">
+      <thead>
+        <tr>
+          <th>인스턴스</th>
+          <th>box@120</th>
+          <th>gassign@120</th>
+          <th>best-of</th>
+          <th>경쟁자</th>
+          <th>best−comp</th>
+          <th style="text-align:center;">판정</th>
+        </tr>
+      </thead>
+      <tbody id="inst-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── PROB_38 CEILING ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(248,81,73,0.15);color:var(--red);">05</div>
+    <div class="section-title">왜 set2 &lt; 250M 은 불가능한가 — prob_38 천장 근거</div>
+  </div>
+  <div class="section-body">
+    <table class="ev-table" id="ev-table">
+      <thead>
+        <tr>
+          <th>레버</th>
+          <th>prob_38 z1</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>베이스 (box@120)</td>
+          <td>6,161</td>
+          <td>기준선</td>
+        </tr>
+        <tr>
+          <td>TL 5× (box@600)</td>
+          <td>6,002</td>
+          <td>5배 시간에 −159뿐</td>
+        </tr>
+        <tr>
+          <td>배정 변경 (gassign)</td>
+          <td style="color:var(--red);">obj 90.6M (더 나쁨)</td>
+          <td>무의미</td>
+        </tr>
+        <tr>
+          <td>크레인 적층 (rasterpack v2)</td>
+          <td>6,019</td>
+          <td>실제 체커 99.8% 거부, 재반증</td>
+        </tr>
+        <tr>
+          <td>라스터 BLF</td>
+          <td style="color:var(--muted);">NOOP</td>
+          <td>혼잡 베이 미완</td>
+        </tr>
+        <tr class="floor-confirmed">
+          <td>LNS (43×+SA 7,704 accepts+백트래킹, 19,682 iters)</td>
+          <td>6,161 (Δ=0)</td>
+          <td>floor 확정</td>
+        </tr>
+        <tr class="comp-row">
+          <td>경쟁자</td>
+          <td>4,934</td>
+          <td>복제 못한 다른 솔버</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="prog-caption" style="margin-top:14px;border-color:var(--red);">
+      prob_38 z1 floor (~6,100)는 고정 배정 + 현 패킹 기하 하의 진짜 구조적 천장.
+      throughput 아티팩트 아님 (43× 가속에도 불변). 경쟁자 4,934 도달 불가.
+      ∴ set2 &lt; 250M 결론적 불가능.
+    </div>
+  </div>
+</div>
+
+<!-- ── GAP DECOMP ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(188,140,255,0.15);color:var(--purple);">06</div>
+    <div class="section-title">갭의 성격 — <span class="tag-z1">Z1</span> (밀도) vs <span class="tag-z3">Z3</span> (선호) 분해</div>
+  </div>
+  <div class="section-body">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">손실 인스턴스 갭 분해 (×weight 적용한 obj 기여, 단위 M). 막대 너비 = 절댓값 기준.</div>
+    <div class="gap-grid" id="gap-grid"></div>
+    <div class="gap-caption" style="margin-top:14px;">
+      근본 원인은 <strong>패킹 밀도</strong> — 경쟁자는 ~95% 밀도로 블록을 선호 베이에 제때 전부 넣어 Z1·Z3 동시 최소화.
+      우리는 ~80%라 둘 중 하나를 희생.
+    </div>
+  </div>
+</div>
+
+<!-- ── CONCLUSION ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(88,166,255,0.15);color:var(--accent);">07</div>
+    <div class="section-title">결론 & 권고</div>
+  </div>
+  <div class="section-body">
+    <div class="callout success">
+      <h4>성과</h4>
+      <ul>
+        <li>gassign으로 set2 경쟁자 갭 <strong>50M → 13.3M</strong> 압축, 8/20 인스턴스 격파.</li>
+        <li>전부 gated · never−1 · 코드 통합 완료.</li>
+        <li>z1 가중치 1000× 저평가 버그 정정 — 근본 배정 품질 개선.</li>
+      </ul>
+    </div>
+    <div class="callout warning">
+      <h4>한계 (반증 완료)</h4>
+      <ul>
+        <li>set2 &lt; 250M 및 경쟁자 279M 추월은 <strong>prob_38류 혼잡 multi-layer의 구조적 z1 floor</strong>로 불가능 확정.</li>
+        <li>TL 5×, 배정 변경, 크레인 적층, 라스터 BLF, LNS 43×+SA — 전부 반증.</li>
+      </ul>
+    </div>
+    <div class="callout info">
+      <h4>권고</h4>
+      <ul>
+        <li><strong>①</strong> 제출 전 통합 코드 ALL40 @운영TL 검증 1회 실행 (feasible 40/40 · 무회귀 · never−1).</li>
+        <li><strong>②</strong> gassign 채택 확정.</li>
+        <li><strong>③</strong> 추가 추월은 근본적으로 다른 패커 필요 — 통합 crane-aware NFP 3D nesting / 강한 global 솔버 (연구급, 현 대회 범위 밖).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>
+  <div>생성일 <strong>2026-06-17</strong> · 데이터 출처: <code>notes/research/perbay-loop-ledger.md</code> (E0–E13), <code>notes/competitor-2026-06-15.json</code></div>
+  <div>엔진: <code>src/{gassign,perbay,rasterpack,lns}.py</code></div>
+</footer>
+
+<script>
+// ── Progression bars ──
+(function(){
+  var data = [
+    { label: "순수 legacy (box OFF)", val: 4243804385, color: "#f85149", alpha: 1.0 },
+    { label: "box 단독 @120",         val: 317405330,  color: "#d29922", alpha: 1.0 },
+    { label: "gassign 단독 @120",     val: 303279471,  color: "#e3823d", alpha: 1.0 },
+    { label: "best-of (box, gassign)",val: 293105364,  color: "#58a6ff", alpha: 1.0, highlight: true },
+    { label: "경쟁자",                val: 279824051,  color: "#3fb950", alpha: 1.0, competitor: true },
+    { label: "목표 (미달)",           val: 250000000,  color: "#bc8cff", alpha: 1.0, goal: true },
+  ];
+  // Log scale: map [250M, 4.24B] → [0,100]
+  var logMin = Math.log10(250000000);
+  var logMax = Math.log10(4243804385);
+  var list = document.getElementById('prog-list');
+  data.forEach(function(d){
+    var logVal = Math.log10(d.val);
+    var pct = ((logVal - logMin) / (logMax - logMin) * 100).toFixed(1);
+    var valClass = d.highlight ? 'highlight' : d.competitor ? 'competitor' : d.goal ? 'goal' : '';
+    var item = document.createElement('div');
+    item.className = 'prog-item';
+    item.innerHTML =
+      '<div class="prog-label">' + (d.highlight ? '<strong>' : '') + d.label + (d.highlight ? '</strong>' : '') + '</div>' +
+      '<div class="prog-bar-wrap">' +
+        '<div class="prog-bar" style="width:' + pct + '%;background:' + d.color + (d.highlight ? '' : ';opacity:0.7') + ';"></div>' +
+      '</div>' +
+      '<div class="prog-val ' + valClass + '">' + d.val.toLocaleString() + '</div>';
+    list.appendChild(item);
+  });
+})();
+
+// ── Instance table ──
+(function(){
+  var rows = [
+    ["prob_21",3527630,5526153,3527630,3724980,true,"box"],
+    ["prob_22",1976154,1448585,1448585,902125,false,"gas"],
+    ["prob_23",8259476,7655529,7655529,6851876,false,"gas"],
+    ["prob_24",2974410,3444918,2974410,2739005,false,"box"],
+    ["prob_25",596143,693471,596143,465720,false,"box"],
+    ["prob_26",27913457,23881181,23881181,30417445,true,"gas"],
+    ["prob_27",53911118,46476211,46476211,48292973,true,"gas"],
+    ["prob_28",9585765,10296466,9585765,9388394,false,"box"],
+    ["prob_29",1952697,1909194,1909194,1328458,false,"gas"],
+    ["prob_30",12253485,11668056,11668056,8403812,false,"gas"],
+    ["prob_31",21244304,20931819,20931819,22256964,true,"gas"],
+    ["prob_32",8263202,7029228,7029228,5680477,false,"gas"],
+    ["prob_33",20388791,19055683,19055683,16163273,false,"gas"],
+    ["prob_34",2640321,3698068,2640321,2834967,true,"box"],
+    ["prob_35",7685410,4641560,4641560,10652374,true,"gas"],
+    ["prob_36",543816,628433,543816,628061,true,"box"],
+    ["prob_37",11064110,9809780,9809780,6934080,false,"gas"],
+    ["prob_38",84871783,90626466,84871783,68290241,false,"box"],
+    ["prob_39",32828918,29858531,29858531,29735939,false,"gas"],
+    ["prob_40",4924340,4000139,4000139,4132886,true,"gas"],
+  ];
+  var tbody = document.getElementById('inst-tbody');
+  var wins = 0;
+  rows.forEach(function(r){
+    var inst=r[0],box=r[1],gas=r[2],best=r[3],comp=r[4],win=r[5];
+    var diff = best - comp;
+    var diffStr = (diff > 0 ? '+' : '') + diff.toLocaleString();
+    var diffClass = diff < 0 ? 'num-pos' : (diff > 10000000 ? 'num-neg' : '');
+    if(win) wins++;
+    var tr = document.createElement('tr');
+    tr.className = win ? 'win' : (diff > 5000000 ? 'lose-big' : '');
+    tr.innerHTML =
+      '<td>' + inst + '</td>' +
+      '<td>' + box.toLocaleString() + '</td>' +
+      '<td>' + gas.toLocaleString() + '</td>' +
+      '<td><strong>' + best.toLocaleString() + '</strong></td>' +
+      '<td>' + comp.toLocaleString() + '</td>' +
+      '<td class="' + diffClass + '">' + diffStr + '</td>' +
+      '<td style="text-align:center">' + (win ? '<span class="badge-win">WIN</span>' : '<span class="badge-lose">LOSE</span>') + '</td>';
+    tbody.appendChild(tr);
+  });
+  // total row
+  var totalBox=317405330, totalGas=303279471, totalBest=293105364, totalComp=279824051;
+  var totalDiff = totalBest - totalComp;
+  var tr = document.createElement('tr');
+  tr.className = 'total';
+  tr.innerHTML =
+    '<td>합계 (' + wins + '승/20)</td>' +
+    '<td>' + totalBox.toLocaleString() + '</td>' +
+    '<td>' + totalGas.toLocaleString() + '</td>' +
+    '<td>' + totalBest.toLocaleString() + '</td>' +
+    '<td>' + totalComp.toLocaleString() + '</td>' +
+    '<td class="num-neg">+' + totalDiff.toLocaleString() + '</td>' +
+    '<td style="text-align:center;font-size:11px;color:var(--muted);">' + wins + '/20</td>';
+  tbody.appendChild(tr);
+})();
+
+// ── Gap decomp bars ──
+(function(){
+  var gaps = [
+    { inst:"prob_38", z1:+16.36, z3:+0.23, note:"순수 밀도" },
+    { inst:"prob_30", z1:+2.33,  z3:+0.94, note:"밀도 우세" },
+    { inst:"prob_33", z1:+1.87,  z3:+1.01, note:"밀도 우세" },
+    { inst:"prob_37", z1:-0.09,  z3:+2.99, note:"Z3 (선호 과-분산)" },
+    { inst:"prob_39", z1:-1.35,  z3:+1.48, note:"Z3 (우리 Z1 우세)" },
+    { inst:"prob_29", z1:-0.65,  z3:+1.25, note:"Z3 (우리 Z1 우세)" },
+  ];
+  var maxAbs = 16.36;
+  var grid = document.getElementById('gap-grid');
+  gaps.forEach(function(g){
+    var z1Pct = (Math.abs(g.z1) / maxAbs * 100).toFixed(1);
+    var z3Pct = (Math.abs(g.z3) / maxAbs * 100).toFixed(1);
+    var z1Neg = g.z1 < 0;
+    var z1Color = z1Neg ? 'z1 neg' : 'z1';
+    var z1Label = (g.z1 > 0 ? '+' : '') + g.z1.toFixed(2) + 'M';
+    var z3Label = '+' + g.z3.toFixed(2) + 'M';
+    var div = document.createElement('div');
+    div.className = 'gap-row';
+    div.innerHTML =
+      '<div class="gap-inst">' + g.inst + '</div>' +
+      '<div class="gap-bars">' +
+        '<div class="gap-bar-row">' +
+          '<div class="gap-bar-label" style="color:var(--orange);">Z1</div>' +
+          '<div class="gap-bar-outer"><div class="gap-bar-fill ' + z1Color + '" style="width:' + z1Pct + '%"></div></div>' +
+          '<div class="gap-bar-val" style="color:' + (z1Neg ? 'var(--green)' : 'var(--orange)') + ';">' + z1Label + '</div>' +
+        '</div>' +
+        '<div class="gap-bar-row">' +
+          '<div class="gap-bar-label" style="color:var(--purple);">Z3</div>' +
+          '<div class="gap-bar-outer"><div class="gap-bar-fill z3" style="width:' + z3Pct + '%"></div></div>' +
+          '<div class="gap-bar-val" style="color:var(--purple);">' + z3Label + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="gap-note">' + g.note + '</div>';
+    grid.appendChild(div);
+  });
+})();
+</script>
+</body>
+</html>

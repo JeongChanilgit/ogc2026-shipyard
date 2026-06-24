@@ -1,0 +1,53 @@
+{
+ "tl": 300.0,
+ "total": 2022750.0,
+ "feasible": 2,
+ "minus1": 0,
+ "base_v1": 0,
+ "base_v2": 2,
+ "pp_improved": 0,
+ "rows": [
+  {
+   "i": 21,
+   "obj": 1388281.0,
+   "z1": 77.0,
+   "z2": 749,
+   "z3": 2361.0,
+   "feas": true,
+   "stage": 5,
+   "wall": 29.8,
+   "base": "v2",
+   "base_obj": 1388281.0,
+   "v2_obj": 1388281.0,
+   "orig_obj": null,
+   "pp_obj": null,
+   "pp_improved": false,
+   "v2_wall": 6.8,
+   "orig_wall": null,
+   "pp_budget": 269.2,
+   "pp_wall": 22.9,
+   "final_src": "v2"
+  },
+  {
+   "i": 24,
+   "obj": 634469.0,
+   "z1": 28.0,
+   "z2": 1169,
+   "z3": 851.0,
+   "feas": true,
+   "stage": 5,
+   "wall": 37.7,
+   "base": "v2",
+   "base_obj": 634469.0,
+   "v2_obj": 634469.0,
+   "orig_obj": null,
+   "pp_obj": null,
+   "pp_improved": false,
+   "v2_wall": 14.9,
+   "orig_wall": null,
+   "pp_budget": 261.1,
+   "pp_wall": 22.7,
+   "final_src": "v2"
+  }
+ ]
+}

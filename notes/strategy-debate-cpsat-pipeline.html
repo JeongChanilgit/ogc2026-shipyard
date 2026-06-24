@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 전략 토론 — cpsat / 파이프라인 (3-에이전트)</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212b; --ink:#e6e9ef; --mut:#9aa3b2;
+    --line:#2a2f3a; --accent:#6ea8fe; --theo:#7bd88f; --prag:#f0b86e; --contra:#e06c9f;
+    --p0:#ff6b6b; --p1:#ffd166; --p2:#8aa1c1; --ok:#5fd0a0; --warn:#f0a060;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 22px 90px}
+  h1{font-size:27px;line-height:1.25;margin:0 0 6px}
+  h2{font-size:20px;margin:42px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px}
+  .sub{color:var(--mut);font-size:14px;margin:0 0 4px}
+  p{margin:10px 0}
+  code{background:#11141b;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;
+    font-family:"Cascadia Code",Consolas,monospace;color:#cfe3ff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .grid3{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:820px){.grid3{grid-template-columns:repeat(3,1fr)}}
+  .persona{border-top:4px solid var(--line)}
+  .persona.theo{border-top-color:var(--theo)} .persona.prag{border-top-color:var(--prag)} .persona.contra{border-top-color:var(--contra)}
+  .pname{font-weight:700;font-size:15px;margin:0 0 2px}
+  .theo .pname{color:var(--theo)} .prag .pname{color:var(--prag)} .contra .pname{color:var(--contra)}
+  .role{color:var(--mut);font-size:12.5px;margin:0 0 10px}
+  .lbl{display:inline-block;font-size:11px;letter-spacing:.04em;color:var(--mut);text-transform:uppercase;margin:10px 0 3px;font-weight:600}
+  ul{margin:8px 0;padding-left:20px} li{margin:5px 0}
+  .badge{display:inline-block;border-radius:6px;padding:1px 9px;font-size:11.5px;font-weight:700;color:#0c0e12}
+  .b-p0{background:var(--p0)} .b-p1{background:var(--p1)} .b-p2{background:var(--p2)}
+  .b-low{background:var(--ok)} .b-med{background:var(--warn)} .b-high{background:#ff7a7a}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:var(--card2);color:var(--ink);font-weight:600}
+  td.mid{text-align:center;white-space:nowrap}
+  .diag{background:var(--card2);border-radius:10px;padding:4px 18px}
+  .key{color:var(--accent);font-weight:600}
+  .reject{border-left:3px solid var(--contra);background:#1a1418;border-radius:0 10px 10px 0;padding:6px 18px}
+  .ok{border-left:3px solid var(--ok);background:#121a16;border-radius:0 10px 10px 0;padding:6px 18px}
+  .foot{color:var(--mut);font-size:12.5px;margin-top:30px;border-top:1px solid var(--line);padding-top:14px}
+  .pill{display:inline-block;background:#11141b;border:1px solid var(--line);border-radius:999px;padding:2px 11px;font-size:12px;color:var(--mut);margin:2px 4px 2px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="sub">OGC 2026 · The Grand Shipyard Puzzle · 전략 토론 기록</p>
+  <h1>무거운 ALNS는 왜 무의미했나 — cpsat / 파이프라인 재배치 결정</h1>
+  <p class="sub">3-에이전트 적대적 토론 (Theorist · Pragmatist · Contrarian) · 3 라운드 · 2026-05-30</p>
+  <p>
+    <span class="pill">엔트리: <code>src/myalgorithm.py</code></span>
+    <span class="pill">제약: feasible &amp; ≥ baseline 이미 보장</span>
+    <span class="pill">점수: −1 회피 1순위, 동점 = 만점</span>
+  </p>
+
+  <h2>0. 토론의 출발점 — 진단 사실</h2>
+  <div class="card diag">
+    <ul>
+      <li><b>ALNS 탐색이 모든 트레이스에서 개선 0</b> (<code>op_improves=[0,0,0]</code>). 한 트레이스는 51만 iter·8,605 restart에도 best=시드값 그대로.</li>
+      <li>cpsat optimality-gap 계측 후 gen+stress 21개(T=60) 재측정:
+        <ul>
+          <li><b>21개 중 19개</b>: cpsat가 배정-레벨 최적을 <span class="key">증명</span>(<code>gap=0.0</code>), ms~7s.</li>
+          <li><b>s12</b> (n120·w2): <code>FEASIBLE, gap=16.4%</code> — 10s 캡 안에 증명 실패. 결과는 baseline과 정확히 동점.</li>
+          <li><b>s202</b>(n80·w3·dense), <b>s204</b>(n100·w1·dense): cpsat <code>SKIPPED("no time")</code>.</li>
+        </ul>
+      </li>
+      <li>잠정 결론은 "cpsat를 항상·충분히 돌리자"였고, 이 토론은 그 방향을 <b>코드로 stress-test</b> 했다.</li>
+    </ul>
+  </div>
+
+  <h2>1. 세 관점의 진화 (R1 → R2 → R3)</h2>
+  <div class="grid3">
+
+    <div class="card persona theo">
+      <p class="pname">The Theorist</p>
+      <p class="role">문제 구조·다항시간 서브문제·이론적 한계</p>
+      <span class="lbl">R1 입장</span>
+      <p>“gap=0은 <b>Z1을 뺀 부분문제</b>의 최적일 뿐. <code>cpsat 목적(c2·Z2+c3·pref)</code>에 Z1 항이 없다. cpsat에 <b>Z1 대리 하한항</b>을 넣어 분해의 맹점을 닫고, cpsat를 baseline 앞으로.”</p>
+      <span class="lbl">R2 공격받음</span>
+      <p>Contrarian: “ALNS는 <code>_objective</code>로 <b>이미 진짜 Z1</b>을 본다(L300). 그래도 0개선 → 병목은 정식화가 아니라 <b>디코더 표현력</b>.”</p>
+      <span class="lbl">R3 수정</span>
+      <p>Z1-프록시항을 <b>P0→P2로 강등</b>, <b>측정 게이트 뒤</b>로. cpsat 맹점 “사실”은 인정하되 “처방”은 보류. 무위험 재배치를 1순위로 수용.</p>
+    </div>
+
+    <div class="card persona prag">
+      <p class="pname">The Pragmatist</p>
+      <p class="role">우승 공식·견고성·시간관리·4코어</p>
+      <span class="lbl">R1 입장</span>
+      <p>“진짜 −1 위험은 ALNS가 아니라 <b>dense에서 38s 먹는 baseline greedy</b>가 cpsat·시드를 굶기는 것. cpsat를 앞으로 + baseline 예산 캡 + s12 캡 확대.”</p>
+      <span class="lbl">R2 공격받음</span>
+      <p>Contrarian: “baseline 예산 캡은 <b>이미 닫은 stress_n80_w3 회귀를 다시 여는 것</b>. #1만으로 #2 동기가 사라진다.”</p>
+      <span class="lbl">R3 수정</span>
+      <p>baseline 캡 <b>철회</b>(baseline은 끝까지 돌수록 floor 품질↑). 고유 발견 격상: <b>타임가드 머신 의존성</b>(<code>hard_stop=0.93T</code> + <code>_DECODE_SAFETY=1.8</code>이 로컬 캘리브). 검증 불가능한 변경은 정의상 “회귀&lt;이득” 부등식을 못 만족.</p>
+    </div>
+
+    <div class="card persona contra">
+      <p class="pname">The Contrarian</p>
+      <p class="role">직교적 각도·R−nb 비대칭·재배치</p>
+      <span class="lbl">R1 입장</span>
+      <p>“R−nb상 gap=0인 19개는 exact 팀 전원 <b>동점</b> → 차별화 0. 점수는 하드/hidden에서만. 진짜 레버는 <b>디코드 속도</b>(raster 본경로 승격) + baseline을 <b>워커로 spawn</b>해 임계경로에서 빼기. M4는 격리/제거.”</p>
+      <span class="lbl">R2 공격받음</span>
+      <p>Pragmatist: “raster 승격 = 크레인 j≥k 재작성 = <b>−1 꼬리</b>. baseline-spawn = 미실측 pickle/import.”</p>
+      <span class="lbl">R3 수정</span>
+      <p><code>parallel_decode.py</code>를 직접 읽고 <b>raster 승격·baseline-spawn 둘 다 철회</b>(greedy/geom_kernel가 spawn child에서 import되는지 미실측). 핵심 통찰(점수 비대칭)은 유지. 재배치+독립캡으로 동일 목표 안전 달성.</p>
+    </div>
+
+  </div>
+
+  <h2>2. 합의 (셋 다 동의)</h2>
+  <div class="card ok">
+    <ul>
+      <li><b>근본 원인은 게이트가 아니다.</b> s202/s204의 cpsat SKIP은 cpsat 앞에 직렬로 선 ~38s baseline greedy가 <b>단일 공유 예산</b>(<code>decode_deadline = work_deadline</code>)을 통째로 삼켜서다. cpsat는 <code>prob_info</code>만 소비하고 baseline/decode에 무의존 → 앞당겨도 정합성 무변.</li>
+      <li><b>“무조건 앞”이 아니라 “앞 + 독립 하드캡”.</b> 단일 공유 예산 때문에 cpsat에 <code>min(8s, 0.15·T)</code> 독립 캡을 박아 시드·gate 예산을 안 굶긴다.</li>
+      <li><b>cpsat 목적에 Z1 항이 없다</b>는 건 코드 사실(<code>L469</code>). 다만 ALNS가 <code>_objective</code>로 진짜 Z1을 이미 평가하므로, 이는 “정식화에 Z1 추가” 처방으로 직결되지 않는다 — <b>측정해야 할 가설</b>로 다룬다.</li>
+      <li><b>M5 병렬 멀티스타트는 순수 낭비.</b> 증명적 0-개선 <code>_local_search</code>를 4코어로 돌리고 cpsat의 <code>num_search_workers=4</code>와 16-way 오버서브 → 게이트를 닫는다.</li>
+      <li><b>웜스타트(AddHint)는 순수 upside.</b> 정식화 불변, 실패 시 cold-start와 동일.</li>
+      <li><b>회귀 게이트 불가침.</b> gen17+stress4 전부 21/21 feasible·tie-or-better, <code>example_B2_b10</code> bit-identical, 각 변경 독립 feature-flag + kill-switch. 하드 불변식(시그니처·floor·타임가드·<code>utils</code>/<code>baseline</code> 미수정·결정론 seed) 절대 불가침.</li>
+    </ul>
+  </div>
+
+  <h2>3. 실행 계획 (합의 권고)</h2>
+  <table>
+    <thead><tr><th style="width:34%">변경</th><th class="mid">우선</th><th class="mid">위험</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>cpsat 재배치 + 독립 캡</b><br>cpsat solve를 baseline 앞(trivial floor 직후)으로. <code>cp_budget=min(8.0,0.15·T,…)</code>. baseline 예산은 잔여시간으로 재계산. floor 검증·불변식 무접촉. <code>OGC_CPSAT_FIRST</code> flag.</td>
+        <td class="mid"><span class="badge b-p0">P0</span></td>
+        <td class="mid"><span class="badge b-low">low</span></td>
+        <td>확정 병목(SKIP)의 유일 원인 해소. cpsat 무의존성으로 정합성 무변. −1 위험 <b>감소</b>.</td>
+      </tr>
+      <tr>
+        <td><b>M5 병렬 멀티스타트 OFF</b><br>게이트(<code>T≥20·n≥30·n_bays≥2</code>)를 기본 비활성. in-process <code>_local_search</code>로 폴백. <code>parallel_decode.py</code>는 테스트 자산으로 보존.</td>
+        <td class="mid"><span class="badge b-p1">P1</span></td>
+        <td class="mid"><span class="badge b-low">low</span></td>
+        <td>0-개선 ALNS의 4코어 낭비·spawn/메모리 리스크 제거. 코어를 cpsat에 양보. never-raises 폴백이라 끄는 게 더 안전.</td>
+      </tr>
+      <tr>
+        <td><b>cpsat 웜스타트</b><br>balanced/pref 시드를 <code>AddHint</code>로 주입(Solve 직전).</td>
+        <td class="mid"><span class="badge b-p1">P1</span></td>
+        <td class="mid"><span class="badge b-low">low</span></td>
+        <td>s12 incumbent 가속. 정식화 불변, OR-Tools가 나쁜 hint 무시 → cold-start와 동일.</td>
+      </tr>
+      <tr>
+        <td><b>타임가드 마진</b><br>P0 적용 후 대표 인스턴스를 <code>--timelimit 30/60/120</code>로 OGC_TRACE 실측 → 모든 원자 디코드가 <code>0.85·T</code> 내 반환 확인. 깨지면 <code>hard_stop</code> 0.93→0.90/0.88로 당김. <code>_DECODE_SAFETY</code> 불변.</td>
+        <td class="mid"><span class="badge b-p1">P1</span></td>
+        <td class="mid"><span class="badge b-low">low</span></td>
+        <td>P0가 cpsat를 항상 돌려 wall-clock이 밀린다. 더 보수적으로만 → −1 단조 감소. 측정으로 게이팅(추정으로 당기지 않음).</td>
+      </tr>
+      <tr>
+        <td><b>M4 opt-in 격리</b><br><code>has_oversub</code> 자동활성을 <code>OGC_M4_CUT</code>(기본 OFF) opt-in으로. 코드·<code>test_m4_contract</code> 보존.</td>
+        <td class="mid"><span class="badge b-p2">P2</span></td>
+        <td class="mid"><span class="badge b-low">low</span></td>
+        <td>gen 전부 Z1=0이라 현재도 휴면. 격리는 import 표면·미실측 −1 꼬리 축소. 강제 over-sub hidden 이득은 flag로 보존.</td>
+      </tr>
+      <tr>
+        <td><b>측정 게이트</b> (코드 변경 아님)<br>gen_instance.py로 (a) w1지배+tight+over-sub, (b) w2지배+dense-large 생성 → 현재 코드 OGC_TRACE 측정.</td>
+        <td class="mid"><span class="badge b-p2">P2</span></td>
+        <td class="mid"><span class="badge b-med">med</span></td>
+        <td>cpsat Z1 맹점이 <b>실제 점수 손실</b>인지 관측. 디코더가 더 나은 배정을 더 낮은 Z1로 환전 가능함이 둘 다 확인될 때만 Z1-프록시항 검토.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. 보존된 비합의 (끝내 안 맞음)</h2>
+  <table>
+    <thead><tr><th style="width:28%">쟁점</th><th>입장 차이 · 결론</th></tr></thead>
+    <tbody>
+      <tr><td><b>cpsat에 Z1-프록시항</b></td><td>Theorist(측정 후 채택 가능) vs Contrarian(코드가 반증 → 측정 통과해도 거부) vs Pragmatist(측정 전 보류). → <b>지금 구현 안 함. 측정 게이트 뒤로.</b></td></tr>
+      <tr><td><b>baseline를 워커로 spawn</b></td><td>Contrarian이 제안했다가 <code>parallel_decode.py</code> 확인 후 <b>철회</b>(greedy/geom_kernel의 spawn child import 미실측 = 새 −1 꼬리). → <b>채택 안 함.</b> 재배치+캡으로 안전 달성.</td></tr>
+      <tr><td><b>raster 디코드 본경로 승격</b></td><td>Contrarian이 제안했다가 <b>철회</b>(크레인 j≥k 2차 구현 = atomic·미실측 −1 꼬리, 마감 임박 ROI 최악). → <b>채택 안 함.</b></td></tr>
+      <tr><td><b>s12 대칭깨기/정식화 강화</b></td><td>Theorist(formulation 약점) vs 둘(이미 feasible 시드인데 baseline 동점 = 디코드가 환전 못 하면 점수 0, 동점=만점). → <b>웜스타트만 합의, 대칭깨기 보류.</b></td></tr>
+      <tr><td><b>“19개 동점은 0점인가”</b></td><td>Contrarian(0점) vs 둘(R·필드 구성 미지 → 다수가 휴리스틱이면 압승 구간). → <b>본질적 미지수, 보존.</b> 행동은 “동점도 안전, 하드에서 추가 upside”로 수렴.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. 한 줄 결론</h2>
+  <div class="card">
+    <p>무거운 M3/M4 ALNS가 무의미한 건 <b>분해가 옳아서</b>(cpsat가 배정 최적을 증명)이고, 추가 점수 레버는 <b>탐색 연산자가 아니라 옵티마이저/파이프라인 앞단</b>에 있다. 그러나 그 레버조차 “cpsat를 더 똑똑하게”가 아니라 <span class="key">“cpsat가 굶지 않게 + 4코어를 헛돌리지 않게 + 타임가드 마진을 지키게”</span>라는 <b>무위험 엔지니어링</b>으로 귀결된다. 검증 불가능한 정식화 변경은 확정 동점(R/2 가치)을 거는 음의 기대값이므로 측정 게이트 뒤로 보류한다.</p>
+  </div>
+
+  <p class="foot">
+    생성: 3-에이전트 워크플로우 (9 호출 = 3 페르소나 × 3 라운드) · 산출물 동기화: <code>notes/milestone-status.md</code> 진단 섹션 ·
+    이 문서는 합의/비합의/실행계획을 모두 보존한다(CLAUDE.md §10 원칙).
+  </p>
+
+</div>
+</body>
+</html>

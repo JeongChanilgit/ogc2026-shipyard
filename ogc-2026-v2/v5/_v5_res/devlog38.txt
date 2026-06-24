@@ -1,0 +1,46 @@
+[DBG] USE_GUIDE=1 guide dist=[46, 114, 90]
+[DBG] after placement state dist=[57, 94, 99] ovf=127
+[DBG] timing per_bay_s=64 (elapsed=8)
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 4
+  [precompute] blocks=114 active=114 tardy=98 cands_total=550 (x+436 y+0 o+0) combos=149915 stored=20676 poses=550 wall=5.59s
+  [CP-SAT] status=FEASIBLE obj=3342.0 wall=30.09s
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [precompute] blocks=114 active=114 tardy=80 cands_total=581 (x+0 y+467 o+0) combos=167272 stored=21721 poses=581 wall=6.22s
+  [CP-SAT] status=FEASIBLE obj=3174.0 wall=30.14s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 4
+  [precompute] blocks=114 active=114 tardy=78 cands_total=567 (x+0 y+0 o+453) combos=159333 stored=24957 poses=567 wall=6.75s
+  [CP-SAT] status=FEASIBLE obj=3170.0 wall=30.12s
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 4
+  [precompute] blocks=114 active=114 tardy=78 cands_total=535 (x+421 y+0 o+0) combos=141845 stored=19829 poses=535 wall=5.39s
+  [CP-SAT] status=FEASIBLE obj=3146.0 wall=30.11s
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [precompute] blocks=114 active=114 tardy=78 cands_total=576 (x+0 y+462 o+0) combos=164407 stored=21605 poses=576 wall=6.12s
+  [CP-SAT] status=FEASIBLE obj=3116.0 wall=30.19s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 4
+  [precompute] blocks=114 active=114 tardy=78 cands_total=567 (x+0 y+0 o+453) combos=159333 stored=24854 poses=567 wall=6.67s
+  [CP-SAT] status=FEASIBLE obj=3116.0 wall=30.11s
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 4
+  [precompute] blocks=114 active=114 tardy=78 cands_total=534 (x+420 y+0 o+0) combos=141315 stored=19721 poses=534 wall=5.25s
+  [CP-SAT] status=FEASIBLE obj=3116.0 wall=29.75s
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [precompute] blocks=114 active=114 tardy=78 cands_total=575 (x+0 y+461 o+0) combos=163837 stored=21540 poses=575 wall=6.03s
+  [CP-SAT] status=FEASIBLE obj=3116.0 wall=23.78s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 6
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 4
+  [precompute] blocks=114 active=114 tardy=78 cands_total=567 (x+0 y+0 o+453) combos=159333 stored=24811 poses=567 wall=6.75s
+  [CP-SAT] status=FEASIBLE obj=3116.0 wall=18.75s
+  [precompute] blocks=46 active=46 tardy=40 cands_total=353 (x+307 y+0 o+0) combos=60945 stored=16848 poses=353 wall=4.25s

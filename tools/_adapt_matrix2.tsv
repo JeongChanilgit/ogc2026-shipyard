@@ -1,0 +1,35 @@
+instance	tl	config	feasible	obj1	obj2	obj3	wall
+prob_1	60	off	PARSE_ERR	JSONDecodeError('Expecting value: line 1 column 1 (char 0)')	-	-	-
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_6276.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_6478.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_7357.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_8228.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_8437.txt
+
+prob_6	300	off	PARSE_ERR	JSONDecodeError('Expecting value: line 1 column 1 (char 0)')	-	-	-
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_9502.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_10384.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_10573.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_10759.txt
+
+Failed to run 'conda activate "C:\Users\peter\anaconda3\envs\ogc2025"'.
+C:\Users\peter\AppData\Local\Temp\__conda_tmp_11638.txt
+

@@ -1,0 +1,34 @@
+{
+  "tag": "v04-crane-budget",
+  "timestamp_kst": "20260530-062120",
+  "zip_filename": "v04-crane-budget-20260530-062120.zip",
+  "zip_size_bytes": 49362,
+  "zip_sha256": "835629bd247c2af88561bedb2e1d8ba55d701db7593dfabee99163e29c64208c",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 44063
+    },
+    {
+      "path": "geom_kernel.py",
+      "bytes": 4367
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 5790
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 79995
+    },
+    {
+      "path": "parallel_decode.py",
+      "bytes": 12148
+    },
+    {
+      "path": "regime.py",
+      "bytes": 18316
+    }
+  ],
+  "note": ""
+}

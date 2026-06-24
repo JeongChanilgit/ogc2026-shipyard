@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정확한 z1 피드백 배정 루프 — 설계 문서 (2026-06-24)</title>
+<style>
+  :root{--bg:#0e1014;--panel:#171a21;--panel2:#1c2029;--ink:#e7eaf0;--muted:#98a2b3;
+        --line:#2a2f3a;--win:#3fb950;--bad:#f85149;--neut:#d29922;--accent:#58a6ff;
+        --purple:#bc8cff;--cyan:#39d0d8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1140px;margin:0 auto;padding:34px 22px 96px}
+  h1{font-size:26px;margin:0 0 4px}
+  h2{font-size:20px;margin:40px 0 6px;padding-top:10px;border-top:1px solid var(--line);color:var(--accent)}
+  h3{font-size:16px;margin:22px 0 6px;color:var(--cyan)}
+  .sub{color:var(--muted);margin:0 0 20px}
+  p{margin:8px 0}
+  code{background:#0b0d11;padding:1px 6px;border-radius:5px;font:12.5px ui-monospace,Consolas,monospace;color:#d9e0ec}
+  .fl{color:var(--purple);font:11.5px ui-monospace,Consolas,monospace}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 19px;margin:14px 0}
+  .crux{background:#141b14;border:1px solid #2f5d2f;border-radius:12px;padding:16px 19px;margin:16px 0}
+  .risk{background:#1d130f;border:1px solid #6e2b21;border-radius:12px;padding:16px 19px;margin:16px 0}
+  .key{background:#0f1722;border:1px solid #244;border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;border-bottom:1px solid #3a4150}
+  .mut{color:var(--muted)} .win{color:var(--win)} .bad{color:var(--bad)} .neut{color:var(--neut)}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:4px 0}
+  .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:20px;border:1px solid var(--line);color:var(--muted);margin-left:6px}
+  .flow{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;
+        font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#cdd6e4;white-space:pre;overflow-x:auto}
+  .pill{display:inline-block;background:#0b0d11;border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px 3px;font-size:12px}
+  .stepn{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;
+          background:var(--accent);color:#06121f;font-weight:700;font-size:12px;margin-right:6px}
+  .eff{color:var(--win);font-weight:600}
+  b.q{color:var(--cyan)}
+  .small{font-size:12.5px}
+  hr{border:none;border-top:1px dashed var(--line);margin:18px 0}
+</style></head><body><div class="wrap">
+
+<h1>정확한 z1 피드백 배정 루프</h1>
+<p class="sub">설계 문서 · 2026-06-24 · OGC2026 v2 파이프라인 · <span class="fl">file:line</span>은 실제 코드 근거</p>
+
+<div class="key">
+<b>아이디어 한 줄</b> — 전역 그리디는 블록을 어느 베이에 보낼지를 <b>myopic tardy 추정</b>(이 블록만 단독으로 본
+exit−due)으로 결정한다. 그런데 per-bay txyo 최적화를 한 번 돌리고 나면 각 블록의 <b class="q">진짜 z1 기여</b>가
+정확히 나온다. <b>그 정확한 z1을 다시 그리디 배정에 먹여 재배치</b>하면 배정 정확도가 올라간다 →
+(M1) 끝까지 tardy인 블록은 다른 베이로, (M2) 그 tardy를 만든 선행블록까지 포함해 베이 간 밀도를 맞춘다.
+</div>
+
+<div class="flow">  ┌────────────────────────────── 피드백 루프 (Benders / LBBD 형태) ──────────────────────────────┐
+  │                                                                                                │
+  │   ① 전역 그리디 배정+배치        ②  per-bay 타이밍 오라클        ③  정확한 z1 측정              │
+  │      unified_greedy.unified()  ──▶   parallel_timing /      ──▶   global_eval (z1/z2/z3)       │
+  │      (myopic tardy 로 베이 결정)      crane_repack_bay             _bz1 (베이별) , 블록별 기여   │
+  │              ▲                        (위치고정·entry만·z1 마감)            │                   │
+  │              │                                                             ▼                   │
+  │              └──────────────  ④ 정확 z1 을 배정비용으로 갱신 후 재-그리디  ◀──────────────────┘   │
+  │                                  M1: tardy 블록 → 다른 베이                                      │
+  │                                  M2: 선행블록 포함 → 베이 밀도 균형                              │
+  │                                  (best-of 게이트: 더 좋을 때만 채택, 수렴 시 정지)              │
+  └────────────────────────────────────────────────────────────────────────────────────────────────┘</div>
+
+<!-- ══════════════════════════════════ PART 1 ══════════════════════════════════ -->
+<h2>Part 1 — 현재 알고리즘의 모든 컴포넌트</h2>
+<p class="mut">제출 develop 엔트리 <code>myalgorithm_fix.py</code> 의 v2 경로(<code>OGC_NO_V1=1</code>) 기준. 단계별로
+무엇을 하고, 무엇을 입력/출력하고, 어떤 신호로 결정하는지.</p>
+
+<h3><span class="stepn">A</span>전역 그리디 배정 + 초기 배치 <span class="tag">unified_greedy.unified()</span></h3>
+<div class="card">
+<b>무엇</b> — 베이를 미리 정하지 않는다. 블록을 EDD/blend 순으로 하나씩 꺼내 <b>모든 fit 베이에 실제로 한 번씩 시험배치</b>(<code>place_one</code>)해 보고,
+<b>marginal obj 가 최소인 베이</b>에 commit 한다. 배정은 패킹의 emergent 결과. <span class="fl">unified_greedy.py:218–281</span>
+<table>
+<tr><th>요소</th><th>내용</th><th>근거</th></tr>
+<tr><td>입력</td><td><code>prob_info</code> (bays/blocks/weights)</td><td class="fl">:80</td></tr>
+<tr><td>출력</td><td>블록→{bay, x, y, orient, entry, exit} 레코드 (베이별 <code>results</code>)</td><td class="fl">:565</td></tr>
+<tr><td>위치(x,y,o)·시각(entry/exit)</td><td><b>배치 시점에 한꺼번에</b> 결정. entry = 가장 이른 feasible 시각, exit = entry+P. 크레인·trap·공식 게이트 통과 첫 BL 후보.</td><td class="fl">temporal_pack.py:574, :600,633</td></tr>
+<tr><td>배정 점수 (marginal)</td><td><code>sc = w1·tardy + w2·Δz2 + w3·(smax−pref[j])</code></td><td class="fl">:256</td></tr>
+</table>
+<div class="risk small" style="margin-top:6px">
+<b>★ 정확도가 떨어지는 바로 그 지점</b> — <span class="fl">unified_greedy.py:248</span><br>
+<code>tardy = rec["exit"] − D</code> = "지금 이 베이 상태에서 이 블록 하나만 놓았을 때의 exit". <b>co-presence 미반영</b> —
+나중에 같은 베이·시간창에 들어올 블록이 크레인 <code>j≥k</code> 직렬화로 이 블록(혹은 다른 블록)을 밀어낼지 모른다.
+거대한 <code>w1</code>(set2 667~29,600)과 곱해져 작은 <code>w3≈133</code> 의 z3 항을 <b>자릿수로 깔아뭉갠다</b> →
+솔버가 "헛지각"을 피하려고 선호 베이를 버리는 잘못된 배정을 한다. <span class="fl">주석 :190–192 가 이를 명시</span>
+</div>
+</div>
+
+<h3><span class="stepn">B</span>per-bay 타이밍 오라클 — 위치 고정, 시각만 z1 마감 <span class="tag">parallel_timing / crane_repack_bay</span></h3>
+<div class="card">
+<b>무엇</b> — 배치가 정한 위치를 <b>그대로 두고</b>, 각 베이에서 entry/exit 만 CP-SAT 로 다시 최적화해 z1 을 마감한다.
+배정·위치는 안 바꾼다. <span class="fl">unified_greedy.py:445–453</span> (postproc 의 PURE-T 도 동일 엔진)
+<ul class="small">
+<li><b>핵심 엔진</b> <code>crane_repack_bay(..., n_xcand=0, n_ycand=0, n_ocand=0)</code> = 위치·방향 완전 고정, <b>entry(t)만 1차원 자유</b>(0D 모델, 큰 베이도 ~1s OPTIMAL). <span class="fl">crane_cpsat.py:378, 541</span></li>
+<li><b>크레인 j≥k 모델</b> = ① 모든 블록쌍·후보조합의 5개 시간-무관 불리언(충돌/진입막힘/퇴출막힘)을 공식 체커로 사전계산 <span class="fl">:353–357</span> → ② entry 변수 위의 <b>시간 분리절</b>로 변환(<code>ax≤be ∨ bx≤ae</code> 등). <span class="fl">:561–593</span> → 채택된 어떤 타이밍도 크레인-feasible 보장.</li>
+<li><b>목적</b> = <code>tard[b] ≥ entry[b]+P−D; minimize Σtard</code> → <b>z1 만</b> 최소화(z2/z3 는 모델에 없음). <span class="fl">:603–605</span></li>
+</ul>
+<div class="key small" style="margin-top:4px"><b>디커플 구조의 함의</b> — 배정·배치(A)는 <b>myopic</b> tardy 로 "어느 베이"만 흔들고, 실제 z1 은 오라클(B)이 마감한다.
+즉 <b>부정확성은 "배정 결정"에만 있고 최종 타이밍에는 없다</b>. ← 사용자 통찰과 정확히 일치. 그래서 <b>오라클이 마감한 정확 z1</b>을 배정으로 되먹이는 것이 합리적.</div>
+</div>
+
+<h3><span class="stepn">C</span>후처리 루프 — 공간 재배치 + 크로스베이 <span class="tag">postproc._run_loop</span></h3>
+<div class="card">
+<b>무엇</b> — 라운드 루프로 z1 큰 베이부터 좌표하강(x→y→o) + 크로스베이 move/swap(선호 베이로) 을 시도. 모든 패스는
+<b>never-worse 게이트</b>(<code>global_eval</code> 으로 전체 obj strict 개선 + feasible 일 때만 채택). <span class="fl">postproc.py:467–693, 게이트 :516–521</span>
+<table>
+<tr><th>패스</th><th>하는 일</th><th>자유화</th><th>기본</th></tr>
+<tr><td>SPATIAL / DUALWIN</td><td>tardy 베이 좌표하강(x/y/o), 듀얼윈도</td><td>위치 축별 + entry</td><td>ON</td></tr>
+<tr><td>CROSS-BAY move/swap</td><td>tardy·wrong-bay 블록을 선호 베이로 이동/교환</td><td>이동블록만 자유</td><td>ON</td></tr>
+<tr><td class="mut">PURET·MOVEALL·WRONGBAY·FREEALL·FRONT·CLUSTER</td><td class="mut">게이트형 (실험/보강)</td><td class="mut">—</td><td class="mut">env</td></tr>
+</table>
+<p class="small mut">참고: 오늘 밤 실험으로 MOVEALL 강화(pref/destretime/ordering)는 falsified, FRONT/CLUSTER 크로스베이도 falsified. → 이 Part C 의 미세 레버는 천장. 그래서 레버를 <b>한 단계 위(배정)</b>로 올리는 것이 본 설계의 동기.</p>
+</div>
+
+<div class="key">
+<b>전체 데이터 흐름</b><br>
+<code>prob_info → unified()[그리디 배정+배치, myopic tardy] → parallel_timing[위치고정·z1 마감] → postproc[공간·크로스베이] → operations</code><br>
+<span class="mut">+ 인스턴스별 best-of: <code>OGC_SCALE_BESTOF</code> 가 여러 <code>w1</code> 디스카운트로 각각 돌려 z1=0 우선 최저 obj 선택 <span class="fl">myalgorithm_fix.py:105–165</span></span>
+</div>
+
+<!-- ══════════════════════════════════ PART 2 ══════════════════════════════════ -->
+<h2>Part 2 — 제안 ①: 정확한 z1 피드백 배정 루프 (공통 골격)</h2>
+
+<div class="crux">
+<b>핵심</b> — 이것은 <b>Benders / LBBD 형태의 fixed-point</b> 다.<br>
+· <b>마스터</b> = 그리디 배정(어느 블록 → 어느 베이)<br>
+· <b>서브문제</b> = per-bay 타이밍 오라클(고정 위치 위 z1 마감) — <b>이미 존재</b><br>
+· <b>피드백(cut/cost)</b> = 서브문제가 돌려준 <b>정확한 z1</b> 을 마스터의 배정비용으로 갱신<br>
+지금은 마스터가 myopic tardy 라는 <b>부정확한 자기추정</b>으로만 배정한다. 서브문제의 정답을 한 번도 안 본다.
+피드백을 연결하면 마스터가 "이 블록을 이 베이에 두면 <i>실제로</i> 얼마나 늦는지"를 알고 재배정한다.
+</div>
+
+<h3>정확한 z1 측정 — 무엇을 호출하나 (확정된 레시피)</h3>
+<table>
+<tr><th>측정 단위</th><th>호출</th><th>반환</th><th>근거</th></tr>
+<tr><td>전역 z1/z2/z3/obj</td><td><code>seed.global_eval(data, bays_placed)</code></td><td>공식 <code>check_feasibility</code> 기반 정확 분해 (obj1/2/3)</td><td class="fl">seed.py:87–104</td></tr>
+<tr><td>베이별 z1</td><td><code>postproc._bz1(data, placed)</code></td><td><code>Σ max(0, exit−due)</code></td><td class="fl">postproc.py:101</td></tr>
+<tr><td>블록별 z1 기여</td><td><code>max(0, p["exit"] − due[p.id])</code></td><td>그 블록이 만든 정확 tardiness</td><td class="fl">crane_cpsat.py:760</td></tr>
+</table>
+<p class="small mut">셋 다 placement dict 만 있으면 즉시 호출 가능 + 공식 체커 기반이라 "평가서버와 동일하게 정확". 단 <code>global_eval</code> 은 전 솔루션 재검증(전역 비용) → 자주 돌릴 땐 베이별 <code>_bz1</code> 이 훨씬 쌈.</p>
+
+<h3>루프 구조</h3>
+<div class="card"><ol>
+<li><b>R0</b>: 평소대로 <code>unified()</code> → <code>parallel_timing</code> → 해 S₀ 확보.</li>
+<li><b>측정</b>: <code>global_eval(S₀)</code> + 블록별 z1 기여 테이블 <code>realized[b] = max(0, exit_b − due_b)</code>, 그리고 <b>각 블록이 실제로 놓인 베이</b> <code>bay₀[b]</code>.</li>
+<li><b>R1 재-그리디</b>: <code>unified()</code> 를 다시 돌리되, marginal 의 tardy 항을 myopic 대신 <b>M1/M2 의 갱신 비용</b>으로 대체(아래). → 새 해 S₁ → <code>parallel_timing</code>.</li>
+<li><b>best-of 게이트</b>: <code>obj(S₁) &lt; obj(S₀)</code> 면 채택, 아니면 S₀ 유지(<b>never-worse</b>). feasible·never−1 필수.</li>
+<li><b>수렴</b>: 배정이 안 변하거나 obj 정체 또는 예산 소진이면 정지. (보통 2~3 회; 각 회가 ~<code>V2_CAP</code> 초라 서버 TL 에서 회수 제한.)</li>
+</ol></div>
+
+<div class="key">
+<b>왜 이게 production 의 gassign 과 다른가 (그리고 보완적인가)</b> — production 마스터 <code>gassign</code> 은 이미 z1-aware 지만,
+co-presence 를 <b>CP-SAT area-time <i>완화</i></b>로 <b>추정</b>한다(과대추정 → 과스필 → <code>C3_MULT=2.0</code> 로 보정). <span class="fl">gassign.py:231, 368</span>
+본 설계는 완화 추정 대신 <b>오라클의 <i>정확한</i> 측정</b>을 되먹인다 → 원리상 더 정확한 신호. <b>경험적 피드백 vs 해석적 완화</b>의 대결.
+</div>
+
+<!-- ══════════════════════════════════ PART 3 ══════════════════════════════════ -->
+<h2>Part 3 — 제안 ②: Method 1 — tardy 블록 재배정</h2>
+<p class="mut">"끝까지 tardy 한 블록은 이번 그리디에서 다른 베이로 가라."</p>
+
+<h3>단계별</h3>
+<div class="card"><ol>
+<li><span class="stepn">1</span><b>신호 수집</b> — S₀ 측정 후 <code>realized[b] &gt; 0</code> 인 블록 = "실현 tardy". 각각의 현 베이 <code>bay₀[b]</code> 기록. <span class="fl">crane_cpsat.py:760 식</span></li>
+<li><span class="stepn">2</span><b>배정비용 갱신</b> — 재-그리디에서 블록 b 를 후보 베이 j 에 시험배치할 때 marginal tardy 항을:
+  <div class="small" style="margin:6px 0">· <b>소프트(권장)</b>: <code>tardy_cost(b,j) = myopic(b,j) + λ · realized[b] · 𝟙[j == bay₀[b]]</code> — 즉 "지난 회에 이 베이가 이 블록을 늦게 만들었다"는 패널티를 <b>그 베이에만</b> 부과 → 자연히 다른 베이를 택하게 유도. λ 로 강도 조절.</div>
+  <div class="small" style="margin:6px 0">· <b>하드(주의)</b>: <code>realized[b]</code> 가 큰 상위 K 블록만 <code>bay₀[b]</code> 금지(<code>FORCE</code> 류 게이트 재사용). <span class="fl">unified_greedy.py:222–239</span></div></li>
+<li><span class="stepn">3</span><b>재-그리디 + 오라클</b> — 갱신비용으로 <code>unified()</code> 재실행 → <code>parallel_timing</code> → S₁.</li>
+<li><span class="stepn">4</span><b>best-of</b> — <code>obj(S₁)&lt;obj(S₀)</code> 면 채택. λ 또는 K 를 여러 값으로 race 해 최저 채택(scale-bestof 패턴 재사용).</li>
+</ol></div>
+
+<h3>무엇이 쓰이나</h3>
+<p class="small"><span class="pill">신호: <code>realized[b]</code> (블록별 정확 z1)</span><span class="pill">비용: marginal 의 tardy 항 교체 <span class="fl">unified_greedy.py:248,256</span></span><span class="pill">실행: <code>unified()</code> 재호출</span><span class="pill">게이트: <code>global_eval</code> best-of</span><span class="pill">기존 노브 재사용: <code>PLACE_W1_SCALE</code>/<code>FORCE_PREF</code></span></p>
+
+<h3 class="eff">기대효과</h3>
+<ul class="small">
+<li>배정이 <b>실제로 늦는 베이</b>를 피함 → 그 블록의 z1↓. myopic 이 못 보던 "이 베이는 이미 그 시간창이 크레인 직렬화로 꽉 참"을 경험적으로 학습.</li>
+<li>헛지각(phantom tardy)으로 선호 베이를 버리던 잘못이 줄면 <b>z3 도 동시에↓</b>(선호 회복) — z1↔z3 동시 개선 가능성.</li>
+<li>비용: 회당 ~<code>V2_CAP</code>(기본 90s) → 서버 TL 에서 2회 정도.</li>
+</ul>
+
+<!-- ══════════════════════════════════ PART 4 ══════════════════════════════════ -->
+<h2>Part 4 — 제안 ③: Method 2 — 선행블록 포함 밀도 균형</h2>
+<p class="mut">"tardy 는 그 블록 잘못이 아니다. <b>먼저 배치돼 그 시간창을 점유한 선행블록</b>이 뒤를 늦춘 것. 그 선행블록까지
+포함해 베이 간 밀도를 맞추자."</p>
+
+<h3>왜 선행블록인가</h3>
+<div class="card small">
+크레인 <code>j≥k</code> 직렬화에서, 블록 b 가 늦는 이유는 <b>b 가 들어가려는 시간창에 이미 다른 블록들이 위(또는 진입 경로)에
+있어</b> b 의 entry 가 밀리기 때문. 그 "막는 블록"들이 <b>blocking predecessor</b>. 핵심은 이 정보가
+<b>이미 계산돼 있다</b>는 것: 타이밍 오라클이 모든 블록쌍의 진입막힘/퇴출막힘 5-불리언을 사전계산한다. <span class="fl">crane_cpsat.py:353–357</span>
+→ b 의 entry 를 미루게 만든 페어 <code>(predecessor, b)</code> 를 그 테이블에서 직접 식별 가능.
+</div>
+
+<h3>단계별</h3>
+<div class="card"><ol>
+<li><span class="stepn">1</span><b>tardy → blocking predecessor 추적</b> — <code>realized[b]&gt;0</code> 인 각 b 에 대해, 같은 베이에서 b 와 co-present 이고 entry 가 더 이르며 b 를 막는(진입/퇴출 불리언 True 또는 시간창 겹침) 블록 집합 <code>P(b)</code> 수집. <span class="fl">crane_cpsat.py:561–593 의 페어가 곧 후보</span></li>
+<li><span class="stepn">2</span><b>베이별 피크 밀도 측정</b> — 각 베이의 <b>peak concurrent footprint</b>(동시공존 면적/개수) 를 임계 시간창에서 계산(오늘 밤 density 진단과 동일식: <code>peak Σ bbox area</code>). 포화 베이(util ≥100%) vs 여유 베이 식별.</li>
+<li><span class="stepn">3</span><b>균형 재배정</b> — 재-그리디에서 <b>tardy 블록 자체가 아니라 그 선행블록 일부</b> <code>P(b)</code> 를 <b>여유 베이로</b> 유도(소프트 패널티: 포화 베이의 그 시간창 점유 블록에 비용 가산). 목표 = 임계 시간창의 peak co-presence 를 베이 간 평준화 → b 의 entry 가 빈 크레인창으로 당겨짐.</li>
+<li><span class="stepn">4</span><b>재-그리디 + 오라클 + best-of</b> — M1 과 동일 게이트.</li>
+</ol></div>
+
+<h3>무엇이 쓰이나</h3>
+<p class="small"><span class="pill">신호: blocking 페어 테이블 <span class="fl">crane_cpsat.py:353</span></span><span class="pill">밀도: peak concurrent area (density 진단식)</span><span class="pill">비용: 포화 베이·임계창 점유블록에 패널티</span><span class="pill">실행: <code>unified()</code> 재호출</span><span class="pill">게이트: best-of</span></p>
+
+<h3 class="eff">기대효과</h3>
+<ul class="small">
+<li>tardy 블록 하나를 옮겨 안 풀리던 문제(분산된 지각)를, <b>원인(과밀 시간창)</b>을 직접 완화해 푼다 — 한 베이에 co-present 가 몰려 크레인이 직렬화되는 구조를 분해.</li>
+<li>z1 의 <b>근본 원인(co-presence saturation)</b>을 건드리므로, M1(증상=tardy 블록 이동)보다 상류 레버. 잘 되면 z1↓ 폭이 더 큼.</li>
+<li>z2(workload imbalance)도 부수적으로 개선될 수 있음(밀도 균형 = 부하 균형 방향).</li>
+</ul>
+
+<!-- ══════════════════════════════════ PART 5 ══════════════════════════════════ -->
+<h2>Part 5 — 기대효과 종합 · 리스크 · 이전 증거 (정직하게)</h2>
+
+<div class="crux">
+<b>왜 될 수 있나 (upside)</b>
+<ul class="small" style="margin-bottom:0">
+<li>지금 배정의 유일한 부정확성(myopic tardy)을 <b>정확한 측정</b>으로 교체 → 원리상 더 나은 배정.</li>
+<li>z1·z3 <b>동시 개선</b> 가능: phantom tardy 가 사라지면 선호 베이를 덜 버림.</li>
+<li>오라클·측정 함수가 <b>이미 다 있음</b>(<code>global_eval</code>·<code>_bz1</code>·crane 페어 테이블) → 새 인프라 거의 불필요, 마스터 비용항만 교체.</li>
+<li>production <code>gassign</code> 의 완화-추정(과대추정→C3_MULT 보정)보다 <b>정확한 경험적 신호</b>일 수 있음.</li>
+</ul>
+</div>
+
+<div class="risk">
+<b>★ 왜 안 될 수도 있나 — 이전에 인접 레버가 전부 falsified 됐다 (반드시 직시)</b>
+<table>
+<tr><th>이전 실험</th><th>결과</th><th>본 설계와의 관계</th></tr>
+<tr><td>v4 <b>reassign</b> (선호 몰기)</td><td class="bad">z1 2~16배 폭발, 0/5 채택</td><td>M1 과 표면상 유사</td></tr>
+<tr><td>v4 <b>reassign_balance</b> (부하 분산)</td><td class="bad">z1 3~11배 폭발, 0/5</td><td>M2 와 표면상 유사</td></tr>
+<tr><td>크로스베이 <b>front/cluster</b> (선행블록 이동)</td><td class="bad">단일 루프0·cluster 만석0·−744K</td><td>M2 의 "선행블록" 과 동일 직관</td></tr>
+<tr><td>z1-localization</td><td class="bad">재배정이 패킹 바꿔 Δz1 폭발(z1·Δz1 ≫ w3·Δz3)</td><td>공통 실패 메커니즘</td></tr>
+</table>
+<p class="small" style="margin-bottom:0"><b>공통 실패 원인</b> = z1 이 <b>구조적 co-presence-bound</b> 이고, <b>완성된 패킹에 블록 하나를 끼워넣으면 목적지가 재패킹되며 z1 이 터진다</b>(perturbation → explosion). 만석 베이는 애초에 갈 데가 없다.</p>
+</div>
+
+<div class="key">
+<b>그런데 — 본 설계가 그 falsified 들과 결정적으로 다른 점</b>
+<ul class="small" style="margin-bottom:0">
+<li><b>사후 perturbation 이 아니라 re-greedy 전면 재구축</b>. 이전 실험들은 <b>완성된 해</b>에서 블록/클러스터를 다른 베이로 <b>밀어넣고 re-time</b>(국소 이동) → 그래서 터졌다. 본 설계는 <b>비용만 갱신해 그리디를 처음부터 다시</b> 돌린다 → 목적지가 <b>coherent 하게 재구성</b>되지, 기존 패킹을 깨고 끼워넣지 않는다. <b>실패 프로파일이 근본적으로 다르다.</b></li>
+<li><b>정확한 z1 피드백</b> 자체가 이전 reassign 들에 없던 재료. 이전엔 "선호로 몰자/부하로 나누자" 휴리스틱이었지, "오라클이 잰 진짜 tardy 를 비용으로 쓰자"가 아니었다.</li>
+<li><b>그래도 risk 는 실재</b>: re-greedy 가 새 패킹에서 또 다른 co-presence 를 만들어 z1 이 안 줄 수도(혹은 늘 수도) 있다. <b>그래서 best-of never-worse 가 필수</b> — 나빠지면 그냥 이전 해 유지(−1·회귀 0 보장).</li>
+</ul>
+</div>
+
+<h3>필수 가드 (구현 시)</h3>
+<ul class="small">
+<li><b>best-of never-worse</b> — 재-그리디 해가 더 나쁘면 무조건 이전 해 채택. 회귀·−1 위험 0(이전 v2 best-of 패턴 그대로).</li>
+<li><b>수렴/반-진동</b> — 배정이 두 상태를 오가면(oscillation) 정지. no-good 메모리 또는 damping(λ 감쇠).</li>
+<li><b>소프트 &gt; 하드</b> — 베이 금지(하드)는 thrashing 유발. 비용 패널티(소프트)가 안전.</li>
+<li><b>예산 규율</b> — 회당 ~<code>V2_CAP</code>. 서버 TL(가변, 비공개)에서 2~3회만. 첫 회(R0) 는 항상 보존.</li>
+<li><b>답지 튜닝 금지 준수</b> — 피드백은 <b>솔브시점 측정</b> 기반(인스턴스 종류별 config 분기 아님) → 정당한 적응.</li>
+</ul>
+
+<!-- ══════════════════════════════════ PART 6 ══════════════════════════════════ -->
+<h2>Part 6 — 구현 스케치 · 검증 계획</h2>
+<div class="card small">
+<b>게이트</b> <code>OGC_REGREEDY_FEEDBACK</code> (기본 OFF → 프로덕션 무영향), <code>OGC_REGREEDY_MODE=m1|m2|both</code>, <code>OGC_REGREEDY_LAMBDA</code>, <code>OGC_REGREEDY_ROUNDS</code>.<br>
+<b>훅 위치</b> — <code>unified()</code> + <code>parallel_timing</code> 직후(S₀ 확보 지점)에서 <code>realized[b]</code>/<code>bay₀[b]</code> 계산 → 비용 오버라이드 주입해 <code>unified()</code> 재호출 → best-of. <span class="fl">unified_greedy.py:248,256 (비용항), :445 (오라클 후)</span><br>
+<b>측정/판정</b> — full set1 + ALL40, 판정 = <b>총 obj + never−1</b>(개별 z 아님). 격리 testbed 부터(오늘 밤 러너 패턴 재사용), 채택은 사람 승인 후.<br>
+<b>단계</b> — ① 비용 오버라이드 + 정확z1 측정 배선(M1 소프트) → set1 A/B → ② 효과 있으면 M2(선행블록 밀도) → ③ ALL40 never−1 → ④ 채택 결정.
+</div>
+
+<div class="key">
+<b>현실적 기대치 (균형)</b> — z1 이 구조적 co-presence-bound 임은 여러 차례 확인됐고 인접 레버가 모두 falsified 라
+<b>downside risk 가 실재</b>한다. 그러나 본 설계의 <b>re-greedy 재구축 + 정확 z1 피드백</b>은 그 falsified 들과
+메커니즘이 다르고 <b>아직 이 형태로는 시험된 적 없다</b>. best-of 가드가 회귀·−1 을 0 으로 막으므로 <b>downside 는 "효과 없음(시간 낭비)"이지 "악화"가 아니다</b> → 시도할 가치가 있는 연구 베팅. M1(소프트) 부터 격리 A/B 권장.
+</div>
+
+<p class="small mut" style="margin-top:26px">근거 정찰: 2× code-analyzer (배정측 / per-bay·postproc측), file:line 직접 확인 · 이전 증거: 메모리
+<code>ogc2026-v4-assignment-falsified</code>·<code>z1-localization</code>·<code>crossbay-front-falsified</code> · 측정 레시피:
+<code>seed.global_eval</code>/<code>postproc._bz1</code>/crane 페어 테이블</p>
+</div></body></html>

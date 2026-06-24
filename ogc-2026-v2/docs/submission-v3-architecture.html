@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>제출본 v3 (postproc) 구조 — 왜 빠른가 + v5 차용</title>
+<style>
+  :root{--bg:#0e1014;--card:#171a21;--card2:#1e222b;--ink:#e8ebf1;--mut:#969eae;--cy:#5ad1c7;--bad:#ff6b6b;--good:#7ee787;--warn:#f0c674;--blue:#6cb6ff;--line:#262b35}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:30px 22px 80px}
+  h1{font-size:25px;margin:0 0 4px}
+  .sub{color:var(--mut);margin-bottom:22px}
+  h2{font-size:18px;margin:32px 0 12px;border-left:3px solid var(--cy);padding-left:10px}
+  h3{font-size:14px;color:var(--cy);margin:16px 0 6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0}
+  pre{background:#0a0c10;border:1px solid var(--line);border-radius:8px;padding:11px 13px;overflow-x:auto;font:12px/1.5 Consolas,monospace;color:#cfe3ff;margin:6px 0}
+  .k{color:#ff9d6c} .c{color:#6b7585} .s{color:#9ae6a0} .n{color:#f0c674}
+  code{background:#0a0c10;padding:1px 6px;border-radius:5px;color:#bfe3ff;font-size:12.5px}
+  .flow{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+  .step{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:11px 14px}
+  .step b{color:var(--cy)} .step .t{float:right;color:var(--good);font-size:12px;font-weight:700}
+  .arrow{text-align:center;color:var(--mut);font-size:16px}
+  .why{display:flex;gap:12px;flex-wrap:wrap}
+  .whycard{flex:1;min-width:230px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:13px 15px}
+  .whycard .h{color:var(--warn);font-weight:700;font-size:13px;margin-bottom:5px}
+  .mut{color:var(--mut)} .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} b{color:var(--cy)}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:8px;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 9px;text-align:left;border-bottom:1px solid var(--line)} th{color:var(--mut)}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:9px;border:1px solid var(--line);color:var(--mut);margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>제출본 v3 (<code>postproc</code> crane_repack) 구조 — 왜 빠른가</h1>
+  <div class="sub">2026-06-23 · <code>submission_build/postproc.py</code> 해부 + v5 STEP2가 차용한 기법</div>
+
+  <div class="card">
+    <b>한 줄:</b> v3는 <b>tardy(지각) 있는 베이만</b> · <b>그 시간창 블록만</b> 풀어서 · <b>작은 후보(K=5)</b>로 · <b>적응형 시간 캡</b>을 걸고 CP-SAT 재패킹한다. 그래서 96블록 베이도 베이당 수십 초로 끝난다. 내 v5 STEP2가 느렸던 건 정반대로 <b>모든 베이 · 전체 블록 free-all · iters=3</b>로 돌려서였다.
+  </div>
+
+  <!-- ===== 전체 구조 ===== -->
+  <h2>1. 전체 구조 — <code>postprocess()</code> → <code>_run_loop()</code> 라운드 루프</h2>
+  <div class="card">
+    <pre><span class="k">def</span> postprocess(prob_info, solution, deadline):
+    bays_placed = adapter.<span class="n">deserialize</span>(prob_info, solution)   <span class="c"># 해 → per-bay 배치</span>
+    best, best_obj = _run_loop(prob_info, bays_placed, base_obj, deadline)
+    <span class="k">return</span> serialize(best) <span class="k">if</span> best_obj &lt; base_obj <span class="k">else</span> solution  <span class="c"># never-worse</span></pre>
+    <div class="flow">
+      <div class="step"><b>_run_loop</b>: <code>while time &lt; deadline</code> 라운드 반복. 매 라운드:</div>
+      <div class="arrow">▼</div>
+      <div class="step"><b>C3</b> (cheap, 먼저) — tardy 블록을 모든 fit 베이로 crane_repack 이동 <span class="t">~2s</span><div class="mut">전-베이 z1 cross-bay 수리 (내가 추가). free_ids=1블록이라 빠름.</div></div>
+      <div class="arrow">▼</div>
+      <div class="step"><b>C1</b> (SPATIAL) — <b>tardy 베이만</b> x→y→o 좌표하강 crane_repack <span class="t">핵심</span><div class="mut">위치+시각 재최적화로 z1↓. 아래 "빠른 이유" 전부 여기 적용.</div></div>
+      <div class="arrow">▼</div>
+      <div class="step"><b>C2</b> (CROSS-BAY) — tardy/wrong 블록 move/swap (선호베이로) <span class="t">~중</span><div class="mut">z3·z1 동시 — 선호베이로 옮겨 페널티↓.</div></div>
+      <div class="arrow">▼</div>
+      <div class="step"><b>never-worse 게이트</b> — 각 trial은 공식 obj가 <b>엄격히 개선될 때만</b> 채택 <span class="t">안전</span></div>
+    </div>
+    <div class="mut" style="font-size:12.5px">xyo는 <b>라운드당 1번</b>. 여러 라운드 = 반복 정제. (내 v5는 STEP2 안에서 iters=3을 또 돌려 중복이었음)</div>
+  </div>
+
+  <!-- ===== 왜 빠른가 ===== -->
+  <h2>2. 왜 빠른가 — 4가지</h2>
+  <div class="why">
+    <div class="whycard">
+      <div class="h">① tardy 베이만 재패킹</div>
+      <pre>bays_t = [(j, _bz1(pl)) <span class="k">for</span> j,pl ...]
+bays_t = [(j,z) <span class="k">for</span> j,z <span class="k">in</span> bays_t <span class="k">if</span> z&gt;<span class="n">0</span>]</pre>
+      z1=0 베이는 <b>통째 스킵</b>. prob_38 4베이 중 지각인 2~3개만 손댐. <span class="mut">(postproc.py:137)</span>
+    </div>
+    <div class="whycard">
+      <div class="h">② window_tardy_only=True</div>
+      <b>지각 시간창의 블록만</b> 자유변수, 나머지는 상수로 동결 → CP-SAT 모델이 작음 → 솔브 빠름.<br>
+      <span class="mut">내 v5는 free-all(96블록 전체 변수) → 거대 모델 → 30초 캡 꽉 채움.</span>
+    </div>
+    <div class="whycard">
+      <div class="h">③ _pass_cap 적응형 시간</div>
+      <pre>size_cap   = min(<span class="n">40</span>, max(<span class="n">12</span>, .3·n))
+budget_cap = remaining/(<span class="n">2</span>·n_active)
+ts = max(<span class="n">8</span>, min(size_cap, budget_cap))</pre>
+      베이 크기 <b>와</b> 남은예산 양쪽으로 자동 제한. <span class="mut">(postproc.py:51)</span>
+    </div>
+    <div class="whycard">
+      <div class="h">④ K=5 작은 후보 + 축별 분리</div>
+      축당 후보 5개(x만/y만/o만) → combo 작음. <span class="mut">(joint 3축은 17만 combo로 폭발)</span>
+    </div>
+  </div>
+
+  <!-- ===== v5 비교 ===== -->
+  <h2>3. 내 v5 STEP2가 느렸던 이유 → v3 기법 차용</h2>
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>항목</th><th>제출본 v3 (빠름)</th><th>v5 STEP2 (느렸음)</th><th>차용 후 v5</th></tr></thead>
+      <tbody>
+        <tr><td>대상 베이</td><td class="good">tardy(z1&gt;0)만</td><td class="bad">모든 베이</td><td class="good">tardy만</td></tr>
+        <tr><td>자유 블록</td><td class="good">tardy 시간창만 (window)</td><td class="bad">free-all (전체)</td><td class="good">window 기본</td></tr>
+        <tr><td>시간 캡</td><td class="good">_pass_cap (적응)</td><td class="bad">고정 30s × 다 채움</td><td class="good">_pass_cap</td></tr>
+        <tr><td>후보 K</td><td>5</td><td>6</td><td>5</td></tr>
+        <tr><td>반복</td><td>라운드 = 반복</td><td class="bad">iters=3 (중복)</td><td>iters=3 (tardy만이라 OK)</td></tr>
+        <tr><td>prob_38 STEP2/패스</td><td class="good">~수십초</td><td class="bad">~160~650초</td><td class="good">측정중</td></tr>
+      </tbody>
+    </table>
+    <div class="mut" style="margin-top:8px;font-size:12.5px">v5 STEP2를 위 4기법으로 재작성: <code>step2_all</code>=tardy 베이만(<code>_bz1&gt;0</code>) 선별 → <code>step2_bay</code>=window-only + <code>_pass_cap</code> + K=5. 좌표하강 xyo(t는 매 축 동시최적)은 유지. <span class="tag">env: OGC_V5_FREEALL_MAX(window↔free) · OGC_V5_TS_AXIS(상한30) · OGC_V5_ITERS</span></div>
+  </div>
+
+  <!-- ===== 시간 분해 ===== -->
+  <h2>4. 시간이 어디서 걸렸나 (prob_38, 차용 전)</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>단계</th><th>이 단계 소요</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>STEP1 배정 + greedy 초기배치</td><td class="good">4s</td><td class="mut">빠름</td></tr>
+        <tr><td><b>STEP2 (xyo CP-SAT)</b></td><td class="bad">~160초/패스</td><td>모든 베이 free-all → 병목</td></tr>
+        <tr><td>STEP3 (tardy 재배정+greedy)</td><td class="good">~2~3초</td><td class="mut">거의 공짜</td></tr>
+      </tbody>
+    </table>
+    <p class="mut" style="font-size:12.5px">STEP3가 아니라 <b>STEP2가 시간의 ~98%</b>였다. v3 기법(tardy-only + window-only)으로 STEP2를 줄이는 게 정답.</p>
+  </div>
+
+  <div class="card" style="border-color:#2f4a6b;background:#111822">
+    <b class="blue">결론</b> — 제출본 v3가 빠른 비결 = "<b>고칠 곳(tardy 베이·그 시간창)만, 작게, 예산만큼만</b>" 푼다. v5 STEP2가 이 원칙을 어겨(전부·크게·30초씩) 느렸고, 이제 차용해 동일하게 빠르게 만들었다. 측정 결과는 <code>v5-devlog.html</code>에 누적.
+  </div>
+</div>
+</body>
+</html>

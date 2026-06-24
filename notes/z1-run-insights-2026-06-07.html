@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 — Z1 궤적 런 인사이트 (2026-06-07)</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#171d26; --panel2:#1d2530; --line:#2a3340;
+    --ink:#e6edf3; --mut:#8b97a7; --mut2:#6b7685;
+    --accent:#4aa3ff; --good:#3fb950; --warn:#d29922; --bad:#f85149;
+    --near:#7ee787; --mid:#e3b341;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.55;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:8px}
+  h1{font-size:25px;margin:0 0 6px;letter-spacing:-.3px}
+  .sub{color:var(--mut);font-size:14px}
+  .sub b{color:var(--ink)}
+  h2{font-size:19px;margin:42px 0 4px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px}
+  h2 .n{display:inline-flex;width:26px;height:26px;border-radius:7px;background:var(--panel2);
+    color:var(--accent);font-size:14px;align-items:center;justify-content:center;border:1px solid var(--line)}
+  h3{font-size:15px;margin:22px 0 8px;color:var(--ink)}
+  .lead{color:var(--mut);margin:6px 0 14px;font-size:14.5px}
+  p{margin:9px 0}
+  a{color:var(--accent)}
+  code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:13px;
+    font-family:"SFMono-Regular",Consolas,monospace}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 6px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .kpi .v{font-size:27px;font-weight:700;letter-spacing:-.5px}
+  .kpi .l{color:var(--mut);font-size:12.5px;margin-top:3px}
+  .kpi.g .v{color:var(--good)} .kpi.w .v{color:var(--warn)} .kpi.a .v{color:var(--accent)}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card.full{grid-column:1/-1}
+  .card .tag{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px}
+  .tag.hot{background:rgba(248,81,73,.15);color:#ff7b72;border:1px solid rgba(248,81,73,.3)}
+  .tag.win{background:rgba(63,185,80,.15);color:var(--near);border:1px solid rgba(63,185,80,.3)}
+  .tag.eye{background:rgba(74,163,255,.15);color:#79c0ff;border:1px solid rgba(74,163,255,.3)}
+  .tag.cau{background:rgba(210,153,34,.15);color:#e3b341;border:1px solid rgba(210,153,34,.3)}
+  .card h4{margin:0 0 6px;font-size:15.5px}
+  .card p{margin:6px 0;font-size:13.8px;color:var(--mut)}
+  .card p b,.card p strong{color:var(--ink)}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.3px}
+  th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.3px;
+    position:sticky;top:0;background:var(--bg)}
+  td:first-child,th:first-child{text-align:left}
+  tr:hover td{background:var(--panel)}
+  .mono{font-family:"SFMono-Regular",Consolas,monospace}
+  .pill{display:inline-block;padding:1px 7px;border-radius:6px;font-weight:600;font-size:12px}
+  .z0{background:rgba(63,185,80,.2);color:var(--near)}
+  .zlo{background:rgba(126,231,135,.12);color:#9be7a0}
+  .znear{background:rgba(227,179,65,.16);color:var(--mid)}
+  .zhi{background:rgba(248,81,73,.18);color:#ff7b72}
+  .dim{color:var(--mut2)}
+  .casc{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:3px 0;font-size:12.5px}
+  .casc .lab{width:64px;color:var(--mut);font-size:12px;flex:none}
+  .step{display:inline-flex;flex-direction:column;align-items:center;padding:3px 9px;border-radius:7px;
+    min-width:52px;font-weight:700;line-height:1.15}
+  .step small{font-weight:500;font-size:9.5px;opacity:.8;text-transform:uppercase;letter-spacing:.2px}
+  .s-hi{background:rgba(248,81,73,.22);color:#ff9a92}
+  .s-mid{background:rgba(210,153,34,.22);color:#f1cf6b}
+  .s-lo{background:rgba(126,231,135,.18);color:#a6efab}
+  .s-z{background:rgba(63,185,80,.28);color:#b9f6bd}
+  .arr{color:var(--mut2);font-size:13px}
+  .bar{height:9px;border-radius:5px;background:var(--panel2);overflow:hidden;display:inline-block;
+    width:100%;vertical-align:middle}
+  .bar>span{display:block;height:100%}
+  .note{background:var(--panel);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;
+    padding:12px 16px;margin:14px 0;font-size:13.8px;color:var(--mut)}
+  .note b{color:var(--ink)}
+  .note.bad{border-color:var(--bad)} .note.good{border-color:var(--good)} .note.warn{border-color:var(--warn)}
+  .grp{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0;background:var(--panel)}
+  .grp .gh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .grp .gh b{font-size:15px} .grp .gh .cnt{color:var(--mut);font-size:12.5px}
+  .grp.A{border-left:4px solid var(--good)} .grp.B{border-left:4px solid var(--mid)}
+  .grp.C{border-left:4px solid var(--bad)}
+  .recs{counter-reset:r;padding:0;list-style:none;margin:14px 0}
+  .recs li{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:13px 16px 13px 52px;position:relative;margin:9px 0}
+  .recs li::before{counter-increment:r;content:counter(r);position:absolute;left:14px;top:13px;
+    width:26px;height:26px;border-radius:7px;background:var(--accent);color:#04121f;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:14px}
+  .recs li b{color:var(--ink)} .recs li .why{color:var(--mut);font-size:13.3px;display:block;margin-top:3px}
+  .prio{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .prio.hi{background:rgba(248,81,73,.2);color:#ff7b72} .prio.md{background:rgba(210,153,34,.2);color:var(--mid)}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut2);font-size:12.5px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:8px 0}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  @media(max-width:760px){.kpis{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Z1 궤적 런 — 결과 인사이트 리포트</h1>
+  <div class="sub">
+    OGC 2026 · <b>train</b> 20 인스턴스 · 인스턴스당 <b>300s</b> · concurrency 4 · 단일 cfg <code>solve</code><br>
+    런 시각 <b>2026-06-07 19:39–20:00 KST</b> · 소스 <code>results/z1traj/</code> · 분석 <code>tools/ogc_analysis.py</code>
+  </div>
+</header>
+
+<div class="kpis">
+  <div class="kpi g"><div class="v">12 / 20</div><div class="l">Z1 = 0 도달 (정확히 0)</div></div>
+  <div class="kpi a"><div class="v">17 / 20</div><div class="l">Z1 ≤ 2 (실질 해결)</div></div>
+  <div class="kpi w"><div class="v">3</div><div class="l">진짜 어려운 인스턴스 (12·14·20)</div></div>
+  <div class="kpi"><div class="v">~65%</div><div class="l">미해결 인스턴스 평균 낭비 예산</div></div>
+</div>
+<div class="lead">전 인스턴스 <b style="color:var(--good)">feasible</b> (−1 없음). Z1 감소 캠페인은 사실상 성공했고, 분석의 무게중심은 이미 다음 레버로 넘어갔다.</div>
+
+<!-- ============ 핵심 인사이트 ============ -->
+<h2><span class="n">1</span>핵심 인사이트 (먼저 읽기)</h2>
+<div class="cards">
+
+  <div class="card">
+    <span class="tag eye">레버 이동</span>
+    <h4>Z1은 끝났다 — 점수는 이제 Z3·Z2에 있다</h4>
+    <p>고득점 인스턴스의 OBJ는 거의 전부 <b>Z3(선호편차)</b>가 지배한다. prob_3은 OBJ 91,840 중 <b>w3·Z3 = 87,600 (95%)</b>, prob_17은 289,856 중 <b>261,744 (90%)</b>, prob_20은 1.79M 중 <b>1.30M (73%)</b>. 이 세 인스턴스는 이미 Z1=0인데도 OBJ가 크다. <b>현재 파이프라인은 Z2·Z3를 건드리지 않는다.</b></p>
+  </div>
+
+  <div class="card">
+    <span class="tag hot">예산 낭비</span>
+    <h4>미해결 인스턴스는 시간의 2/3를 헛돈다</h4>
+    <p>Z1>0인 8개는 <b>마지막 개선 이후 평균 ~65%의 벽시계 시간 동안 단 1의 개선도 없다.</b> prob_16은 36s에 Z1=1 도달 후 <b>260s(88%) 동안 정지</b>, prob_15는 78s에 Z1=2 후 <b>218s(74%) 정지</b>, prob_14는 113s에 Z1=35 후 <b>183s(62%) 완전 정지</b>. 마지막 1~35를 닫을 <b>last-mile 연산자가 없다.</b></p>
+  </div>
+
+  <div class="card">
+    <span class="tag cau">예외 (역설)</span>
+    <h4>단, prob_12·14는 그 잔여 Z1이 점수의 70%다</h4>
+    <p>대부분 잔여 Z1은 w1이 작아 무시 가능하지만 — prob_12·14는 <b>w1이 거대(≈21.9K·17.8K)</b>해 잔여 Z1이 OBJ를 지배한다: prob_12 <b>w1·Z1 = 438K (OBJ의 70%)</b>, prob_14 <b>622K (77%)</b>. 위의 "정지된 last-mile"이 <b>바로 여기서 점수로 환산되어 새고 있다.</b> 두 인스턴스가 최우선 타겟.</p>
+  </div>
+
+  <div class="card">
+    <span class="tag win">검증된 기둥</span>
+    <h4>baseline seed는 없으면 모든 게 무너지는 토대</h4>
+    <p>A/B 절제(base on/off): seed를 끄면 Z1이 <b>0 → 9,834~29,760</b>으로, OBJ가 <b>×2,862 (prob_3) ~ ×26,510 (prob_8)</b> 폭발. CP-SAT·packing 같은 정교한 단계는 모두 <b>이 seed 위에서만</b> 작동한다. seed = 협상 불가 토대.</p>
+  </div>
+
+</div>
+
+<!-- ============ 감소 파이프라인 ============ -->
+<h2><span class="n">2</span>Z1 감소 파이프라인 — 어느 단계가 진짜 레버인가</h2>
+<p class="lead">궤적(<code>stage_marks</code>)을 보면 감소는 <b>덧셈이 아니라 곱셈</b>이다. seed가 수백~수천에서 출발 → <b>cpsat_timing</b>이 ÷5~6 → <b>bbox_pack</b>이 ÷8~30 (최대 레버) → <b>crossbay_relocate</b>가 마지막 한 자릿수를 청소.</p>
+
+<div class="legend">
+  <span><span class="dot" style="background:rgba(248,81,73,.5)"></span>≥1000</span>
+  <span><span class="dot" style="background:rgba(210,153,34,.5)"></span>100–999</span>
+  <span><span class="dot" style="background:rgba(126,231,135,.4)"></span>1–99</span>
+  <span><span class="dot" style="background:rgba(63,185,80,.6)"></span>0</span>
+</div>
+
+<!-- cascades -->
+<div class="casc"><span class="lab">prob_14</span>
+  <span class="step s-hi">5222<small>seed</small></span><span class="arr">→</span>
+  <span class="step s-mid">883<small>cpsat</small></span><span class="arr">→</span>
+  <span class="step s-lo">81<small>bbox</small></span><span class="arr">→</span>
+  <span class="step s-lo">35<small>crossbay</small></span><span class="arr">·</span><span class="dim">정지 183s</span>
+</div>
+<div class="casc"><span class="lab">prob_18</span>
+  <span class="step s-hi">4202<small>seed</small></span><span class="arr">→</span>
+  <span class="step s-mid">982<small>cpsat</small></span><span class="arr">→</span>
+  <span class="step s-lo">6<small>bbox</small></span><span class="arr">→</span>
+  <span class="step s-z">0<small>crossbay</small></span>
+</div>
+<div class="casc"><span class="lab">prob_17</span>
+  <span class="step s-hi">3259<small>seed</small></span><span class="arr">→</span>
+  <span class="step s-mid">612<small>cpsat</small></span><span class="arr">→</span>
+  <span class="step s-lo">153<small>bbox</small></span><span class="arr">→</span>
+  <span class="step s-z">0<small>crossbay</small></span>
+</div>
+<div class="casc"><span class="lab">prob_20</span>
+  <span class="step s-mid">995<small>decode</small></span><span class="arr">→</span>
+  <span class="step s-mid">350<small>cpsat</small></span><span class="arr">→</span>
+  <span class="step s-lo">70<small>bbox</small></span><span class="arr">→</span>
+  <span class="step s-lo">20<small>crossbay</small></span><span class="arr">→</span>
+  <span class="step s-lo">18<small>bbox2</small></span><span class="arr">·</span><span class="dim">정지 70s</span>
+</div>
+<div class="casc"><span class="lab">prob_1</span>
+  <span class="step s-mid">153<small>seed</small></span><span class="arr">→</span>
+  <span class="step s-lo">7<small>cum_level</small></span><span class="arr">→</span>
+  <span class="step s-z">0<small>bbox</small></span>
+</div>
+
+<div class="note good"><b>레버 순위:</b> <b>bbox_pack(bbox→polygon 밀집화)</b>이 단일 최대 레버 — 수백을 한 자릿수로 떨군다(prob_18: 982→6, prob_11: 589→6). cpsat_timing은 seed의 나쁜 타이밍을 ÷5~6로 회복하지만 그것만으로는 수백이 남는다. <b>마지막 한 자릿수~수십은 crossbay_relocate가 맡는데, 여기서 막히면 끝까지 막힌다.</b></div>
+
+<!-- ============ 전체 결과 ============ -->
+<h2><span class="n">3</span>전체 결과 (20 인스턴스)</h2>
+<p class="lead">정렬: 인스턴스 번호. <span class="pill z0">초록</span>=Z1 0 · <span class="pill znear">노랑</span>=Z1 1–2 · <span class="pill zhi">빨강</span>=Z1≥3. OBJ는 w1·Z1+w2·Z2+w3·Z3.</p>
+<table>
+  <thead><tr><th>인스턴스</th><th>blocks</th><th>bays</th><th>Z1</th><th>Z2</th><th>Z3</th><th>OBJ</th><th>벽시계</th><th>0도달</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">prob_1</td><td>100</td><td>2</td><td><span class="pill z0">0</span></td><td>239</td><td>10</td><td class="mono">3,673</td><td>208.8s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_2</td><td>100</td><td>3</td><td><span class="pill z0">0</span></td><td>614</td><td>17</td><td class="mono">8,690</td><td>44.3s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_3</td><td>100</td><td>3</td><td><span class="pill z0">0</span></td><td>424</td><td><b>584</b></td><td class="mono">91,840</td><td>64.7s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_4</td><td>100</td><td>2</td><td><span class="pill znear">1</span></td><td>1,299</td><td>654</td><td class="mono">161,811</td><td>238.0s</td><td>—</td></tr>
+    <tr><td class="mono">prob_5</td><td>150</td><td>3</td><td><span class="pill z0">0</span></td><td>1,756</td><td>716</td><td class="mono">119,692</td><td>76.3s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_6</td><td>150</td><td>3</td><td><span class="pill z0">0</span></td><td>3,290</td><td><b>1,652</b></td><td class="mono">270,830</td><td>255.3s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_7</td><td>150</td><td>3</td><td><span class="pill z0">0</span></td><td>2,035</td><td>780</td><td class="mono">131,245</td><td>175.7s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_8</td><td>150</td><td>2</td><td><span class="pill z0">0</span></td><td>2,413</td><td>8</td><td class="mono">11,252</td><td>41.4s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_9</td><td>200</td><td>3</td><td><span class="pill znear">2</span></td><td>1,986</td><td>1,531</td><td class="mono">266,246</td><td>296.7s</td><td>—</td></tr>
+    <tr><td class="mono">prob_10</td><td>200</td><td>4</td><td><span class="pill z0">0</span></td><td>2,764</td><td>933</td><td class="mono">143,437</td><td>223.2s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_11</td><td>200</td><td>4</td><td><span class="pill z0">0</span></td><td>490</td><td>659</td><td class="mono">91,077</td><td>255.9s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_12</td><td>200</td><td>4</td><td><span class="pill zhi">20</span></td><td>4,582</td><td>1,206</td><td class="mono"><b>630,832</b></td><td>296.4s</td><td>—</td></tr>
+    <tr><td class="mono">prob_13</td><td>250</td><td>4</td><td><span class="pill znear">1</span></td><td>2,097</td><td>1,106</td><td class="mono">176,188</td><td>296.5s</td><td>—</td></tr>
+    <tr><td class="mono">prob_14</td><td>250</td><td>4</td><td><span class="pill zhi">35</span></td><td>2,162</td><td>1,324</td><td class="mono"><b>809,132</b></td><td>296.3s</td><td>—</td></tr>
+    <tr><td class="mono">prob_15</td><td>250</td><td>4</td><td><span class="pill znear">2</span></td><td>3,859</td><td>214</td><td class="mono">77,387</td><td>296.4s</td><td>—</td></tr>
+    <tr><td class="mono">prob_16</td><td>250</td><td>4</td><td><span class="pill znear">1</span></td><td>1,733</td><td>1,120</td><td class="mono">166,514</td><td>296.6s</td><td>—</td></tr>
+    <tr><td class="mono">prob_17</td><td>300</td><td>4</td><td><span class="pill z0">0</span></td><td><b>7,028</b></td><td><b>1,968</b></td><td class="mono">289,856</td><td>277.6s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_18</td><td>300</td><td>4</td><td><span class="pill z0">0</span></td><td>1,421</td><td>842</td><td class="mono">117,670</td><td>270.6s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_19</td><td>300</td><td>4</td><td><span class="pill z0">0</span></td><td>2,473</td><td>922</td><td class="mono">132,518</td><td>162.5s</td><td>✅</td></tr>
+    <tr><td class="mono">prob_20</td><td>300</td><td>5</td><td><span class="pill zhi">18</span></td><td>573</td><td><b>10,422</b></td><td class="mono"><b>1,786,194</b></td><td>296.5s</td><td>—</td></tr>
+  </tbody>
+</table>
+<div class="note"><b>크기 ≠ 난이도.</b> Z1>0인 prob_4는 가장 작은 인스턴스(100 blocks)이고, 가장 큰 prob_17·18·19(300 blocks)는 모두 Z1=0에 도달했다. 잔여 Z1은 단순 크기가 아니라 <b>특정 weight 구조 + bay 혼잡도(crane 직렬화)</b>가 만든다. → 메모리 <code>z1-lever-is-packing</code>("crane not packing")와 일치.</div>
+
+<!-- ============ 전략 그룹 ============ -->
+<h2><span class="n">4</span>20개를 3개 전략 그룹으로</h2>
+
+<div class="grp A">
+  <div class="gh"><b>그룹 A — 해결됨 (Z1 = 0)</b><span class="cnt">12개 · 1,2,3,5,6,7,8,10,11,17,18,19</span></div>
+  <p style="margin:4px 0;color:var(--mut);font-size:13.5px">잔여 OBJ는 순수 Z2/Z3. Z1 관점에선 더 짤 게 없다. 점수를 더 따려면 <b>Z2(부하 불균형)·Z3(선호) 연산자</b>가 필요. 특히 prob_3·6·17은 Z3가 OBJ의 90%+.</p>
+</div>
+
+<div class="grp B">
+  <div class="gh"><b>그룹 B — 거의 해결 (Z1 = 1–2)</b><span class="cnt">5개 · 4,9,13,15,16</span></div>
+  <p style="margin:4px 0;color:var(--mut);font-size:13.5px">잔여 Z1이 1~2로 작고 <b>w1도 작아 OBJ 기여 미미</b>. 여기에 시간을 더 쓰는 건 ROI가 낮다 — 차라리 그 예산을 그룹 C나 Z2/Z3로 재배치. 다만 last-mile 연산자가 생기면 공짜로 0이 될 후보들.</p>
+</div>
+
+<div class="grp C">
+  <div class="gh"><b>그룹 C — 진짜 전장 (Z1 ≥ 18, 점수 영향 큼)</b><span class="cnt">3개 · 12,14,20</span></div>
+  <p style="margin:4px 0;color:var(--mut);font-size:13.5px"><b>prob_12·14</b>: w1이 거대 → 잔여 Z1이 OBJ의 70~77%. last-mile 정지가 직접 점수 손실. <b>최우선.</b><br>
+  <b>prob_20</b>: Z1=18(OBJ의 27%)도 크지만 Z3가 73%(10,422) — Z1·Z3 동시 공략 대상. seed 자체가 느려 incumbent가 196s에야 등장(가장 혼잡).</p>
+</div>
+
+<!-- ============ 레버 이동 정량 ============ -->
+<h2><span class="n">5</span>레버 이동 — OBJ를 무엇이 먹고 있나</h2>
+<p class="lead">고OBJ 4개 인스턴스의 가중 기여 분해. Z1을 0으로 만들어도 OBJ가 큰 이유 = Z3.</p>
+<table>
+  <thead><tr><th>인스턴스</th><th>지배 항</th><th>w1·Z1</th><th>w2·Z2</th><th>w3·Z3</th><th>OBJ</th><th>지배 비중</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">prob_3</td><td><span class="pill znear">Z3</span></td><td>0</td><td>4,240</td><td><b>87,600</b></td><td class="mono">91,840</td><td>Z3 95%</td></tr>
+    <tr><td class="mono">prob_6</td><td><span class="pill znear">Z3</span></td><td>0</td><td>23,030</td><td><b>247,800</b></td><td class="mono">270,830</td><td>Z3 92%</td></tr>
+    <tr><td class="mono">prob_17</td><td><span class="pill znear">Z3</span></td><td>0</td><td>28,112</td><td><b>261,744</b></td><td class="mono">289,856</td><td>Z3 90%</td></tr>
+    <tr><td class="mono">prob_20</td><td><span class="pill znear">Z3</span></td><td>480,006</td><td>3,438</td><td><b>1,302,750</b></td><td class="mono">1,786,194</td><td>Z3 73% / Z1 27%</td></tr>
+    <tr style="border-top:2px solid var(--line)"><td class="mono">prob_12</td><td><span class="pill zhi">Z1</span></td><td><b>438,360</b></td><td>~?</td><td>~?</td><td class="mono">630,832</td><td>Z1 70%</td></tr>
+    <tr><td class="mono">prob_14</td><td><span class="pill zhi">Z1</span></td><td><b>622,230</b></td><td>~?</td><td>~?</td><td class="mono">809,132</td><td>Z1 77%</td></tr>
+  </tbody>
+</table>
+<div class="note warn"><b>핵심 분기:</b> w1이 작은 인스턴스에서 Z1=0은 "보기 좋지만 점수엔 거의 무의미"하고, w1이 큰 prob_12·14에서는 잔여 Z1 한 단위가 ~1.8만~2.2만 점이다. <b>"Z1을 0으로"가 아니라 "w1·Z1을 줄여라"가 올바른 목적함수다.</b> 점수공식이 인스턴스별 상대순위(R−nb)임을 감안하면, 모두가 Z1=0 하는 쉬운 인스턴스보다 <b>prob_12·14·20에서 남보다 앞서는 것</b>이 순위 이득이 크다.</div>
+
+<!-- ============ 예산 낭비 ============ -->
+<h2><span class="n">6</span>예산 낭비 — last-mile 정지</h2>
+<p class="lead">미해결 8개의 "마지막 개선 이후 정지 구간". 막대 = 벽시계 중 개선 없이 흘려보낸 비율.</p>
+<table>
+  <thead><tr><th>인스턴스</th><th>마지막 개선</th><th>최종 Z1</th><th>정지 구간</th><th>정지 비율</th><th></th></tr></thead>
+  <tbody>
+    <tr><td class="mono">prob_16</td><td class="dim">crossbay @36s → 1</td><td>1</td><td>260s</td><td>88%</td><td style="width:170px"><span class="bar"><span style="width:88%;background:var(--bad)"></span></span></td></tr>
+    <tr><td class="mono">prob_4</td><td class="dim">crossbay @53s → 1</td><td>1</td><td>185s</td><td>78%</td><td><span class="bar"><span style="width:78%;background:var(--bad)"></span></span></td></tr>
+    <tr><td class="mono">prob_15</td><td class="dim">bbox @78s → 2</td><td>2</td><td>218s</td><td>74%</td><td><span class="bar"><span style="width:74%;background:var(--bad)"></span></span></td></tr>
+    <tr><td class="mono">prob_9</td><td class="dim">crossbay @95s → 5</td><td>2</td><td>201s</td><td>68%<span class="dim"> *5→2 미세개선</span></td><td><span class="bar"><span style="width:68%;background:var(--warn)"></span></span></td></tr>
+    <tr><td class="mono">prob_13</td><td class="dim">reschedule @107s → 1</td><td>1</td><td>190s</td><td>64%</td><td><span class="bar"><span style="width:64%;background:var(--bad)"></span></span></td></tr>
+    <tr><td class="mono">prob_12</td><td class="dim">crossbay @105s → 24</td><td>20</td><td>191s</td><td>64%<span class="dim"> *24→20 미세개선</span></td><td><span class="bar"><span style="width:64%;background:var(--warn)"></span></span></td></tr>
+    <tr><td class="mono">prob_14</td><td class="dim">crossbay @113s → 35</td><td>35</td><td>183s</td><td>62%</td><td><span class="bar"><span style="width:62%;background:var(--bad)"></span></span></td></tr>
+    <tr><td class="mono">prob_20</td><td class="dim">bbox2 @226s → 18</td><td>18</td><td>70s</td><td>24%</td><td><span class="bar"><span style="width:24%;background:var(--warn)"></span></span></td></tr>
+  </tbody>
+</table>
+<div class="note bad"><b>읽는 법:</b> 빨강 막대(4·13·14·15·16)는 정지 구간 동안 <b>개선이 정확히 0</b> — 순수 낭비. 미해결 8개 평균 정지 ~65%. 즉 <b>하드 인스턴스에서 300s 예산의 약 2/3가 같은 해를 반복 검증하며 증발</b>한다. 이 유휴 시간이 last-mile 연산자(타겟 reschedule / diversified restart / Z2·Z3 LNS)로 전환되면 그룹 C·B를 닫고 그룹 A의 Z3까지 손댈 여력이 생긴다.</div>
+
+<!-- ============ A/B ============ -->
+<h2><span class="n">7</span>A/B 절제 — baseline seed의 무게</h2>
+<p class="lead">20:22–20:25 실행. 동일 파이프라인에서 baseline seed만 on/off.</p>
+<table>
+  <thead><tr><th>인스턴스</th><th>설정</th><th>Z1</th><th>Z2</th><th>Z3</th><th>OBJ</th><th>벽시계</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">prob_3</td><td><span class="pill z0">base ON</span></td><td>0</td><td>424</td><td>584</td><td class="mono">91,840</td><td>118.6s</td></tr>
+    <tr><td class="dim mono">prob_3</td><td><span class="pill zhi">base OFF</span></td><td>9,834</td><td>4,440</td><td>3,607</td><td class="mono">262,828,728</td><td>174.4s</td></tr>
+    <tr style="border-top:2px solid var(--line)"><td class="mono">prob_8</td><td><span class="pill z0">base ON</span></td><td>0</td><td>2,413</td><td>8</td><td class="mono">11,252</td><td>112.3s</td></tr>
+    <tr><td class="dim mono">prob_8</td><td><span class="pill zhi">base OFF</span></td><td>29,760</td><td>47</td><td>3,450</td><td class="mono">298,290,188</td><td>179.5s</td></tr>
+  </tbody>
+</table>
+<div class="note good">seed off 시 OBJ <b>×2,862 (prob_3) ~ ×26,510 (prob_8)</b>. 정교한 단계(CP-SAT timing·bbox packing·crossbay)는 모두 <b>seed가 깔아준 합리적 출발점 위에서만</b> 의미가 있다. <b>seed는 제거·약화 금지 영역</b>으로 고정. (단 seed off가 더 빨리 끝남 → seed 생성 자체에 ~수십초 비용. prob_20처럼 혼잡 인스턴스는 seed/decode가 incumbent를 196s까지 늦춤 → seed 가속이 그룹 C의 별도 레버.)</div>
+
+<!-- ============ 권고 ============ -->
+<h2><span class="n">8</span>권고 — 다음 액션</h2>
+<ol class="recs">
+  <li><b>prob_12·14 전용 last-mile Z1 연산자</b><span class="prio hi">최우선</span>
+    <span class="why">이 둘만 잔여 Z1이 OBJ의 70~77%(438K·622K점). 정지된 ~183~191s 유휴를 타겟 reschedule / crane-aware 직렬화 완화 / diversified restart로 전환하면 직접 점수. 다른 모든 작업보다 기대 ROI 최대.</span></li>
+  <li><b>유휴 감지 → 예산 재배치 (조기종료 또는 전략 전환)</b><span class="prio hi">최우선</span>
+    <span class="why">미해결 8개 평균 65% 예산이 0 개선으로 증발. "K초 무개선 시 연산자 전환/재시작" 게이트를 넣어 낭비를 회수. 그룹 B(4·13·15·16)는 차라리 조기종료해 절약한 시간을 그룹 C·Z3로 이전.</span></li>
+  <li><b>Z3(선호편차) 연산자 도입</b><span class="prio md">높음</span>
+    <span class="why">prob_3·6·17은 Z1=0인데 OBJ의 90%+가 Z3. prob_20도 Z3 73%. 현재 파이프라인이 전혀 안 건드리는 미개척 레버 — Z1이 포화된 지금 최대 미사용 점수원.</span></li>
+  <li><b>목적함수 재정의: "Z1=0" 대신 "w1·Z1 최소"</b><span class="prio md">높음</span>
+    <span class="why">조기종료·연산자 선택 기준을 가중 Z1로 바꾸면 prob_4·13·16(작은 w1) 시간 낭비를 자동으로 멈추고 prob_12·14(큰 w1)에 집중. 점수공식과 정렬.</span></li>
+  <li><b>seed는 고정, 단 혼잡 인스턴스 seed 가속 검토</b><span class="prio md">높음</span>
+    <span class="why">A/B가 seed의 절대 필요성 입증 → 변경 금지. 그러나 prob_20은 incumbent가 196s에야 등장 → seed/decode 가속이 그룹 C 최적화 시간을 늘리는 별도 레버.</span></li>
+</ol>
+
+<div class="note"><b>한 문장 요약:</b> Z1 캠페인은 12/20 정확히 0 + 5개 ≤2로 사실상 끝났다 — 남은 진짜 점수는 ① prob_12·14의 가중 잔여 Z1(정지된 유휴를 점수로 전환)과 ② 모든 고OBJ 인스턴스를 지배하는 미개척 Z3에 있다.</div>
+
+<footer>
+  생성 2026-06-07 · 소스 <code>results/z1traj/</code> (run.log · stage_marks · live_*.jsonl · _ab_*.json) ·
+  Z 분해 <code>tools/ogc_analysis.py::obj_tuple</code> (conda <code>ogc2025</code>) ·
+  보조 시각자료 <code>results/z1traj/panel_prob_*.png</code>, <code>z1_trajectory.html</code> ·
+  관련 메모리 <code>z1-feasibility-floor</code> · <code>z1-lever-is-packing</code> · <code>analysis-toolkit</code>
+</footer>
+
+</div>
+</body>
+</html>

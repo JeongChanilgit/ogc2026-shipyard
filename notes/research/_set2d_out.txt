@@ -1,0 +1,6 @@
+[Greedy] Phase 1 done  |  placed=100  bay0=5628  bay1=3368  elapsed=57.17s
+[Greedy] Done  |  assigned=100/100  elapsed=57.24s
+prob_25: blocks=100 bays=2 | obj=5365051 z1=8017 feas=True | wall=114.0s TL=120 OVER=-6.0s ok
+[Greedy] Phase 1 done  |  placed=150  bay0=4108  bay1=10990  bay2=3537  elapsed=56.49s
+[Greedy] Done  |  assigned=150/150  elapsed=56.68s
+prob_26: blocks=150 bays=3 | obj=365494548 z1=27391 feas=True | wall=109.7s TL=120 OVER=-10.3s ok

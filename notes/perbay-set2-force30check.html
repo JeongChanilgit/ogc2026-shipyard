@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 per-bay single-leg (set2)</title>
+<style>
+ :root{--good:#1a7f37;--bad:#b91c1c;--neu:#6b7280;}
+ *{box-sizing:border-box;}
+ body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;
+      background:#f1f5f9;color:#0f172a;font-size:13px;line-height:1.4;}
+ header{background:#0f172a;color:#e2e8f0;padding:18px 24px;}
+ header h1{margin:0 0 4px;font-size:20px;}
+ header .cfg{color:#94a3b8;font-size:12px;}
+ .wrap{padding:20px 24px;max-width:1500px;margin:0 auto;}
+ .cards{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 22px;}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;
+       min-width:200px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+ .card h3{margin:0 0 8px;font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.04em;}
+ .card .big{font-size:22px;font-weight:700;}
+ .card p{margin:3px 0;}
+ .card.alarm{border-color:var(--bad);}
+ .card.alarm .big{color:var(--bad);}
+ table{border-collapse:collapse;width:100%;background:#fff;font-size:12px;
+       box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:6px;overflow:hidden;}
+ th,td{padding:5px 8px;border-bottom:1px solid #eef2f7;text-align:left;}
+ th{background:#1e293b;color:#e2e8f0;font-weight:600;cursor:pointer;
+    position:sticky;top:0;white-space:nowrap;}
+ td.num{text-align:right;font-variant-numeric:tabular-nums;}
+ td.small{font-size:11px;color:#475569;}
+ td.inst{font-weight:600;}
+ tr.good td{background:#f0fdf4;}
+ tr.bad td{background:#fef2f2;}
+ tr.neu td{background:#fff;}
+ .good{color:var(--good);} .bad{color:var(--bad);font-weight:700;} .muted,.neu{color:var(--neu);}
+ h2{margin:26px 0 10px;font-size:16px;border-bottom:2px solid #cbd5e1;padding-bottom:5px;}
+ details{background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin:6px 0;padding:6px 12px;}
+ summary{cursor:pointer;font-size:12px;}
+ table.detail{margin:8px 0;width:auto;min-width:520px;}
+ .findings{background:#fff;border-left:4px solid #2563eb;padding:12px 18px;border-radius:0 6px 6px 0;}
+ .findings li{margin:4px 0;}
+ .note{color:#64748b;font-size:11px;margin:8px 0 0;}
+</style></head><body>
+<header><h1>OGC2026 per-bay SINGLE-LEG marginal &mdash; set2</h1>
+<div class="cfg">instances=prob_26,prob_28,prob_31,prob_32 (n=4) &middot; TL=120.0s &middot; tag=force30-check &middot; generated=2026-06-17 00:15:00</div></header><div class='wrap'><div class='cards'><div class='card'><h3>perbay marginal gain (clean)</h3><p class='big good'>-4,613,218</p><p class='muted'>&Sigma; w1&middot;&Delta;z1 within-run, noise-free</p></div><div class='card'><h3>Fire rate</h3><p class='big'>3/4</p><p class='muted'>improve() fired on at least one bay</p></div><div class='card '><h3>Feasibility (set2 safety)</h3><p class='big'>4/4</p><p class='muted'>ALL feasible</p></div><div class='card alarm'><h3>Max wall</h3><p class='big'>138.6s</p><p class='muted'>TL=120.0s (OVER TL!)</p></div><div class='card'><h3>&Sigma; final obj (feasible)</h3><p class='big'>64,020,629</p><p class='muted'>pre-perbay &Sigma;: 68,633,847</p><p class='muted'>competitor &Sigma;: 67,743,279</p></div></div><h2>Findings (auto-generated)</h2><div class='findings'><ul><li>Total perbay marginal gain (clean within-run): 4,613,218 = sum of w1*(z1_before - z1_after) over all fired runs.</li><li>perbay fire-rate: 3/4 instances had improve() fire (at least one work-bay solved).</li><li>perbay helped most on: prob_28 (-3,119,922), prob_26 (-1,026,641), prob_31 (-466,655).</li><li>No bays were skipped_maxn (MAXN large enough for every tardy bay).</li><li>No infeasible instances: every set2 solve was feasible (never -1).</li><li>Max wall over all runs: 138.6s (TL was 120.0s).</li><li>Context: our &amp;Sigma; final obj over feasible w/ competitor data = 64,020,629 vs competitor &amp;Sigma; = 67,743,279.</li></ul></div><h2>Per-instance</h2><table id='tbl'><thead><tr><th onclick='sortT(0)'>instance</th><th onclick='sortT(1)'>n_blk</th><th onclick='sortT(2)'>n_bay</th><th onclick='sortT(3)'>w1</th><th>fired?</th><th onclick='sortT(5)'>bays&uarr;</th><th>z1 before&rarr;after</th><th onclick='sortT(7)'>&Delta;z1</th><th onclick='sortT(8)'>marginal gain</th><th onclick='sortT(9)'>marginal %</th><th onclick='sortT(10)'>final obj</th><th>feas</th><th onclick='sortT(12)'>wall</th><th onclick='sortT(13)'>comp obj</th></tr></thead><tbody><tr class='good'><td class='inst'>prob_26</td><td class='num'>150</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>yes</td><td class='num'>2</td><td class='num small'>2,025&rarr;1,948</td><td class='num'>77</td><td class='num good'>-1,026,641</td><td class='num'>3.68%</td><td class='num'>26,886,816</td><td class='num good'>yes</td><td class='num'>137.6</td><td class='num'>30,417,445</td></tr><tr class='good'><td class='inst'>prob_28</td><td class='num'>150</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>yes</td><td class='num'>3</td><td class='num small'>749&rarr;515</td><td class='num'>234</td><td class='num good'>-3,119,922</td><td class='num'>26.87%</td><td class='num'>8,492,459</td><td class='num good'>yes</td><td class='num'>138.6</td><td class='num'>9,388,394</td></tr><tr class='good'><td class='inst'>prob_31</td><td class='num'>200</td><td class='num'>4</td><td class='num'>13,333</td><td class='num'>yes</td><td class='num'>1</td><td class='num small'>1,381&rarr;1,346</td><td class='num'>35</td><td class='num good'>-466,655</td><td class='num'>2.13%</td><td class='num'>21,444,299</td><td class='num good'>yes</td><td class='num'>131.2</td><td class='num'>22,256,964</td></tr><tr class='neu'><td class='inst'>prob_32</td><td class='num'>200</td><td class='num'>3</td><td class='num'>3,333</td><td class='num'>no</td><td class='num'>0</td><td class='num small'>2,115&rarr;2,115</td><td class='num'>0</td><td class='num good'>0</td><td class='num'>0.00%</td><td class='num'>7,197,055</td><td class='num good'>yes</td><td class='num'>138.3</td><td class='num'>5,680,477</td></tr></tbody></table><p class='note'>marginal gain = w1&middot;(z1_before&minus;z1_after) read from perbay telemetry (noise-free, within the SAME run). pre_obj = final_obj + marginal_gain. Baseline reference (tl120_all40_fixed.json) is box-OFF (set2=4.24B) and LOOSE; the authoritative perbay number is this within-run marginal.</p><h2>Per-bay detail (where perbay engaged vs skipped)</h2><details><summary><b>prob_26</b> &mdash; calls=1, fired=yes, bays improved=2, skipped_maxn=0, z1 2,025&rarr;1,948, &Delta;z1=77, gain=-1,026,641, bay-wall&Sigma;=30.1s</summary><table class='detail'><thead><tr><th>bay</th><th>n_blocks</th><th>cur_tard</th><th>new_tard</th><th>&Delta;tard</th><th>wall(s)</th><th>status</th></tr></thead><tbody><tr><td class='num'>0</td><td class='num'>57</td><td class='num'>904</td><td class='num'>875</td><td class='num good'>-29</td><td class='num'>10.22</td><td class='good'>improved</td></tr><tr><td class='num'>1</td><td class='num'>59</td><td class='num'>716</td><td class='num'>764</td><td class='num good'>--48</td><td class='num'>10.11</td><td class='neu'>noop</td></tr><tr><td class='num'>2</td><td class='num'>34</td><td class='num'>405</td><td class='num'>357</td><td class='num good'>-48</td><td class='num'>9.78</td><td class='good'>improved</td></tr></tbody></table></details><details><summary><b>prob_28</b> &mdash; calls=1, fired=yes, bays improved=3, skipped_maxn=0, z1 749&rarr;515, &Delta;z1=234, gain=-3,119,922, bay-wall&Sigma;=30.2s</summary><table class='detail'><thead><tr><th>bay</th><th>n_blocks</th><th>cur_tard</th><th>new_tard</th><th>&Delta;tard</th><th>wall(s)</th><th>status</th></tr></thead><tbody><tr><td class='num'>1</td><td class='num'>34</td><td class='num'>274</td><td class='num'>165</td><td class='num good'>-109</td><td class='num'>10.08</td><td class='good'>improved</td></tr><tr><td class='num'>2</td><td class='num'>65</td><td class='num'>260</td><td class='num'>166</td><td class='num good'>-94</td><td class='num'>10.24</td><td class='good'>improved</td></tr><tr><td class='num'>0</td><td class='num'>51</td><td class='num'>215</td><td class='num'>184</td><td class='num good'>-31</td><td class='num'>9.86</td><td class='good'>improved</td></tr></tbody></table></details><details><summary><b>prob_31</b> &mdash; calls=1, fired=yes, bays improved=1, skipped_maxn=0, z1 1,381&rarr;1,346, &Delta;z1=35, gain=-466,655, bay-wall&Sigma;=23.2s</summary><table class='detail'><thead><tr><th>bay</th><th>n_blocks</th><th>cur_tard</th><th>new_tard</th><th>&Delta;tard</th><th>wall(s)</th><th>status</th></tr></thead><tbody><tr><td class='num'>3</td><td class='num'>69</td><td class='num'>506</td><td class='num'>595</td><td class='num good'>--89</td><td class='num'>7.80</td><td class='neu'>noop</td></tr><tr><td class='num'>0</td><td class='num'>66</td><td class='num'>412</td><td class='num'>417</td><td class='num good'>--5</td><td class='num'>7.67</td><td class='neu'>noop</td></tr><tr><td class='num'>2</td><td class='num'>47</td><td class='num'>329</td><td class='num'>349</td><td class='num good'>--20</td><td class='num'>7.45</td><td class='neu'>noop</td></tr><tr><td class='num'>1</td><td class='num'>18</td><td class='num'>134</td><td class='num'>99</td><td class='num good'>-35</td><td class='num'>0.33</td><td class='good'>improved</td></tr></tbody></table></details><details><summary><b>prob_32</b> &mdash; calls=1, fired=no, bays improved=0, skipped_maxn=0, z1 2,115&rarr;2,115, &Delta;z1=0, gain=-0, bay-wall&Sigma;=30.3s</summary><table class='detail'><thead><tr><th>bay</th><th>n_blocks</th><th>cur_tard</th><th>new_tard</th><th>&Delta;tard</th><th>wall(s)</th><th>status</th></tr></thead><tbody><tr><td class='num'>0</td><td class='num'>67</td><td class='num'>1,115</td><td class='num'>1,255</td><td class='num good'>--140</td><td class='num'>10.28</td><td class='neu'>noop</td></tr><tr><td class='num'>1</td><td class='num'>65</td><td class='num'>906</td><td class='num'>1,387</td><td class='num good'>--481</td><td class='num'>10.12</td><td class='neu'>noop</td></tr><tr><td class='num'>2</td><td class='num'>68</td><td class='num'>94</td><td class='num'>160</td><td class='num good'>--66</td><td class='num'>9.91</td><td class='neu'>noop</td></tr></tbody></table></details>
+<script>
+function sortT(c){
+ var t=document.getElementById('tbl'),b=t.tBodies[0],r=[].slice.call(b.rows);
+ var asc=t.getAttribute('data-c')==c&&t.getAttribute('data-a')!='1';
+ t.setAttribute('data-c',c);t.setAttribute('data-a',asc?'1':'0');
+ r.sort(function(x,y){
+  var a=x.cells[c].innerText.replace(/[,%\s]/g,''),d=y.cells[c].innerText.replace(/[,%\s]/g,'');
+  var na=parseFloat(a),nb=parseFloat(d);
+  if(!isNaN(na)&&!isNaN(nb))return asc?na-nb:nb-na;
+  return asc?a.localeCompare(d):d.localeCompare(a);
+ });
+ r.forEach(function(x){b.appendChild(x);});
+}
+</script></div></body></html>

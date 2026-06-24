@@ -1,0 +1,34 @@
+{
+  "tag": "v1-refactor-check",
+  "timestamp_kst": "20260529-210141",
+  "zip_filename": "v1-refactor-check-20260529-210141.zip",
+  "zip_size_bytes": 19401,
+  "zip_sha256": "1936ea32716c2f6da31a59f0ee1c5c114fa9c4b90b0c43508efa53f55239ff39",
+  "files": [
+    {
+      "path": ".pytest_cache/.gitignore",
+      "bytes": 39
+    },
+    {
+      "path": ".pytest_cache/CACHEDIR.TAG",
+      "bytes": 191
+    },
+    {
+      "path": ".pytest_cache/README.md",
+      "bytes": 310
+    },
+    {
+      "path": ".pytest_cache/v/cache/nodeids",
+      "bytes": 2
+    },
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 43751
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 22811
+    }
+  ],
+  "note": ""
+}

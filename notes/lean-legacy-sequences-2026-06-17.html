@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>린 레거시 파이프라인 상세 분해 — OGC2026 (2026-06-17)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430; --border:#2d3340;
+    --txt:#e6edf3; --dim:#9aa7b4; --good:#3fb950; --bad:#f85149; --warn:#d29922;
+    --cp:#58a6ff; --cp2:#1f6feb; --acc:#bc8cff; --heu:#e3a857;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.58;font-size:15px}
+  .wrap{max-width:1140px;margin:0 auto;padding:28px 22px 90px}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:21px;margin:42px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  h3{font-size:17px;margin:0 0 4px}
+  .sub{color:var(--dim);font-size:13.5px;margin-bottom:24px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:20px 22px;margin:16px 0}
+  .note{border-left:4px solid var(--cp);background:#0e1726}
+  .ok{border-left:4px solid var(--good);background:#0f1a12}
+  .warnbox{border-left:4px solid var(--warn);background:#1a1408}
+  .badbox{border-left:4px solid var(--bad);background:#1d1113}
+  code{background:#0b0f14;padding:1px 6px;border-radius:4px;font-family:'Consolas',monospace;font-size:12.5px;color:#ffa657}
+  .loc{font-family:'Consolas',monospace;font-size:11.5px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:13.5px}
+  th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  .tag{display:inline-block;padding:1px 9px;border-radius:20px;font-size:11.5px;font-weight:700;margin-right:4px;vertical-align:middle}
+  .t-cp{background:#132a47;color:var(--cp)} .t-heu{background:#3a2a12;color:var(--heu)}
+  .t-bend{background:#2a1d3d;color:var(--acc)}
+  ul{margin:6px 0;padding-left:20px} li{margin:4px 0}
+  .small{font-size:12.5px;color:var(--dim)}
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:18px 0}
+  .step{flex:1;min-width:150px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;position:relative}
+  .step .n{font-size:22px;font-weight:800;opacity:.5}
+  .step .t{font-weight:700;margin:2px 0;font-size:14px}
+  .step .e{font-size:11px;color:var(--dim);font-family:'Consolas',monospace}
+  .arrow{display:flex;align-items:center;padding:0 6px;color:var(--cp);font-size:22px;font-weight:700}
+  .fix{display:inline-block;background:#0b0f14;border:1px dashed var(--cp);border-radius:5px;padding:0 6px;color:var(--cp);font-size:11.5px;font-family:'Consolas',monospace;margin:1px 2px}
+  .kv{display:grid;grid-template-columns:90px 1fr;gap:4px 14px;margin:10px 0;font-size:13.5px}
+  .kv b{color:var(--dim);font-weight:600}
+  .modelbox{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px}
+  .modelbox .lbl{color:var(--acc);font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+  .formula{font-family:'Consolas',monospace;font-size:12.5px;color:#ffd9a0;background:#15100a;padding:3px 8px;border-radius:5px;display:inline-block;margin:2px 0}
+  .pill{font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px}
+  .p-good{background:#0f2a16;color:var(--good)} .p-bad{background:#2a1416;color:var(--bad)} .p-warn{background:#2a2008;color:var(--warn)}
+  hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>린 레거시 파이프라인 — 시퀀스별 상세 분해</h1>
+<div class="sub">OGC2026 · <code>OGC_LEGACY_LEAN</code> 분기 (<span class="loc">myalgorithm.py:5615-5685</span>) · 2026-06-17 · code-analyzer 정밀분석 기반</div>
+
+<!-- ===== 한 줄 요약 ===== -->
+<div class="card note">
+<b>한 줄 요약:</b> 린 레거시 = 3중 NP-hard(배정·위치·시간)를 <b>의도적으로 분리(decouple)</b>한 <b>단방향(1-pass) 파이프라인</b>.
+<span class="tag t-cp">①배정 CP-SAT (z2+z3)</span> → <span class="tag t-heu">②위치 휴리스틱 (크레인-aware BL)</span> → <span class="tag t-cp">③시간 CP-SAT (z1)</span> → ④포맷.
+각 단계는 <b>앞 단계 결정을 상수로 흡수</b>해 자기 문제를 작게 만든다. 핵심: <b class="warn">①배정 마스터가 z1-blind</b>이고 <b class="warn">③→① 컷 환류가 없다</b> → 그래서 z3는 탁월하지만 z1은 약하다.
+</div>
+
+<!-- ===== 파이프라인 다이어그램 ===== -->
+<div class="flow">
+  <div class="step"><div class="n">①</div><div class="t">배정 마스터</div><div class="e">_cpsat_assignment</div>
+    <div class="small" style="margin-top:6px">블록→베이<br>min z2+z3</div></div>
+  <div class="arrow">→<br><span class="fix">배정 고정</span></div>
+  <div class="step"><div class="n">②</div><div class="t">위치 디코드</div><div class="e">_fixed_time_decode</div>
+    <div class="small" style="margin-top:6px">x,y,orient<br>크레인 j≥k</div></div>
+  <div class="arrow">→<br><span class="fix">위치+시간 고정</span></div>
+  <div class="step"><div class="n">③</div><div class="t">타이밍 오라클</div><div class="e">_cpsat_bay_timing</div>
+    <div class="small" style="margin-top:6px">entry/exit<br>min z1</div></div>
+  <div class="arrow">→</div>
+  <div class="step"><div class="n">④</div><div class="t">연산 빌드</div><div class="e">_build_operations</div>
+    <div class="small" style="margin-top:6px">solution<br>dict</div></div>
+</div>
+
+<!-- ===== 예산 ===== -->
+<h2>0. 오케스트레이션 · 예산 캡 <span class="loc">:5615-5685</span></h2>
+<div class="card">
+<p><b>역할:</b> z3-focused 빠른 CP-SAT 후보를 생성해 (z1-focused) gassign/box 엔진과 best-of로 보완. <b>자체적으로 작고 빠르게 끝나</b> 나머지 wall을 메인 엔진에 양보하는 게 설계 목적.</p>
+<div class="kv">
+<b>reserve</b><div><code>_ll_reserve = max(1, min(8, 0.05·T))</code> — gate/check_feasibility 여유분</div>
+<b>총 예산</b><div><code>_ll_total = min(0.40·T, 60s)</code> 그리고 <code>min(_, T − reserve)</code> → <b>항상 T의 40% 또는 60초 이하</b> (나머지는 box/gassign 몫)</div>
+<b>데드라인</b><div><code>_ll_deadline = min(t_start+T−reserve, now+_ll_total)</code> — 전역 가드 ∧ lean 캡 둘 다 만족</div>
+<b>배정 예산</b><div><code>_ll_ab = 0.5·_ll_total</code> — ①에 절반, ②+③이 나머지 절반 공유</div>
+</div>
+<p><b>호출 순서:</b> <code>_balanced_seed</code>→hint <span class="loc">:5636</span> → <code>_cpsat_assignment</code> <span class="loc">:5640</span> → 베이별 <code>_fixed_time_decode</code> <span class="loc">:5651</span> → <code>_cpsat_bay_timing_verified</code> <span class="loc">:5662</span> → 타이밍 None이면 decode를 <code>_build_operations</code>로 직접 <span class="loc">:5668</span>.</p>
+<div class="warnbox card" style="margin:10px 0 0">
+<b>never−1 3중 안전망:</b>
+<ul style="margin:4px 0">
+<li>각 단계 <code>try/except</code> → 어떤 실패든 <code>_ll_sol=None</code></li>
+<li>디코드 중 한 베이라도 None → <code>_ll_ok=False</code>로 전체 폐기</li>
+<li><code>_ll_sol is None</code> → <code>_trivial_solution</code> (항상 feasible) → 그것도 실패하면 full legacy 경로로 fall-through</li>
+</ul>
+</div>
+</div>
+
+<!-- ===== 시퀀스 ① ===== -->
+<h2>① 배정 마스터 — <code>_cpsat_assignment</code> <span class="loc">:1615</span></h2>
+<div class="card">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+<span class="tag t-cp">CP-SAT</span><span class="pill p-bad">z1-blind</span><span class="small">num_search_workers=4, max_time=_ll_ab</span>
+</div>
+<p><b>역할:</b> 모든 블록을 베이에 배정해 <b>z2(workload 불균형) + z3(선호 이탈)</b>의 가중합 최소화.</p>
+<div class="kv">
+<b>입력</b><div><code>prob_info, bays, feasible_bays, bay_u, time_budget(=_ll_ab), hint</code></div>
+<b>출력</b><div><code>assign: list[int]</code> (블록→베이), 실패 시 None</div>
+</div>
+
+<div class="modelbox">
+<div class="lbl">결정 변수</div>
+<code>x[b,j]</code> BoolVar — 블록 b를 베이 j에 배정. 단 <b><code>j ∈ feasible_bays[b]</code></b>로만 도메인 제한 <span class="loc">:1640</span>.
+파생: <code>wl[j]</code>(베이별 가중 workload), <code>hi/lo</code>(max/min load), <code>z2=hi−lo</code>.
+</div>
+<div class="modelbox">
+<div class="lbl">제약</div>
+<ul style="margin:2px 0">
+<li>각 블록 정확히 1베이: <span class="formula">Σⱼ x[b,j] = 1</span> <span class="loc">:1644</span></li>
+<li>workload: <span class="formula">wl[j] = Σ_b workload_b · U[j] · x[b,j]</span>, <code>U[j]=round(bay_u[j]·1000)</code> <span class="loc">:1650</span></li>
+<li>불균형: <code>z2 = AddMaxEquality(hi,wl) − AddMinEquality(lo,wl)</code> <span class="loc">:1660</span></li>
+<li class="small">선택적 area-time 용량(<code>cap_alpha</code>) / count cap(<code>count_cap_beta</code>) — <b>LEAN은 미전달 → OFF</b> <span class="loc">:1694,1733</span></li>
+<li><b class="bad">크레인 제약 없음 · ENTRY/EXIT 시각 없음</b> — 순수 배정 문제</li>
+</ul>
+</div>
+<div class="modelbox">
+<div class="lbl">목적식</div>
+<span class="formula">Minimize( c2·z2 + c3·1000·Σ (s_max − pref[j])·x[b,j] )</span><br>
+<span class="small">c2=round(w2), c3=round(w3) <span class="loc">:1665</span>. <b class="bad">z1(tardiness) 항 전혀 없음 = z1-blind</b> <span class="loc">:1675</span>.</span>
+</div>
+<p class="small"><b>warm-start:</b> <code>_balanced_seed</code>를 <code>AddHint</code>로 주입(나쁜 hint는 OR-Tools가 무시). <b>cap 완화 self-fallback:</b> INFEASIBLE이면 count_cap→area_cap 순으로 떼고 재호출 — 배정을 절대 잃지 않음 <span class="loc">:1769</span>. (이 재귀는 ①→① cap 완화이지 ③→① 컷이 아님.)</p>
+<p style="margin-bottom:0"><b style="color:var(--cp)">decouple:</b> 위치·방향·시각을 전혀 안 다루고 오직 배정만 → 변수가 <code>O(블록×베이)</code> BoolVar로 축소.</p>
+</div>
+
+<!-- ===== 시퀀스 ② ===== -->
+<h2>② 위치 디코드 — <code>fastfloor._fixed_time_decode</code> <span class="loc">:556</span></h2>
+<div class="card">
+<div style="margin-bottom:6px"><span class="tag t-heu">휴리스틱 (Bottom-Left)</span><span class="small">order_key="F0" (LEAN 고정, 레이스 없음)</span></div>
+<p><b>역할:</b> 고정된 한 베이의 배정 블록들에 대해 <b>시간을 먼저 고정(entry=R, exit=R+P)</b>하고 <b>위치(x,y,orient)만</b> 크레인-안전하게 탐색.</p>
+<div class="kv">
+<b>입력</b><div><code>bay, bay_idx, ids, blocks_data, deadline, order_key</code></div>
+<b>출력</b><div><code>result: dict[b→{x,y,orient_idx,entry_time,exit_time}]</code> 또는 (None, ft)</div>
+</div>
+<div class="modelbox">
+<div class="lbl">"시간 고정"의 의미 <span class="loc">:558,598</span></div>
+모든 블록이 <span class="formula">entry=R, exit=R+P</span>를 목표 → due ≥ R+P면 tardiness=0. <b>시각을 결정변수에서 빼고 위치만 자유변수</b>로 만든다.
+</div>
+<div class="modelbox">
+<div class="lbl">위치 결정 (3단 폴백) <span class="loc">:594-643</span></div>
+<ol style="margin:2px 0">
+<li><b>at-R abut + grid scan</b>: order대로 R 시점 밀착 후보 + 베이 전체 격자 스캔(<code>_ft_search_pos</code>), <b>시간-겹침 집합</b>(<code>_ft_interacting</code>)에 대해서만 충돌/크레인 접근성 검사</li>
+<li><b>delayed</b>: 실패 시 placed exit 시각들로 entry를 오름차순 이동 <span class="loc">:608</span></li>
+<li><b>forced</b>: 모든 placed exit 이후 빈 윈도우(상호작용 0 보장) <span class="loc">:619</span> ← tardiness 발생 지점</li>
+</ol>
+</div>
+<p><b>크레인 j≥k 보장:</b> <code>_ft_search_pos</code>가 시간-겹치는 placed 블록들에 대해 충돌/entry/exit 접근성 검사 → 통과 위치만 채택. coexit는 <code>_CRANE_COEXIT</code>(기본 ON).</p>
+<p style="margin-bottom:0"><b style="color:var(--cp)">decouple:</b> ①이 배정을 고정 → 각 베이가 <b>독립</b>(베이별 따로 디코드), 시간을 R로 고정 → <b>위치 탐색만</b> 남음.</p>
+</div>
+
+<!-- ===== 시퀀스 ③ ===== -->
+<h2>③ 타이밍 오라클 — <code>_cpsat_bay_timing_verified</code> <span class="loc">:2617</span></h2>
+<div class="card ok">
+<div style="margin-bottom:6px"><span class="tag t-cp">CP-SAT per-bay</span><span class="tag t-bend">벤더스 서브문제</span><span class="pill p-good">★ 최고 ROI (3.5s에 −49%)</span></div>
+<p><b>역할:</b> ②가 만든 <b>고정 레이아웃(x,y,orient 불변)</b> 위에서 ENTRY/EXIT만 재배치해 베이별 tardiness(z1) 최적화. <b>z2/z3는 증명적으로 불변</b>(위치를 안 건드림).</p>
+<div class="kv">
+<b>입력</b><div><code>prob_info, bays, results(②출력), deadline, lb_skip=True</code></div>
+<b>출력</b><div>개선된 solution 또는 <b>None</b>(구조적 개선 없음/deadline)</div>
+</div>
+<div class="modelbox">
+<div class="lbl">결정 변수</div>
+블록당 <code>e[b]</code> IntVar(entry, 도메인 <code>[R[b], H]</code>) <b>단 하나</b>. exit는 선형식 <span class="formula">e[b]+P[b]</span>(WLOG 최적). <code>tard[b] ≥ e[b]+P[b]−D[b]</code> <span class="loc">:2877</span>.
+</div>
+<div class="modelbox">
+<div class="lbl">제약 — 1-D disjunctive 스케줄링</div>
+기하는 고정 위치에만 의존 → 상호작용 쌍마다 <b>5개 시간-독립 boolean을 1회 사전계산</b>(collision/entry×2/exit×2) <span class="loc">:2838</span> → 각각을 <b>interval disjunction</b>(half-reified BoolOr) <span class="loc">:2847</span>.
+<b>per-bay 독립</b>(베이 간 결합 없음). <code>ENTRY≥R</code>은 e 하한 도메인, <code>EXIT−ENTRY≥P</code>는 exit=e+P 정의로 자동.
+</div>
+<div class="modelbox">
+<div class="lbl">목적식</div>
+<span class="formula">Minimize( Σ tard )</span> = <b>z1 tardiness만</b> <span class="loc">:2881</span>.
+</div>
+<p class="small"><b>warm-start:</b> <code>AddHint(e[b], cur_entry[b])</code>(현 스케줄이 feasible incumbent). <b>lb_skip:</b> 베이 현 tardiness가 <code>_bay_tardiness_lb</code>(어떤 스케줄로도 못 깨는 하한)와 같으면 그 베이 건너뜀(예산 절약). <b>베이별 best-of</b>: <code>new_tard&lt;cur_tard</code>일 때만 갱신 → <b>절대 악화 없음</b>.</p>
+<p style="margin-bottom:0"><b style="color:var(--cp)">decouple:</b> ①배정·②위치 고정 → 남은 건 베이별 1-D entry 변수의 disjunctive tardiness 최소화. <b>CP-SAT가 실제로 풀 수 있는 작은 문제</b>(이래서 3.5초에 −49%).</p>
+</div>
+
+<!-- ===== 시퀀스 ④ ===== -->
+<h2>④ 연산 빌드 + 폴백 <span class="loc">baseline_greedy.py:1786 · myalgorithm.py:2358</span></h2>
+<div class="card">
+<p><b><code>_build_operations</code>:</b> flat assignment → <code>operations</code> dict(<code>str(time)→[op]</code>). 같은 시각 내 <b>EXIT가 ENTRY보다 먼저</b>, 그 다음 block_id 순(check_feasibility 요구 순서). <b>순수 포맷 변환, 엔진 아님.</b></p>
+<hr>
+<p style="margin-bottom:0"><b><code>_trivial_solution</code> (절대 폴백 = never−1의 마지막 보루):</b> EDD 순 정렬 후 각 블록을 <code>_force_in_bay</code>(빈 시간 윈도우 = 상호작용 0 → 크레인/충돌 vacuously 만족)로 직렬 배치. 같은 베이 블록이 시간상 절대 안 겹치므로 <b>항상 feasible</b>. 베이 선택은 <code>w1·tard+w2·z2_proxy+w3·pref</code> 최소화.</p>
+</div>
+
+<!-- ===== 핵심 인사이트 ===== -->
+<h2>핵심 인사이트 3가지</h2>
+
+<div class="card note">
+<h3>1. decouple = 작은 문제 3개로 쪼개기</h3>
+<p>① 배정 고정 <span class="fix">assign[b]</span> → ② 각 베이 독립 + 시간 R 고정해 위치만 → ③ 위치 고정 <span class="fix">x,y,orient</span> → entry 1-D disjunctive만.
+각 단계가 앞 출력을 <b>상수로 흡수</b>해 결합 NP-hard를 <b>풀 수 있는 작은 문제 3개</b>로 만든다. 동시에 풀면 폭발하는 걸 순차 분리로 회피.</p>
+</div>
+
+<div class="card badbox">
+<h3>2. ③→① 컷 환류가 <span style="color:var(--bad)">없다</span> — 진짜 LBBD가 아닌 1-pass</h3>
+<p>③ 타이밍 오라클이 산출한 잔여 tardiness를 ①배정으로 되돌리는 <b>no-good / tardy-cardinality 컷이 LEAN 분기에 전혀 없다.</b>
+<code>_cpsat_assignment</code>는 LEAN에서 <b>단 1회만 호출</b>(<span class="loc">:5640</span>). 코드베이스의 no-good-cut 상태(:1896, :2059)는 별개의 ALNS 경로 소속이고 LEAN은 호출 안 함.</p>
+<p style="margin-bottom:0">→ <b>③의 z1 정보가 ①로 환류되지 않으므로 진정한 벤더스(LBBD)가 아니라 단방향 decomposition.</b> 이것이 <b>벤더스 컷 환류 레버</b>가 들어갈 정확한 빈자리다(③→① tardy 컷 추가 = 1-pass를 진짜 LBBD로 승격).</p>
+</div>
+
+<div class="card warnbox">
+<h3>3. z1은 ③에서만 다뤄진다 → LEAN이 z1-약한 <span style="color:var(--warn)">구조적</span> 이유</h3>
+<table>
+<tr><th>단계</th><th>z1(tardiness) 처리</th></tr>
+<tr><td>① 배정</td><td><b class="bad">z1-blind</b> — 목적식에 tardiness 항 없음(z2+z3만). 한 베이에 시간-충돌 블록을 몰아넣을 수 있음</td></tr>
+<tr><td>② 위치</td><td>entry=R로 z1=0 <i>시도</i>, 단 congestion 시 delayed/forced → tardiness 발생</td></tr>
+<tr><td>③ 타이밍</td><td>고정 레이아웃 위에서 베이별 최적 재타이밍으로 z1 깎음 — <b>단 ②가 정한 배정·위치 안에서만</b></td></tr>
+</table>
+<p style="margin-bottom:0">①이 z1을 안 봤으므로 배정 자체가 나쁘면, ③은 베이별 LB(<code>_bay_tardiness_lb</code>) 이하로 <b>절대 못 내림</b>.
+→ LEAN = <b class="good">z3 탁월</b>(①이 선호 베이 유지) · <b class="bad">z1 약</b>(①이 z1 무시). gassign(z1-aware)·box(z1/density)가 이를 보완하는 best-of 후보인 이유.</p>
+</div>
+
+<!-- ===== 다음 레버 ===== -->
+<h2>그래서 다음 레버</h2>
+<div class="card ok">
+<p style="margin-top:0">이 분해가 가리키는 단 하나의 정확한 빈자리: <b>②번 인사이트의 컷 환류.</b></p>
+<ul>
+<li><b>③ 타이밍 오라클 → ① 배정 마스터로 tardy-cardinality 컷 환류.</b> 이미 있는 오라클이 "이 배정은 베이 j에서 tardy ≥ N개라 나쁘다"를 알아냄 → 그걸 제약으로 ①에 되돌려 재배정 → ① z1-blind 결함을 닫음. 1-pass를 진짜 LBBD로 승격.</li>
+<li><b>구현 싸다</b> — ①·③ 모델은 그대로, 둘 사이 루프 + 컷 1종만 추가. ① 변수가 이미 <code>x[b,j]</code>라 no-good 컷(<code>Σ x[b,j] for tardy set ≤ k−1</code>) 자연스럽게 표현.</li>
+<li><b>위험:</b> 루프 반복이 _ll_total 예산 안에서 수렴해야 함 → 1~2 iteration 캡 + deadline 가드. never−1은 기존 폴백으로 유지.</li>
+</ul>
+<p style="margin-bottom:0" class="small">대안: ② forced-placement(tardiness 발생 지점)를 z1-aware order_key로 줄이기 / ① 목적식에 z1 proxy(area-time 용량 cap) 부활 — 단 둘 다 컷 환류보다 간접적.</p>
+</div>
+
+<p class="small" style="margin-top:30px">생성 2026-06-17 · 출처: code-analyzer 정밀분석(agentId aef4e587) · <code>src/myalgorithm.py</code>, <code>src/fastfloor.py</code>, <code>src/baseline_greedy.py</code> · 모든 변경 default-OFF 게이트(banked 안전)</p>
+
+</div>
+</body>
+</html>

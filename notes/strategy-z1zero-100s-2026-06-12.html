@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOAL — 100초 내 전 인스턴스 z1=0 (2026-06-12)</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: #2e3352;
+    --text: #e2e6f3;
+    --text-dim: #8b92b8;
+    --text-muted: #5a6080;
+    --green: #22c55e;
+    --green-bg: #052e0f;
+    --green-border: #166534;
+    --blue: #3b82f6;
+    --blue-bg: #0c1a3a;
+    --blue-border: #1d4ed8;
+    --orange: #f97316;
+    --orange-bg: #2c1000;
+    --orange-border: #9a3412;
+    --red: #ef4444;
+    --red-bg: #2a0808;
+    --red-border: #991b1b;
+    --yellow: #facc15;
+    --yellow-bg: #2a1f00;
+    --yellow-border: #854d0e;
+    --accent: #a78bfa;
+    --bar-track: #1e2236;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 32px 16px;
+  }
+  .page { max-width: 1080px; margin: 0 auto; }
+
+  /* Header */
+  .header { margin-bottom: 36px; }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin-top: 8px;
+    font-style: italic;
+  }
+  .header .date {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* Section */
+  .section { margin-bottom: 44px; }
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .card p { margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  /* Verdict card */
+  .verdict-card {
+    background: #13163a;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .verdict-card .verdict-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .verdict-card .verdict-body {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  /* Stat grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-box .stat-val {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .stat-box .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .sv-green  { color: var(--green); }
+  .sv-blue   { color: var(--blue); }
+  .sv-accent { color: var(--accent); }
+  .sv-yellow { color: var(--yellow); }
+  .sv-orange { color: var(--orange); }
+  .sv-red    { color: var(--red); }
+
+  /* Highlight box */
+  .highlight {
+    background: #1a1540;
+    border: 1px solid #3730a3;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    color: #c7d2fe;
+    font-size: 13px;
+  }
+  .highlight strong { color: #e0e7ff; }
+
+  .warn-box {
+    background: var(--yellow-bg);
+    border: 1px solid var(--yellow-border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    color: #fef9c3;
+    font-size: 13px;
+  }
+  .warn-box strong { color: var(--yellow); }
+
+  .danger-box {
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    color: #fecaca;
+    font-size: 13px;
+  }
+  .danger-box strong { color: var(--red); }
+
+  .success-box {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    color: #bbf7d0;
+    font-size: 13px;
+  }
+  .success-box strong { color: var(--green); }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 8px;
+    letter-spacing: 0.5px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .badge-green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+  .badge-blue   { background: var(--blue-bg);   color: var(--blue);   border: 1px solid var(--blue-border); }
+  .badge-orange { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+  .badge-red    { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
+  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+  .badge-accent { background: #1e1540;          color: var(--accent); border: 1px solid #4c2fa0; }
+
+  /* Two-col compare */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .compare-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .compare-box .compare-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+  .compare-box.bad  { border-color: var(--red-border); }
+  .compare-box.good { border-color: var(--green-border); }
+  .compare-box.bad  .compare-title { color: var(--red); }
+  .compare-box.good .compare-title { color: var(--green); }
+
+  /* Strategy axis blocks */
+  .axis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .axis-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .axis-box .axis-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+  .axis-box .axis-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .axis-box .axis-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .axis-s1 { border-color: #7c3aed; }
+  .axis-s1 .axis-label { color: var(--accent); }
+  .axis-s2 { border-color: #1d4ed8; }
+  .axis-s2 .axis-label { color: var(--blue); }
+  .axis-s3 { border-color: #166534; }
+  .axis-s3 .axis-label { color: var(--green); }
+  .axis-s4 { border-color: #854d0e; }
+  .axis-s4 .axis-label { color: var(--yellow); }
+
+  /* Pipeline steps */
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 12px 0;
+  }
+  .pipeline-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .pipeline-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 28px;
+  }
+  .pipeline-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a0a40;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .pipeline-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border);
+    min-height: 20px;
+    margin: 4px 0;
+  }
+  .pipeline-content {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    flex: 1;
+  }
+  .pipeline-content .pc-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .pipeline-content .pc-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-bottom: 10px;
+  }
+  th {
+    background: var(--bg3);
+    color: var(--text-dim);
+    font-weight: 600;
+    text-align: left;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg3); }
+  tr:nth-child(odd)  td { background: var(--bg2); }
+  .td-num   { text-align: right; font-variant-numeric: tabular-nums; }
+  .td-pct   { text-align: right; color: var(--accent); font-weight: 700; }
+  .td-win   { color: var(--green); font-weight: 700; }
+  .td-lose  { color: var(--red); }
+  .td-warn  { color: var(--yellow); font-weight: 700; }
+  .td-dim   { color: var(--text-muted); font-style: italic; }
+  .td-center { text-align: center; }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .chk-box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chk-box.done { border-color: var(--green); background: var(--green-bg); color: var(--green); font-size: 12px; font-weight: 700; }
+  .chk-box.todo { border-color: var(--accent); }
+  .chk-body strong { color: var(--text); }
+  .chk-body .chk-sub { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  /* Bar */
+  .bar-wrap { margin: 16px 0; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 9px;
+    gap: 10px;
+  }
+  .bar-label {
+    width: 90px;
+    flex-shrink: 0;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+  .bar-track {
+    flex: 1;
+    background: var(--bar-track);
+    border-radius: 4px;
+    height: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    position: absolute;
+    left: 0; top: 0;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .bar-value {
+    font-size: 11px;
+    color: var(--text-dim);
+    width: 60px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .bf-green  { background: #16a34a; }
+  .bf-blue   { background: #2563eb; }
+  .bf-orange { background: #c2410c; }
+  .bf-red    { background: #b91c1c; }
+  .bf-accent { background: #7c3aed; }
+  .bf-yellow { background: #a16207; }
+
+  code {
+    background: #2a2e4a;
+    color: #93c5fd;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  /* Data source */
+  .source-footer {
+    margin-top: 36px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  @media (max-width: 640px) {
+    .compare-grid { grid-template-columns: 1fr; }
+    .axis-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+  <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">OGC 2026 · 전략 목표</div>
+  <h1>GOAL — 100초 내 전 인스턴스 z1=0</h1>
+  <div class="subtitle">현재 15/20 → 목표 20/20 (×2 paired = 40/40). 잔여 5개의 원인은 2종으로 분류 완료</div>
+  <div class="date">2026-06-12 수립 · 다음 세션 실행 · 측정 게이트: <code>notes/_capture20_aff.py</code> full-20 ×2</div>
+</div>
+
+<!-- ═══ §1 목표 정의와 현재 위치 ═══ -->
+<div class="section">
+  <div class="section-title">§1 목표 정의와 현재 위치</div>
+
+  <div class="verdict-card">
+    <div class="verdict-label">GOAL 정의</div>
+    <div class="verdict-body">
+      tl=100에서 full-20 전부 z1=0
+      <span style="color:var(--text-dim);font-size:13px;font-weight:400;"> — 판정 게이트: </span>
+      <code>notes/_capture20_aff.py</code>
+      <span style="color:var(--text-dim);font-size:13px;font-weight:400;"> (4코어 affinity, 오염 수정판) · </span>
+      <strong style="color:var(--green);">z1=0 40/40</strong>
+      <span style="color:var(--text-dim);font-size:13px;font-weight:400;"> (full-20 ×2 paired)</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-dim);">
+      달성 시 잉여 시간 전부가 z3로 전환 — 경쟁자 테이블 <strong>15/20 엄밀승</strong> 목표에 직결.
+    </p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val sv-yellow">15/20</div>
+      <div class="stat-label">현재 z1=0<br>린-하이브리드 @100</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val sv-green">20/20</div>
+      <div class="stat-label">목표 z1=0<br>×2 paired = 40/40</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val sv-red">5</div>
+      <div class="stat-label">잔여 인스턴스<br>prob_6/11/14/18/20</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val sv-accent">2종</div>
+      <div class="stat-label">원인 분류<br>A형·B형</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val sv-red">12/20</div>
+      <div class="stat-label">default 경로 비교<br>prob_14=8, _20=3, _6=33</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val sv-blue">20/20</div>
+      <div class="stat-label">경쟁자 현황<br>평균 15.5s</div>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <strong>측정 함정:</strong> 원본 <code>notes/_capture20.py</code>는 오염 미수정 — <strong>사용 금지</strong>. 모든 측정은 <code>notes/_capture20_aff.py</code> 사용. 단일 캡처 판정 금지(프로젝트 룰), z1=0 인정 기준은 ×2 모두 0.
+  </div>
+
+  <div class="card">
+    <p><strong>측정 기준 데이터</strong></p>
+    <p>공정 측정 경로: <code>results/capture/fflean100_v3/</code> (린-하이브리드), <code>base100_v2/</code> (default)</p>
+  </div>
+
+  <!-- 잔여 5개 z1 바 차트 -->
+  <div class="bar-wrap">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">잔여 인스턴스별 z1 (린-하이브리드 @100)</div>
+    <div class="bar-row">
+      <div class="bar-label">prob_18</div>
+      <div class="bar-track">
+        <div class="bar-fill bf-yellow" style="width:2%;">1</div>
+      </div>
+      <div class="bar-value">z1 = 1</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">prob_6</div>
+      <div class="bar-track">
+        <div class="bar-fill bf-orange" style="width:6%;">3</div>
+      </div>
+      <div class="bar-value">z1 = 3</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">prob_11</div>
+      <div class="bar-track">
+        <div class="bar-fill bf-orange" style="width:22%;">11</div>
+      </div>
+      <div class="bar-value">z1 = 11</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">prob_14</div>
+      <div class="bar-track">
+        <div class="bar-fill bf-red" style="width:20%;">10</div>
+      </div>
+      <div class="bar-value">z1 = 10</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">prob_20</div>
+      <div class="bar-track">
+        <div class="bar-fill bf-red" style="width:20%;">10</div>
+      </div>
+      <div class="bar-value">z1 = 10</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ §2 잔여 5개의 원인 분류 ═══ -->
+<div class="section">
+  <div class="section-title">§2 잔여 5개의 원인 분류 (오늘 증거 기반)</div>
+
+  <div class="compare-grid">
+    <div class="compare-box good">
+      <div class="compare-title">A형 — 마무리 부족·변동</div>
+      <p style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px;">prob_6 · prob_11 · prob_18</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">
+        FastFloor floor는 정상 (z1 0~24)인데 @100의 pp 잔여 시간이 마지막 1~11을 못 깎거나 런 간 변동으로 출렁임.
+      </p>
+      <p style="font-size:12px;color:var(--text-dim);">
+        prob_11은 같은 코드로 z1=3이 나온 런 존재 — <strong style="color:var(--yellow);">pp의 타이밍 의존 분기가 변동원</strong>.
+      </p>
+    </div>
+    <div class="compare-box bad">
+      <div class="compare-title">B형 — floor 실패 + 폴백 세금</div>
+      <p style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px;">prob_14 · prob_20</p>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">
+        FastFloor 자체가 약함 — ff floor z1: prob_14=46 고질, prob_20=90~200 (bay-1 대형블록 집중, 재배치 기하 불가).
+      </p>
+      <p style="font-size:12px;color:var(--text-dim);">
+        <code>OGC_FF_PRIMARY_Z1MAX=35</code> 게이트로 greedy 폴백하지만 <strong style="color:var(--red);">ff 20초 세금</strong> 때문에 pp 마무리 시간 부족. default 풀예산조차 z1=8/3 — 마지막 한 자릿수도 pp 수리력 문제.
+      </p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>인스턴스</th>
+        <th>분류</th>
+        <th>FF floor z1</th>
+        <th>@100 최종 z1</th>
+        <th>핵심 원인</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>prob_18</strong></td>
+        <td><span class="badge badge-green">A형</span></td>
+        <td class="td-num">0~수</td>
+        <td class="td-num td-warn">1</td>
+        <td>pp 잔여 시간 부족, 변동</td>
+      </tr>
+      <tr>
+        <td><strong>prob_6</strong></td>
+        <td><span class="badge badge-green">A형</span></td>
+        <td class="td-num">0~24</td>
+        <td class="td-num td-warn">3</td>
+        <td>pp 마무리 미달, 타이밍 분기 변동</td>
+      </tr>
+      <tr>
+        <td><strong>prob_11</strong></td>
+        <td><span class="badge badge-green">A형</span></td>
+        <td class="td-num">0~수</td>
+        <td class="td-num td-warn">11</td>
+        <td>pp 변동 — 동일 코드 z1=3 런 존재</td>
+      </tr>
+      <tr>
+        <td><strong>prob_14</strong></td>
+        <td><span class="badge badge-red">B형</span></td>
+        <td class="td-num">46 (고질)</td>
+        <td class="td-num td-lose">10</td>
+        <td>FF floor 실패, 폴백 20초 세금</td>
+      </tr>
+      <tr>
+        <td><strong>prob_20</strong></td>
+        <td><span class="badge badge-red">B형</span></td>
+        <td class="td-num">90~200</td>
+        <td class="td-num td-lose">10</td>
+        <td>bay-1 대형블록 집중, 기하 불가, 폴백 세금</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══ §3 전략 4축 ═══ -->
+<div class="section">
+  <div class="section-title">§3 전략 4축</div>
+
+  <div class="axis-grid">
+    <div class="axis-box axis-s1">
+      <div class="axis-label">S1 — B형 근원 공략</div>
+      <div class="axis-title">FastFloor floor 개선</div>
+      <div class="axis-body">
+        <strong style="color:var(--text);">파일:</strong> <code>src/fastfloor.py</code><br><br>
+        <strong style="color:var(--text);">In-bay eviction 무브:</strong> fixed-time 배치에서 자리 못 찾는 블록이 기존 placed 1개를 밀어내고(피해자 재배치) 들어가는 1-swap — v4 xbay의 베이 내 버전.<br><br>
+        <strong style="color:var(--text);">z1-aware 배정/spill:</strong> CP-SAT 배정(현재 z2+z3만)에 area-time 용량 제약 추가 또는 spill 기준에 "동시간대 충돌 카운트" 반영 — prob_14의 release 피크 과밀을 배정 단계에서 회피.<br><br>
+        <strong style="color:var(--text);">prob_20 전용:</strong> bay-1 분할-재배정 (대형블록 분산).
+      </div>
+    </div>
+    <div class="axis-box axis-s2">
+      <div class="axis-label">S2 — B형 완화</div>
+      <div class="axis-title">실패 조기감지 + 세금 환급</div>
+      <div class="axis-body">
+        <strong style="color:var(--text);">파일:</strong> <code>src/fastfloor.py</code> + <code>src/myalgorithm.py</code><br><br>
+        <strong style="color:var(--text);">FF early-abort:</strong> target 단계(0.4s)의 target-tardiness 또는 1차 디코드 ft_tard가 임계 초과면 <strong style="color:var(--blue);">≤7초에 중단·반환</strong> → Z1MAX 폴백 시 greedy/pp가 ~13초를 돌려받음.<br><br>
+        현재 ff 20초 세금 → early-abort 성공 시 폴백 예산 대폭 증가.
+      </div>
+    </div>
+    <div class="axis-box axis-s3">
+      <div class="axis-label">S3 — A·B형 공통 마무리</div>
+      <div class="axis-title">pp z1-타깃 수리 루프</div>
+      <div class="axis-body">
+        <strong style="color:var(--text);">파일:</strong> 신규 pp 단계<br><br>
+        cum_level(다중시도 best-of, 51% 시간도둑이던 구조) 대신: <strong style="color:var(--green);">tardy 블록 한정</strong> grid-스캔 재배치 + 크로스베이 + CP-SAT 재타이밍을 z1=0 도달까지 반복하는 타깃 루프.<br><br>
+        z1=0 도달 즉시 z3(Front B)로 전환. 게이트: <code>OGC_Z1_REPAIR_LOOP</code>.<br><br>
+        근거: 잔여 z1이 1~11 수준 — 전수 재디코드 아닌 표적 수리가 맞는 체급.
+      </div>
+    </div>
+    <div class="axis-box axis-s4">
+      <div class="axis-label">S4 — A형</div>
+      <div class="axis-title">변동 결정화</div>
+      <div class="axis-body">
+        <strong style="color:var(--text);">범위:</strong> pp 분기 결정적 우선순위/시드 고정<br><br>
+        필요시 pp 2-변형 직렬 best-of.<br><br>
+        검증 자체도 ×2 paired로 변동 검출 — 단일 캡처 판정 절대 금지.
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <strong>전략 우선순위:</strong> S1·S2가 B형 근원을 건드리고 S3가 A·B 양형의 공통 마무리 레이어. S4는 측정 신뢰도 확보. 독립적이므로 W2에서 S1·S2 병렬 구현, W3에서 S3.
+  </div>
+</div>
+
+<!-- ═══ §4 실행 플랜 ═══ -->
+<div class="section">
+  <div class="section-title">§4 실행 플랜 (다음 세션, 순서대로)</div>
+
+  <div class="pipeline">
+
+    <!-- W1 -->
+    <div class="pipeline-step">
+      <div class="pipeline-connector">
+        <div class="pipeline-circle">W1</div>
+        <div class="pipeline-line"></div>
+      </div>
+      <div class="pipeline-content">
+        <div class="pc-title">진단 — 병렬 2 에이전트 (~30분)</div>
+        <div class="pc-desc">
+          <span class="badge badge-accent">data-analyst</span> prob_14/20 ff 실패 해부: 어느 베이·어느 블록·target 약속 vs 실현<br>
+          <span class="badge badge-blue">code-analyzer</span> prob_6/11/18 pp가 마지막 z1을 왜 못 깎는지 + 변동원 분기 특정
+        </div>
+      </div>
+    </div>
+
+    <!-- W2 -->
+    <div class="pipeline-step">
+      <div class="pipeline-connector">
+        <div class="pipeline-circle">W2</div>
+        <div class="pipeline-line"></div>
+      </div>
+      <div class="pipeline-content">
+        <div class="pc-title">구현 — 병렬 code-writer 2</div>
+        <div class="pc-desc">
+          <span class="badge badge-accent">W2a</span> S1 구현: eviction 무브 + z1-aware spill (<code>src/fastfloor.py</code>)<br>
+          <span class="badge badge-blue">W2b</span> S2 구현: early-abort + 환급 (<code>src/fastfloor.py</code> + <code>src/myalgorithm.py</code>)
+        </div>
+      </div>
+    </div>
+
+    <!-- W3 -->
+    <div class="pipeline-step">
+      <div class="pipeline-connector">
+        <div class="pipeline-circle">W3</div>
+        <div class="pipeline-line"></div>
+      </div>
+      <div class="pipeline-content">
+        <div class="pc-title">구현 — S3 z1-타깃 수리 루프</div>
+        <div class="pc-desc">
+          pp 배선, <code>OGC_Z1_REPAIR_LOOP</code> 게이트. tardy 블록 한정 표적 수리 → z1=0 즉시 Front B 전환.
+        </div>
+      </div>
+    </div>
+
+    <!-- W4 -->
+    <div class="pipeline-step">
+      <div class="pipeline-connector">
+        <div class="pipeline-circle">W4</div>
+        <div class="pipeline-line"></div>
+      </div>
+      <div class="pipeline-content">
+        <div class="pc-title">S4 결정화 + 스모크</div>
+        <div class="pc-desc">
+          pp 분기 시드·우선순위 고정. 스모크: prob_6/11/14/18/20 ×2 확인.
+        </div>
+      </div>
+    </div>
+
+    <!-- 게이트 -->
+    <div class="pipeline-step">
+      <div class="pipeline-connector">
+        <div class="pipeline-circle" style="background:var(--green);color:#052e0f;">G</div>
+      </div>
+      <div class="pipeline-content" style="border-color:var(--green-border);">
+        <div class="pc-title" style="color:var(--green);">GATE — full-20 @100 ×2</div>
+        <div class="pc-desc">
+          <code>notes/_capture20_aff.py</code> 실행 → <strong style="color:var(--green);">z1=0 40/40 달성 시 GOAL 완료</strong>.<br>
+          부분 달성 시 잔여 인스턴스별 원인 보고 후 재반복.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 실행 체크리스트 -->
+  <div style="margin-top:20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">실행 체크리스트</div>
+    <ul class="checklist">
+      <li>
+        <div class="chk-box todo"></div>
+        <div class="chk-body">
+          <strong>W1: 병렬 진단 완료</strong>
+          <div class="chk-sub">B형(ff 실패 해부) + A형(pp 변동원 특정) 각 에이전트 반환 수령</div>
+        </div>
+      </li>
+      <li>
+        <div class="chk-box todo"></div>
+        <div class="chk-body">
+          <strong>W2a: S1 구현 — eviction 무브 + z1-aware spill</strong>
+          <div class="chk-sub"><code>src/fastfloor.py</code></div>
+        </div>
+      </li>
+      <li>
+        <div class="chk-box todo"></div>
+        <div class="chk-body">
+          <strong>W2b: S2 구현 — FF early-abort (≤7s) + greedy 예산 환급</strong>
+          <div class="chk-sub"><code>src/fastfloor.py</code> + <code>src/myalgorithm.py</code></div>
+        </div>
+      </li>
+      <li>
+        <div class="chk-box todo"></div>
+        <div class="chk-body">
+          <strong>W3: S3 구현 — z1-타깃 수리 루프 pp 배선</strong>
+          <div class="chk-sub"><code>OGC_Z1_REPAIR_LOOP</code> 게이트, tardy 블록 표적 수리</div>
+        </div>
+      </li>
+      <li>
+        <div class="chk-box todo"></div>
+        <div class="chk-body">
+          <strong>W4: S4 결정화 + prob_6/11/14/18/20 ×2 스모크</strong>
+          <div class="chk-sub">pp 분기 시드·우선순위 고정</div>
+        </div>
+      </li>
+      <li>
+        <div class="chk-box todo"></div>
+        <div class="chk-body">
+          <strong>GATE: full-20 @100 ×2 — z1=0 40/40 달성 확인</strong>
+          <div class="chk-sub"><code>notes/_capture20_aff.py</code> 사용 (원본 <code>_capture20.py</code> 사용 금지)</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══ §5 리스크와 대비 ═══ -->
+<div class="section">
+  <div class="section-title">§5 리스크와 대비</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>리스크</th>
+        <th>대상</th>
+        <th>대비책</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>prob_20이 100초 내 z1=0 불가능</td>
+        <td class="td-warn">B형 (극단)</td>
+        <td>intrinsic LB=0이라 이론상 가능. 전용 레짐(default raster 경로 강화 + S3 루프 집중). 과거 @100 raster posk3가 z1≤4 이력 존재.</td>
+      </tr>
+      <tr>
+        <td>S1 eviction의 비용 폭주</td>
+        <td class="td-warn">S1</td>
+        <td>deadline 가드 필수 — fastfloor 기존 블록당 슬라이스 패턴 재사용.</td>
+      </tr>
+      <tr>
+        <td>측정 함정 재발</td>
+        <td class="td-warn">게이트</td>
+        <td>원본 <code>_capture20.py</code> 사용 금지(오염 미수정). <strong>전부 <code>_capture20_aff.py</code></strong>.</td>
+      </tr>
+      <tr>
+        <td>변동으로 z1=0 판정 오류</td>
+        <td class="td-warn">A형</td>
+        <td>단일 캡처 판정 절대 금지(프로젝트 룰). ×2 모두 z1=0이어야 인정.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="danger-box">
+    <strong>절대 금지:</strong> <code>notes/_capture20.py</code>(오염 원본) 사용 — 오염된 측정으로 z1=0 달성을 잘못 판정하는 것이 가장 위험한 실수.
+  </div>
+
+  <div class="success-box">
+    <strong>prob_20 이론 근거:</strong> intrinsic tardiness LB=0 (CLAUDE.md §메모리: ogc2026-z1-feasibility-floor) — 이론상 달성 가능. 탐색이 못 찾는 것이지 불가능이 아니다.
+  </div>
+</div>
+
+<!-- ═══ §6 참고 자료 ═══ -->
+<div class="section">
+  <div class="section-title">§6 참고 자료</div>
+
+  <div class="card">
+    <p><strong>오늘 산출물</strong></p>
+    <p>
+      <code>src/fastfloor.py</code> (v5+Z1MAX) ·
+      린 구성 env: <code>OGC_FASTFLOOR=1,OGC_FF_PRIMARY=1,OGC_FASTFLOOR_MIN_T=60,OGC_FASTFLOOR_FRAC=0.20,OGC_CHEAPER_STEPS=0</code>
+    </p>
+    <p>
+      리포트: <code>notes/fastfloor-design-2026-06-12.html</code> ·
+      <code>notes/logic-triage-2026-06-12.html</code> ·
+      핸드오프: <code>notes/SESSION-HANDOFF-2026-06-12-fastfloor.md</code>
+    </p>
+  </div>
+
+  <div class="card">
+    <p><strong>데이터</strong></p>
+    <p>
+      <code>results/capture/fflean100_v3/</code> — 하이브리드 (현재 15/20 기준)<br>
+      <code>results/capture/base100_v2/</code> — default (비교 12/20)<br>
+      <code>results/fastfloor_v5_full20_r1.json</code> · <code>results/fastfloor_v5_full20_r2.json</code> — ff 단독
+    </p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>전략 축</th>
+        <th>파일</th>
+        <th>게이트 env</th>
+        <th>대상</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>S1 eviction + z1-aware spill</td>
+        <td><code>src/fastfloor.py</code></td>
+        <td class="td-dim">—</td>
+        <td>B형</td>
+      </tr>
+      <tr>
+        <td>S2 early-abort + 환급</td>
+        <td><code>src/fastfloor.py</code> + <code>src/myalgorithm.py</code></td>
+        <td><code>OGC_FF_PRIMARY_Z1MAX=35</code></td>
+        <td>B형</td>
+      </tr>
+      <tr>
+        <td>S3 z1-타깃 수리 루프</td>
+        <td>pp 신규 단계</td>
+        <td><code>OGC_Z1_REPAIR_LOOP</code></td>
+        <td>A·B 공통</td>
+      </tr>
+      <tr>
+        <td>S4 결정화</td>
+        <td>pp 분기 내부</td>
+        <td class="td-dim">시드 고정</td>
+        <td>A형</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══ FOOTER ═══ -->
+<div class="source-footer">
+  OGC 2026 · 전략 목표 문서 · 2026-06-12 수립<br>
+  측정 게이트: <code>notes/_capture20_aff.py</code> (4코어 affinity, 오염 수정판) · full-20 ×2 판정 기준<br>
+  수정 금지 영역: <code>src/utils.py</code> · <code>baseline/</code> 폴더
+</div>
+
+</div>
+</body>
+</html>

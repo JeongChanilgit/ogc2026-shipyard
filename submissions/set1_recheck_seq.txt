@@ -1,0 +1,93 @@
+=== set1 재검증 (sequential myalgorithm @120) ===
+prob_1 obj=1499.0 z1=0.0
+prob_2 obj=3690.0 z1=0.0
+prob_3 obj=76630.0 z1=0.0
+prob_4 obj=46011.0 z1=0.0
+prob_5 obj=64402.0 z1=0.0
+prob_6 obj=79517.0 z1=0.0
+prob_7 obj=74997.0 z1=0.0
+prob_8 obj=11252.0 z1=0.0
+prob_9 obj=64675.0 z1=0.0
+prob_10 obj=85162.0 z1=0.0
+prob_11 obj=45703.0 z1=0.0
+prob_12 obj=95277.0 z1=0.0
+prob_13 obj=113939.0 z1=0.0
+prob_14 obj=80394.0 z1=0.0
+prob_15 obj=50783.0 z1=0.0
+[Greedy] Instance : prob_16
+[Greedy] Bays     : 4  |  Blocks : 250  |  Timelimit : 34.4s
+[Greedy] Weights  : w1=8889  w2=5.0  w3=133.0
+[Greedy] --------------------------------------------------------
+[Greedy]   bay[0]  141x29
+[Greedy]   bay[1]  142x28
+[Greedy]   bay[2]  46x23
+[Greedy]   bay[3]  94x18
+[Greedy] --------------------------------------------------------
+[Greedy] Phase 1 : EDD greedy placement ...
+[Greedy]     25/250  block219  -> bay0 (15,0) oi=0  t=[18,23)  loads=[b0=665 b1=728 b2=227 b3=201]  fallback=0  0.5s
+[Greedy]     50/250  block122  -> bay3 (28,0) oi=0  t=[24,31)  loads=[b0=1552 b1=1071 b2=435 b3=895]  fallback=0  2.0s
+[Greedy]     75/250  block17   -> bay3 (17,0) oi=0  t=[45,53)  loads=[b0=2574 b1=1600 b2=753 b3=1330]  fallback=0  3.4s
+[Greedy]    100/250  block77   -> bay0 (71,15) oi=5  t=[51,61)  loads=[b0=3489 b1=2195 b2=1037 b3=1623]  fallback=0  4.9s
+[Greedy]    125/250  block231  -> bay3 (21,0) oi=4  t=[63,71)  loads=[b0=3993 b1=2262 b2=1455 b3=1909]  fallback=0  7.5s
+[Greedy]    150/250  block133  -> bay0 (42,3) oi=2  t=[84,89)  loads=[b0=4823 b1=3183 b2=1624 b3=2127]  fallback=0  8.3s
+[Greedy]    175/250  block212  -> bay0 (7,0) oi=0  t=[99,103)  loads=[b0=5779 b1=3897 b2=1743 b3=2697]  fallback=0  9.9s
+[Greedy]    200/250  block209  -> bay0 (17,0) oi=1  t=[111,120)  loads=[b0=6690 b1=5026 b2=1803 b3=3071]  fallback=0  12.5s
+[Greedy]    225/250  block240  -> bay3 (8,7) oi=4  t=[127,135)  loads=[b0=7796 b1=5409 b2=2210 b3=3556]  fallback=0  13.2s
+[Greedy]    250/250  block83   -> bay2 (14,12) oi=3  t=[138,147)  loads=[b0=8804 b1=6257 b2=2297 b3=3672]  fallback=0  14.6s
+[Greedy] Phase 1 done  |  placed=250  bay0=8804  bay1=6257  bay2=2297  bay3=3672  elapsed=14.56s
+[Greedy] --------------------------------------------------------
+[Greedy] Phase 2 : repair  mode=greedy  requested=greedy
+[Greedy] Repair pass 1: 65 violation(s)  stage=2  elapsed=14.6s
+[Greedy]   repair   1/23  block207  [time]  bay0 (48,0)  N/A -> [3,9)  elapsed=16.3s
+[Greedy]   repair   2/23  block47   [time]  bay2 (22,5)  N/A -> [15,21)  elapsed=21.8s
+[Greedy]   repair   3/23  block228  [time]  bay1 (102,0)  N/A -> [18,28)  elapsed=28.5s
+[Greedy]   repair   4/23  block242  [time]  bay1 (115,9)  N/A -> [18,28)  elapsed=34.0s
+[Greedy] --------------------------------------------------------
+[Greedy] Done  |  assigned=231/250  elapsed=34.00s
+[Greedy] INFEASIBLE stage=1
+[Greedy]   Stage1: block 27 is not assigned
+[Greedy]   Stage1: block 30 is not assigned
+[Greedy]   Stage1: block 40 is not assigned
+[Greedy]   Stage1: block 42 is not assigned
+[Greedy]   Stage1: block 54 is not assigned
+prob_16 obj=42900.0 z1=0.0
+prob_17 obj=78233.0 z1=0.0
+prob_18 obj=116106.0 z1=0.0
+[Greedy] Instance : prob_19
+[Greedy] Bays     : 4  |  Blocks : 300  |  Timelimit : 40.4s
+[Greedy] Weights  : w1=10667  w2=4.0  w3=133.0
+[Greedy] --------------------------------------------------------
+[Greedy]   bay[0]  41x23
+[Greedy]   bay[1]  178x20
+[Greedy]   bay[2]  111x20
+[Greedy]   bay[3]  140x25
+[Greedy] --------------------------------------------------------
+[Greedy] Phase 1 : EDD greedy placement ...
+[Greedy]     30/300  block135  -> bay2 (48,13) oi=6  t=[12,19)  loads=[b0=111 b1=551 b2=689 b3=286]  fallback=0  0.9s
+[Greedy]     60/300  block282  -> bay2 (12,8) oi=2  t=[22,31)  loads=[b0=457 b1=1185 b2=1175 b3=1468]  fallback=0  2.3s
+[Greedy]     90/300  block168  -> bay3 (20,0) oi=0  t=[37,43)  loads=[b0=869 b1=1768 b2=1889 b3=2264]  fallback=0  5.2s
+[Greedy]    120/300  block111  -> bay3 (56,4) oi=0  t=[45,55)  loads=[b0=1268 b1=2418 b2=2472 b3=3375]  fallback=0  9.1s
+[Greedy]    150/300  block193  -> bay0 (15,11) oi=2  t=[61,67)  loads=[b0=1753 b1=2579 b2=3157 b3=3741]  fallback=0  11.9s
+[Greedy]    180/300  block278  -> bay3 (39,0) oi=0  t=[70,78)  loads=[b0=1753 b1=3465 b2=3723 b3=4774]  fallback=0  13.9s
+[Greedy]    210/300  block242  -> bay1 (39,0) oi=6  t=[85,91)  loads=[b0=2001 b1=4285 b2=4209 b3=5284]  fallback=0  16.6s
+[Greedy]    240/300  block184  -> bay2 (9,0) oi=6  t=[100,105)  loads=[b0=2448 b1=4964 b2=4714 b3=5691]  fallback=0  18.8s
+[Greedy]    270/300  block108  -> bay1 (39,0) oi=2  t=[106,115)  loads=[b0=2591 b1=5209 b2=5372 b3=6383]  fallback=0  20.9s
+[Greedy]    300/300  block224  -> bay1 (11,0) oi=4  t=[119,128)  loads=[b0=2688 b1=5742 b2=5841 b3=7102]  fallback=0  24.0s
+[Greedy] Phase 1 done  |  placed=300  bay0=2688  bay1=5742  bay2=5841  bay3=7102  elapsed=24.04s
+[Greedy] --------------------------------------------------------
+[Greedy] Phase 2 : repair  mode=greedy  requested=greedy
+[Greedy] Repair pass 1: 92 violation(s)  stage=2  elapsed=24.1s
+[Greedy]   repair   1/34  block105  [time]  bay3 (56,0)  N/A -> [7,10)  elapsed=26.9s
+[Greedy]   repair   2/34  block44   [time]  bay0 (27,4)  N/A -> [12,19)  elapsed=33.5s
+[Greedy]   repair   3/34  block95   [time]  bay2 (108,6)  N/A -> [12,19)  elapsed=41.1s
+[Greedy] --------------------------------------------------------
+[Greedy] Done  |  assigned=269/300  elapsed=41.13s
+[Greedy] INFEASIBLE stage=1
+[Greedy]   Stage1: block 29 is not assigned
+[Greedy]   Stage1: block 31 is not assigned
+[Greedy]   Stage1: block 36 is not assigned
+[Greedy]   Stage1: block 40 is not assigned
+[Greedy]   Stage1: block 43 is not assigned
+prob_19 obj=62980.0 z1=0.0
+prob_20 obj=181166.0 z1=0.0
+=== DONE ===

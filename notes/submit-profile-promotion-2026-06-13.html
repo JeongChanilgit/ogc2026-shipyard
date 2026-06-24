@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제출 default 승격 — gate200_v2 (2026-06-13)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; font-size: 14px; line-height: 1.5; padding: 24px; }
+  .page { max-width: 960px; margin: 0 auto; }
+
+  /* header */
+  .header { border-left: 4px solid #3b82f6; padding: 12px 16px; margin-bottom: 20px; background: #1a1d27; border-radius: 0 6px 6px 0; }
+  .header h1 { font-size: 20px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.3px; }
+  .header .meta { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .context-block { background: #1a1d27; border: 1px solid #2d3148; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; color: #94a3b8; font-size: 13px; line-height: 1.7; }
+
+  /* metric cards */
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 8px; padding: 14px 16px; }
+  .card .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .card .old { font-size: 12px; color: #475569; text-decoration: line-through; margin-bottom: 2px; }
+  .card .new { font-size: 22px; font-weight: 700; color: #f1f5f9; }
+  .card .delta { font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .delta-good { color: #34d399; }
+  .delta-neutral { color: #94a3b8; }
+  .card.highlight { border-color: #3b82f6; }
+
+  /* section headings */
+  h2 { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #2d3148; }
+
+  /* tables */
+  .table-wrap { margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: #1e2235; }
+  thead th { padding: 8px 12px; text-align: left; font-weight: 600; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid #2d3148; }
+  tbody tr { border-bottom: 1px solid #1e2235; }
+  tbody tr:hover { background: #1e2235; }
+  tbody td { padding: 8px 12px; color: #cbd5e1; }
+  .num { font-variant-numeric: tabular-nums; }
+  .tag-zero { display: inline-block; background: #064e3b; color: #34d399; font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; }
+  .tag-old  { display: inline-block; background: #450a0a; color: #f87171; font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; }
+  .col-good { color: #34d399; font-weight: 600; }
+  .col-warn { color: #f59e0b; }
+
+  /* two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* code block */
+  .code-section { margin-bottom: 20px; }
+  pre { background: #0d1117; border: 1px solid #2d3148; border-radius: 6px; padding: 14px 16px; font-size: 12px; color: #a5f3fc; overflow-x: auto; white-space: pre; line-height: 1.6; font-family: 'Consolas', 'Cascadia Code', monospace; }
+  .code-label { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+
+  /* checklist */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 5px 0; color: #94a3b8; font-size: 13px; }
+  .checklist li::before { content: '✓ '; color: #34d399; font-weight: 700; }
+
+  /* caveats */
+  .caveats { background: #1a1d27; border: 1px solid #854d0e; border-left: 3px solid #f59e0b; border-radius: 0 6px 6px 0; padding: 14px 16px; }
+  .caveats h2 { border-bottom-color: #292524; }
+  .caveats ol { padding-left: 18px; }
+  .caveats ol li { color: #94a3b8; font-size: 13px; margin-bottom: 7px; line-height: 1.6; }
+  .caveats ol li strong { color: #fbbf24; }
+
+  /* speed table note */
+  .table-note { font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.6; }
+
+  /* reversibility badge */
+  .badge { display: inline-block; background: #1e3a5f; color: #7dd3fc; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>제출 default 승격 — gate200_v2 <span class="badge">가역: OGC_SUBMIT_V2=0</span></h1>
+    <div class="meta">2026-06-13 &nbsp;·&nbsp; tl=200 full-20 측정 &nbsp;·&nbsp; OGC 2026 Shipyard Packing</div>
+  </div>
+
+  <!-- Context -->
+  <div class="context-block">
+    실제 제출 경로(환경변수 미설정)가 그동안 검증된 개선을 하나도 안 쓰고 legacy greedy-floor 파이프라인으로 돌고 있었다.
+    full-20×2로 검증된 gate200_v2 구성(FastFloor 초기해 + BAN-RACE)이 전부 env-gated OFF였기 때문.
+    이를 마스터 스위치 <strong style="color:#7dd3fc">OGC_SUBMIT_V2</strong>(default ON)로 제출 default에 승격했다.
+  </div>
+
+  <!-- Headline Metrics -->
+  <h2>헤드라인 지표</h2>
+  <div class="cards">
+    <div class="card highlight">
+      <div class="label">Total Objective</div>
+      <div class="old">2,675,893</div>
+      <div class="new num">1,550,000</div>
+      <div class="delta delta-good">−42%</div>
+    </div>
+    <div class="card highlight">
+      <div class="label">Paired z1=0 (20인스턴스)</div>
+      <div class="old">15 / 20</div>
+      <div class="new">19 / 20</div>
+      <div class="delta delta-good">+4 인스턴스</div>
+    </div>
+    <div class="card">
+      <div class="label">Feasible</div>
+      <div class="new">20 / 20</div>
+      <div class="delta delta-neutral">유지</div>
+    </div>
+    <div class="card">
+      <div class="label">Rollback</div>
+      <div class="new" style="font-size:14px; padding-top:4px;">OGC_SUBMIT_V2=0</div>
+      <div class="delta delta-neutral">정확한 legacy 복원</div>
+    </div>
+  </div>
+
+  <!-- Two column: Table 1 + Validation -->
+  <div class="two-col">
+
+    <!-- Table 1 -->
+    <div class="table-wrap">
+      <h2>이전 tardy 인스턴스 전부 z1=0으로 닫힘</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>인스턴스</th>
+            <th>legacy z1</th>
+            <th>new z1</th>
+            <th>legacy obj</th>
+            <th>new obj</th>
+            <th>obj Δ%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>prob_13</strong></td>
+            <td><span class="tag-old">10</span></td>
+            <td><span class="tag-zero">0</span></td>
+            <td class="num">330,342</td>
+            <td class="num col-good">113,939</td>
+            <td class="col-good">−66%</td>
+          </tr>
+          <tr>
+            <td><strong>prob_18</strong></td>
+            <td><span class="tag-old">4</span></td>
+            <td><span class="tag-zero">0</span></td>
+            <td class="num">284,640</td>
+            <td class="num col-good">103,314</td>
+            <td class="col-good">−62%</td>
+          </tr>
+          <tr>
+            <td><strong>prob_17</strong></td>
+            <td><span class="tag-old">1</span></td>
+            <td><span class="tag-zero">0</span></td>
+            <td class="num">213,946</td>
+            <td class="num col-good">77,221</td>
+            <td class="col-good">−64%</td>
+          </tr>
+          <tr>
+            <td><strong>prob_14</strong></td>
+            <td><span class="tag-old">6</span></td>
+            <td><span class="tag-zero">0</span></td>
+            <td class="num">217,973</td>
+            <td class="num col-good">104,881</td>
+            <td class="col-good">−48%</td>
+          </tr>
+          <tr>
+            <td><strong>prob_11</strong></td>
+            <td><span class="tag-old">1</span></td>
+            <td><span class="tag-zero">0</span></td>
+            <td class="num">94,278</td>
+            <td class="num col-good">45,703</td>
+            <td class="col-good">−52%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Validation -->
+    <div>
+      <h2>검증 체크리스트</h2>
+      <ul class="checklist">
+        <li>feasibility 회귀 17/17 pass</li>
+        <li>결정적 12개 인스턴스 gate200_v2와 bit-identical (주입 충실성 입증)</li>
+        <li>변동셋 paired z1=0 6/7 == gate200_v2</li>
+        <li>prob_14 / 17 / 18 정확 일치</li>
+      </ul>
+
+      <!-- Speed Table -->
+      <div style="margin-top: 20px;">
+        <h2>속도 — FastFloor가 느린 greedy floor 대체</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>인스턴스</th>
+              <th>legacy wall(s)</th>
+              <th>new wall(s)</th>
+              <th>obj Δ%</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>prob_5</td>
+              <td class="num col-warn">181</td>
+              <td class="num col-good">130</td>
+              <td class="col-good">−34%</td>
+            </tr>
+            <tr>
+              <td>prob_7</td>
+              <td class="num col-warn">191</td>
+              <td class="num col-good">139</td>
+              <td class="col-good">−35%</td>
+            </tr>
+            <tr>
+              <td>prob_4</td>
+              <td class="num col-warn">162</td>
+              <td class="num col-good">130</td>
+              <td class="col-good">−58%</td>
+            </tr>
+            <tr>
+              <td>prob_9</td>
+              <td class="num col-warn">190</td>
+              <td class="num col-good">168</td>
+              <td class="col-good">−22%</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-note">
+          legacy는 느린 greedy floor(대형 인스턴스 n=300이면 ~108s)에 예산을 쓰고도 더 나쁜 해에 머문다.
+          new-default는 FastFloor(~30s)로 floor를 빨리 만들어 pp/BAN-RACE 예산을 늘려 더 빨리 끝내며 훨씬 좋은 해를 낸다.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Implementation -->
+  <div class="code-section">
+    <h2>구현 — 마스터 스위치 OGC_SUBMIT_V2</h2>
+    <div class="code-label">algorithm() 진입부: gate200_v2 노브 주입 (T≥60 게이트, 개별 OGC_* override 우선)</div>
+    <pre>
+if os.environ.get("OGC_SUBMIT_V2", "1") == "1" and timelimit >= 60:
+    _defaults = {
+        "OGC_FASTFLOOR":           "1",
+        "OGC_FF_PRIMARY":          "1",
+        "OGC_FASTFLOOR_MIN_T":     "60",
+        "OGC_FF_ASSIGN_CAP":       "0.85",
+        "OGC_FF_PRIMARY_Z1MAX":    "150",
+        "OGC_CUMLEVEL_BUDGET_PCT": "30",
+        "OGC_BAN_RACE":            "1",
+        "OGC_BANRACE_ROUNDS":      "2",
+        "OGC_BANRACE_TAIL":        "1",
+        # ... 나머지 gate200_v2 노브 7개
+    }
+    for k, v in _defaults.items():
+        os.environ.setdefault(k, v)   # 개별 override 우선
+# T < 60: legacy 폴백 (단-tl 안전)
+# OGC_SUBMIT_V2=0: 정확한 legacy 복원
+</pre>
+  </div>
+
+  <!-- Caveats / Next -->
+  <div class="caveats">
+    <h2>주의 / 다음 단계</h2>
+    <ol>
+      <li>
+        <strong>잔여 회귀</strong> — prob_15 <span class="col-warn">+34%</span>(37.8K→50.8K, 소형 z3 교환) · prob_10 <span class="col-warn">+6%</span>.
+        전체 obj −42%에 묻히지만 후속 점검 대상.
+      </li>
+      <li>
+        <strong>prob_20 z1 잔여</strong> — z1=6~7(단일베이 직렬 LB), obj 309–386K 추첨.
+        경쟁자는 z1=0 @~250K(구조적 디코더 우위) — 구조적 개선 없이는 따라잡기 어려움.
+      </li>
+      <li>
+        <strong>속도 레버 3개 보류</strong> — FAST_GEOM / PP_RASTER / REDECODE_FAST는 prob_20 추첨 악화로 제외,
+        env-gated OFF 유지. 고-tl(≥600) 재검증 대상.
+      </li>
+      <li>
+        <strong>다음 목적함수 레버</strong> — <span style="color:#7dd3fc">z3race</span>(OGC_Z3_RACE, T≥300).
+        probe: prob_16 −21.6% 검증 완료. eval target tl=600 "경쟁자 이기기" 본게임의 핵심 레버.
+      </li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>

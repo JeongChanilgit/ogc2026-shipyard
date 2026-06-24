@@ -1,0 +1,1705 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 솔버 — 알고리즘 절차 &amp; 단계별 시간단축 방법론</title>
+<style>
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --bg3:       #1c2230;
+  --surface:   #1e2736;
+  --surface2:  #243040;
+  --border:    #2d3748;
+  --border2:   #374151;
+  --text:      #e2e8f0;
+  --text2:     #94a3b8;
+  --text3:     #64748b;
+  --cyan:      #22d3ee;
+  --cyan2:     #0891b2;
+  --cyan3:     #164e63;
+  --amber:     #fbbf24;
+  --amber2:    #d97706;
+  --amber3:    #451a03;
+  --green:     #34d399;
+  --green2:    #065f46;
+  --green3:    #d1fae5;
+  --red:       #f87171;
+  --red2:      #7f1d1d;
+  --violet:    #a78bfa;
+  --violet2:   #4c1d95;
+  --mono:      "JetBrains Mono","Cascadia Code","Fira Code","Consolas","Courier New",monospace;
+  --sans:      "Segoe UI","Noto Sans KR","Apple SD Gothic Neo",Arial,sans-serif;
+  --radius:    8px;
+  --radius2:   12px;
+  --shadow:    0 2px 8px rgba(0,0,0,.45);
+  --shadow2:   0 4px 20px rgba(0,0,0,.6);
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.65;
+  min-height: 100vh;
+}
+
+h1,h2,h3,h4 { line-height: 1.2; font-weight: 700; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.1rem; }
+h4 { font-size: 0.95rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); }
+
+p { margin: .5rem 0 .9rem; }
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { padding-left: 1.4rem; }
+li { margin: .25rem 0; }
+strong { color: var(--text); }
+
+/* ===== LAYOUT ===== */
+.page-wrap {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ===== SIDEBAR NAV ===== */
+#sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 1.2rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+#sidebar::-webkit-scrollbar { width: 5px; }
+#sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+.nav-logo {
+  padding: .4rem 1.2rem 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: .8rem;
+}
+.nav-logo .badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--cyan2), var(--cyan));
+  color: #000;
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-bottom: .4rem;
+}
+.nav-logo p { font-size: .75rem; color: var(--text3); margin: 0; line-height: 1.4; }
+
+.nav-section-label {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: .6rem 1.2rem .25rem;
+}
+
+#sidebar nav a {
+  display: block;
+  padding: .3rem 1.2rem .3rem 1.4rem;
+  font-size: .8rem;
+  color: var(--text2);
+  border-left: 2px solid transparent;
+  transition: all .15s;
+  line-height: 1.4;
+}
+#sidebar nav a:hover,
+#sidebar nav a.active {
+  color: var(--cyan);
+  border-left-color: var(--cyan);
+  background: rgba(34,211,238,.06);
+  text-decoration: none;
+}
+#sidebar nav a.stage-link { padding-left: 2rem; font-size: .76rem; }
+
+/* ===== MAIN CONTENT ===== */
+#main {
+  padding: 2rem 2.5rem 4rem;
+  max-width: 1000px;
+}
+
+/* ===== HEADER ===== */
+.page-header {
+  background: linear-gradient(135deg, #0d1f35 0%, #0a1628 50%, #0d1117 100%);
+  border-bottom: 2px solid var(--cyan2);
+  padding: 2rem 2.5rem 1.6rem;
+  position: relative;
+  overflow: hidden;
+}
+.page-header::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(34,211,238,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.page-header h1 { color: var(--text); font-size: 1.7rem; margin-bottom: .4rem; }
+.page-header .subtitle {
+  color: var(--text2);
+  font-size: .875rem;
+}
+.page-header .subtitle code {
+  background: rgba(34,211,238,.12);
+  color: var(--cyan);
+  padding: .1rem .4rem;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: .8rem;
+}
+
+/* ===== SECTIONS ===== */
+.section {
+  scroll-margin-top: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+}
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, var(--cyan2), var(--cyan3));
+  color: var(--cyan);
+  font-weight: 800;
+  font-size: .85rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid var(--cyan2);
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+.card-dark {
+  background: var(--bg2);
+  border-color: var(--border2);
+}
+
+/* ===== STAGE CARDS ===== */
+.stage-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  box-shadow: var(--shadow2);
+}
+.stage-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.4rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  background: linear-gradient(135deg, var(--cyan3), var(--cyan2));
+  color: var(--cyan);
+  font-weight: 800;
+  font-size: .9rem;
+  border-radius: 8px;
+  border: 1px solid var(--cyan2);
+  flex-shrink: 0;
+  font-family: var(--mono);
+}
+.stage-title-block h3 { color: var(--text); font-size: 1.05rem; margin: 0 0 .15rem; }
+.stage-purpose { color: var(--text2); font-size: .85rem; }
+
+.stage-body { padding: 1.1rem 1.4rem; }
+
+.io-row {
+  display: flex;
+  gap: .5rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: .6rem 0 .9rem;
+  padding: .6rem .9rem;
+  background: rgba(0,0,0,.25);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: .82rem;
+}
+.io-label {
+  color: var(--text3);
+  font-weight: 600;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+.io-arrow { color: var(--border2); }
+
+/* ===== CHIPS ===== */
+code, .chip {
+  font-family: var(--mono);
+  font-size: .78rem;
+  background: rgba(34,211,238,.09);
+  color: var(--cyan);
+  padding: .1rem .45rem;
+  border-radius: 4px;
+  border: 1px solid rgba(34,211,238,.2);
+  white-space: nowrap;
+}
+
+.chip-file {
+  background: rgba(167,139,250,.09);
+  color: var(--violet);
+  border-color: rgba(167,139,250,.25);
+}
+
+.chip-green {
+  background: rgba(52,211,153,.1);
+  color: var(--green);
+  border-color: rgba(52,211,153,.25);
+  font-family: var(--sans);
+  font-size: .75rem;
+  padding: .15rem .5rem;
+  font-weight: 600;
+  border-radius: 4px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.chip-amber {
+  background: rgba(251,191,36,.1);
+  color: var(--amber);
+  border-color: rgba(251,191,36,.25);
+  font-family: var(--sans);
+  font-size: .75rem;
+  padding: .15rem .5rem;
+  font-weight: 600;
+  border-radius: 4px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.chip-red {
+  background: rgba(248,113,113,.1);
+  color: var(--red);
+  border-color: rgba(248,113,113,.2);
+  font-family: var(--sans);
+  font-size: .75rem;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.chip-off {
+  background: rgba(100,116,139,.1);
+  color: var(--text3);
+  border-color: rgba(100,116,139,.2);
+  font-family: var(--sans);
+  font-size: .75rem;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* ===== CALLOUT BOXES ===== */
+.callout {
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin: .9rem 0;
+  border-left: 3px solid;
+}
+.callout-cyan {
+  background: rgba(34,211,238,.06);
+  border-color: var(--cyan);
+}
+.callout-amber {
+  background: rgba(251,191,36,.06);
+  border-color: var(--amber);
+}
+.callout-green {
+  background: rgba(52,211,153,.06);
+  border-color: var(--green);
+}
+.callout-red {
+  background: rgba(248,113,113,.06);
+  border-color: var(--red);
+}
+.callout-violet {
+  background: rgba(167,139,250,.06);
+  border-color: var(--violet);
+}
+.callout-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: .4rem;
+  opacity: .7;
+}
+
+/* ===== TIME SECTION ===== */
+.time-section {
+  background: linear-gradient(135deg, rgba(251,191,36,.04), rgba(34,211,238,.04));
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--amber);
+  border-radius: var(--radius2);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 1rem;
+}
+
+/* ===== TABLES ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+  margin: .7rem 0 1.1rem;
+}
+th {
+  background: var(--surface2);
+  color: var(--text2);
+  text-align: left;
+  padding: .5rem .75rem;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--border2);
+}
+td {
+  padding: .45rem .75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--text);
+  line-height: 1.5;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,.02); }
+td code { font-size: .75rem; }
+
+/* ===== FORMULA ===== */
+.formula-block {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  font-family: var(--mono);
+  font-size: .88rem;
+  line-height: 2;
+  margin: .9rem 0;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text);
+}
+.formula-block .f-cyan { color: var(--cyan); }
+.formula-block .f-amber { color: var(--amber); }
+.formula-block .f-green { color: var(--green); }
+.formula-block .f-violet { color: var(--violet); }
+.formula-block .f-red { color: var(--red); }
+
+/* ===== TIME LIST ===== */
+.time-list { list-style: none; padding-left: 0; }
+.time-list li {
+  display: flex;
+  gap: .6rem;
+  align-items: flex-start;
+  padding: .4rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .85rem;
+}
+.time-list li:last-child { border-bottom: none; }
+.time-list li .tl-icon { flex-shrink: 0; margin-top: .05rem; }
+.time-list li .tl-text { flex: 1; }
+
+/* ===== SCORE BOX ===== */
+.score-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  font-family: var(--mono);
+  font-size: .85rem;
+  line-height: 1.9;
+  margin: .7rem 0;
+}
+
+/* ===== LEGEND ===== */
+.legend {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: .75rem 1rem;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin: .7rem 0 1.2rem;
+  font-size: .82rem;
+}
+.legend-item { display: flex; align-items: center; gap: .4rem; color: var(--text2); }
+
+/* ===== GRID LAYOUTS ===== */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+@media (max-width: 800px) {
+  .grid-2, .grid-3, .grid-2-1 { grid-template-columns: 1fr; }
+}
+
+/* ===== FLAG TABLE ===== */
+.flag-on { color: var(--green); font-weight: 700; }
+.flag-off { color: var(--text3); }
+
+/* ===== DEAD CODE ===== */
+.dead-box {
+  background: rgba(100,116,139,.07);
+  border: 1px solid rgba(100,116,139,.2);
+  border-radius: var(--radius);
+  padding: .9rem 1.1rem;
+  margin: .5rem 0;
+  font-size: .83rem;
+  color: var(--text2);
+}
+.dead-box h4 { color: var(--text3); margin-bottom: .3rem; font-size: .8rem; }
+
+/* ===== SUMMARY PANEL ===== */
+.summary-panel {
+  background: linear-gradient(135deg, var(--bg2), var(--bg3));
+  border: 1px solid var(--border2);
+  border-top: 2px solid var(--violet);
+  border-radius: var(--radius2);
+  padding: 1.3rem 1.5rem;
+  margin-top: 1rem;
+}
+.summary-panel h3 { color: var(--violet); margin-bottom: .8rem; }
+.summary-cat {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  padding: .5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .85rem;
+}
+.summary-cat:last-child { border-bottom: none; }
+.summary-cat-num {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: rgba(167,139,250,.15);
+  color: var(--violet);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .75rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(167,139,250,.2);
+}
+
+/* ===== BACK TO TOP ===== */
+#back-top {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--cyan2);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .2s;
+  z-index: 100;
+}
+#back-top:hover { background: var(--cyan); }
+
+/* ===== PRINT ===== */
+@media print {
+  .page-wrap { display: block; }
+  #sidebar { display: none; }
+  #back-top { display: none; }
+  #main { padding: 1rem; max-width: 100%; }
+  .stage-card, .card, .callout, .formula-block { break-inside: avoid; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .page-header { background: #eee; color: #000; border-color: #999; }
+  code, .chip, .chip-file { background: #f0f0f0; color: #222; border-color: #ccc; }
+  .chip-green { background: #d4edda; color: #155724; border-color: #c3e6cb; }
+  .chip-amber { background: #fff3cd; color: #856404; border-color: #ffeeba; }
+  th { background: #e9ecef; color: #000; }
+  td { border-color: #ddd; }
+  h2 { page-break-after: avoid; }
+  details { display: block; }
+  details summary { display: none; }
+}
+
+/* ===== FLOW DIAGRAM UTILITIES ===== */
+.flow-box {
+  rx: 8;
+}
+
+/* ===== MISC ===== */
+.muted { color: var(--text3); font-size: .82rem; }
+.text-cyan { color: var(--cyan); }
+.text-amber { color: var(--amber); }
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-violet { color: var(--violet); }
+.mt-sm { margin-top: .5rem; }
+.mt-md { margin-top: 1rem; }
+.mb-sm { margin-bottom: .5rem; }
+.flex-gap { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+hr.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.2rem 0;
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="page-wrap">
+<aside id="sidebar">
+  <div class="nav-logo">
+    <div class="badge">OGC 2026</div>
+    <p>솔버 알고리즘<br>절차 &amp; 시간단축</p>
+  </div>
+  <div class="nav-section-label">개요</div>
+  <nav>
+    <a href="#sec0">§0 한눈에</a>
+    <a href="#sec1">§1 문제 &amp; 목적함수</a>
+    <a href="#sec2">§2 파이프라인 한 장</a>
+    <a href="#sec3">§3 시간 예산</a>
+    <div class="nav-section-label">단계별 카드</div>
+    <a href="#stage0" class="stage-link">Stage 0 Trivial floor</a>
+    <a href="#stage1" class="stage-link">Stage 1 CP-SAT-first</a>
+    <a href="#stage2" class="stage-link">Stage 2 Baseline greedy</a>
+    <a href="#stage3" class="stage-link">Stage 3 Greedy multi-start</a>
+    <a href="#stage4" class="stage-link">Stage 4 Z1 crane-clean</a>
+    <a href="#stage5" class="stage-link">Stage 5 Seeds+ALNS</a>
+    <a href="#stage6" class="stage-link">Stage 6 Final gate</a>
+    <div class="nav-section-label">보조</div>
+    <a href="#sec5">§5 보조 머신러리</a>
+    <a href="#sec6">§6 -1 회피 안전망</a>
+    <a href="#sec7">§7 Env-flag 범례</a>
+    <a href="#sec8">§8 Dead / 미연결</a>
+    <a href="#sec-summary">§ 횡단 시간단축 요약</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<div>
+<header class="page-header">
+  <h1>OGC2026 솔버 — 알고리즘 절차 &amp; 단계별 시간단축 방법론</h1>
+  <p class="subtitle">제출 엔트리 <code>src/myalgorithm.py</code> 기준 &nbsp;·&nbsp; 작성 2026-06-07</p>
+</header>
+
+<main id="main">
+
+<!-- ==================== SECTION 0 ==================== -->
+<section class="section" id="sec0">
+  <div class="section-title">
+    <span class="section-number">0</span>
+    <h2>한눈에 (Executive Overview)</h2>
+  </div>
+
+  <div class="callout callout-cyan">
+    <div class="callout-label text-cyan">설계 철학</div>
+    <p style="margin:0;font-size:.92rem;line-height:1.7;">
+      검증된 feasible 바닥(floor)을 깔고, 그 위에서 <strong>'진짜 목적함수'</strong>에 대한 assignment-level 지역탐색으로 개선하되,
+      모든 후보는 반환 전 <code>check_feasibility</code> 게이트를 통과해야 한다 —
+      크래시/타임아웃이 절대 <strong>−1</strong>을 못 만들도록 전 구간 <code>try/except</code> + 데드라인 가드.
+    </p>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h4>점수 모델</h4>
+    <div class="score-box">
+<span class="text-cyan">score(team, instance)</span> = <span class="text-red">-1</span>              <span class="text-amber"># infeasible / timeout / crash</span>
+                      = <span class="text-green">R - nb</span>             <span class="text-amber"># feasible (R = #teams, nb = #teams strictly better)</span>
+
+<span class="text-cyan">total</span> = <span class="text-green">Σ score</span> over all instances
+    </div>
+    <div class="callout callout-amber" style="margin-top:.7rem;">
+      <div class="callout-label text-amber">핵심 시사점</div>
+      <ul style="font-size:.88rem;margin:0;">
+        <li><strong>−1 회피가 1순위</strong> — 한 인스턴스 실현불가 = −1, 평균 R/2 손실</li>
+        <li>동점(nb 동일) OK — 엄밀히 더 좋은 팀 수만 제거</li>
+        <li><strong>"모든 문제 안정적 feasible"</strong>이 "한 문제 압도"보다 유리</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="legend">
+    <strong style="color:var(--text2);font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;">범례</strong>
+    <div class="legend-item">
+      <span class="chip-green">✅ 적용됨</span>
+      <span>코드에 이미 구현 / 기본 ON</span>
+    </div>
+    <div class="legend-item">
+      <span class="chip-amber">💡 추가여지</span>
+      <span>미구현이거나 default OFF인 가속 레버</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 1 ==================== -->
+<section class="section" id="sec1">
+  <div class="section-title">
+    <span class="section-number">1</span>
+    <h2>문제 &amp; 목적함수 &amp; 크레인 규칙</h2>
+  </div>
+
+  <div class="callout callout-cyan">
+    <div class="callout-label text-cyan">의사결정 — 블록당 동시</div>
+    <div class="flex-gap" style="margin-top:.4rem;">
+      <span class="chip-file">베이 j</span>
+      <span class="chip-file">위치 (x, y) 정수</span>
+      <span class="chip-file">방향 o</span>
+      <span class="chip-file">ENTRY 시각</span>
+      <span class="chip-file">EXIT 시각</span>
+    </div>
+  </div>
+
+  <!-- Objective formula callout -->
+  <div class="callout callout-amber" style="margin-top:1rem;">
+    <div class="callout-label text-amber">목적함수 &nbsp; <code>_objective</code> at <code class="chip-file">src/myalgorithm.py:1271</code></div>
+    <div class="formula-block"><span class="f-cyan">min</span>  <span class="f-amber">w1</span>·Z1 + <span class="f-amber">w2</span>·Z2 + <span class="f-amber">w3</span>·Z3
+
+<span class="f-green">Z1</span> = Σ max(0, exit − due)
+     <span class="f-violet"># tardiness</span>
+
+<span class="f-green">Z2</span> = max_j(u_j · load_j) − min_j(u_j · load_j)
+     <span class="f-violet"># workload imbalance  (u_j = avg_area / area_j)</span>
+
+<span class="f-green">Z3</span> = Σ (max(prefs) − prefs[chosen])
+     <span class="f-violet"># preference deviation</span></div>
+  </div>
+
+  <!-- Crane rule callout -->
+  <div class="callout callout-red" style="margin-top:1rem;">
+    <div class="callout-label text-red">크레인 j ≥ k 규칙 — 가장 어려운 제약</div>
+    <p style="font-size:.88rem;margin:.3rem 0 .6rem;">
+      크레인은 수직으로만 움직인다. 블록의 layer <strong>k</strong>를 내리거나 올리면 <strong>j ≥ k</strong>인 모든 높이를 휩쓴다
+      → 그 경로에 수평으로 겹치는 기존 layer(j ≥ k)가 있으면 막힌다. j &lt; k 층은 절대 방해 안 함.
+    </p>
+    <div class="flex-gap">
+      <code class="chip-file">utils.check_entry</code>
+      <code class="chip-file">utils.py:603</code>
+      <code class="chip-file">utils.check_exit</code>
+      <code class="chip-file">utils.py:727</code>
+    </div>
+    <p class="muted" style="margin-top:.5rem;">
+      평가서버 ground-truth: Shapely 폴리곤 교차 + <code>j in range(k, n)</code> 루프, AABB bbox 프리필터로 페어 스킵.
+      <strong>utils.py 수정 금지.</strong>
+    </p>
+
+    <!-- Crane SVG diagram -->
+    <div style="margin-top:1rem;overflow-x:auto;">
+      <svg width="520" height="170" viewBox="0 0 520 170" style="display:block;margin:0 auto;max-width:100%;" aria-label="크레인 j≥k 수직접근 개념도">
+        <!-- Background -->
+        <rect x="0" y="0" width="520" height="170" fill="rgba(0,0,0,.25)" rx="8"/>
+        <!-- Title -->
+        <text x="260" y="18" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#94a3b8">크레인 수직접근 다이어그램 (j ≥ k 규칙)</text>
+        <!-- Bay frame -->
+        <rect x="30" y="30" width="200" height="120" fill="none" stroke="#374151" stroke-width="1.5" rx="4"/>
+        <text x="130" y="47" text-anchor="middle" font-size="10" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">베이 내부</text>
+
+        <!-- Layer labels left -->
+        <text x="18" y="80" text-anchor="middle" font-size="9" fill="#64748b" font-family="Consolas,monospace">k+2</text>
+        <text x="18" y="104" text-anchor="middle" font-size="9" fill="#64748b" font-family="Consolas,monospace">k+1</text>
+        <text x="18" y="128" text-anchor="middle" font-size="9" fill="#f87171" font-family="Consolas,monospace" font-weight="700">k</text>
+
+        <!-- Layer floors (dashed) -->
+        <line x1="30" y1="91" x2="230" y2="91" stroke="#2d3748" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="30" y1="115" x2="230" y2="115" stroke="#2d3748" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Block being moved at layer k -->
+        <rect x="65" y="118" width="70" height="24" fill="rgba(34,211,238,.15)" stroke="#22d3ee" stroke-width="1.5" rx="3"/>
+        <text x="100" y="134" text-anchor="middle" font-size="9" fill="#22d3ee" font-family="Segoe UI,Arial,sans-serif" font-weight="700">블록 (layer k)</text>
+
+        <!-- Blocking block at layer k+1 -->
+        <rect x="80" y="94" width="60" height="20" fill="rgba(248,113,113,.25)" stroke="#f87171" stroke-width="1.5" rx="3"/>
+        <text x="110" y="108" text-anchor="middle" font-size="9" fill="#fca5a5" font-family="Segoe UI,Arial,sans-serif">기존 블록 (j=k+1)</text>
+
+        <!-- Sweep zone arrow -->
+        <defs>
+          <marker id="arr-up" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M2,6 L4,2 L6,6" fill="none" stroke="#fbbf24" stroke-width="1.5"/>
+          </marker>
+        </defs>
+        <line x1="48" y1="135" x2="48" y2="55" stroke="#fbbf24" stroke-width="2" stroke-dasharray="3,2" marker-end="url(#arr-up)"/>
+        <text x="37" y="92" font-size="8" fill="#fbbf24" font-family="Segoe UI,Arial,sans-serif" writing-mode="vertical-rl" transform="rotate(0,37,92)">j≥k 스윕</text>
+
+        <!-- BLOCKED label -->
+        <rect x="155" y="94" width="58" height="18" fill="rgba(248,113,113,.15)" rx="3"/>
+        <text x="184" y="107" text-anchor="middle" font-size="9" fill="#f87171" font-weight="700" font-family="Segoe UI,Arial,sans-serif">⛔ BLOCKED</text>
+
+        <!-- OK label for j<k -->
+        <text x="100" y="158" text-anchor="middle" font-size="9" fill="#34d399" font-family="Segoe UI,Arial,sans-serif">j &lt; k → 절대 방해 안 함 ✓</text>
+
+        <!-- Separator -->
+        <line x1="250" y1="30" x2="250" y2="150" stroke="#2d3748" stroke-width="1" stroke-dasharray="4,3"/>
+
+        <!-- Right: range(k,n) loop explanation -->
+        <text x="390" y="50" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">utils.py ground-truth</text>
+        <text x="390" y="68" text-anchor="middle" font-size="9" fill="#64748b" font-family="Consolas,monospace">for j in range(k, n):</text>
+        <text x="390" y="83" text-anchor="middle" font-size="9" fill="#64748b" font-family="Consolas,monospace">  if AABB_overlap(block, j):</text>
+        <text x="390" y="98" text-anchor="middle" font-size="9" fill="#64748b" font-family="Consolas,monospace">    if polygon_intersect(...):</text>
+        <text x="390" y="113" text-anchor="middle" font-size="9" fill="#f87171" font-family="Consolas,monospace">      → INFEASIBLE</text>
+
+        <rect x="265" y="125" width="250" height="22" fill="rgba(34,211,238,.05)" rx="4"/>
+        <text x="390" y="139" text-anchor="middle" font-size="9" fill="#22d3ee" font-family="Segoe UI,Arial,sans-serif">AABB bbox 프리필터로 대부분 페어 스킵</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h4>제약 그룹</h4>
+    <table>
+      <thead><tr><th>그룹</th><th>세부 제약</th></tr></thead>
+      <tbody>
+        <tr><td><span class="chip-green">할당</span></td><td>모든 블록이 정확히 1 베이 = 1 ENTRY + 1 EXIT</td></tr>
+        <tr><td><span class="chip" style="background:rgba(34,211,238,.09);color:var(--cyan);">시간</span></td><td>ENTRY ≥ release, EXIT − ENTRY ≥ processing</td></tr>
+        <tr><td><span class="chip-red">공간</span></td><td>(1) 베이 경계, (2) 동일 층 충돌 금지, (3) 크레인 j ≥ k 수직접근</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== SECTION 2 ==================== -->
+<section class="section" id="sec2">
+  <div class="section-title">
+    <span class="section-number">2</span>
+    <h2>파이프라인 한 장</h2>
+  </div>
+  <p class="muted">엔트리 <code>algorithm(prob_info, timelimit)</code> at <code class="chip-file">src/myalgorithm.py:4016</code> &nbsp;→&nbsp; 반환 <code>{"operations": {str_time: [op,...]}}</code> (<code class="chip-file">_build_operations</code>, <code class="chip-file">baseline_greedy.py:1346</code>; EXIT가 ENTRY보다 먼저 정렬)</p>
+
+  <!-- Vertical pipeline SVG -->
+  <div style="overflow-x:auto;margin:1.2rem 0;">
+    <svg width="700" height="640" viewBox="0 0 700 640" style="display:block;margin:0 auto;max-width:100%;" aria-label="Stage 0-6 파이프라인 흐름도">
+      <defs>
+        <marker id="arrowD" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#22d3ee" opacity=".7"/>
+        </marker>
+        <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" opacity=".8"/>
+        </marker>
+        <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" opacity=".5"/>
+        </marker>
+      </defs>
+
+      <!-- Background -->
+      <rect width="700" height="640" fill="rgba(0,0,0,.2)" rx="10"/>
+
+      <!-- Entry point -->
+      <rect x="220" y="12" width="260" height="34" rx="6" fill="#164e63" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="350" y="33" text-anchor="middle" font-size="11" font-weight="700" fill="#22d3ee" font-family="Consolas,monospace">algorithm(prob_info, timelimit) :4016</text>
+
+      <!-- Stage boxes: x=120, width=260, spacing=84 -->
+      <!-- Stage 0 -->
+      <line x1="350" y1="46" x2="350" y2="64" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowD)"/>
+      <rect x="105" y="64" width="290" height="52" rx="8" fill="#1a2535" stroke="#374151" stroke-width="1.5"/>
+      <rect x="105" y="64" width="8" height="52" rx="4" fill="#22d3ee"/>
+      <text x="125" y="83" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 0</text>
+      <text x="125" y="100" font-size="11" fill="#e2e8f0" font-family="Segoe UI,Arial,sans-serif" font-weight="700">Trivial floor</text>
+      <text x="365" y="90" font-size="9" fill="#64748b" font-family="Consolas,monospace">:2097  항상 실행</text>
+
+      <!-- Floor tracker (right side) -->
+      <rect x="520" y="64" width="160" height="52" rx="6" fill="rgba(52,211,153,.06)" stroke="rgba(52,211,153,.25)" stroke-width="1"/>
+      <text x="600" y="83" text-anchor="middle" font-size="9" fill="#34d399" font-family="Segoe UI,Arial,sans-serif" font-weight="700">VERIFIED FLOOR</text>
+      <text x="600" y="98" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">trivial (no check needed)</text>
+      <text x="600" y="111" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">단조 상승으로만 갱신</text>
+      <!-- Floor line -->
+      <line x1="395" y1="90" x2="520" y2="90" stroke="rgba(52,211,153,.3)" stroke-width="1" stroke-dasharray="4,3"/>
+
+      <!-- Stage 1 -->
+      <line x1="350" y1="116" x2="350" y2="134" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowA)"/>
+      <rect x="105" y="134" width="290" height="52" rx="8" fill="#1a2535" stroke="#374151" stroke-width="1" opacity=".65"/>
+      <rect x="105" y="134" width="8" height="52" rx="4" fill="#64748b"/>
+      <text x="125" y="153" font-size="10" fill="#64748b" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 1</text>
+      <text x="125" y="170" font-size="11" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">CP-SAT-first</text>
+      <text x="338" y="153" font-size="9" fill="#64748b" font-family="Consolas,monospace">:4264  default OFF</text>
+      <rect x="318" y="161" width="68" height="16" rx="4" fill="rgba(100,116,139,.15)"/>
+      <text x="352" y="173" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">실험 경로</text>
+
+      <!-- Stage 2 -->
+      <line x1="350" y1="186" x2="350" y2="204" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowD)"/>
+      <rect x="105" y="204" width="290" height="52" rx="8" fill="#1a2535" stroke="#374151" stroke-width="1.5"/>
+      <rect x="105" y="204" width="8" height="52" rx="4" fill="#0891b2"/>
+      <text x="125" y="223" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 2</text>
+      <text x="125" y="240" font-size="11" fill="#e2e8f0" font-family="Segoe UI,Arial,sans-serif" font-weight="700">Baseline greedy floor + 검증 + postprocess</text>
+      <text x="371" y="223" font-size="9" fill="#64748b" font-family="Consolas,monospace">:4292</text>
+      <line x1="395" y1="230" x2="520" y2="230" stroke="rgba(52,211,153,.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="600" y="234" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">→ baseline check → floor↑</text>
+
+      <!-- Stage 3 -->
+      <line x1="350" y1="256" x2="350" y2="274" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowD)"/>
+      <rect x="105" y="274" width="290" height="52" rx="8" fill="#1a2535" stroke="#374151" stroke-width="1.5"/>
+      <rect x="105" y="274" width="8" height="52" rx="4" fill="#0891b2"/>
+      <text x="125" y="293" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 3</text>
+      <text x="125" y="310" font-size="11" fill="#e2e8f0" font-family="Segoe UI,Arial,sans-serif" font-weight="700">Greedy multi-start (≤15회)</text>
+      <text x="344" y="293" font-size="9" fill="#64748b" font-family="Consolas,monospace">:4467  ON 대형w1</text>
+      <line x1="395" y1="300" x2="520" y2="300" stroke="rgba(52,211,153,.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="600" y="304" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">→ best-of-N → floor↑</text>
+
+      <!-- Stage 4 -->
+      <line x1="350" y1="326" x2="350" y2="344" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowD)"/>
+      <rect x="105" y="344" width="290" height="52" rx="8" fill="#1a2535" stroke="#374151" stroke-width="1.5"/>
+      <rect x="105" y="344" width="8" height="52" rx="4" fill="#fbbf24"/>
+      <text x="125" y="363" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 4</text>
+      <text x="125" y="380" font-size="11" fill="#e2e8f0" font-family="Segoe UI,Arial,sans-serif" font-weight="700">Z1 crane-clean 병렬 bay decode</text>
+      <text x="343" y="363" font-size="9" fill="#fbbf24" font-family="Consolas,monospace">:4522  bays≥2</text>
+      <line x1="395" y1="370" x2="520" y2="370" stroke="rgba(52,211,153,.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="600" y="374" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">→ z1_bay_clean(조건부)</text>
+
+      <!-- Stage 5 -->
+      <line x1="350" y1="396" x2="350" y2="414" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowD)"/>
+      <rect x="105" y="414" width="290" height="64" rx="8" fill="#1c2030" stroke="#374151" stroke-width="1.5"/>
+      <rect x="105" y="414" width="8" height="64" rx="4" fill="#a78bfa"/>
+      <text x="125" y="433" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 5</text>
+      <text x="125" y="450" font-size="11" fill="#e2e8f0" font-family="Segoe UI,Arial,sans-serif" font-weight="700">Seeds + decode + ALNS (최적화 코어)</text>
+      <text x="125" y="468" font-size="9" fill="#a78bfa" font-family="Segoe UI,Arial,sans-serif">pref · balanced · tardy · cpsat seeds → 지역탐색</text>
+      <text x="347" y="433" font-size="9" fill="#64748b" font-family="Consolas,monospace">:4588</text>
+      <line x1="395" y1="446" x2="520" y2="446" stroke="rgba(52,211,153,.3)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="600" y="450" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">→ candidates["search"]</text>
+
+      <!-- Stage 6 -->
+      <line x1="350" y1="478" x2="350" y2="496" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowD)"/>
+      <rect x="105" y="496" width="290" height="64" rx="8" fill="#1c2030" stroke="#22d3ee" stroke-width="2"/>
+      <rect x="105" y="496" width="8" height="64" rx="4" fill="#22d3ee"/>
+      <text x="125" y="515" font-size="10" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-weight="700">STAGE 6</text>
+      <text x="125" y="532" font-size="11" fill="#22d3ee" font-family="Segoe UI,Arial,sans-serif" font-weight="700">Objective-safe 최종 게이트 + postprocess</text>
+      <text x="125" y="550" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">quick_obj 랭킹 → check → 채택 → postprocess</text>
+      <text x="340" y="515" font-size="9" fill="#64748b" font-family="Consolas,monospace">:4946</text>
+
+      <!-- Return -->
+      <line x1="350" y1="560" x2="350" y2="578" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowG)"/>
+      <rect x="160" y="578" width="380" height="34" rx="6" fill="rgba(52,211,153,.07)" stroke="rgba(52,211,153,.3)" stroke-width="1.5"/>
+      <text x="350" y="598" text-anchor="middle" font-size="11" fill="#34d399" font-family="Consolas,monospace">{"operations": {str_time: [op,...]}}  반환</text>
+
+      <!-- Floor label (right) -->
+      <text x="600" y="554" text-anchor="middle" font-size="9" fill="#34d399" font-family="Segoe UI,Arial,sans-serif" font-weight="700">→ floor("verified_floor")</text>
+      <text x="600" y="567" text-anchor="middle" font-size="9" fill="#64748b" font-family="Segoe UI,Arial,sans-serif">타이밍과 무관한 best feasible</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ==================== SECTION 3 ==================== -->
+<section class="section" id="sec3">
+  <div class="section-title">
+    <span class="section-number">3</span>
+    <h2>시간 예산 — 데드라인 사다리</h2>
+  </div>
+  <p class="muted" style="margin-bottom:.8rem;">모두 <code>time.monotonic</code> 절대시각, T = max(1.0, timelimit).</p>
+
+  <!-- Timeline SVG -->
+  <div style="overflow-x:auto;margin-bottom:1.2rem;">
+    <svg width="680" height="100" viewBox="0 0 680 100" style="display:block;margin:0 auto;max-width:100%;" aria-label="데드라인 사다리 타임라인">
+      <rect width="680" height="100" fill="rgba(0,0,0,.2)" rx="8"/>
+      <!-- Track -->
+      <line x1="30" y1="55" x2="650" y2="55" stroke="#374151" stroke-width="3" stroke-linecap="round"/>
+      <!-- T=0 -->
+      <circle cx="30" cy="55" r="5" fill="#22d3ee"/>
+      <text x="30" y="48" text-anchor="middle" font-size="9" fill="#22d3ee" font-family="Consolas,monospace">t_start</text>
+      <text x="30" y="75" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">T=0</text>
+
+      <!-- check_cost (implied, small) -->
+      <circle cx="110" cy="55" r="4" fill="#94a3b8"/>
+      <text x="110" y="44" text-anchor="middle" font-size="8" fill="#94a3b8" font-family="Consolas,monospace">check_cost</text>
+      <text x="110" y="76" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">reserved</text>
+
+      <!-- work_deadline -->
+      <circle cx="290" cy="55" r="5" fill="#fbbf24"/>
+      <text x="290" y="43" text-anchor="middle" font-size="8" fill="#fbbf24" font-family="Consolas,monospace">work_deadline</text>
+      <text x="290" y="79" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">=decode_deadline</text>
+      <text x="290" y="92" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">soft stop</text>
+
+      <!-- done_by -->
+      <circle cx="480" cy="55" r="5" fill="#a78bfa"/>
+      <text x="480" y="43" text-anchor="middle" font-size="8" fill="#a78bfa" font-family="Consolas,monospace">done_by</text>
+      <text x="480" y="76" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">0.88·T</text>
+      <text x="480" y="89" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">search 종료</text>
+
+      <!-- hard_stop -->
+      <circle cx="610" cy="55" r="6" fill="#f87171"/>
+      <text x="610" y="42" text-anchor="middle" font-size="8" fill="#f87171" font-family="Consolas,monospace" font-weight="700">hard_stop</text>
+      <text x="610" y="76" text-anchor="middle" font-size="8" fill="#f87171" font-family="Consolas,monospace">0.97–0.995·T</text>
+      <text x="610" y="89" text-anchor="middle" font-size="8" fill="#64748b" font-family="Consolas,monospace">절대 -1 가드</text>
+
+      <!-- T end -->
+      <circle cx="650" cy="55" r="4" fill="#374151"/>
+      <text x="650" y="48" text-anchor="middle" font-size="9" fill="#64748b" font-family="Consolas,monospace">T</text>
+
+      <!-- Zones -->
+      <rect x="30" y="58" width="580" height="6" rx="3" fill="url(#timeGrad)"/>
+      <defs>
+        <linearGradient id="timeGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#22d3ee" stop-opacity=".4"/>
+          <stop offset="65%" stop-color="#a78bfa" stop-opacity=".4"/>
+          <stop offset="85%" stop-color="#f87171" stop-opacity=".4"/>
+          <stop offset="100%" stop-color="#f87171" stop-opacity=".2"/>
+        </linearGradient>
+      </defs>
+      <text x="160" y="71" text-anchor="middle" font-size="8" fill="#22d3ee" font-family="Segoe UI,Arial,sans-serif" opacity=".7">← search window →</text>
+      <text x="565" y="71" text-anchor="middle" font-size="7.5" fill="#f87171" font-family="Segoe UI,Arial,sans-serif" opacity=".8">safety</text>
+    </svg>
+  </div>
+
+  <!-- Deadline table -->
+  <table>
+    <thead>
+      <tr>
+        <th>데드라인</th>
+        <th>공식</th>
+        <th>의미</th>
+        <th>anchor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>check_cost</strong></td>
+        <td><code>min(0.8, 2e-5·n² + 0.05)</code></td>
+        <td>check_feasibility 1회 보수적 추정(관측 ~50×), 예약</td>
+        <td><code class="chip-file">:4160</code></td>
+      </tr>
+      <tr>
+        <td><strong>done_by</strong></td>
+        <td><code>t_start + 0.88·T</code></td>
+        <td>search+게이트 종료 목표, 12% 서버 세이프티</td>
+        <td><code class="chip-file">:4161</code></td>
+      </tr>
+      <tr>
+        <td><strong>work_deadline</strong></td>
+        <td><code>max(done_by − check_cost, t_start + 0.2·T)</code></td>
+        <td>모든 search 작업의 소프트 데드라인</td>
+        <td><code class="chip-file">:4162</code></td>
+      </tr>
+      <tr>
+        <td><strong>decode_deadline</strong></td>
+        <td><code>= work_deadline</code> (레버용으로 당겨짐)</td>
+        <td>per-decode admission/abort 경계</td>
+        <td><code class="chip-file">:4163</code></td>
+      </tr>
+      <tr>
+        <td><strong>hard_stop</strong></td>
+        <td><code>t_start + hard_frac·T</code><br><span class="muted">(n≤120→0.970, else 0.995)</span></td>
+        <td>절대 −1 가드: 이 뒤로 check를 시작 안 함</td>
+        <td><code class="chip-file">:4164</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="time-section">
+    <h4 style="color:var(--amber);margin-bottom:.7rem;">⏱ 시간단축 / 안전 방법론</h4>
+    <ul class="time-list">
+      <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Monotonic 절대 데드라인 사다리</strong> — 88% 목표 + 12% 세이프티로 타임아웃 −1 차단.</span></li>
+      <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><code>_DECODE_SAFETY=1.8</code> (<code class="chip-file">:276</code>) — 디코드 비용을 1.8× 과대추정해 admission, 단일 per-bay crane 디코드(원자적·관측 ~1.7× 과소추정)의 오버런 방지.</span></li>
+      <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Per-decode deadline + 잔여 tail force-place</strong> (<code class="chip-file">_decode_bay</code>, <code class="chip-file">:967-991</code>, <code class="chip-file">:1033</code>) — 단일 디코드가 절대 벽시계 초과 못 함.</span></li>
+      <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Lever-reserve</strong> = <code>min(0.40·T, max(15.0, 0.22·T))</code> (<code class="chip-file">:4177-4192</code>) — 후단 Z1 레버에 윈도우 확보(대형 인스턴스서 search가 예산 다 먹는 것 차단).</span></li>
+      <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>check_feasibility 비용을 n²로 추정·예약</strong> — check가 hard_stop을 절대 못 넘게.</span></li>
+      <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>ALNS <code>touch_fits</code> 워치독</strong> (<code class="chip-file">:1704</code>) — 2-베이 재디코드가 deadline 넘는 move 스킵.</span></li>
+      <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>적응형 _DECODE_SAFETY</strong> — 현재 고정 1.8; 관측 디코드 시간으로 동적 보정하면 보수적 마진 회수 여지.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== SECTION 4 — STAGE CARDS ==================== -->
+<section class="section" id="sec4">
+  <div class="section-title">
+    <span class="section-number">4</span>
+    <h2>단계별 상세 카드 (Stage 0 ~ 6)</h2>
+  </div>
+
+  <!-- STAGE 0 -->
+  <div class="stage-card" id="stage0">
+    <div class="stage-header">
+      <div class="stage-badge">S0</div>
+      <div class="stage-title-block">
+        <h3>Trivial floor</h3>
+        <div class="stage-purpose">Serial EDD — 동시점유 없는 최후의 −1 가드. 검증 불필요.</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+        <code class="chip-file">_trivial_solution :2097</code>
+        <span class="chip-green">항상 실행</span>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="io-row">
+        <span class="io-label">입력</span>
+        <code>prob_info</code>, <code>bays</code>, <code>feasible_bays</code>
+        <span class="io-arrow">→</span>
+        <span class="io-label">출력</span>
+        <code>candidates["trivial"]</code>, floor 초기화
+      </div>
+      <p style="font-size:.88rem;">
+        모든 블록을 자기 베이의 시간 윈도우에 <strong>단독 배치</strong>. 동시 점유가 없으므로 crane/collision 제약이 vacuous.
+        검증 없이 feasible한 유일한 구성이자 최후의 −1 가드.
+      </p>
+      <hr class="divider">
+      <h4 style="color:var(--amber);">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>검증 불필요 구성</strong> → <code>check_feasibility</code> 0회, O(n) 즉시.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong><code>feasible_bays</code> 1회 precompute</strong> (<code class="chip-file">:4143</code>) 재사용.</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text">baseline이 거의 항상 이기면 lazy 스킵 가능하나, 안전망이라 유지 권장.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STAGE 1 -->
+  <div class="stage-card" id="stage1">
+    <div class="stage-header">
+      <div class="stage-badge" style="background:rgba(100,116,139,.2);color:#64748b;border-color:#374151;">S1</div>
+      <div class="stage-title-block">
+        <h3 style="color:var(--text2);">CP-SAT-first <span class="chip-off" style="font-size:.7rem;vertical-align:middle;margin-left:.3rem;">실험 경로</span></h3>
+        <div class="stage-purpose">baseline 전에 CP-SAT assignment를 먼저 푸는 실험 경로. 기본 비활성.</div>
+      </div>
+      <div style="margin-left:auto;">
+        <code class="chip-file">:4264-4286</code>
+        <span class="chip-off" style="margin-left:.4rem;">OGC_CPSAT_FIRST OFF</span>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="callout callout-red" style="font-size:.85rem;">
+        dense 인스턴스(s202)에서 baseline floor 예산을 훔쳐 회귀 → 기본 비활성. 실험용 보존.
+      </div>
+      <h4 style="color:var(--amber);margin-top:.7rem;">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>기본 OFF</strong> (서버에서 실행 안 됨) — 켜면 floor 예산 잠식 위험.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STAGE 2 -->
+  <div class="stage-card" id="stage2">
+    <div class="stage-header">
+      <div class="stage-badge">S2</div>
+      <div class="stage-title-block">
+        <h3>Baseline greedy floor + 검증 + postprocess</h3>
+        <div class="stage-purpose">공식 EDD + Best-Fit + Phase-2 repair. 검증된 품질/안전 후보.</div>
+      </div>
+      <div style="margin-left:auto;">
+        <code class="chip-file">greedyalgorithm :4292-4450</code>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="io-row">
+        <span class="io-label">입력</span>
+        <code>prob_info</code>, <code>base_budget(≥2.0s)</code>
+        <span class="io-arrow">→</span>
+        <span class="io-label">출력</span>
+        <code>candidates["baseline"]</code>, floor 갱신, <code>baseline_seed_assign</code>
+      </div>
+      <p style="font-size:.88rem;">
+        <code>base_obj &lt; floor</code>면 <code>check_feasibility</code> (<code class="chip-file">:4367</code>) 후 floor 승격
+        (체커의 정확한 목적값 사용, 검증 데드라인은 hard_stop). 여유 있으면 <code>_postprocess_verified_solution</code>
+        (<code class="chip-file">:3767</code>) 적용. floor를 ALNS seed로 bank (<code class="chip-file">:4424</code>).
+      </p>
+      <hr class="divider">
+      <h4 style="color:var(--amber);">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><code>OGC_FAST_POSITIONS</code> + <code>FAST_POS_TOP=4</code> — bottom-left 후보 위치를 top-4로 제한, 위치탐색 폭발 차단.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><code>OGC_BBOX_CACHE</code> — 블록 폴리곤/bbox 캐시로 반복 기하계산 제거.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>AABB bbox 프리필터</strong> (<code class="chip-file">utils.py:687</code>) — Shapely 폴리곤 교차 전 bbox로 페어 스킵.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><code>greedyalgorithm.last_result</code> 재사용 → floor 검증 시 재-check 스킵.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Checkpointing</strong> (n≥200, <code class="chip-file">baseline_greedy.py:522</code>) — 완성 assignment마다 best feasible 보관, 막판 열화 시 이전 incumbent 복구(재실행 0).</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>skip_greedy_floor</strong> (n≥280 &amp; bays≥5, <code class="chip-file">:4314</code>) — greedy Phase1이 벽시계 초과하는 300×5 shape는 trivial floor로 직행.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong><code>_candidate_positions</code> bottom-left fill</strong> (<code class="chip-file">baseline_greedy.py:262</code>) — skyline 대신 leftmost/bottom 우선.</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>geom_kernel raster 프리필터</strong> (<code class="chip-file">geom_kernel.py</code>, 현재 미연결) — "definitely clear" 시 Shapely check_entry/exit 통째 스킵; built but unwired, 연결하면 crane 체크 비용 절감.</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>증분 feasibility</strong> — 변경된 페어만 재검사(현재 전체 재검사), 공간 해시로 collision 후보 가지치기.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STAGE 3 -->
+  <div class="stage-card" id="stage3">
+    <div class="stage-header">
+      <div class="stage-badge">S3</div>
+      <div class="stage-title-block">
+        <h3>Greedy multi-start</h3>
+        <div class="stage-purpose">±20× Z1 분산을 "multi-start, keep best"로 흡수. 대형 w1-dominant 전용.</div>
+      </div>
+      <div style="margin-left:auto;">
+        <code class="chip-file">:4467-4512</code>
+        <span class="chip-green" style="margin-left:.4rem;">OGC_GREEDY_MULTISTART ON</span>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="io-row">
+        <span class="io-label">조건</span>
+        n≥200 &amp; bays≥2 &amp; w1≥w2,w3 &amp; not(n≥280&amp;bays≥5)
+        <span class="io-arrow">→</span>
+        <span class="io-label">출력</span>
+        floor 승격(strictly-better만)
+      </div>
+      <p style="font-size:.88rem;">
+        <code>greedyalgorithm</code>을 <code>repair_mode="greedy"</code>로 최대 15회 반복,
+        각 결과 <code>check_feasibility</code> 게이트 → strictly-better만 floor 승격.
+        greedy-repair의 ±20× Z1 분산을 흡수, 폭발은 reject.
+      </p>
+      <hr class="divider">
+      <h4 style="color:var(--amber);">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>예산 가드 break</strong> (<code>remaining &lt; max(10, 0.25T)</code>).</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>feasibility-gated 승격</strong> — 폭발(±20× Z1)은 reject, floor 안전.</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>프로세스 병렬화</strong> — 현재 순차; Stage5의 <code>run_parallel_multistart</code>처럼 4코어 병렬화하면 같은 벽시계에 더 많은 start.</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>LB 조기종료</strong> — Z1이 Σ<code>_bay_tardiness_lb</code> (<code class="chip-file">:2246</code>)에 도달하면 추가 start 중단.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STAGE 4 -->
+  <div class="stage-card" id="stage4">
+    <div class="stage-header">
+      <div class="stage-badge" style="background:rgba(251,191,36,.15);color:var(--amber);border-color:var(--amber2);">S4</div>
+      <div class="stage-title-block">
+        <h3>Z1 crane-clean 병렬 bay decode</h3>
+        <div class="stage-purpose">floor의 베이 할당 유지 + 모든 베이를 full crane-safe 디코더로 병렬 재구성 → Z1 직접 공격.</div>
+      </div>
+      <div style="margin-left:auto;">
+        <code class="chip-file">run_parallel_bay_decode :4522-4580</code>
+        <span class="chip-green" style="margin-left:.4rem;">OGC_Z1_BAY_DECODE ON</span>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="io-row">
+        <span class="io-label">조건</span>
+        bays≥2, floor_z1 &gt; 0
+        <span class="io-arrow">→</span>
+        <span class="io-label">입력</span>
+        <code>assign0</code>, <code>bay_deadline</code>, <code>n_par=min(4,cpu)</code>
+        <span class="io-arrow">→</span>
+        <span class="io-label">출력</span>
+        <code>candidates["z1_bay_clean"]</code> (조건부)
+      </div>
+      <p style="font-size:.88rem;">
+        예산-truncated/force-placed 디코드가 부풀린 Z1을 직접 공격.
+        <code>obj &lt; floor</code> 또는 <code>(obj≈floor &amp; z1 &lt; floor_z1)</code>일 때만 후보 채택.
+      </p>
+      <hr class="divider">
+      <h4 style="color:var(--amber);">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>프로세스 per-bay 병렬</strong> (4 workers) — 베이 독립, embarrassingly parallel.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Longest-bay-first 스케줄</strong> (<code class="chip-file">parallel_decode.py:381</code>) — critical path 먼저 시작.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>All-or-nothing</strong> (<code class="chip-file">:414-435</code>) — 데드라인 내 모든 베이 완료해야 채택, 부분결과 drop → partial force-place의 가짜 저-Z1 후보 방지.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>alt_threshold</strong> (n&gt;200→0, <code class="chip-file">parallel_decode.py:372</code>) — 큰 더미는 EDD-only, 여러 ordering 시도 생략.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><code>floor_z1 ≤ 0</code> 스킵 — 이미 tardiness 0이면 단계 전체 건너뜀.</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>fast crane geometry</strong> (<code>OGC_REDECODE_FAST</code>) — bt-guard라 upside-only인데 default OFF; 연결 시 베이 디코드 가속.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STAGE 5 -->
+  <div class="stage-card" id="stage5">
+    <div class="stage-header">
+      <div class="stage-badge" style="background:rgba(167,139,250,.15);color:var(--violet);border-color:#6d28d9;">S5</div>
+      <div class="stage-title-block">
+        <h3>Seeds + decode + ALNS</h3>
+        <div class="stage-purpose">최적화 코어 — 다양한 씨앗에서 assignment-level 지역탐색, 4코어 병렬 multistart.</div>
+      </div>
+      <div style="margin-left:auto;">
+        <code class="chip-file">:4588-4944</code>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="io-row">
+        <span class="io-label">입력</span>
+        seeds, decode_deadline, op_weights/sa_temp(regime)
+        <span class="io-arrow">→</span>
+        <span class="io-label">출력</span>
+        <code>candidates["search"]</code>, best (assign,results,obj)
+      </div>
+
+      <!-- 5a: Seeds -->
+      <div class="card card-dark" style="margin:.7rem 0;">
+        <h4 style="color:var(--violet);margin-bottom:.5rem;">5a — 씨앗 (Seeds)</h4>
+        <table>
+          <thead><tr><th>씨앗</th><th>목표</th><th>구현</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>pref_seed</code></td>
+              <td>가장 선호 베이 → Z3↓</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><code>balanced_seed</code></td>
+              <td>가중 부하 균형 → Z2↓</td>
+              <td><code class="chip-file">_balanced_seed :1339</code></td>
+            </tr>
+            <tr>
+              <td><code>baseline_incumbent</code></td>
+              <td>검증 floor</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><code>tardy</code></td>
+              <td>EDD순으로 덜 혼잡한 베이 → Z1 레버 (tardy_dominant일 때만)</td>
+              <td><code class="chip-file">_tardiness_seed :1357</code></td>
+            </tr>
+            <tr>
+              <td><code>cpsat</code></td>
+              <td>Z2/Z3만 최소화하는 MIP, warm-start, 4 workers; tardiness 항 없음</td>
+              <td><code class="chip-file">_cpsat_assignment :1449</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 5d: ALNS -->
+      <div class="card card-dark" style="margin:.7rem 0;">
+        <h4 style="color:var(--violet);margin-bottom:.5rem;">5d/5e — ALNS <code>_local_search</code> (<code class="chip-file">:1612</code>)</h4>
+        <p style="font-size:.85rem;">move당 건드린 <strong>2 베이만</strong> 재디코드하는 assignment-level 지역탐색.</p>
+        <div class="flex-gap" style="margin:.4rem 0;">
+          <code>op_shift</code>
+          <code>op_swap</code>
+          <code>op_destroy_repair</code>
+          <span style="font-size:.8rem;color:var(--text2);">+ adaptive roulette + 시간기반 geometric cooling SA + stagnation stop</span>
+        </div>
+        <p class="muted">병렬 경로: <code>run_parallel_multistart</code> (<code class="chip-file">parallel_decode.py:152</code>, 4 workers, default auto-on T≥20&amp;n≥30)</p>
+      </div>
+
+      <hr class="divider">
+      <h4 style="color:var(--amber);">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>씨앗 우선순위</strong> (<code class="chip-file">:4676</code>) — 값싼 closed-form seed(cpsat/balanced)를 느린 pref 더미보다 먼저 디코드(PROTECT_SEED+tardy_dominant).</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong><code>_Decoder</code> 캐시</strong> (bay, frozenset(ids))→결과 — 동일 베이 재디코드 제거.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>증분 2-베이 재디코드</strong> — ALNS move당 건드린 2 베이만(전체 재디코드 대비 대폭 절감).</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>닫힌형 Z2/Z3 재계산</strong> (<code class="chip-file">_obj_of_results :1607</code>) — 전체 목적함수 재계산 회피.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong><code>touch_fits</code> 워치독</strong> (<code class="chip-file">:1704</code>) — deadline 넘는 move 스킵.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Adaptive roulette</strong> (segment=25, rho=0.2, <code class="chip-file">:2040</code>) — 생산적 연산자에 가중치 재학습.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Stagnation stop</strong> (STALL_LIMIT=25, <code class="chip-file">:1921</code>) + restart-from-best — 정체 시 예산 반납.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>budget-bounded decode</strong> (<code class="chip-file">_BUDGET_DECODE :755</code>, force tail) — 느린 seed도 데드라인 내 마감.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Parallel multistart 4 workers</strong> — straggler <code>pool.terminate()</code> (<code class="chip-file">parallel_decode.py:236</code>)로 벽시계 보장, 워커가 디코드된 결과 반환 → 부모 재디코드 0회 (<code class="chip-file">parallel_decode.py:140</code>).</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>CP-SAT 가속</strong> — max_time cap(<code>min(10, max(2, T·0.2))</code>), warm-start(balanced_seed), <code>OGC_CPSAT_ZERO_STOP</code>(Z1/타깃 0이면 중단), cumlevel은 num_search_workers=1(베이가 병렬이므로, <code class="chip-file">parallel_decode.py:498</code>), CP-SAT는 seed 슬롯서 먼저 → multistart와 16-way 오버서브 회피 (<code class="chip-file">:4883</code>).</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>Move 사전선별</strong> — cost-estimate로 비싼 move 우선 거르기(일부 touch_fits로 부분 적용).</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>Neighborhood 가지치기</strong> — 기하적으로 불가능한 shift/swap 후보 사전 제거.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- STAGE 6 -->
+  <div class="stage-card" id="stage6" style="border-color:var(--cyan2);">
+    <div class="stage-header" style="border-color:rgba(34,211,238,.2);">
+      <div class="stage-badge" style="background:rgba(34,211,238,.15);color:var(--cyan);border-color:var(--cyan2);">S6</div>
+      <div class="stage-title-block">
+        <h3 style="color:var(--cyan);">Objective-safe 최종 게이트 + postprocess</h3>
+        <div class="stage-purpose">전 후보 랭킹 → 게이트 검증 → 채택 → postprocess. 정확성이 타이밍에 의존 안 함.</div>
+      </div>
+      <div style="margin-left:auto;">
+        <code class="chip-file">:4946-5039</code>
+        <span class="chip-green" style="margin-left:.4rem;">OGC_GATE_POSTPROCESS ON</span>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="io-row">
+        <span class="io-label">입력</span>
+        전 후보 + floor
+        <span class="io-arrow">→</span>
+        <span class="io-label">출력</span>
+        최종 검증된 솔루션 또는 <code>"verified_floor"</code>
+      </div>
+
+      <div class="callout callout-cyan" style="font-size:.86rem;">
+        <div class="callout-label text-cyan">게이트 순서</div>
+        <ol style="margin:.3rem 0;padding-left:1.2rem;line-height:1.9;">
+          <li><code>_quick_objective</code> (<code class="chip-file">:1295</code>)로 오름차순 랭킹 (check 없는 cheap proxy)</li>
+          <li>q ≥ floor면 <strong>prune-break</strong></li>
+          <li><code>now + gate_cost &gt; hard_stop</code>면 break</li>
+          <li><code>check_feasibility</code> 검증</li>
+          <li>feasible &amp; (checked_obj &lt; floor 또는 ≈floor&amp;z1&lt;floor_z1)이면 <strong>채택</strong> → postprocess 1회</li>
+        </ol>
+        <p class="muted" style="margin-top:.4rem;">
+          <code>_quick_objective == _objective</code>(feasible 한정)라 첫 통과 후보가 곧 global-best feasible. 정확성이 타이밍에 의존 안 함.
+        </p>
+      </div>
+
+      <div class="card card-dark" style="margin:.7rem 0;">
+        <h4 style="color:var(--cyan);margin-bottom:.5rem;">후처리 Z1 레버 순서 <code>_postprocess_verified_solution :3767</code></h4>
+        <p class="muted" style="margin-bottom:.5rem;">obj1 &gt; 0일 때, 무거운 것부터:</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+          <span class="chip" style="background:rgba(34,211,238,.12);">cum_level</span>
+          <span style="color:var(--text3);font-size:.8rem;">anti-stacking, <code class="chip-file">_cumulative_leveled_redecode_verified :2506</code>, 70% window cap, multi-alpha 90;85;80, 베이할당 불변→Z2/Z3 불변</span>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.4rem;">
+          <span class="chip">cpsat_timing</span>
+          <code class="chip-file">:2356</code>
+          <span class="chip">bbox_pack</span>
+          <code class="chip-file">:3229</code>
+          <span class="chip">crossbay_relocate</span>
+          <code class="chip-file">:2762</code>
+          <span class="chip">cheaper_steps</span>
+          <span class="chip chip-off">multi_reschedule OFF</span>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h4 style="color:var(--amber);">⏱ 시간단축 방법론</h4>
+      <ul class="time-list">
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong><code>_quick_objective</code> 선랭킹</strong> — check 없이 cheap 정렬.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Prune q≥floor break</strong> (<code class="chip-file">:4973</code>) — 그 뒤 후보는 못 이기므로 불필요 check 차단.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Accept-first</strong> — floor 이기고 통과하는 첫 후보 채택, 모든 후보 검증 불필요.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>Time-guard</strong> (<code class="chip-file">:4985</code>) — gate_cost 못 들어가면 break.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong><code>_bay_tardiness_lb</code> lb_skip</strong> (<code class="chip-file">:2246</code>) — 이미 최적인 베이 스킵.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>cum_level LB early-exit</strong> — LB 도달 시 ~20s spin 회피.</span></li>
+        <li><span class="tl-icon"><span class="chip-green">✅ 적용됨</span></span><span class="tl-text"><strong>bt-guard</strong> — 베이 절대 악화 안 함(체커 재검증).</span></li>
+        <li><span class="tl-icon"><span class="chip-amber">💡 추가여지</span></span><span class="tl-text"><strong>cheaper_steps는 무익으로 관측</strong>(프로젝트 메모리) — 비활성 고려해 사이클 단축.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 5 — AUX ==================== -->
+<section class="section" id="sec5">
+  <div class="section-title">
+    <span class="section-number">5</span>
+    <h2>보조 머신러리</h2>
+  </div>
+
+  <div class="grid-2">
+    <!-- A: Parallel decode -->
+    <div class="card">
+      <h4 style="color:var(--cyan);margin-bottom:.5rem;">(A) 병렬 디코드</h4>
+      <p class="muted"><code class="chip-file">parallel_decode.py</code></p>
+      <p style="font-size:.86rem;">3 진입점:</p>
+      <ul style="font-size:.84rem;">
+        <li><code>run_parallel_multistart</code> — 프로세스별 독립 seed search</li>
+        <li><code>run_parallel_bay_decode</code> — 베이별 클린 디코드</li>
+        <li><code>run_parallel_cumlevel</code> — 베이별 demand-flatten CP-SAT 재디코드</li>
+      </ul>
+      <p style="font-size:.84rem;margin-top:.6rem;">MAX_WORKERS=4 (4코어 서버 매칭), spawn-pickle 안전(모듈레벨 워커), 실패 시 항상 None 반환→인프로세스 폴백. <strong>정확성은 병렬에 의존 안 함</strong>(순수 speedup).</p>
+    </div>
+
+    <!-- B: Regime -->
+    <div class="card">
+      <h4 style="color:var(--amber);margin-bottom:.5rem;">(B) Regime 라우팅</h4>
+      <p class="muted"><code class="chip-file">regime.py</code></p>
+      <p style="font-size:.84rem;">stdlib-only never-raise 분류기. 3 feature:</p>
+      <ul style="font-size:.84rem;">
+        <li>weight dominance ≥3.0×</li>
+        <li>density ≥0.55</li>
+        <li>size ≤20 / ≥80</li>
+      </ul>
+      <p style="font-size:.84rem;margin-top:.4rem;">결과: DECOMPOSITION / ESCAPE / UNKNOWN→DEFAULT.</p>
+      <div class="callout callout-amber" style="font-size:.8rem;margin-top:.5rem;padding:.6rem .8rem;">
+        search 거동 knob(seed_priority, use_cpsat, op_weights, sa_temp)만 읽음. <strong>wall-clock knob은 의도적으로 미사용</strong> — 오분류가 −1 timeguard를 넓히지 못하게.
+      </div>
+    </div>
+
+    <!-- C: Geometry -->
+    <div class="card">
+      <h4 style="color:var(--violet);margin-bottom:.5rem;">(C) 기하</h4>
+      <p style="font-size:.84rem;"><strong>라이브 경로</strong>: <code class="chip-file">utils.py</code>의 Shapely 기반 <code>check_entry</code>/<code>check_exit</code>/<code>check_collisions</code> + AABB 프리필터.</p>
+      <div class="dead-box" style="margin-top:.6rem;">
+        <h4>geom_kernel.py — built but unwired</h4>
+        raster 크레인 프리필터. unit-tested이나 라이브 솔버에 미연결. bbox→polygon 갭을 칠 잠재 가속 레버.
+      </div>
+    </div>
+
+    <!-- D: Instrumentation -->
+    <div class="card">
+      <h4 style="color:var(--text2);margin-bottom:.5rem;">(D) 계측</h4>
+      <p class="muted"><code class="chip-file">instrument.py</code></p>
+      <p style="font-size:.84rem;"><strong>기본 OFF</strong> (NullTracer, 무오버헤드). 서버는 env 미설정 → 무영향.</p>
+      <ul style="font-size:.84rem;">
+        <li><code>OGC_TRACE</code> — phase/objective 타임라인</li>
+        <li><code>OGC_BIMODAL_LOG</code> — ±20× 비결정성 감사</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 6 — SAFETY ==================== -->
+<section class="section" id="sec6">
+  <div class="section-title">
+    <span class="section-number">6</span>
+    <h2>Feasibility / −1 회피 안전망</h2>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-label text-green">6겹 안전망 — 모든 겹이 독립적으로 작동</div>
+    <ol style="font-size:.88rem;line-height:2;margin:.4rem 0;">
+      <li><strong>Trivial floor</strong> (검증 불필요 feasible) — Stage 0에서 항상 구성, 즉시 사용 가능.</li>
+      <li><strong>검증된 floor</strong> ("never worse than baseline"가 타이밍 독립) — 모든 stage에서 단조 상승만.</li>
+      <li><strong>crane-safe 디코더</strong> (retroactive obstruction까지, <code class="chip-file">_find_slot_crane_safe :361</code>; <code class="chip-file">_force_in_bay :338</code> empty-window 보장).</li>
+      <li><strong>모든 후보 게이트 검증 + objective-safe 채택규칙</strong> — 검증 없이 "done" 선언 없음.</li>
+      <li><strong>전 구간 시간가드</strong> (force-place tail, _DECODE_SAFETY=1.8, hard_stop, touch_fits).</li>
+      <li><strong>크래시 봉쇄</strong> (전체 try/except, 모든 옵셔널 import guarded no-op).</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ==================== SECTION 7 — FLAGS ==================== -->
+<section class="section" id="sec7">
+  <div class="section-title">
+    <span class="section-number">7</span>
+    <h2>Env-flag 범례</h2>
+  </div>
+
+  <div class="callout callout-amber" style="font-size:.86rem;margin-bottom:1rem;">
+    <strong>평가서버는 어떤 flag도 설정하지 않음</strong> → default가 곧 ship 동작.
+    flag는 로컬 A/B와 rollback kill-switch 전용. (<code class="chip-file">:4044</code>)
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <h4 style="color:var(--green);margin-bottom:.5rem;">Default ON (ship 동작)</h4>
+      <table>
+        <thead><tr><th>Flag</th><th>역할 요약</th></tr></thead>
+        <tbody>
+          <tr><td><code>OGC_CRANE_SAFE</code></td><td>crane-safe 디코더 활성</td></tr>
+          <tr><td><code>OGC_CRANE_COEXIT</code></td><td>동시 EXIT 허용 crane 검사</td></tr>
+          <tr><td><code>OGC_CPSAT_ZERO_STOP</code></td><td>Z1/타깃 0이면 CP-SAT 조기중단</td></tr>
+          <tr><td><code>OGC_BBOX_CACHE</code></td><td>폴리곤/bbox 캐시</td></tr>
+          <tr><td><code>OGC_CRANE_PRESSURE</code></td><td>crane pressure 고려</td></tr>
+          <tr><td><code>OGC_FAST_POSITIONS</code></td><td>top-4 위치 후보 제한</td></tr>
+          <tr><td><code>OGC_PROTECT_SEED</code></td><td>seed 우선순위 보호</td></tr>
+          <tr><td><code>OGC_ADAPT_DECODE</code></td><td>적응형 디코드</td></tr>
+          <tr><td><code>OGC_BUDGET_DECODE</code></td><td>예산 경계 디코드</td></tr>
+          <tr><td><code>OGC_ALNS_OVER_BASELINE</code></td><td>ALNS baseline 초과 허용</td></tr>
+          <tr><td><code>OGC_GREEDY_MULTISTART</code></td><td>greedy multi-start (대형 w1)</td></tr>
+          <tr><td><code>OGC_Z1_BAY_DECODE</code></td><td>Z1 crane-clean 병렬 bay decode</td></tr>
+          <tr><td><code>OGC_CUMLEVEL</code></td><td>cum_level anti-stacking</td></tr>
+          <tr><td><code>OGC_CPSAT_TIMING</code></td><td>CP-SAT timing 후처리</td></tr>
+          <tr><td><code>OGC_BBOX_PACK</code></td><td>bbox_pack 후처리</td></tr>
+          <tr><td><code>OGC_CROSSBAY_RELOCATE</code></td><td>crossbay 재배치 후처리</td></tr>
+          <tr><td><code>OGC_GATE_POSTPROCESS</code></td><td>게이트 통과 후 postprocess</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h4 style="color:var(--text3);margin-bottom:.5rem;">Default OFF (실험 / dead)</h4>
+      <table>
+        <thead><tr><th>Flag</th><th>상태</th></tr></thead>
+        <tbody>
+          <tr><td><code>OGC_CPSAT_FIRST</code></td><td class="flag-off">실험, floor 잠식 위험</td></tr>
+          <tr><td><code>OGC_FAST_CRANE</code></td><td class="flag-off">실험</td></tr>
+          <tr><td><code>OGC_FAST_GEOM</code></td><td class="flag-off">실험</td></tr>
+          <tr><td><code>OGC_REDECODE_FAST</code></td><td class="flag-off">bt-guard, upside-only</td></tr>
+          <tr><td><code>OGC_DECODE_EARLY_EXIT</code></td><td class="flag-off">실험</td></tr>
+          <tr><td><code>OGC_DUE_FORCE</code></td><td class="flag-off">실험</td></tr>
+          <tr><td><code>OGC_M4_CUT</code></td><td class="flag-off">dead (Z1=0 인스턴스에서 무의미)</td></tr>
+          <tr><td><code>OGC_M4_CRANE_CUT</code></td><td class="flag-off">dead</td></tr>
+          <tr><td><code>OGC_Z1_MULTI_RESCHED</code></td><td class="flag-off">dead</td></tr>
+          <tr><td><code>OGC_Z1_PUSH</code></td><td class="flag-off">dead</td></tr>
+          <tr><td><code>OGC_EXIT_ON_Z1_ZERO</code></td><td class="flag-off">실험</td></tr>
+          <tr><td><code>OGC_FOLD_SEEDS</code></td><td class="flag-off">실험</td></tr>
+          <tr><td><code>OGC_SLAB_PACK</code></td><td class="flag-off">실험</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 8 — DEAD CODE ==================== -->
+<section class="section" id="sec8">
+  <div class="section-title">
+    <span class="section-number">8</span>
+    <h2>Dead / 미연결 코드 노트</h2>
+  </div>
+
+  <div class="dead-box">
+    <h4>geom_kernel.py 전체</h4>
+    라이브 미연결 (테스트만). raster 크레인 프리필터 잠재 가속 dormant. 연결하면 bbox→polygon 갭 차단 가능.
+  </div>
+
+  <div class="dead-box">
+    <h4>op_cut_destroy / M4 no-good-cut</h4>
+    모든 실제 인스턴스가 Z1=0이라 dead-but-reachable. <code>OGC_M4_CUT</code> OFF.
+  </div>
+
+  <div class="dead-box">
+    <h4>regime.py work_frac / hard_stop_frac</h4>
+    의도적 미사용 (inert by design). 오분류가 −1 timeguard를 넓히지 못하게 하는 설계.
+  </div>
+
+  <div class="dead-box">
+    <h4>CP-SAT assignment 모델</h4>
+    tardiness 항 없음 (Z2/Z3만). Z1은 tardy seed·bay-decode·후처리 레버가 별도 담당.
+  </div>
+</section>
+
+<!-- ==================== SECTION SUMMARY ==================== -->
+<section class="section" id="sec-summary">
+  <div class="section-title">
+    <span class="section-number" style="background:linear-gradient(135deg,var(--violet2),#6d28d9);color:var(--violet);border-color:#6d28d9;">∑</span>
+    <h2>횡단 시간단축 요약 — 7개 카테고리</h2>
+  </div>
+
+  <div class="summary-panel">
+    <h3>Cross-Cutting 시간단축 방법론</h3>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">1</div>
+      <div>
+        <strong class="text-cyan">캐싱</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span>
+          <code>_Decoder</code> 디코드 캐시 (bay, frozenset(ids))→결과.
+          <span class="chip-green">✅ 적용됨</span>
+          <code>OGC_BBOX_CACHE</code> 폴리곤/bbox 캐시로 반복 기하계산 제거.
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">2</div>
+      <div>
+        <strong class="text-amber">기하 가속</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span> AABB 프리필터 (utils.py 내부, Shapely 전 페어 스킵).
+          <span class="chip-amber">💡 추가여지</span> geom_kernel raster 프리필터 (미연결).
+          <span class="chip-amber">💡 추가여지</span> <code>OGC_FAST_GEOM</code> / <code>OGC_FAST_CRANE</code> (실험 OFF).
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">3</div>
+      <div>
+        <strong class="text-violet">병렬화</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span> 4코어 프로세스풀 (multistart / bay-decode / cumlevel).
+          <span class="chip-green">✅ 적용됨</span> CP-SAT 4-worker.
+          <span class="chip-green">✅ 적용됨</span> straggler <code>pool.terminate()</code>로 벽시계 보장.
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">4</div>
+      <div>
+        <strong class="text-green">증분성</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span> touched-bay 2개만 재디코드 (ALNS move당).
+          <span class="chip-green">✅ 적용됨</span> 닫힌형 Z2/Z3 재계산 (<code>_obj_of_results</code>).
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">5</div>
+      <div>
+        <strong class="text-red">LB 가지치기</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span> <code>_bay_tardiness_lb</code> early-exit (이미 최적인 베이 스킵).
+          <span class="chip-green">✅ 적용됨</span> CP-SAT <code>OGC_CPSAT_ZERO_STOP</code> (Z1=0이면 즉시 중단).
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">6</div>
+      <div>
+        <strong class="text-amber">시간예산</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span> monotonic 데드라인 사다리 (88% + 12% safety).
+          <span class="chip-green">✅ 적용됨</span> <code>_DECODE_SAFETY=1.8</code> admission.
+          <span class="chip-green">✅ 적용됨</span> force-place tail (잔여 블록 즉시 확정).
+          <span class="chip-green">✅ 적용됨</span> lever-reserve로 후단 Z1 레버 윈도우 확보.
+        </span>
+      </div>
+    </div>
+
+    <div class="summary-cat">
+      <div class="summary-cat-num">7</div>
+      <div>
+        <strong class="text-cyan">인스턴스 라우팅</strong>
+        <br><span style="font-size:.85rem;color:var(--text2);">
+          <span class="chip-green">✅ 적용됨</span> size gate: <code>skip_greedy_floor</code> (n≥280&amp;bays≥5) → trivial floor 직행.
+          <span class="chip-green">✅ 적용됨</span> <code>alt_threshold=0</code> (n&gt;200) → EDD-only, 여러 ordering 생략.
+          <span class="chip-green">✅ 적용됨</span> <code>regime.py</code> 분류 → seed/op 거동 knob만 조정.
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<div style="text-align:center;padding:2rem 0 1rem;color:var(--text3);font-size:.78rem;border-top:1px solid var(--border);">
+  OGC2026 솔버 알고리즘 참조 문서 &nbsp;·&nbsp; 작성 2026-06-07 &nbsp;·&nbsp; <code style="font-size:.72rem;">src/myalgorithm.py</code> 기준
+</div>
+
+</main>
+</div><!-- end main wrapper -->
+</div><!-- end page-wrap -->
+
+<!-- Back to top -->
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="맨 위로" aria-label="맨 위로">↑</button>
+
+<script>
+// Scroll spy for sidebar
+(function() {
+  var links = document.querySelectorAll('#sidebar nav a[href^="#"]');
+  var sections = [];
+  links.forEach(function(l) {
+    var id = l.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({el: el, link: l});
+  });
+
+  function onScroll() {
+    var scrollY = window.scrollY + 80;
+    var active = null;
+    for (var i = sections.length - 1; i >= 0; i--) {
+      if (sections[i].el.offsetTop <= scrollY) { active = sections[i]; break; }
+    }
+    links.forEach(function(l) { l.classList.remove('active'); });
+    if (active) active.link.classList.add('active');
+  }
+
+  window.addEventListener('scroll', onScroll, {passive: true});
+  onScroll();
+
+  // Show/hide back-top
+  var btn = document.getElementById('back-top');
+  window.addEventListener('scroll', function() {
+    btn.style.opacity = window.scrollY > 300 ? '1' : '0';
+    btn.style.pointerEvents = window.scrollY > 300 ? 'auto' : 'none';
+  }, {passive: true});
+  btn.style.opacity = '0';
+  btn.style.pointerEvents = 'none';
+  btn.style.transition = 'opacity .2s';
+})();
+</script>
+</body>
+</html>

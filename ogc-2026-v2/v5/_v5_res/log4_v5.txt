@@ -1,0 +1,32 @@
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [precompute] blocks=50 active=50 tardy=15 cands_total=591 (x+484 y+57 o+0) combos=171141 stored=25085 poses=591 wall=7.53s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=3.25s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [precompute] blocks=50 active=50 tardy=0 cands_total=615 (x+459 y+106 o+0) combos=185325 stored=27380 poses=615 wall=8.45s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=2.28s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [precompute] blocks=50 active=50 tardy=17 cands_total=630 (x+482 y+98 o+0) combos=194464 stored=35483 poses=630 wall=10.58s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=6.20s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [precompute] blocks=50 active=50 tardy=0 cands_total=602 (x+455 y+97 o+0) combos=177564 stored=31880 poses=602 wall=10.56s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=3.11s
+[v5] init+step2 obj=16916.0 (58s)
+[v5] DONE best=16916.0 rounds=1 (58s)
+RESULT prob_4 [v5]: obj=16916.0 z1=0.0 z3=8.0 feas=True wall=59.1s

@@ -1,0 +1,30 @@
+===== REMOVED (old only) =====
+- May16,2026(DocumentVersion1.0)
+- 12
+- Figure9:AlgorithmTester
+
+===== ADDED (new only) =====
++ May31,2026(DocumentVersion1.1)
++ 4.2.1UsingOtherProgrammingLanguages
++ Usingnon-Pythonlanguagesandlibrariesisallowed.Youmustincludeallrequiredbinariesand
++ librariesinthezipandcallthemfrommyalgorithm.py.Tomaintainfairnessandavoidalteringthe
++ globalexecutionenvironment,organizersshouldcarefullyconsiderinstallingsystem-widelanguages
++ andlibraries.Fornon-Pythonimplementations,teamsareresponsibleforlocalizingeverythingin
++ theirsubmissionsoitdoesnotaﬀectotherteamsandforensuringcompatibilitywiththeserver
++ environmentpresentedinSection3.2.Somegeneralinstructionsforothernon-Pythonlanguagesare
++ asfollows:
++ •C/C++:CompileonLinux/Ubuntu24.04ﬁrst,thensubmitthegenerated.soorexecutablein
++ thezip.Server-sidecompilationisnotperformed.
++ •Java:ThefollowingJavaruntimeisavailableontheevaluationserver
++ 1openjdk17.0.18-internal2026-01-20
++ 2OpenJDKRuntimeEnvironment(build17.0.18-internal+0-adhoc.conda.src)
++ 3OpenJDK64-BitServerVM(build17.0.18-internal+0-adhoc.conda.src,mixed
++ mode,sharing)
++ •Dotnetframework:ThefollowingDotnetruntimeisavailableontheevaluationserver
++ 1Host:
++ 2 Version: 8.0.15
++ 3 Architecture:x64
++ 4 Commit: 50c4cb9fc3
++ 5 RID: linux-x64
++ 12
++ Figure9:AlgorithmTester

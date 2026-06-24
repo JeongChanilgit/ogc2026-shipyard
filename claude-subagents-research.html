@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code 서브에이전트 — 인기 레포 TOP 5 벤치마킹</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2d3645;
+    --txt:#e6edf3; --muted:#9aa7b5; --accent:#58a6ff; --accent2:#3fb950;
+    --warn:#d29922; --gold:#f0b429; --pink:#db61a2; --code:#0b0f15;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    line-height:1.65;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+  header.hero{border-bottom:1px solid var(--border);padding-bottom:28px;margin-bottom:36px}
+  .kicker{color:var(--accent);font-weight:700;letter-spacing:.12em;font-size:12px;text-transform:uppercase}
+  h1{font-size:34px;line-height:1.2;margin:10px 0 8px}
+  .sub{color:var(--muted);font-size:16px;max-width:760px}
+  .meta-line{color:var(--muted);font-size:13px;margin-top:14px}
+  .meta-line b{color:var(--txt)}
+  h2{font-size:24px;margin:52px 0 18px;padding-top:18px;border-top:1px solid var(--border)}
+  h2 .num{color:var(--accent);font-variant-numeric:tabular-nums}
+  h3{font-size:18px;margin:26px 0 10px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  th,td{border:1px solid var(--border);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--txt);font-weight:700}
+  td.center,th.center{text-align:center}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.015)}
+  .stars{color:var(--gold);font-weight:700;white-space:nowrap}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:22px 24px;margin:18px 0}
+  .card .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .card .head .rank{background:var(--accent);color:#04101f;border-radius:6px;
+    font-weight:800;padding:2px 10px;font-size:13px}
+  .card .head .repo{font-size:19px;font-weight:700}
+  .card .oneline{color:var(--muted);font-style:italic;margin:4px 0 16px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .badge{font-size:12px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:var(--panel2);color:var(--muted)}
+  .badge.mit{color:var(--accent2);border-color:#1f5c34}
+  .badge.warn{color:var(--warn);border-color:#5c4a16}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:6px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .block{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 15px}
+  .block h4{margin:0 0 7px;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+  .block.adopt h4{color:var(--gold)}
+  .block.weak h4{color:var(--warn)}
+  ul{margin:6px 0;padding-left:18px}
+  li{margin:4px 0}
+  li b{color:#fff}
+  code{background:var(--code);border:1px solid var(--border);border-radius:4px;
+    padding:1px 6px;font-family:"SF Mono",Consolas,monospace;font-size:12.5px;color:#a5d6ff}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;
+    padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:10px 0}
+  pre code{background:none;border:none;padding:0;color:#d6deeb}
+  .tok{color:var(--accent2)}.key{color:var(--pink)}.com{color:var(--muted)}
+  .callout{background:linear-gradient(180deg,rgba(88,166,255,.08),rgba(88,166,255,.02));
+    border:1px solid #234; border-left:3px solid var(--accent);border-radius:8px;padding:16px 20px;margin:18px 0}
+  .callout.gold{border-left-color:var(--gold);background:linear-gradient(180deg,rgba(240,180,41,.08),transparent)}
+  .pill{display:inline-block;font-size:11px;background:var(--panel2);border:1px solid var(--border);
+    border-radius:5px;padding:1px 7px;margin:0 3px 3px 0;color:var(--muted)}
+  .foot{margin-top:60px;padding-top:22px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px}
+  .tag-us{color:var(--accent2);font-weight:700}
+  .legend{font-size:12px;color:var(--muted);margin-top:-8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">OGC2026 · 내부 기술 조사</div>
+  <h1>Claude Code 서브에이전트 — 인기 레포 TOP 5 벤치마킹</h1>
+  <p class="sub">GitHub에서 가장 많이 쓰이는 Claude Code 서브에이전트 레포 5개를 심층 분석하고,
+  우리 셋업(개별 작업 에이전트 + 메인 세션의 병렬 위임)에 도입할 구체 패턴을 정리한다.</p>
+  <p class="meta-line">조사일 <b>2026-06-03</b> · 방식 <b>레포당 분리 컨텍스트 서브에이전트 병렬 조사</b>(메인 컨텍스트 토큰 보호) ·
+  스타 수는 조사 시점 GitHub 값으로 변동 가능</p>
+</header>
+
+<!-- ============ AT A GLANCE ============ -->
+<h2><span class="num">0.</span> 한눈에 보기</h2>
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>레포</th><th class="center">⭐ 스타</th><th>정체성</th>
+      <th class="center">오케스트레이션</th><th class="center">모델 전략</th><th class="center">라이선스</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="center">1</td>
+      <td><a href="https://github.com/wshobson/agents">wshobson/agents</a></td>
+      <td class="center stars">~36.3k</td>
+      <td>멀티-하니스 플러그인 마켓플레이스 (192 agents)</td>
+      <td class="center">파일기반 상태 + Task 병렬 spawn</td>
+      <td class="center">4-tier (문서) / inherit (파일)</td>
+      <td class="center">MIT</td>
+    </tr>
+    <tr>
+      <td class="center">2</td>
+      <td><a href="https://github.com/VoltAgent/awesome-claude-code-subagents">VoltAgent/awesome-…-subagents</a></td>
+      <td class="center stars">~21.1k</td>
+      <td>154+ 에이전트 정의 카탈로그 (10 카테고리)</td>
+      <td class="center">계획→분배→실행 3계층 분리</td>
+      <td class="center">opus/sonnet/haiku 명시</td>
+      <td class="center">MIT</td>
+    </tr>
+    <tr>
+      <td class="center">3</td>
+      <td><a href="https://github.com/vijaythecoder/awesome-claude-agents">vijaythecoder/awesome-claude-agents</a></td>
+      <td class="center stars">~4.3k</td>
+      <td>"팀 기반" 24 에이전트, 스택 자동감지</td>
+      <td class="center">tech-lead 라우팅 체인 (병렬 ≤2)</td>
+      <td class="center">파일 model:opus (문서화 X)</td>
+      <td class="center">MIT</td>
+    </tr>
+    <tr>
+      <td class="center">4</td>
+      <td><a href="https://github.com/davepoon/claude-code-subagents-collection">davepoon/…-collection</a></td>
+      <td class="center stars">~3.0k</td>
+      <td>디스커버리 허브 (117 agents + 훅/스킬/플러그인)</td>
+      <td class="center">없음 (Claude 네이티브 위임)</td>
+      <td class="center">command 레벨만 model 핀</td>
+      <td class="center">MIT</td>
+    </tr>
+    <tr>
+      <td class="center">5</td>
+      <td><a href="https://github.com/lst97/claude-code-sub-agents">lst97/claude-code-sub-agents</a></td>
+      <td class="center stars">~1.6k</td>
+      <td>풀스택 33 에이전트 + auto-delegation</td>
+      <td class="center">agent-organizer 3모드 분기</td>
+      <td class="center">organizer=haiku, 구현=sonnet</td>
+      <td class="center">MIT</td>
+    </tr>
+  </tbody>
+</table>
+<p class="legend">※ 1·4번은 "플러그인/허브" 성격(배포·탐색 중심), 2·3·5번은 "에이전트 정의 + 오케스트레이션" 성격(우리 도입 타깃에 더 가까움).</p>
+
+<!-- ============ REPO 1 ============ -->
+<h2><span class="num">1.</span> wshobson/agents</h2>
+<div class="card">
+  <div class="head">
+    <span class="rank">#1 · ~36.3k ⭐</span>
+    <span class="repo"><a href="https://github.com/wshobson/agents">wshobson/agents</a></span>
+  </div>
+  <p class="oneline">단일 Markdown 소스에서 5개 AI 코딩 하니스(Claude Code · Codex · Cursor · OpenCode · Gemini)용
+  에이전트/스킬/커맨드를 생성하는 멀티-하니스 플러그인 마켓플레이스.</p>
+  <div class="badges">
+    <span class="badge mit">MIT</span>
+    <span class="badge">84 plugins</span><span class="badge">192 agents</span>
+    <span class="badge">156 skills</span><span class="badge">16 orchestrators</span>
+  </div>
+
+  <div class="block">
+    <h4>개요</h4>
+    프로덕션용 agentic 워크플로 빌딩블록 모음. 하나의 <code>.md</code> 정의를 <code>make generate</code>로
+    각 하니스의 네이티브 포맷으로 변환 — "최소공통분모 번역"이 아니라 하니스별 idiomatic 산출물을 만든다.
+    도메인 전문가 에이전트를 플러그인 단위로 격리하고, <b>설치한 플러그인의 컴포넌트만 컨텍스트에 로드</b>한다.
+  </div>
+
+  <div class="grid2">
+    <div class="block">
+      <h4>아키텍처</h4>
+      <ul>
+        <li>플러그인 중심: <code>plugins/&lt;name&gt;/</code> 안에 <code>agents/</code> <code>commands/</code> <code>skills/</code></li>
+        <li>컴포넌트는 디렉터리 구조에서 자동탐색</li>
+        <li>오케스트레이터 전용 플러그인: agent-orchestration, full-stack-orchestration, conductor, agent-teams …</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h4>대표 컴포넌트</h4>
+      <ul>
+        <li><b>backend-architect</b> — API·마이크로서비스 경계 설계</li>
+        <li><b>security-auditor</b> — OWASP 취약점 진단</li>
+        <li><b>context-manager</b> — 멀티에이전트 세션 상태 관리</li>
+        <li><b>full-stack-feature</b> (command) — end-to-end 기능 오케스트레이터</li>
+        <li><b>plugin-eval</b> — 3계층 품질평가(정적/LLM judge/몬테카를로)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>오케스트레이션 (가장 정교한 사례)</h3>
+  <ul>
+    <li>오케스트레이터는 별도 에이전트가 아니라 <b>slash command(<code>.md</code>) 절차서</b> — 메인이 <code>Task</code>로 서브에이전트 spawn</li>
+    <li><b>파일 기반 상태</b>: 각 단계 산출물을 <code>.full-stack-feature/stepN.md</code>로 기록 → 다음 단계는 컨텍스트 메모리가 아닌 <b>그 파일을 Read</b> (컨텍스트 윈도우 비의존)</li>
+    <li><code>state.json</code>(current_step / completed_steps / files_created)으로 <b>세션 재개(resume)</b></li>
+    <li><b>병렬 = "한 응답에서 다중 Task 호출"</b>: test-automator + security-auditor + performance-engineer 동시 spawn</li>
+    <li>Phase 체크포인트에서 <code>AskUserQuestion</code>으로 게이트 후 진행</li>
+  </ul>
+
+  <h3>모델 전략 & 정의 포맷</h3>
+  <p>README는 4-tier 권고(Tier1 Opus=중대 결정 / Sonnet=문서·테스트 / Haiku=운영)지만, 실제 파일 frontmatter 기본값은
+  <code>model: inherit</code>(호출자 모델 상속)였다 — 문서 권고와 파일 기본값이 어긋남.</p>
+<pre><code><span class="com">--- (backend-architect.md, 실제 확인)</span>
+<span class="key">name</span>: backend-development-backend-architect   <span class="com"># 플러그인 prefix 네임스페이스</span>
+<span class="key">description</span>: Expert backend architect... Use PROACTIVELY when creating new backend services.
+<span class="key">model</span>: inherit
+<span class="com">---</span></code></pre>
+
+  <div class="grid2">
+    <div class="block weak">
+      <h4>약점</h4>
+      <ul><li><code>make generate</code> 멀티하니스 파이프라인이 무겁다</li>
+      <li>에이전트 본문이 장문 → 컨텍스트 비용↑, 모델 의도 불명확</li></ul>
+    </div>
+    <div class="block adopt">
+      <h4>우리가 가져올 것 <span class="tag-us">★</span></h4>
+      <ul>
+        <li><b>파일 기반 오케스트레이션</b>: 오케스트레이터를 slash command로 만들고 단계 산출물을 <code>.task/stepN.md</code>로 기록 → resume까지. <span class="pill">cheap-context 직결</span></li>
+        <li><b>"한 응답 다중 Task = 병렬"</b> 명문 규칙 + Phase 게이트</li>
+        <li>frontmatter에 <b>"Use PROACTIVELY when…"</b> 트리거 + <code>model: inherit</code>, 단 본문은 더 짧게</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REPO 2 ============ -->
+<h2><span class="num">2.</span> VoltAgent/awesome-claude-code-subagents</h2>
+<div class="card">
+  <div class="head">
+    <span class="rank">#2 · ~21.1k ⭐</span>
+    <span class="repo"><a href="https://github.com/VoltAgent/awesome-claude-code-subagents">VoltAgent/awesome-claude-code-subagents</a></span>
+  </div>
+  <p class="oneline">10개 카테고리로 조직된 154+ 프로덕션급 서브에이전트 정의 카탈로그.
+  별도 런타임 없이 Claude Code 네이티브 <code>.claude/agents/</code> 위에서 동작.</p>
+  <div class="badges">
+    <span class="badge mit">MIT</span><span class="badge">154+ agents</span>
+    <span class="badge">10 categories</span><span class="badge">meta-orchestration 카테고리</span>
+  </div>
+
+  <div class="grid2">
+    <div class="block">
+      <h4>10개 카테고리</h4>
+      <ul style="columns:2;font-size:13px">
+        <li>Core Development (11)</li><li>Language Specialists (31)</li>
+        <li>Infrastructure (16)</li><li>Quality &amp; Security (17)</li>
+        <li>Data &amp; AI (13)</li><li>Developer Experience (15)</li>
+        <li>Specialized Domains (14)</li><li>Business &amp; Product (16)</li>
+        <li>Meta &amp; Orchestration</li><li>Research &amp; Analysis (11)</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h4>대표 컴포넌트 (조정 계층)</h4>
+      <ul>
+        <li><b>agent-organizer</b> <span class="pill">sonnet</span> — 팀 조립·작업 분해·능력 매칭 (계획)</li>
+        <li><b>multi-agent-coordinator</b> <span class="pill">opus</span> — 동시 실행·동기화·실패 처리 (실행)</li>
+        <li><b>task-distributor</b> — 작업 할당·로드 밸런싱</li>
+        <li><b>codebase-orchestrator</b> — 리팩터링 거버넌스</li>
+        <li><b>error-coordinator</b> — 에러 복구 조정</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>오케스트레이션 — 명시적 3계층 분리 (핵심 차별점)</h3>
+  <div class="callout">
+    <b>계획(agent-organizer) → 분배(task-distributor) → 실행(multi-agent-coordinator)</b> 의 역할이 분리돼 있다.
+    한 코디네이터가 분해+실행을 다 하지 않는다. coordinator는 scatter-gather / fork-join 으로 병렬 분배하고,
+    의존성에 topological sort, 데드락에 circular detection, 자원에 priority scheduling을 적용(프롬프트 수준 서술).
+  </div>
+
+  <h3>정의 포맷 (가장 정제된 템플릿)</h3>
+<pre><code><span class="com">---</span>
+<span class="key">name</span>: agent-organizer
+<span class="key">description</span>: "Use when assembling and optimizing multi-agent teams..."  <span class="com"># 트리거형</span>
+<span class="key">tools</span>: Read, Write, Edit, Glob, Grep   <span class="com"># 화이트리스트</span>
+<span class="key">model</span>: sonnet
+<span class="com">---</span>
+<span class="com"># 본문 골격: 역할 → "When invoked" → 도메인 체크리스트</span>
+<span class="com">#           → Communication Protocol(JSON 컨텍스트 요청) → 3단계 워크플로 → Integration</span></code></pre>
+
+  <div class="grid2">
+    <div class="block weak">
+      <h4>약점</h4>
+      <ul><li>본질적으로 정적 프롬프트 카탈로그 — 런타임 검증·실측 성능 없음</li>
+      <li>오케스트레이션이 "한다고 적어둔" 서술이지 실제 보장 메커니즘 아님; 154개 전부 깔면 라우팅 충돌 우려</li></ul>
+    </div>
+    <div class="block adopt">
+      <h4>우리가 가져올 것 <span class="tag-us">★</span></h4>
+      <ul>
+        <li><b>계획/분배/실행 3계층 분리</b> — 분해 에이전트와 실행 코디네이터를 분리</li>
+        <li><b>트리거형 description + 3필드 frontmatter</b>(name/description/tools/model)로 자동 라우팅 정확도↑</li>
+        <li><b>Communication Protocol</b>: 워커가 시작 시 필요한 컨텍스트만 구조화 요청 → 거대 JSON 통째 Read 방지</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REPO 3 ============ -->
+<h2><span class="num">3.</span> vijaythecoder/awesome-claude-agents</h2>
+<div class="card">
+  <div class="head">
+    <span class="rank">#3 · ~4.3k ⭐</span>
+    <span class="repo"><a href="https://github.com/vijaythecoder/awesome-claude-agents">vijaythecoder/awesome-claude-agents</a></span>
+  </div>
+  <p class="oneline">스택을 자동감지해 전문가 서브에이전트 팀을 동적 조립하는 "조율형 개발팀" — 24 에이전트.</p>
+  <div class="badges">
+    <span class="badge mit">MIT</span><span class="badge">24 agents</span>
+    <span class="badge">3 orchestrators</span><span class="badge">13 framework specialists</span>
+  </div>
+
+  <div class="grid2">
+    <div class="block">
+      <h4>구성</h4>
+      <ul>
+        <li><b>Orchestrators (3)</b>: tech-lead-orchestrator, project-analyst, team-configurator</li>
+        <li><b>Framework Specialists (13)</b>: Laravel·Django·Rails·React·Vue 특화</li>
+        <li><b>Universal Experts (4)</b> + <b>Core Team (4)</b>: code-reviewer, perf-optimizer …</li>
+        <li>특화 없으면 Universal로 <b>폴백</b>하는 계층</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h4>라우팅 체인</h4>
+      <ul>
+        <li><b>tech-lead-orchestrator</b> — 접수·분해 허브 (직접 구현 X, 전부 위임)</li>
+        <li><b>project-analyst</b> — package.json 등 검사로 스택 감지</li>
+        <li><b>team-configurator</b> — 스택→전문가 매핑, CLAUDE.md에 팀 기록</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>오케스트레이션</h3>
+  <p><b>tech-lead(분해) → project-analyst(스택감지) → team-configurator(팀 선정) → 동적 조립 → 병렬 실행</b>.
+  tech-lead는 delegation-focused — 구현은 전부 위임, <b>병렬 실행 최대 2개로 제한</b>, 응답은
+  (작업 분해 / 실행 순서 / 가용 에이전트 / 위임 지시) 고정 포맷 강제. code-reviewer·perf-optimizer를 품질 게이트로 필수 삽입.</p>
+<pre><code><span class="key">name</span>: tech-lead-orchestrator
+<span class="key">description</span>: ...<span class="tok">MUST BE USED</span> for any multi-step development task...
+<span class="key">tools</span>: Read, Grep, Glob, LS, Bash
+<span class="key">model</span>: opus    <span class="com"># 무거운 역할=강모델 (단 README엔 문서화 안 됨)</span></code></pre>
+
+  <div class="grid2">
+    <div class="block weak">
+      <h4>약점</h4>
+      <ul><li>토큰 집약(복잡 작업 10~50k) — 단순 작업엔 조율 오버헤드</li>
+      <li>Django/Rails/React/Vue만 깊고 그 외 폴백; 모델 전략 문서화 안 됨</li></ul>
+    </div>
+    <div class="block adopt">
+      <h4>우리가 가져올 것 <span class="tag-us">★</span></h4>
+      <ul>
+        <li><b>"MUST BE USED for…" 트리거 + 고정 응답 포맷</b> → 메인이 결과를 결정론적으로 수집·머지</li>
+        <li><b>오케스트레이터 "직접 구현 금지 + 병렬 N개 제한"</b> → 평가서버 4코어에 맞춰 상한 2~4 명시</li>
+        <li>판단 역할(critic/오케스트레이터)엔 강모델, 단순 워커엔 경량 모델</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REPO 4 ============ -->
+<h2><span class="num">4.</span> davepoon/claude-code-subagents-collection</h2>
+<div class="card">
+  <div class="head">
+    <span class="rank">#4 · ~3.0k ⭐</span>
+    <span class="repo"><a href="https://github.com/davepoon/claude-code-subagents-collection">davepoon/claude-code-subagents-collection</a></span>
+  </div>
+  <p class="oneline">Skills · Agents · Commands · Hooks · Plugins를 한 곳에서 찾는 디스커버리 허브
+  (buildwithclaude.com). 레포 자체에 117 agents 포함.</p>
+  <div class="badges">
+    <span class="badge mit">MIT</span><span class="badge">117 agents</span>
+    <span class="badge">175 commands</span><span class="badge">28 hooks</span><span class="badge">26 skills</span>
+  </div>
+
+  <div class="grid2">
+    <div class="block">
+      <h4>아키텍처</h4>
+      <ul>
+        <li>모든 것이 <b>markdown-as-config</b>: <code>plugins/{type}-{category}/{type}/*.md</code></li>
+        <li>agents ~11 / commands ~22 / hooks ~8 카테고리</li>
+        <li>buildwithclaude.com은 같은 <code>plugins/</code> 콘텐츠 위의 탐색 UX (레포가 source of truth)</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h4>대표 컴포넌트</h4>
+      <ul>
+        <li><b>code-reviewer / security-auditor</b> (agent)</li>
+        <li><b>/commit · /create-pr · /tdd</b> (command)</li>
+        <li>이벤트 훅: lint-on-save, smart-commit (Stop/PreToolUse/PostToolUse + matcher)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>오케스트레이션 — 없음</h3>
+  <p>중앙 오케스트레이터/라우터가 <b>없다</b>. 디스패치는 Claude Code 네이티브 — description 매칭 자동 호출 또는
+  <code>@agent-security-auditor</code> 명시 호출. 멀티에이전트 토론/팬아웃 패턴은 제공하지 않음.</p>
+<pre><code><span class="com">--- (code-reviewer.md)</span>
+<span class="key">name</span>: code-reviewer
+<span class="key">description</span>: Analyzes code quality and security issues
+<span class="key">category</span>: quality-security    <span class="com"># 카테고리 필수 필드</span>
+<span class="key">tools</span>: Read, Bash             <span class="com"># 최소권한 화이트리스트</span>
+<span class="com">---</span>
+You are a senior code review specialist.
+When invoked: 1.구조 검토 2.이슈 식별 3.보안/성능 4.실행가능 피드백</code></pre>
+
+  <div class="grid2">
+    <div class="block weak">
+      <h4>약점</h4>
+      <ul><li>실제 오케스트레이션 레이어 부재 — 디스패처·의존성 그래프·팬아웃 없음(정작 우리가 원하는 것)</li>
+      <li>breadth-over-depth: 얇은 템플릿의 커뮤니티 파일 다수, 품질 편차</li></ul>
+    </div>
+    <div class="block adopt">
+      <h4>우리가 가져올 것 <span class="tag-us">★</span></h4>
+      <ul>
+        <li><b>frontmatter 규율 + 본문 골격</b>("You are…/When invoked 1..4/Process/Deliverables")</li>
+        <li><b><code>tools:</code> 최소권한 화이트리스트</b> — 위임 워커에 필요한 도구만 (우리 수정금지 규칙과 정합)</li>
+        <li>command 레벨 <code>model:</code> 핀으로 정찰=경량, 어려운 단계만 opus 에스컬레이션</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REPO 5 ============ -->
+<h2><span class="num">5.</span> lst97/claude-code-sub-agents</h2>
+<div class="card">
+  <div class="head">
+    <span class="rank">#5 · ~1.6k ⭐</span>
+    <span class="repo"><a href="https://github.com/lst97/claude-code-sub-agents">lst97/claude-code-sub-agents</a></span>
+  </div>
+  <p class="oneline">풀스택 33 서브에이전트 + 메타 오케스트레이터(agent-organizer)로 자동 위임·팀 조립을 지원.</p>
+  <div class="badges">
+    <span class="badge mit">MIT</span><span class="badge">33 agents</span>
+    <span class="badge">auto-delegation</span><span class="badge">3 실행 모드</span>
+  </div>
+
+  <div class="grid2">
+    <div class="block">
+      <h4>구성 (카테고리 디렉터리)</h4>
+      <ul>
+        <li>Development 13 · Infrastructure 5 · Quality&amp;Testing 5</li>
+        <li>Data&amp;AI 8 · Security 1 · Specialization 2 · Business 1</li>
+        <li>Meta-Orchestration 1: <b>agent-organizer</b> (루트)</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h4>대표 컴포넌트</h4>
+      <ul>
+        <li><b>agent-organizer</b> <span class="pill">haiku</span> — 요구 분석·팀 정의·워크플로 관리 (라우팅 전담)</li>
+        <li><b>python-pro</b> <span class="pill">sonnet</span> — 관용적 구현·최적화</li>
+        <li>backend-architect · code-reviewer · security-auditor · performance-engineer</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>오케스트레이션 — agent-organizer 3모드 분기 (우리에 가장 유용)</h3>
+  <div class="callout gold">
+    <ul style="margin:0">
+      <li><b>sequential</b> — 의존 단계: architect → implement → test → review</li>
+      <li><b>parallel</b> — 상호 비충돌 독립 작업 동시 실행</li>
+      <li><b>iterative</b> — review → 수정 루프</li>
+    </ul>
+    스택·아키텍처 패턴 감지 후, 각 에이전트 선택을 <b>근거 기반(evidence-based)</b>으로 정당화하고 품질 게이트를 둔다.
+  </div>
+<pre><code><span class="key">name</span>: python-pro
+<span class="key">description</span>: An expert Python developer... <span class="tok">Use PROACTIVELY</span> for refactoring, optimization...
+<span class="key">tools</span>: Read, Write, Edit, Grep, Glob, Bash, Task, mcp__context7__...
+<span class="key">model</span>: sonnet    <span class="com"># organizer=haiku(라우팅), 구현 워커=sonnet</span></code></pre>
+
+  <div class="grid2">
+    <div class="block weak">
+      <h4>약점</h4>
+      <ul><li>자동 위임이 Claude 내장 휴리스틱 의존 — description 품질에 좌우, 결정성 없음</li>
+      <li>대부분 범용 풀스택 페르소나 → 특수 문제(최적화 대회)엔 커스텀 필요. 활동 2025-08 정체</li></ul>
+    </div>
+    <div class="block adopt">
+      <h4>우리가 가져올 것 <span class="tag-us">★</span></h4>
+      <ul>
+        <li><b>3모드 분기(sequential/parallel/iterative)</b>를 위임 규약으로 명문화</li>
+        <li><b>model 티어 분담</b>: organizer=haiku, 솔버/코드작성=opus·sonnet</li>
+        <li>"Use PROACTIVELY for…" 트리거 + <b>핵심 작업은 명시 호출 기본</b>(하이브리드)으로 비결정성 보완</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CROSS-CUTTING ============ -->
+<h2><span class="num">6.</span> 횡단 패턴 — 5개 레포의 공통 합의</h2>
+<table>
+  <thead><tr><th>패턴</th><th>누가 쓰나</th><th>우리 도입</th></tr></thead>
+  <tbody>
+    <tr><td><b>트리거형 <code>description</code></b> ("Use PROACTIVELY / MUST BE USED when…")</td>
+        <td>전부 (5/5)</td><td class="tag-us">필수 — 자동 위임 라우팅의 핵심</td></tr>
+    <tr><td><b>3~4필드 frontmatter</b> (name/description/tools/model)</td>
+        <td>전부</td><td class="tag-us">필수 — 우리 에이전트 정의 표준</td></tr>
+    <tr><td><b><code>tools:</code> 최소권한 화이트리스트</b></td>
+        <td>VoltAgent·davepoon·lst97</td><td class="tag-us">채택 — code-analyzer엔 Edit/Write 제외</td></tr>
+    <tr><td><b>모델 티어 분담</b> (라우팅=경량, 판단/구현=강모델)</td>
+        <td>VoltAgent·lst97 (명시), wshobson (문서)</td><td class="tag-us">채택 — 토큰/시간 예산</td></tr>
+    <tr><td><b>오케스트레이터는 직접 구현 X</b>, 위임만</td>
+        <td>vijay·VoltAgent·lst97</td><td class="tag-us">채택 — 메인=분해+위임</td></tr>
+    <tr><td><b>"한 응답 다중 Task = 병렬"</b> + 병렬 상한</td>
+        <td>wshobson·vijay (≤2)</td><td class="tag-us">채택 — 4코어 맞춰 상한</td></tr>
+    <tr><td><b>실행 모드 분기</b> sequential/parallel/iterative</td>
+        <td>lst97</td><td class="tag-us">채택 — 위임 규약에 명문화</td></tr>
+    <tr><td><b>파일 기반 상태 + resume</b></td>
+        <td>wshobson</td><td>선택 — 긴 워크플로 시</td></tr>
+    <tr><td><b>고정 출력 스키마</b> (구조화 반환)</td>
+        <td>vijay·VoltAgent</td><td class="tag-us">채택 — 우리 에이전트가 이미 적용</td></tr>
+  </tbody>
+</table>
+
+<!-- ============ RECOMMENDATION ============ -->
+<h2><span class="num">7.</span> 우리 셋업 도입 권고</h2>
+<div class="callout gold">
+  <b>전략 요약</b> — TOP 3(wshobson/VoltAgent/lst97)의 <i>정의 포맷·모델 티어·3모드 오케스트레이션</i>은 그대로 차용하되,
+  카탈로그가 빠뜨린 <b>오케스트레이션 레이어</b>(우리 차별점)는 직접 만든다.
+</div>
+<ul>
+  <li><b>① 에이전트 정의 표준 확정</b> — <code>~/.claude/agents/</code>의 code-writer · code-analyzer · doc-writer에
+      <span class="pill">name</span><span class="pill">description(트리거형)</span><span class="pill">tools(최소권한)</span><span class="pill">model</span>
+      frontmatter를 통일. <i>(이미 VoltAgent/davepoon 포맷과 정렬됨)</i></li>
+  <li><b>② 모델 티어 분담</b> — 분석·요약·정찰 워커는 <code>model: sonnet</code>/<code>haiku</code>, 어려운 판단(critic, 전략)은 <code>opus</code>.
+      cheap-context 토큰 절약과 직결.</li>
+  <li><b>③ 위임 정책을 전역 CLAUDE.md에 명문화</b> — (a) 독립 작업은 한 응답 다중 Task로 <b>병렬 fan-out</b>,
+      (b) 의존 작업은 <b>배리어</b>(앞 결과 모은 뒤 진행), (c) 병렬 상한은 4코어 기준,
+      (d) <b>같은 파일 동시 편집 금지</b>(agent_farm의 lock 교훈), (e) 워커는 결론·file:line만 반환(덤프 금지).</li>
+  <li><b>④ 3모드 실행 분기</b>(lst97) — sequential(분석→설계→구현→검증) / parallel(독립 인스턴스·실험) / iterative(feasibility 실패 시 수정 루프)를 위임 규약으로 채택.</li>
+</ul>
+
+<div class="foot">
+  <p>이 문서는 OGC2026 내부 기술 조사 자료다. 조사는 레포당 분리 컨텍스트 서브에이전트를 병렬 spawn해
+  수행했으며(총 ~180k 토큰을 분리 컨텍스트에서 소비, 메인 컨텍스트엔 압축 요약만 반영), 이는 본 문서가 권고하는 위임 패턴의 실증 사례다.</p>
+  <p>출처: 각 레포 GitHub 페이지 / README / 실제 에이전트 정의 파일 (2026-06-03 조회). 스타 수·에이전트 개수는 시점값으로 변동 가능.
+  hesreallyhim 레포(라이선스 미표기)는 본 TOP 5에서 제외.</p>
+</div>
+
+</div>
+</body>
+</html>

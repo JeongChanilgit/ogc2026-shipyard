@@ -1,0 +1,27 @@
+[DBG] USE_GUIDE=1 guide dist=[49, 51]
+[DBG] after placement state dist=[49, 51] ovf=4
+[DBG] timing per_bay_s=40 (elapsed=21)
+[DBG] FIXOPT moves=1 obj 127,367.0¡æ124880.0
+  [precompute] blocks=53 active=1 frozen=52 tardy=1 cands_total=57 (x+4 y+0 o+0) combos=260 stored=68 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=1 cands_total=53 (x+4 y+0 o+0) combos=240 stored=48 poses=53 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=9.0 wall=0.00s
+  [precompute] blocks=48 active=13 tardy=1 cands_total=111 (x+63 y+0 o+0) combos=5920 stored=915 poses=111 wall=0.33s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.08s
+  [precompute] blocks=48 active=13 tardy=1 cands_total=104 (x+0 y+56 o+0) combos=5206 stored=1013 poses=104 wall=0.33s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.09s
+  [precompute] blocks=48 active=13 tardy=1 cands_total=107 (x+0 y+0 o+59) combos=5503 stored=1005 poses=107 wall=0.34s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.09s
+  [precompute] blocks=52 active=20 tardy=1 cands_total=143 (x+91 y+0 o+0) combos=9898 stored=1587 poses=143 wall=0.42s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.12s
+  [precompute] blocks=52 active=20 tardy=1 cands_total=135 (x+0 y+83 o+0) combos=8830 stored=3016 poses=135 wall=0.72s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.23s
+  [precompute] blocks=52 active=20 tardy=1 cands_total=150 (x+0 y+0 o+98) combos=10884 stored=4012 poses=150 wall=1.00s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.31s
+  [precompute] blocks=53 active=1 frozen=52 tardy=1 cands_total=57 (x+4 y+0 o+0) combos=260 stored=68 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=49 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.01s
+  [precompute] blocks=52 active=1 frozen=51 tardy=1 cands_total=56 (x+4 y+0 o+0) combos=255 stored=66 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+RESULT prob_4 [cur]: obj=124880.0 z1=2.0 z3=346.0 feas=True wall=32.8s

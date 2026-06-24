@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 — 구조적 천장 조사 (2026-06-14 PM)</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--ink:#e6e9ef;--mut:#9aa3b2;--acc:#5db0ff;
+        --bad:#ff6b6b;--good:#4ade80;--warn:#fbbf24;--line:#272c36;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.6 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif;}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 22px 80px}
+  h1{font-size:26px;margin:0 0 4px}
+  h2{font-size:19px;margin:34px 0 12px;border-left:3px solid var(--acc);padding-left:10px}
+  .sub{color:var(--mut);margin:0 0 22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:18px 20px;margin:14px 0}
+  .verdict{display:inline-block;padding:2px 9px;border-radius:6px;font-weight:700;font-size:12px}
+  .kill{background:rgba(255,107,107,.15);color:var(--bad);border:1px solid var(--bad)}
+  .ok{background:rgba(74,222,128,.13);color:var(--good);border:1px solid var(--good)}
+  .warnv{background:rgba(251,191,36,.13);color:var(--warn);border:1px solid var(--warn)}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:6px 10px;text-align:right}
+  th{background:#1c2029;color:var(--mut);font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  .bad{color:var(--bad);font-weight:600}.good{color:var(--good);font-weight:600}
+  code{background:#0c0e12;border:1px solid var(--line);border-radius:4px;padding:1px 6px;
+       font:13px ui-monospace,Consolas,monospace;color:#cdd6f4}
+  .lead{font-size:16px}
+  ul{margin:8px 0 8px 2px;padding-left:20px}li{margin:4px 0}
+  .foot{color:var(--mut);font-size:12.5px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+  .big{font-size:34px;font-weight:800;letter-spacing:-1px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>OGC2026 — 구조적 천장 조사</h1>
+<p class="sub">2026-06-14 PM · 핸드오프 "폴리곤 nester" 레버 검증 · 사용자 지시: <b>총 목적함수 최소화</b></p>
+
+<div class="card">
+<p class="lead"><b>한 줄 결론.</b> 핸드오프가 지목한 "남은 레버 = 폴리곤 단위 조밀 nester"를 포함해
+<b>3개의 서로 다른 밀도 레버를 구현·측정했고 전부 반증</b>되었다. 손실의 본질은 <b>패킹 밀도가 아니라
+realize 갭</b>(이미 좋은 배정을 z1=0으로 못 푸는 것)이며, 이를 깨려면 greedy+오라클 구조를 넘는
+<b>전역 결합 최적화기</b>가 필요하다(대형·불확실 빌드). 제출 경로 10/20은 비트 동일하게 보존.</p>
+</div>
+
+<h2>0. 점수·가중치 컨텍스트 (왜 obj ≈ z3 인가)</h2>
+<table>
+<tr><th>inst</th><th>w1 (z1 단가)</th><th>w2 (z2 단가)</th><th>w3 (z3 단가)</th><th>함의</th></tr>
+<tr><td>prob_11</td><td>22,857</td><td>7</td><td>133</td><td>z1 1단위 ≈ z3 172단위</td></tr>
+<tr><td>prob_17</td><td>9,697</td><td>4</td><td>133</td><td>z1 1단위 ≈ z3 73단위</td></tr>
+<tr><td>prob_3</td><td>26,667</td><td>10</td><td>150</td><td>z1 1단위 ≈ z3 178단위</td></tr>
+</table>
+<p>→ <b>z1=0은 사실상 필수</b>(트레이드 불가), <b>z2는 거의 공짜</b>(경쟁자가 이미 max), 손실 인스턴스의
+<b>obj는 z3가 지배</b>. "총 obj 최소화"는 손실에선 결국 "z1=0 realize 가능한 배정 중 z3 최소" 문제로 환원된다.</p>
+
+<h2>1. 반증된 레버 3종</h2>
+
+<div class="card">
+<p><span class="verdict kill">KILL</span> &nbsp;<b>① LCA / Extreme-Point + contact-area 배치</b>
+&nbsp;<code>fastfloor._ft_search_pos_lca</code> · <code>OGC_UC_NEST</code> (default OFF)</p>
+<table>
+<tr><th>bay (congested)</th><th>BL tardiness</th><th>LCA tardiness</th><th>판정</th></tr>
+<tr><td>prob_11 bay0 (n=41)</td><td>60</td><td class="bad">70–88</td><td class="bad">악화</td></tr>
+<tr><td>prob_3 bay0 (n=33)</td><td>4</td><td class="bad">12–17</td><td class="bad">악화</td></tr>
+<tr><td>full-solve obj prob_11</td><td>42,581</td><td class="bad">50,386 (+7,805)</td><td class="bad">악화</td></tr>
+</table>
+<p>원인: fixed-time decode는 <b>online(EDD 순차)</b>. max-contact는 각 배치를 국소 최적화하지만
+<b>이후 블록용 잔여 자유공간을 파편화</b> → 후속 블록이 z1=0으로 못 들어감. band 2→16 전 구간 동일.
+BL의 "lowest Y,X"가 잔여공간을 contiguous하게 유지해 전체 시퀀스에 더 유리.</p>
+</div>
+
+<div class="card">
+<p><span class="verdict kill">KILL</span> &nbsp;<b>② Temporal 사전-staggering</b></p>
+<p>면적-시간 cumulative 모델은 "스태거링하면 z1≈0 가능"이라 하지만, <b>실제 crane-safe decode</b>를
+스태거 타깃으로 돌리면 혼재·prob_17 파국적(bay1 0→1689). 이유: <b>uconstruct는 이미 timing 오라클
+(<code>_cpsat_bay_timing_verified</code>)이 고정 레이아웃에서 entry를 crane-safe 최적 재타이밍</b>한다.
+entry=R는 레이아웃 빌드 단계일 뿐 — 실제 진입은 오라클이 최적 스태거링. 사전-스태거는 더 나쁨
+(= 핸드오프 "timing-in-loop 기각").</p>
+</div>
+
+<div class="card">
+<p><span class="verdict kill">KILL</span> &nbsp;<b>③ Finer-raster 기하 (해상도 ↑)</b>
+&nbsp;<code>notes/devlog/probe_fine_geom.py</code></p>
+<p>측정: unit raster superset이 진짜 폴리곤 footprint를 <b>평균 31–40% 과대평가</b>(ratio 1.31–1.40,
+max 2.3×). 가설: 이 보수성이 false crane conflict를 만들어 불필요한 tardiness를 유발. 그러나 1/S 해상도
+(여전히 sound superset)로 decode해도 tardiness는 <b>혼재/음성</b>:</p>
+<table>
+<tr><th>bay</th><th>S=1</th><th>S=2</th><th>S=3</th></tr>
+<tr><td>prob_3 bay2 (n=38)</td><td>23</td><td class="bad">27</td><td class="bad">31 (악화)</td></tr>
+<tr><td>prob_11 bay0 (n=41)</td><td>55</td><td>55</td><td>56 (무변)</td></tr>
+<tr><td>prob_17 bay3 (n=62)</td><td>27</td><td>27</td><td class="good">21 (약간↓)</td></tr>
+</table>
+<p>→ 35% 보수성은 실재하나 <b>tardiness의 binding 제약이 아님</b>. crane 직렬화는 footprint 경계
+반올림이 아니라 <b>co-present 블록 간 layer 스태킹(j≥k)</b>의 문제라 해상도로 안 풀린다.</p>
+</div>
+
+<h2>2. 핵심 진단 — "배정 갭"이 아니라 "realize 갭"</h2>
+<p><code>probe_assign_realize.py</code>: CP-SAT area-cap(alpha)을 스윕하며 각 배정의 closed-form z3와
+realize 가능 z1(entry=R decode + 오라클)을 측정.</p>
+<table>
+<tr><th>prob_17 alpha</th><th>배정 z3</th><th>realize z1</th><th>비고</th></tr>
+<tr><td>None (무캡)</td><td class="good">159</td><td class="bad">72</td><td>z3 최저인데 realize 불가</td></tr>
+<tr><td>1.0</td><td>209</td><td class="bad">50</td><td></td></tr>
+<tr><td>0.85 (최타이트)</td><td>274</td><td class="bad">43</td><td>어떤 alpha도 z1=0 불가</td></tr>
+<tr><td><b>경쟁자</b></td><td><b>~222</b></td><td><b class="good">0</b></td><td>더 높은 z3지만 realize 성공</td></tr>
+<tr><td><b>현재 제출</b></td><td class="bad">384</td><td class="good">0</td><td>z1=0 위해 과도하게 spill</td></tr>
+</table>
+<div class="grid">
+<div class="card"><p><b>발견 A.</b> prob_17 우리 area-최적 배정 z3=<b>159 &lt; 경쟁자 222</b>.
+즉 <b>배정 품질은 우리가 더 좋다</b>. 손실은 그 배정을 z1=0으로 <b>realize 못 하는 것</b>.</p></div>
+<div class="card"><p><b>발견 B.</b> 경쟁자는 z3=222를 z1=0으로 realize. 우리는 z1=0 만들려고 z3를 159→<b>384</b>까지
+spill. 경쟁자 spill이 <b>~3.5× z3-효율적</b>.</p></div>
+</div>
+<p><b>demand_peak</b>: 선호 베이 피크 footprint = <b>115%</b>(>100%) — bbox는 177–197%(우리 bbox 기반
+CP-SAT·box packer가 과도 분산). 폴리곤 밀도여도 피크 115%라 <b>일부 spill/stagger는 불가피</b>.</p>
+
+<h2>3. 남은 레버와 권고</h2>
+<div class="card">
+<p>유일하게 미반증된 이론적 레버 = <b>real-decode realize 게이트로 min-z3 재배정</b>. 그러나 이는
+핸드오프의 LBBD(W1–W4)가 이미 다룬 것이며 marginal이었다. 천장을 깨려면 greedy+per-bay-오라클을 넘는
+<b>전역 결합(position+time+assignment) 최적화기</b>가 필요 — 대형·불확실 빌드(baypack_cp의 exact box
+버전도 절반에 그침).</p>
+</div>
+<div class="card">
+<p><span class="verdict warnv">PIVOT</span> &nbsp;<b>예선 재프레이밍.</b> 예선 개시 <b>2026-06-15 14:00 KST</b>.
+경쟁자 테이블은 train 전용 — 미지의 다수 팀 대상으로 rank=R−nb를 최대화하려면 <b>그냥 obj를 견고하게
+최소화</b>(= 사용자 지시). 따라서 지금 최고 가치 작업:</p>
+<ul>
+<li><b>예선 대비 견고성</b> — 미지의 크기/형태/bay 수에서 <b>never −1</b>(infeasible·timeout·crash 회피),
+TL 준수, 스케일 안전.</li>
+<li><b>새 예선 인스턴스 통합·재검증</b> — 포털 로그인 뒤에 있어 직접 다운로드 불가. 사용자가 받아
+<code>instances/</code>에 두면 크기·구조 검증 → 하니스 등록 → 재baseline.</li>
+<li>train 천장 그라인딩 <b>중단</b>(3 레버 + 기존 13접근 소진).</li>
+</ul>
+</div>
+
+<p class="foot">측정 산출물: <code>notes/devlog/probe_nest_density.py</code> ·
+<code>probe_nest_fullsolve.py</code> · <code>probe_assign_realize.py</code> ·
+<code>probe_fine_geom.py</code>. 인사이트 로그: <code>notes/devlog/REFLECTIONS.md</code>
+(2026-06-14 PM). 제출 경로 비트 동일(<code>OGC_UC_NEST</code> default OFF). 핸드오프 갱신:
+<code>notes/SESSION-HANDOFF-2026-06-14-rebuild.md</code> (§4 FALSIFIED 배너).</p>
+
+</div></body></html>

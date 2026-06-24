@@ -1,0 +1,4 @@
+[LEVERDBG] T=120.0 decode_deadline=105.4 hard_stop=112.0 reserve_window=6.6
+prob_25: blocks=100 bays=2 | obj=31974841 z1=47875 feas=True | wall=177.9s TL=120 OVER=+57.9s *** -1 ON SERVER ***
+[LEVERDBG] T=120.0 decode_deadline=105.1 hard_stop=112.0 reserve_window=6.9
+prob_26: blocks=150 bays=3 | obj=750450835 z1=56205 feas=True | wall=132.9s TL=120 OVER=+12.9s *** -1 ON SERVER ***

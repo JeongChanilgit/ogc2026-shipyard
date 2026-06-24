@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>z1의 정체 — 어디서 오는가 (분해 연구) · OGC 2026 · 2026-06-22</title>
+<style>
+  :root{--bg:#0f1117;--card:#1a1d29;--ink:#e7e9f0;--mut:#9aa3b8;--line:#2a2f42;
+        --good:#3cb371;--bad:#e2245a;--warn:#f1c40f;--accent:#5b8cff;--violet:#9b59b6;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,
+       "Segoe UI",Roboto,"Malgun Gothic",sans-serif;padding:0 0 80px}
+  header{padding:38px 7vw 26px;border-bottom:1px solid var(--line);
+         background:linear-gradient(180deg,#161a27,#0f1117)}
+  h1{margin:0 0 8px;font-size:26px;letter-spacing:-.4px}
+  .sub{color:var(--mut);font-size:14px}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 7vw}
+  section{margin:32px 0}
+  h2{font-size:20px;margin:0 0 4px;padding-top:8px}
+  h2 .num{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:8px}
+  h3{font-size:15.5px;color:#cdd3e6;margin:20px 0 8px}
+  .lead{color:var(--mut);margin:2px 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:16px 20px;margin:14px 0}
+  .verdict{border-left:5px solid var(--violet);background:#1d1726}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;
+        letter-spacing:.3px;vertical-align:middle;margin:2px 0}
+  .pill.solid{background:rgba(60,179,113,.16);color:#67d29a;border:1px solid #2c6b48}
+  .pill.noisy{background:rgba(241,196,15,.14);color:#e6c34d;border:1px solid #7d661f}
+  .pill.struct{background:rgba(155,89,182,.16);color:#c79be0;border:1px solid #5d3a73}
+  .pill.th{background:rgba(91,140,255,.14);color:#9db8ff;border:1px solid #34487f}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0;
+        font-variant-numeric:tabular-nums}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:var(--mut);font-weight:600;border-bottom:2px solid var(--line)}
+  .z{color:var(--bad);font-weight:700}.zero{color:var(--good);font-weight:700}
+  .hi{color:var(--violet);font-weight:700}
+  code{background:#11141f;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+       font:13px ui-monospace,Consolas,monospace;color:#bcd0ff}
+  ul{margin:8px 0;padding-left:20px}li{margin:5px 0}
+  .mut{color:var(--mut)}
+  .ladder{display:flex;flex-direction:column;gap:0;margin:14px 0;font-size:14px}
+  .rung{display:flex;align-items:center;gap:14px;padding:11px 16px;border:1px solid var(--line);
+        border-left:5px solid var(--line);background:#161a26}
+  .rung .v{font-variant-numeric:tabular-nums;font-weight:700;min-width:84px}
+  .rung.g{border-left-color:var(--good)}.rung.b{border-left-color:var(--bad)}
+  .rung.w{border-left-color:var(--warn)}
+  .foot{color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);
+        margin-top:40px;padding-top:16px}
+  a{color:#9db8ff}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>z1의 정체 — 어디서 오는가</h1>
+    <div class="sub">OGC 2026 · 자율 분해 연구 · 2026-06-22 · "다른 각도": z1 92%가 실제로 어디서 나오는지 측정</div>
+    <div style="margin-top:13px">
+      <span class="pill struct">결론: z1 = 2D 폴리곤 패킹-바운드 (near practical floor)</span>
+      <span class="pill th">시간·면적 바운드 아님</span>
+      <span class="pill th">crane은 소수</span>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+
+<section>
+  <h2><span class="num">0</span>한 줄 요약</h2>
+  <p class="lead">z1(set2 obj의 92%)을 4단계 하한으로 분해했다. 결과: z1은 <b>시간 구조</b>(intrinsic=0)도
+  <b>베이 면적 용량</b>(area-relaxed=0)도 아닌, <b>2D 불규칙 폴리곤 패킹</b>이 동시공존을 못 시켜서 생긴다.
+  동시공존 원하는 블록(39~62개)이 면적은 37%만 쓰는데도 <b>실제 패킹은 ~30개에서 막힌다</b>(모양 단편화).
+  우리 솔버(27 동시배치)는 이미 경쟁력 있는 패커다. <b>z1은 모양-구조적이고, 도달가능 이득은 modest다.</b></p>
+</section>
+
+<section>
+  <h2><span class="num">1</span>z1 하한 사다리 — 어디서 폭발하는가</h2>
+  <p class="lead">prob_38 worst 베이(57블록 공존 원함) 기준. 단조 관계 intrinsic ≤ area ≤ packing ≤ full.</p>
+  <div class="ladder">
+    <div class="rung g"><span class="v zero">0</span><div><b>intrinsic LB</b> (R+P vs due, 무충돌) — 시간 구조는 z1=0 허용 <span class="pill solid">OPTIMAL·산술</span></div></div>
+    <div class="rung g"><span class="v zero">0</span><div><b>area-relaxed LB</b> (면적만 ≤ 용량, 모양 무시) — 면적 용량도 z1=0 허용. 동시공존 블록 <b>37% 면적</b>만 사용 <span class="pill solid">CP-SAT OPTIMAL</span></div></div>
+    <div class="rung w"><span class="v hi">~30개</span><div><b>실제 2D 패킹 천장</b> — 모양 때문에 57개 중 ~30만 동시배치 가능 → <b>여기서 z1 발생</b> <span class="pill struct">SHAPE WALL</span></div></div>
+    <div class="rung b"><span class="v z">4,526</span><div><b>full z1</b> (우리 해, +크레인) — 27 동시배치, 나머지 직렬화 <span class="pill th">측정값</span></div></div>
+  </div>
+  <p class="mut">핵심: area-relaxed=0 → packing-ceiling 점프가 z1의 근원. <b>면적은 들어가는데 모양이 안 들어간다.</b>
+  area-relaxed LB=0은 모양을 무시한 <b>느슨한</b> 하한이었다 — 실제로는 도달 불가.</p>
+</section>
+
+<section>
+  <h2><span class="num">2</span>패킹 천장 — 3개 패커가 모두 20~33에 클러스터 <span class="pill struct">≪ 면적이상치 57</span></h2>
+  <p class="lead">"동시공존 원하는 S를 실제로 몇 개 배치 가능한가" — 정확-scale 측정(면적 가드 통과 37%).</p>
+  <table>
+    <thead><tr><th>prob</th><th>worst베이 z1</th><th>\|S\| 공존원함</th><th>면적%</th>
+      <th>우리 M</th><th>greedy F</th><th>거친 CP-SAT N</th><th>면적이상치 대비</th></tr></thead>
+    <tbody>
+      <tr><td>38</td><td class="z">2,033</td><td>57</td><td>36.9%</td><td class="hi">27</td><td>20</td><td>33</td><td class="mut">~30 / 57</td></tr>
+      <tr><td>40</td><td class="z">1,450</td><td>39</td><td>28.3%</td><td class="hi">23</td><td>19</td><td>24</td><td class="mut">~24 / 39</td></tr>
+      <tr><td>27</td><td class="z">1,659</td><td>62</td><td>36.0%</td><td class="hi">29</td><td>25</td><td>30</td><td class="mut">~30 / 62</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><b>F(greedy) &lt; M(우리)</b>: naive bottom-left가 우리 CP-SAT 솔버보다 <i>적게</i> 끼움 → <b>우리 솔버는 이미 좋은 패커</b>(약점 아님).</li>
+    <li>세 패커(20·27·33)가 전부 면적이상치(57)의 절반 근처에서 막힘 → <b>패킹 천장은 실재</b>(모양 단편화), 우리 알고리즘 탓 아님.</li>
+    <li>도달가능 이득 = 27 → 최대 33(거친 CP-SAT 하한) = <b>~6블록/피크</b>. z1 전체가 아니라 <b>modest</b>. 면적이상치(z1=0)는 모양-도달불가.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">3</span>crane은 z1의 주범이 아니다 <span class="pill noisy">측정 noisy</span></h2>
+  <p class="lead">고정 레이아웃에서 크레인 j≥k 제약만 제거(space-only) → z1 변화. 우리의 오랜 "z1=크레인 직렬화" 서사를 점검.</p>
+  <table>
+    <thead><tr><th>prob</th><th>full z1</th><th>space-only z1</th><th>crane-유발(=full−space)</th><th>crane%</th></tr></thead>
+    <tbody>
+      <tr><td>32</td><td>1,087</td><td>910</td><td>177</td><td>16.3%</td></tr>
+      <tr><td>26</td><td>1,032</td><td>891</td><td>141</td><td>13.7%</td></tr>
+      <tr><td>37</td><td>1,436</td><td>1,288</td><td>148</td><td>10.3%</td></tr>
+      <tr><td>38</td><td>4,526</td><td>4,166</td><td>360</td><td>8.0%</td></tr>
+      <tr><td>39</td><td>1,131</td><td>1,129</td><td>2</td><td>0.2%</td></tr>
+      <tr><td class="mut">33†</td><td class="mut">1,595</td><td class="mut">1,602</td><td class="mut">0</td><td class="mut">0%</td></tr>
+    </tbody>
+  </table>
+  <p class="mut">set2 합계 ≈ crane <b>8.8%</b> / space(footprint) <b>91.2%</b> / intrinsic 0%.
+  †prob_33/13에서 space-only &gt; full(불가능) = CP-SAT가 footprint 겹침을 <b>과대계산</b> → space-only는 과대추정,
+  crane은 과소추정. 정밀 분할은 불안정하지만 <b>방향은 명확</b>: z1을 미는 건 크레인 수직접근이 아니라
+  <b>풋프린트 동시배치 한계</b>다. <b>우리가 최근 집중한 crane-repack은 z1의 소수만 건드린다.</b></p>
+</section>
+
+<section>
+  <h2><span class="num">4</span>운영 평가서버 TL — 비공개·가변 <span class="pill noisy">전략 제약</span></h2>
+  <p class="lead">문제정의서 p9: timelimit "문제마다 다름 + 실제값 종료후 공개 + 추정 수 분~30분(wall-clock)".</p>
+  <ul>
+    <li><b>TL에 베팅 불가</b> — 120s(짧은 끝)면 후처리 leftover≈0(죽은 코드), ≥~400s에서만 postproc/relayout 작동.</li>
+    <li>모든 TL에서 실현되는 안전 레버 = <b>solver 본체</b>이지 leftover-의존 polish가 아님. never−1·z1&gt;0-gate 유지가 −1 방어 핵심.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">5</span>결론 & 전략 재지정</h2>
+  <div class="card verdict">
+    <p><b>z1은 2D 불규칙 폴리곤 패킹-바운드이고 practical floor에 가깝다.</b> 시간(intrinsic=0)도 면적(area-relaxed=0)도
+    크레인(~9%)도 주범이 아니다. 동시공존 원하는 블록이 면적은 37%만 쓰는데 모양 때문에 ~절반만 배치돼 나머지가 직렬화된다.
+    우리 솔버는 이미 경쟁력 있는 패커(greedy보다 우수). 도달가능 z1 이득은 <b>modest</b>(불규칙 NFP 패킹 천장, 2026-06-16 리서치의 알려진 난벽).</p>
+  </div>
+  <h3>왜 모든 z1 레버가 안 통했는지 설명됨</h3>
+  <ul>
+    <li><b>배정/크로스베이 falsified</b> — 병목이 "어느 베이"가 아니라 "베이 내 2D 패킹 밀도"라서. 옮겨봐야 도착 베이도 같은 패킹 천장.</li>
+    <li><b>crane-repack 한계</b> — z1의 ~9%만 건드림. 91%는 footprint 패킹.</li>
+    <li><b>밀도 falsified(v2)</b> — <i>더 조밀</i>은 z1 안 줄임. 필요한 건 <i>동시 배치 수</i>인데 그것도 ~30 천장.</li>
+  </ul>
+  <h3>한계 점수가 실제로 있는 곳 (최종 권고)</h3>
+  <ul>
+    <li><b>★실전 우선순위 = never−1 robustness</b> — 점수모델상 −1 회피(≈+R/2)가 obj 미세개선을 압도. set2 ALL40 feasibility + 운영 TL 확정이 진짜 게임.</li>
+    <li><b>z3도 mirage (§6 검증)</b> — area-neutral 헤드룸 4.7M은 realize하면 z1 폭발로 상쇄(0/5 채택). z3는 z1에 묶임. 처음 권고했던 "z3 회수"는 본 연구가 falsify.</li>
+    <li><b>z1 추가 투자 비권장 (§7 확인)</b> — rich/long(베이당 240s) crane_repack도 −5%만 짜냄(candidate cap·FEASIBLE). practical floor 근접.</li>
+    <li><b>유일한 통합 root 레버 = per-bay 패킹밀도</b>(z1·z3 동시 도움)지만 우리 패커 이미 경쟁력 + 큰 베이 combo cap. 27→33 갭은 constructive NFP(난벽)만 도달 — 불확실 ROI.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">6</span>z3도 mirage — z1에 묶여 있다 <span class="pill struct">0/5 REALIZE</span></h2>
+  <p class="lead">z1이 floor라 z3(obj 7.9%/14.4M)를 다음 레버로 검증. 결과: z3도 realizable floor 근접.</p>
+  <div class="two">
+    <div class="card"><b>헤드룸 (배정-수준 낙관)</b><br><span class="mut">
+      z3 = Σ(max선호 − 배정베이선호). area-neutral(count+면적 ±10% 보존) 재배정으로 z3 <b>~4.7M(obj 2.9%)</b> 회수 가능해 <i>보임</i>.
+      bpass는 33%만 커버(tardy+wrong), 67%는 non-tardy wrong-bay = bpass 밖.</span></div>
+    <div class="card"><b>realize 검증 (전체 obj)</b><br><span class="mut">
+      prob_31/35/36/28/24 실제 realize → <b>0/5 채택</b>. z3 raw는 −500~−1468 줄지만 재배정이 패킹 바꿔
+      <b>Δz1 +280~+537 폭발</b>(w1·Δz1 ≫ w3·Δz3, 3~20배), 2건 infeasible.</span></div>
+  </div>
+  <p class="mut"><b>"area-neutral=z1-safe"는 깨진 프록시</b> — z1은 <i>모양</i>-패킹-바운드라 count·면적 같아도 모양 섞이면 직렬화 달라짐.
+  <b>깊은 결론</b>: non-tardy wrong-bay 블록이 비선호 베이에 있는 건 솔버의 <b>최적 트레이드오프</b>(선호베이=패킹천장이라 넣으면 z1폭발 → z3 감수).
+  z3(14.4M)는 z1을 낮추려 지불하는 가격. <b>z1·z3 둘 다 같은 패킹 구조로 묶여 floor 근접.</b></p>
+</section>
+
+<section>
+  <h2><span class="num">7</span>패킹 천장 확인 — rich/long도 −5%뿐 <span class="pill struct">AT CP-SAT CEILING</span></h2>
+  <p class="lead">peak_pack이 27→33 동시배치 가능을 보임(거친 CP-SAT 하한). 우리 패커가 그 갭을 잡나? crane_repack을 rich 후보+240s/베이로.</p>
+  <table>
+    <thead><tr><th>prob</th><th>worst베이(블록)</th><th>z1 before</th><th>z1 after (240s)</th><th>Δ</th><th>status</th></tr></thead>
+    <tbody>
+      <tr><td>38</td><td>bay2 (107)</td><td>2,033</td><td>1,930</td><td>−5.1%</td><td class="mut">FEASIBLE(타임아웃)</td></tr>
+      <tr><td>27</td><td>bay1 (99)</td><td>1,659</td><td>1,582</td><td>−4.6%</td><td class="mut">FEASIBLE</td></tr>
+      <tr><td>31</td><td>bay3 (67)</td><td>159</td><td>155</td><td>−2.5%</td><td class="mut">FEASIBLE</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><b>큰 베이(99~107블록)는 combo cap(200K)이 후보를 production 수준(x5·y0·o0)으로 강제로 깎음</b> — rich 후보를 <i>원해도 CP-SAT로 감당 불가</i>(조합 = 블록 × 후보² 폭발).</li>
+    <li>베이당 240s(production보다 훨씬 김)에도 <b>−5%만</b> + 전부 FEASIBLE(OPTIMAL 미증명) → <b>우리 패커는 CP-SAT 천장 근접</b>.</li>
+    <li>27→33 갭은 crane_repack의 tardy-최소 CP-SAT로 도달 불가 → <b>근본적으로 다른 constructive NFP 패커</b>(난벽)만 가능. = obj upside의 유일 후보지만 불확실.</li>
+  </ul>
+</section>
+
+<div class="foot">
+  측정 스크립트: <code>z1_decomp.py</code> · <code>z1_arealb.py</code> · <code>peak_pack_test.py</code> · <code>static_pack_greedy.py</code>
+  · <code>z3_headroom.py</code> · <code>z3_realize.py</code> · <code>packing_ceiling_test.py</code> (+results JSON).
+  데이터: set2 z1-worst + z3-heavy + set1 대조. 모든 판정 = 공식 check_feasibility.
+  선행: <code>crossbay-z1-research-2026-06-21.html</code>(크로스베이 falsified). 관련 메모리:
+  ogc2026-v4-assignment-falsified · ogc2026-v2-volumetric-packing · ogc2026-packing-density-lever-research.
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,263 @@
+{
+  "config": {
+    "instances_spec": "prob_3,prob_14,prob_20",
+    "timelimit": 120.0,
+    "tag": "valid3",
+    "generated": "2026-06-16 22:43:16"
+  },
+  "totals": {
+    "instances_spec": "prob_3,prob_14,prob_20",
+    "timelimit": 120.0,
+    "sum_base_obj_both": 411701.0,
+    "sum_perbay_obj_both": 314010.0,
+    "n_both_feasible": 3,
+    "n_wins": 2,
+    "n_ties": 1,
+    "n_regressions": 0,
+    "base_infeasible": 0,
+    "perbay_infeasible": 0,
+    "max_wall": 107.70300000003772,
+    "competitor_set1_total": null
+  },
+  "instances": [
+    {
+      "instance": "prob_3",
+      "n_blocks": 100,
+      "n_bays": 3,
+      "weights": {
+        "w1": 26667,
+        "w2": 10,
+        "w3": 150
+      },
+      "bay_sizes": [
+        [
+          70,
+          23
+        ],
+        [
+          136,
+          29
+        ],
+        [
+          85,
+          22
+        ]
+      ],
+      "base": {
+        "obj": 52450.0,
+        "obj1": 0.0,
+        "obj2": 3925,
+        "obj3": 88.0,
+        "feasible": true,
+        "wall": 83.28100000001723,
+        "status": "OK",
+        "err": null
+      },
+      "perbay": {
+        "obj": 52450.0,
+        "obj1": 0.0,
+        "obj2": 3925,
+        "obj3": 88.0,
+        "feasible": true,
+        "wall": 79.10899999999674,
+        "status": "OK",
+        "err": null
+      },
+      "perbay_telemetry": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 33.69100000000326,
+          "n_blocks_total": 100,
+          "n_bays_total": 3,
+          "n_work_bays": 0,
+          "fired": false,
+          "total_wall": 0.0,
+          "z1_before": 0.0,
+          "z1_after": 0.0,
+          "bays": []
+        }
+      ],
+      "delta_obj": 0.0,
+      "delta_pct": 0.0,
+      "delta_z1": 0.0,
+      "winner": "tie",
+      "competitor_obj": 39108.98
+    },
+    {
+      "instance": "prob_14",
+      "n_blocks": 250,
+      "n_bays": 4,
+      "weights": {
+        "w1": 17778,
+        "w2": 5,
+        "w3": 133
+      },
+      "bay_sizes": [
+        [
+          107,
+          19
+        ],
+        [
+          141,
+          26
+        ],
+        [
+          127,
+          15
+        ],
+        [
+          66,
+          20
+        ]
+      ],
+      "base": {
+        "obj": 124751.0,
+        "obj1": 2.0,
+        "obj2": 948,
+        "obj3": 635.0,
+        "feasible": true,
+        "wall": 106.96900000004098,
+        "status": "OK",
+        "err": null
+      },
+      "perbay": {
+        "obj": 80394.0,
+        "obj1": 0.0,
+        "obj2": 970,
+        "obj3": 568.0,
+        "feasible": true,
+        "wall": 94.53099999995902,
+        "status": "OK",
+        "err": null
+      },
+      "perbay_telemetry": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 19.37800000003772,
+          "n_blocks_total": 250,
+          "n_bays_total": 4,
+          "n_work_bays": 2,
+          "fired": true,
+          "total_wall": 1.0310000000172295,
+          "z1_before": 3.0,
+          "z1_after": 0.0,
+          "bays": [
+            {
+              "bay": 3,
+              "n_blocks": 45,
+              "cur_tard": 2.0,
+              "new_tard": 0.0,
+              "wall": 0.46799999999348074,
+              "status": "improved",
+              "err": null
+            },
+            {
+              "bay": 2,
+              "n_blocks": 56,
+              "cur_tard": 1.0,
+              "new_tard": 0.0,
+              "wall": 0.5630000000237487,
+              "status": "improved",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "delta_obj": -44357.0,
+      "delta_pct": -35.55642840538352,
+      "delta_z1": -2.0,
+      "winner": "perbay",
+      "competitor_obj": 60118.21
+    },
+    {
+      "instance": "prob_20",
+      "n_blocks": 300,
+      "n_bays": 5,
+      "weights": {
+        "w1": 26667,
+        "w2": 6,
+        "w3": 125
+      },
+      "bay_sizes": [
+        [
+          136,
+          28
+        ],
+        [
+          32,
+          29
+        ],
+        [
+          153,
+          15
+        ],
+        [
+          150,
+          27
+        ],
+        [
+          58,
+          29
+        ]
+      ],
+      "base": {
+        "obj": 234500.0,
+        "obj1": 2.0,
+        "obj2": 2361,
+        "obj3": 1336.0,
+        "feasible": true,
+        "wall": 107.70300000003772,
+        "status": "OK",
+        "err": null
+      },
+      "perbay": {
+        "obj": 181166.0,
+        "obj1": 0.0,
+        "obj2": 2361,
+        "obj3": 1336.0,
+        "feasible": true,
+        "wall": 94.60899999999674,
+        "status": "OK",
+        "err": null
+      },
+      "perbay_telemetry": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 19.95600000001723,
+          "n_blocks_total": 300,
+          "n_bays_total": 5,
+          "n_work_bays": 2,
+          "fired": true,
+          "total_wall": 1.625,
+          "z1_before": 2.0,
+          "z1_after": 0.0,
+          "bays": [
+            {
+              "bay": 1,
+              "n_blocks": 32,
+              "cur_tard": 1.0,
+              "new_tard": 0.0,
+              "wall": 0.23399999999674037,
+              "status": "improved",
+              "err": null
+            },
+            {
+              "bay": 3,
+              "n_blocks": 72,
+              "cur_tard": 1.0,
+              "new_tard": 0.0,
+              "wall": 1.3910000000032596,
+              "status": "improved",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "delta_obj": -53334.0,
+      "delta_pct": -22.74371002132196,
+      "delta_z1": -2.0,
+      "winner": "perbay",
+      "competitor_obj": 80847.59
+    }
+  ]
+}

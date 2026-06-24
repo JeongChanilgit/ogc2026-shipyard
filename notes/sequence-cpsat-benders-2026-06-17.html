@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC2026 — 시퀀스별 CP-SAT · 벤더스 컷 분석 (2026-06-17)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2430; --border:#2d3340;
+    --txt:#e6edf3; --dim:#9aa7b4; --good:#3fb950; --bad:#f85149; --warn:#d29922;
+    --cp:#58a6ff; --cp2:#1f6feb; --acc:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;
+       line-height:1.55;font-size:15px}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:20px;margin:38px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--cp)}
+  .sub{color:var(--dim);font-size:13.5px;margin-bottom:22px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:14px 0}
+  .alert{border-left:4px solid var(--bad);background:#1d1113}
+  .ok{border-left:4px solid var(--good);background:#0f1a12}
+  .note{border-left:4px solid var(--cp);background:#0e1726}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:'Consolas',monospace}
+  .win{color:var(--good);font-weight:600}
+  .lose{color:var(--bad);font-weight:600}
+  .tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11.5px;font-weight:600;margin-right:5px}
+  .t-cp{background:#132a47;color:var(--cp)} .t-greedy{background:#3a2a12;color:var(--warn)}
+  .t-bend{background:#2a1d3d;color:var(--acc)} .t-kill{background:#2a1416;color:var(--bad)}
+  .bar{height:14px;border-radius:3px;background:var(--cp2);display:inline-block;vertical-align:middle}
+  .bar2{height:14px;border-radius:3px;background:var(--warn);display:inline-block;vertical-align:middle}
+  code{background:#0b0f14;padding:1px 6px;border-radius:4px;font-family:'Consolas',monospace;font-size:12.5px;color:#ffa657}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .kpi{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+  .kpi.bad{color:var(--bad)} .kpi.good{color:var(--good)}
+  ul{margin:6px 0 6px 0;padding-left:20px} li{margin:3px 0}
+  .small{font-size:12.5px;color:var(--dim)}
+  .seqhdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .seqtime{font-family:'Consolas',monospace;color:var(--warn);font-size:14px}
+  .verdict{font-weight:700}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>시퀀스별 CP-SAT · 벤더스 컷 분석</h1>
+<div class="sub">OGC2026 하이브리드 솔버 — 각 시퀀스의 역할·소요시간·인사이트 + CP-SAT 재모델링/벤더스 컷 적용 가능성 · 2026-06-17 · TL=120/300 측정</div>
+
+<!-- ============ REALITY CHECK ============ -->
+<div class="card alert">
+<h2 style="margin-top:0;border:none">⚠ 현실 점검 — C1 병렬은 "노이즈 승리"였다</h2>
+<p>이번 루프에서 "C1 병렬(box∥gassign)이 prob_39를 27.64M으로 경쟁자 격파"라고 보고했으나,
+<b>banked best-of(290M) baseline 대비 대표 4문제 재측정</b> 결과 대부분 <span class="lose">퇴화</span>했다.
+원인: 병렬은 box·gassign이 코어를 나눠 가져 <b>각자 자원 기아</b> → 큰 인스턴스에서 해 품질 하락.</p>
+<table>
+<tr><th>인스턴스</th><th class="num">CURRENT (C1 병렬)</th><th class="num">BASE (290M best-of)</th><th class="num">경쟁자</th><th class="num">cur − base</th></tr>
+<tr><td>prob_27</td><td class="num">49,972,148</td><td class="num">46,476,211</td><td class="num">48,292,973</td><td class="num lose">+3,495,937</td></tr>
+<tr><td>prob_29</td><td class="num">560,208</td><td class="num">1,909,194</td><td class="num">1,328,458</td><td class="num win">−1,348,986</td></tr>
+<tr><td>prob_38</td><td class="num">113,949,979</td><td class="num">84,871,783</td><td class="num">68,290,241</td><td class="num lose">+29,078,196</td></tr>
+<tr><td>prob_39</td><td class="num">35,415,520</td><td class="num">29,858,531</td><td class="num">29,735,939</td><td class="num lose">+5,556,989</td></tr>
+</table>
+<p class="small">prob_39 "27.64M"는 재현 안 됨(→35.42M). 유일한 진짜 개선 = <b>prob_29</b>(560K, z1=0 발견, 경쟁자도 −77만 격파).
+교훈: <i>첫-산출물의 "승리"도 baseline 대비 검증 전엔 믿지 말 것</i> — 사용자 비교 지시가 이 거짓 승리를 잡아냈다.</p>
+</div>
+
+<!-- ============ 290M baseline ============ -->
+<div class="card note">
+<h3 style="margin-top:0">우리가 상대하는 baseline = set2 best-of(box,gassign) = 293.1M</h3>
+<div class="grid2">
+<div><div class="small">우리 banked best-of set2</div><div class="kpi">293.1M</div></div>
+<div><div class="small">경쟁자 set2 (공식 06-15)</div><div class="kpi good">279.8M</div></div>
+</div>
+<p style="margin-bottom:0">갭 <b>+13.3M (1.047×), 8/20 승</b>. 그런데 <b class="lose">prob_38 한 문제가 +16.6M</b> — 전체 갭보다 크다.
+즉 <b>prob_38(z1-wall)만 경쟁자 수준으로 잡으면 set2 전체가 경쟁자 아래로 내려간다.</b>
+다음 큰 갭: prob_30(+3.3M)·prob_33(+2.9M)·prob_37(+2.9M).</p>
+</div>
+
+<!-- ============ 시퀀스 시간 프로파일 ============ -->
+<h2>1. 시퀀스 시간 프로파일 (어디서 시간이 녹는가)</h2>
+<p class="small">측정: prob_26/30/38 @T300, <code>[HYBRID_TIMING]</code>. 후보는 <b>순차 실행</b>(합 = wall). 막대 = 평균 소요(초).</p>
+<table>
+<tr><th>시퀀스</th><th>엔진</th><th class="num">평균 소요</th><th>시간 비중</th><th class="num">obj 기여(대표)</th></tr>
+<tr><td><b>legacy_candidate</b><br><span class="small">└ greedy floor + 후처리</span></td><td><span class="tag t-greedy">Greedy</span></td><td class="num">~130s</td>
+  <td><span class="bar2" style="width:260px"></span> <b>45%</b></td><td class="num lose">set2서 폐기 (0)</td></tr>
+<tr><td><b>box_candidate</b></td><td><span class="tag t-cp">CP-SAT</span></td><td class="num">~74s</td>
+  <td><span class="bar" style="width:148px"></span> 25%</td><td class="num win">prob_30 −94%·prob_38 −41%</td></tr>
+<tr><td><b>gassign_candidate</b></td><td><span class="tag t-cp">CP-SAT</span><span class="tag t-bend">LBBD</span></td><td class="num">~68s</td>
+  <td><span class="bar" style="width:136px"></span> 23%</td><td class="num win">prob_30 −27%</td></tr>
+<tr><td><b>perbay_candidate</b></td><td><span class="tag t-cp">CP-SAT</span></td><td class="num">~19s</td>
+  <td><span class="bar" style="width:38px"></span> 7%</td><td class="num win">prob_38 −4.6%</td></tr>
+</table>
+
+<h3>legacy 내부 분해 (130s의 정체)</h3>
+<table>
+<tr><th>내부 단계</th><th>엔진</th><th class="num">소요</th><th class="num">obj 기여 (prob_26)</th><th>판정</th></tr>
+<tr><td>greedy baseline floor</td><td><span class="tag t-greedy">Greedy</span></td><td class="num">~65s</td><td class="num">출발점 생성만</td><td class="lose">시간 먹보·0 기여</td></tr>
+<tr><td>post-search / refine</td><td><span class="tag t-greedy">Greedy</span></td><td class="num">~60s</td><td class="num">single_move −8%</td><td class="warn">미미</td></tr>
+<tr><td>cum_level</td><td><span class="tag t-greedy">Greedy</span></td><td class="num">~1s</td><td class="num">−0.4%</td><td class="lose">저가치(KILL후보)</td></tr>
+<tr><td><b>cpsat_timing (타이밍 오라클)</b></td><td><span class="tag t-cp">CP-SAT</span></td><td class="num good">~3.5s</td><td class="num win">426M→218M (−49%)</td><td class="win">★ 최고 효율</td></tr>
+</table>
+
+<div class="card ok">
+<b>핵심 인사이트 (시간):</b>
+<ul>
+<li><b>obj 감소는 사실상 전부 CP-SAT</b>이 한다 — cpsat_timing·box·gassign·perbay. 그리디는 출발점만 만든다.</li>
+<li><b>타이밍 오라클이 압도적 ROI</b>: 3.5초에 −49%(prob_26). 고정 레이아웃 위 1-D disjunctive tardiness를 최적으로 푸는 분리된(decoupled) 서브문제.</li>
+<li><b>greedy floor(~125s/legacy)가 wall의 45%인데 set2에선 출력이 폐기된다</b>(box/gassign이 이김) → 순수 낭비.</li>
+<li><b>C1 병렬 ≠ 해법</b>: 코어를 나누면 큰 인스턴스서 퇴화(위 현실점검). 더 나은 길 = legacy 시간을 <i>줄여</i> CP-SAT 후보에 직렬로 몰아주기.</li>
+</ul>
+</div>
+
+<!-- ============ 시퀀스별 CP-SAT/벤더스 ============ -->
+<h2>2. 시퀀스별 — 인사이트 · CP-SAT 재모델링 · 벤더스 컷</h2>
+
+<div class="card">
+<div class="seqhdr"><h3 style="margin:0">① greedy baseline floor <span class="tag t-greedy">Greedy</span></h3><span class="seqtime">~65s · legacy 내부</span></div>
+<p><b>역할:</b> 크레인-aware Bottom-Left로 초기 실현가능 레이아웃 생성 (배정+위치).</p>
+<p><b>인사이트:</b> 시간 최대 소비자인데 obj 기여 ≈ 0. set2에선 box/gassign이 늘 이겨 출력이 통째로 폐기됨.</p>
+<p><b class="t-cp" style="background:none">CP-SAT 재모델링:</b> <span class="verdict win">가능·고가치</span> — 이건 사실상 gassign의 <code>_cpsat_assignment</code>(배정) + per-bay 패킹이 이미 하는 일이다.
+greedy floor를 <b>적출</b>하고 그 시간을 CP-SAT 후보에 넘기면 된다(사용자 방향과 일치). 린 레거시 실험이 이 경로(<code>_cpsat_assignment</code> → fixed-time decode → 타이밍오라클).</p>
+<p><b class="t-bend" style="background:none">벤더스 컷:</b> floor 자체는 아님. 대체재(gassign)가 LBBD 마스터가 된다.</p>
+</div>
+
+<div class="card">
+<div class="seqhdr"><h3 style="margin:0">② cum_level / post-search <span class="tag t-greedy">Greedy</span></h3><span class="seqtime">~60s · legacy 내부</span></div>
+<p><b>역할:</b> 그리디 해 위 국소 재배치·이동 탐색.</p>
+<p><b>인사이트:</b> cum_level −0.4%, single_move −8% — set2 저가치. 시간 대비 미미.</p>
+<p><b class="t-cp" style="background:none">CP-SAT 재모델링:</b> <span class="verdict lose">불필요</span> — CP-SAT 배정/타이밍이 이미 이 영역을 더 잘 푼다. <span class="tag t-kill">KILL 후보</span></p>
+<p><b class="t-bend" style="background:none">벤더스 컷:</b> N/A.</p>
+</div>
+
+<div class="card ok">
+<div class="seqhdr"><h3 style="margin:0">③ cpsat_timing — 타이밍 오라클 <span class="tag t-cp">CP-SAT</span> <span class="tag t-bend">Benders 서브문제</span></h3><span class="seqtime good">~3.5s · ★최고 ROI</span></div>
+<p><b>역할:</b> 위치를 <b>고정</b>한 상태에서 각 블록의 ENTRY/EXIT 시각을 최적화. 베이별 1-D disjunctive(크레인 j≥k 직렬화) tardiness를 CP-SAT로 <b>최적</b>까지.</p>
+<p><b>인사이트:</b> 3.5초에 −49%(prob_26 426M→218M). 위치·시간을 <b>분리(decouple)</b>한 덕에 작고 빠른 문제로 떨어진다 — 동시에 풀면 폭발.</p>
+<p><b class="t-cp" style="background:none">CP-SAT 개선:</b> 이미 CP-SAT·거의 최적. 잔여 레버 = warm-start(직전 해 hint)로 시간 더 단축, 멀티-베이 결합(단 결합 약함 → EV 낮음). <span class="verdict">대체로 완성</span>.</p>
+<p><b class="t-bend" style="background:none">벤더스 컷:</b> <span class="verdict win">이것이 바로 벤더스 서브문제(오라클)다.</span> 현재는 타이밍만 풀고 끝나지만,
+여기서 <b>"이 배정으론 tardy를 N개 이하로 못 만든다"는 컷(no-good / tardy-cardinality)을 배정 마스터로 되돌리면</b> realize 갭이 닫힌다. <b>고가치 미구현 레버.</b></p>
+</div>
+
+<div class="card">
+<div class="seqhdr"><h3 style="margin:0">④ box_candidate — box-decomp <span class="tag t-cp">CP-SAT</span></h3><span class="seqtime">~74s</span></div>
+<p><b>역할:</b> 박스 분해 기반 전결정 CP-SAT 해. 패킹-heavy 인스턴스의 주력 승자(prob_30 255M→13M, prob_38 145M→85M).</p>
+<p><b>인사이트:</b> 위치→시간 순으로 분해. 패킹 밀도가 본질 한계(<b>density wall</b>) — prob_38의 +16.6M 잔여가 여기서 막힘.</p>
+<p><b class="t-cp" style="background:none">CP-SAT 재모델링:</b> 이미 CP-SAT. 진짜 레버 = <b>밀도</b>: semi-discrete BLF / 침투맵(penetration map)으로 후보 배치를 더 촘촘히(리서치 §갈래1·미구현).</p>
+<p><b class="t-bend" style="background:none">벤더스 컷:</b> <span class="verdict win">이미 LBBD 풍</span>(위치 마스터 ↔ 시간 서브). z3-aware 마스터 컷 추가 여지.</p>
+</div>
+
+<div class="card">
+<div class="seqhdr"><h3 style="margin:0">⑤ gassign_candidate <span class="tag t-cp">CP-SAT</span> <span class="tag t-bend">LBBD 정석</span></h3><span class="seqtime">~68s · 굶주림</span></div>
+<p><b>역할:</b> z1-aware CP-SAT 배정 마스터(T2 누적 area-time) + per-bay 디코드 오라클 + no-good 컷(T6 LBBD).</p>
+<p><b>인사이트:</b> 경쟁력 있으나 순차 하이브리드에서 슬라이스(0.27T≈68s)에 <b>굶주림</b>. depgroup 레버로 z3 회복(base-first race, Pareto-safe).</p>
+<p><b class="t-cp" style="background:none">CP-SAT 개선:</b> 마스터에 시간 더(병렬 C1은 실패) → <b>greedy floor 적출분을 직렬로 몰아주기</b>가 정답. depgroup 기본 ON.</p>
+<p><b class="t-bend" style="background:none">벤더스 컷:</b> <span class="verdict win">여기가 이 문제의 정석 LBBD다.</span> 마스터(완화 배정) ↔ per-bay 디코드 오라클 ↔ no-good 컷.
+<b>잔여 갭은 마스터가 z3-과스필을 못 봄</b> — <b>z3-spill 컷(C4)</b>을 추가하면 경쟁자와의 z3 갭(prob_39 우리 9610 vs 경쟁자 59) 직격.</p>
+</div>
+
+<div class="card">
+<div class="seqhdr"><h3 style="margin:0">⑥ perbay_candidate <span class="tag t-cp">CP-SAT</span></h3><span class="seqtime">~19s</span></div>
+<p><b>역할:</b> best 후보의 개별 베이를 per-bay CP-SAT 패킹으로 재최적화(post-refine).</p>
+<p><b>인사이트:</b> 작은 추가 이득(prob_38 84.9→81M, −4.6%). additive·gated·never−1.</p>
+<p><b class="t-cp" style="background:none">CP-SAT 재모델링:</b> 이미 CP-SAT. 베이별 NoOverlap+크레인 조인트. 밀도 한계는 box와 동일.</p>
+<p><b class="t-bend" style="background:none">벤더스 컷:</b> per-bay = 서브문제 레벨. 마스터로 컷 환류 가능(현재는 단방향 refine).</p>
+</div>
+
+<!-- ============ 벤더스 컷 설명 ============ -->
+<h2>3. 벤더스 컷(Benders cut) — 이 문제에 어떻게 적용되나</h2>
+<div class="card note">
+<p><b>왜 분해하나:</b> 배정·위치·방향·시각을 <b>동시에</b> 풀면 NP-hard 3중결합이 폭발한다. 그래서 <b>둘로 쪼갠다.</b></p>
+<ul>
+<li><b>마스터(master):</b> "어느 블록을 어느 베이에" — <i>완화된(relaxed)</i> CP-SAT 배정. 기하·크레인을 area-time 근사로만 봄 → 빠름.</li>
+<li><b>서브문제(subproblem) = 오라클:</b> 마스터가 준 배정을 받아 <b>진짜</b> per-bay 패킹+크레인+타이밍을 푼다(타이밍 오라클 ③). 실제 tardiness가 나옴.</li>
+</ul>
+<p><b>벤더스 컷 = 서브 → 마스터 피드백.</b> 서브가 "이 배정은 tardy ≥ N개라 나쁘다(또는 실현불가)"를 알아내면,
+그 정보를 <b>제약(컷)으로 마스터에 되돌린다</b>: <code>"이 베이에 이 블록 조합 → 금지/페널티"</code>.
+마스터는 그 컷을 안고 <b>다시</b> 배정 → 더 나은 후보 → 다시 서브 검증 … 수렴할 때까지 반복.</p>
+<p style="margin-bottom:0"><b>현재 상태:</b> gassign(⑤)이 no-good 컷 LBBD를 이미 돌린다. <b>미구현 고가치 레버 2개:</b>
+(a) 타이밍 오라클(③)의 <b>tardy-cardinality 컷</b>을 배정 마스터로 환류 → realize 갭(z3는 낮은데 z1=0으로 안 떨어지는 문제) 해소.
+(b) <b>z3-spill 컷(C4)</b> → 마스터의 과스필 억제, 경쟁자와의 z3 갭 직격.</p>
+</div>
+
+<!-- ============ 결론 ============ -->
+<h2>4. 결론 · 다음 방향</h2>
+<div class="card ok">
+<ol>
+<li><b>C1 병렬은 폐기.</b> 코어 분할이 큰 인스턴스를 퇴화시킴 — banked best-of가 더 낫다(prob_38 +29M, prob_39 +5.6M).</li>
+<li><b>시간 레버 = 병렬이 아니라 적출.</b> greedy floor/post-search(~125s, 45% wall, set2 폐기)를 줄여 그 예산을 box/gassign에 직렬로 몰아준다.</li>
+<li><b>점수 레버 = 벤더스 컷 강화.</b> ③ 타이밍오라클의 tardy 컷 환류 + ⑤ gassign의 z3-spill 컷(C4). 둘 다 경쟁자와의 잔여 갭(z3 + prob_38 z1-wall)을 직접 공격.</li>
+<li><b>prob_38이 전부.</b> +16.6M = 전체 갭(+13.3M) 초과. 이건 패킹 <b>density wall</b>(box 한계) — 밀도 레버(semi-discrete BLF/침투맵, 미구현)가 유일한 진짜 추월로.</li>
+</ol>
+<p style="margin-bottom:0"><b>제 1순위 추천:</b> <span class="verdict win">③ 타이밍 오라클의 tardy-cardinality 컷을 gassign 마스터로 환류</span>
+— 이미 있는 오라클을 재활용하므로 구현 싸고, realize 갭(z3 낮은데 z1 안 떨어지는)을 정조준. CP-SAT/벤더스 적극 활용의 정석.</p>
+</div>
+
+<p class="small" style="margin-top:30px">생성: 2026-06-17 · 데이터 출처: <code>notes/stage-parsed.json</code>(시간), <code>notes/box-set2-120.json</code>/<code>gassign-set2-120.json</code>(baseline),
+<code>results/capture/repr-*</code>(현재 C1 측정), <code>notes/competitor-2026-06-15.json</code>(경쟁자) · 모든 변경은 default-OFF 게이트 유지(banked 제출본 안전)</p>
+
+</div>
+</body>
+</html>

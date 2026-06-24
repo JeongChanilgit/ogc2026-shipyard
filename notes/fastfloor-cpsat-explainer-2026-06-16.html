@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fast-Floor Decode & CP-SAT 설명서 — OGC2026</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#161b22; --panel2:#1c232c; --ink:#e6edf3; --muted:#9aa7b4;
+    --line:#2d3742; --accent:#4ea1ff; --good:#3fb950; --warn:#d29922; --bad:#f85149;
+    --cyan:#39c5cf; --violet:#bc8cff; --code:#0b0f14;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",Roboto,sans-serif;
+    line-height:1.65;font-size:16px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 120px}
+  header.hero{padding:54px 24px 36px;background:linear-gradient(160deg,#11203a 0%,#0f1419 70%);
+    border-bottom:1px solid var(--line)}
+  .hero-inner{max-width:1080px;margin:0 auto}
+  .kick{color:var(--accent);font-weight:700;letter-spacing:.12em;font-size:13px;text-transform:uppercase}
+  h1{font-size:34px;line-height:1.2;margin:10px 0 8px}
+  .sub{color:var(--muted);font-size:17px;max-width:760px}
+  .meta{margin-top:18px;color:var(--muted);font-size:13px}
+  .meta code{background:var(--panel2);padding:2px 7px;border-radius:5px;color:var(--cyan)}
+
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(15,20,25,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 24px}
+  nav.toc .toc-inner{max-width:1080px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px}
+  nav.toc a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:5px 11px;
+    border:1px solid var(--line);border-radius:20px;transition:.15s}
+  nav.toc a:hover{color:var(--ink);border-color:var(--accent);background:var(--panel2)}
+
+  section{margin-top:48px;scroll-margin-top:64px}
+  h2{font-size:25px;border-left:4px solid var(--accent);padding-left:14px;margin:0 0 6px}
+  h2 .n{color:var(--accent);font-weight:800;margin-right:8px}
+  h3{font-size:19px;margin:30px 0 6px;color:var(--cyan)}
+  p{margin:12px 0}
+  .lead{color:var(--muted);font-size:16px;margin-bottom:18px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:18px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+
+  code{font-family:"SF Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
+    background:var(--panel2);color:var(--cyan);padding:1.5px 6px;border-radius:5px;font-size:13.5px}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px;overflow-x:auto;font-size:13px;line-height:1.55;margin:14px 0}
+  pre code{background:none;color:#c9d6e0;padding:0}
+  .cmt{color:#5b6b78}
+  .kw{color:#ff7b72}.fn{color:#d2a8ff}.str{color:#a5d6ff}.num{color:#79c0ff}.var{color:#ffa657}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--ink);font-weight:600}
+  td.mono,th.mono{font-family:ui-monospace,monospace;font-size:12.5px}
+  tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;
+    vertical-align:middle;letter-spacing:.03em}
+  .pill.ok{background:rgba(63,185,80,.16);color:var(--good);border:1px solid rgba(63,185,80,.35)}
+  .pill.no{background:rgba(248,81,73,.14);color:var(--bad);border:1px solid rgba(248,81,73,.35)}
+  .pill.gr{background:rgba(210,153,34,.14);color:var(--warn);border:1px solid rgba(210,153,34,.35)}
+
+  .callout{border-radius:10px;padding:16px 18px;margin:18px 0;border:1px solid;font-size:15px}
+  .callout .h{font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .callout.key{background:rgba(78,161,255,.08);border-color:rgba(78,161,255,.4)}
+  .callout.warnbox{background:rgba(210,153,34,.07);border-color:rgba(210,153,34,.4)}
+  .callout.badbox{background:rgba(248,81,73,.07);border-color:rgba(248,81,73,.4)}
+  .callout.goodbox{background:rgba(63,185,80,.07);border-color:rgba(63,185,80,.4)}
+
+  .ref{color:var(--muted);font-size:12px;font-family:ui-monospace,monospace}
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin:18px 0}
+  .flow .step{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:14px 16px;position:relative;margin:6px}
+  .flow .step .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .flow .step .ti{font-weight:700;font-size:15px;margin:4px 0}
+  .flow .step.cp{border-color:rgba(63,185,80,.5)}
+  .flow .step.greedy{border-color:rgba(210,153,34,.6)}
+  .arrow{align-self:center;color:var(--muted);font-size:22px;padding:0 2px}
+
+  ul.tight{margin:8px 0;padding-left:22px}
+  ul.tight li{margin:5px 0}
+  .twocol-defs dt{font-weight:700;color:var(--violet);margin-top:12px}
+  .twocol-defs dd{margin:2px 0 0 0;color:var(--muted)}
+  .big{font-size:18px;font-weight:600;color:var(--ink)}
+  hr{border:none;border-top:1px solid var(--line);margin:30px 0}
+  .foot{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  .tag{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace;background:var(--panel2);
+    padding:1px 6px;border-radius:4px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="kick">OGC2026 · 솔버 내부 설명서</div>
+    <h1>Fast-Floor Decode와 CP-SAT</h1>
+    <p class="sub">현재 공간 배치(fast-floor decode)는 어떻게 동작하는가, CP-SAT란 무엇이며 왜 이 솔버의 목적함수를 크게 줄이는가 — 그리고 왜 그 CP-SAT를 decode 안으로 넣는 일이 "쉬워 보이지만 가장 어려운 방향"인가.</p>
+    <div class="meta">작성 2026-06-16 · 근거 = 읽기전용 코드분석 2건(file:line) · 대상 파일 <code>src/fastfloor.py</code> · <code>src/myalgorithm.py</code> · <code>src/boxsolver.py</code></div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#tldr">0 · 한 줄 요약</a>
+    <a href="#pipeline">1 · 파이프라인 전경</a>
+    <a href="#decode">2 · Fast-Floor Decode 상세</a>
+    <a href="#whatis">3 · CP-SAT란 무엇인가</a>
+    <a href="#models">4 · 이 솔버의 CP-SAT 3종</a>
+    <a href="#why">5 · 왜 timing CP-SAT는 강력한가</a>
+    <a href="#asym">6 · 비대칭: decode에 넣기가 어려운 이유</a>
+    <a href="#next">7 · 그래서 진짜 레버</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ========== 0 ========== -->
+<section id="tldr">
+  <h2><span class="n">0</span>한 줄 요약</h2>
+  <div class="callout key">
+    <div class="h">🎯 핵심</div>
+    이 솔버의 풀이 파이프라인은 <b>양 끝단(베이 배정·타이밍)이 이미 CP-SAT</b>이고, <b>가운데의 위치 배치(x, y, 방향)만 그리디 Bottom-Left</b>다.
+    목적함수를 크게 줄이는 그 CP-SAT(타이밍 오라클)가 잘 푸는 이유는 정확히 <b>공간을 안 풀기 때문</b>이다 —
+    배치를 고정해 문제를 1차원으로 환원한 덕분이다. 그래서 "decode(공간)에 CP-SAT를 넣자"는 시도는
+    <b>이미 <code>boxsolver.py</code>(box-decomp)로 구현되어 있고, 그게 바로 "터진다"고 알려진 모듈</b>이다.
+  </div>
+  <p class="lead">아래는 (1) 현재 decode 로직 → (2) CP-SAT 개념 → (3) 이 솔버의 CP-SAT 3종 → (4) 왜 타이밍 CP-SAT는 강력한가 → (5) 왜 같은 도구를 공간에 쓰면 무너지는가 → (6) 그래서 다음 레버는 무엇인가, 순서로 설명한다.</p>
+</section>
+
+<!-- ========== 1 ========== -->
+<section id="pipeline">
+  <h2><span class="n">1</span>파이프라인 전경 — CP-SAT는 이미 양 끝단에 있다</h2>
+  <p>한 블록의 결정은 5가지다: <b>베이 j · 위치 (x,y) · 방향 o · ENTRY 시각 · EXIT 시각</b>. 솔버는 이걸 한 번에 풀지 않고 세 단계로 분리(decouple)한다.</p>
+
+  <div class="flow">
+    <div class="step cp">
+      <div class="lbl">① 배정 &nbsp;<span class="pill ok">CP-SAT</span></div>
+      <div class="ti">블록 → 베이 (j)</div>
+      <div class="ref">_cpsat_assignment<br>myalgorithm.py:1615</div>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">순수 0-1 배정 ILP. z2(부하 불균형)+z3(선호 페널티) 최소화. <b>기하 없음.</b></p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step greedy">
+      <div class="lbl">② 위치 배치 &nbsp;<span class="pill gr">그리디 BL</span></div>
+      <div class="ti">위치 (x, y) · 방향 o</div>
+      <div class="ref">_fixed_time_decode<br>fastfloor.py:556</div>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--muted)"><b>유일하게 그리디로 남은 단계.</b> 시간을 고정하고 위치만 Bottom-Left로 탐색.</p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step cp">
+      <div class="lbl">③ 타이밍 &nbsp;<span class="pill ok">CP-SAT</span></div>
+      <div class="ti">ENTRY / EXIT 시각</div>
+      <div class="ref">_cpsat_bay_timing_verified<br>myalgorithm.py:2617</div>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">고정된 layout 위에서 시각만 재최적화. <b>1D disjunctive tardiness</b> → 베이별 <b>최적</b>까지 푼다.</p>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <div class="h">🔑 읽는 법</div>
+    <b>①·③은 이미 CP-SAT</b>이고, 사용자가 "CP-SAT를 넣자"고 묻는 대상인 <b>② 위치 배치만 그리디</b>다.
+    이 ②가 본 문서의 주인공이다. (참고: ②를 CP-SAT로 푸는 별도 엔진 = <code>boxsolver.py</code>의 box-decomp가 이미 존재하며 HYBRID에 best-of로 끼어 있다 — §6에서 다룬다.)
+  </div>
+</section>
+
+<!-- ========== 2 ========== -->
+<section id="decode">
+  <h2><span class="n">2</span>Fast-Floor Decode 상세 — 그리디 Bottom-Left의 해부</h2>
+  <p class="lead">함수 <code>_fixed_time_decode</code>(<span class="ref">fastfloor.py:556-643</span>)는 이름 그대로 <b>"시간을 고정(fixed-time)하고 위치만 decode"</b>한다. 베이 하나를 받아 그 안의 블록들을 한 개씩 BL로 떨어뜨린다.</p>
+
+  <h3>2.1 입력·출력</h3>
+  <table>
+    <tr><th style="width:26%">항목</th><th>내용</th></tr>
+    <tr><td>입력</td><td><code>bay</code>(베이 기하), <code>ids</code>(이 베이에 배정된 블록 목록 — 배정은 ①에서 이미 끝남), <code>blocks_data</code>, <code>deadline</code>, <code>order_key</code></td></tr>
+    <tr><td>시간 처리</td><td>블록마다 <code>aB, eB = R, R+P</code> — <b>ENTRY=release, EXIT=ENTRY+process로 완전히 고정</b> <span class="ref">fastfloor.py:598</span></td></tr>
+    <tr><td>출력</td><td>블록별 <code>{block_id, bay_id, x, y, orient_idx, entry_time, exit_time}</code> + <code>ft_stats</code>(placed_at_R / delayed / forced / grid_hits / tardiness) <span class="ref">:638-640</span></td></tr>
+  </table>
+  <div class="callout key">
+    <div class="h">이 한 줄이 모든 것을 정한다</div>
+    <pre style="margin:8px 0 0"><code><span class="var">aB</span>, <span class="var">eB</span> = R, R + P   <span class="cmt"># 시간 완전 고정 → 남은 자유도는 (x, y, 방향)뿐</span></code></pre>
+    시간이 상수가 되면서, decode는 순수 <b>2D 배치 문제</b>로 축소된다. (이 사실이 §6에서 결정적으로 다시 등장한다.)
+  </div>
+
+  <h3>2.2 블록당 3단계 배치 — at-R → delayed → forced</h3>
+  <p>각 블록은 순서대로(2.3의 정렬 순) 다음을 시도한다 <span class="ref">fastfloor.py:594-628</span>:</p>
+  <table>
+    <tr><th style="width:18%">단계</th><th>시도</th><th>tardiness</th><th class="ref">위치</th></tr>
+    <tr><td><b>① at-R</b></td><td>ENTRY=R(가장 이른 시각)으로 빈 자리 탐색</td><td><span class="pill ok">0</span></td><td class="ref">:601-606</td></tr>
+    <tr><td><b>② delayed</b></td><td>실패 시, 이미 놓인 블록들의 EXIT 시각을 오름차순으로 훑으며 ENTRY를 미뤄 자리 확보</td><td><span class="pill gr">발생</span></td><td class="ref">:607-618</td></tr>
+    <tr><td><b>③ forced</b></td><td>그래도 실패 시, 모든 기존 EXIT 이후로 밀어 <b>상호작용 0인 빈 윈도</b>를 만들고 아무 BL 자리</td><td><span class="pill no">큼</span></td><td class="ref">:619-628</td></tr>
+  </table>
+  <p>즉 tardiness(z1)는 "자리가 없어서 시간을 미룬" 결과로 발생한다. 공간이 빽빽할수록 ②·③로 떨어지고 z1이 커진다 — 이것이 패킹 밀도와 z1을 잇는 고리다.</p>
+
+  <h3>2.3 배치 순서 — 어떤 블록부터 떨어뜨리나</h3>
+  <p>순서는 <code>_ft_order</code> <span class="ref">fastfloor.py:538-553</span>로 결정. 기본 F0 = <b>release 오름차순, footprint 면적 내림차순</b>(큰 것 먼저). F1/F2/F3는 due·area 변형이며, 여러 순서를 best-of로 경쟁시킨다.</p>
+
+  <h3>2.4 후보 위치 생성 — NFP가 아니라 BL-abut + raster</h3>
+  <p>핵심 함수 <code>_ft_search_pos</code> <span class="ref">fastfloor.py:231-366</span>. 두 패스로 후보 좌표를 만든다:</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="big">Pass 1 · BL abut 코너</div>
+      <ul class="tight">
+        <li>x-앵커 = 좌/우 벽 + 각 기존 블록의 좌/우 모서리 ±1 <span class="ref">:274-283</span></li>
+        <li>y-앵커 = 바닥 + x가 겹치는 기존 블록들의 top ±1 <span class="ref">:288-297</span></li>
+        <li>→ "벽이나 다른 블록에 딱 붙는" 후보만 생성 (NFP 없이 코너 휴리스틱)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="big">Pass 2 · 정수격자 raster</div>
+      <ul class="tight">
+        <li>Pass 1 전부 실패 시 발동 (<code>grid=True</code>)</li>
+        <li>dy, dx 전 범위를 stride 1(넓은 베이는 2)로 전수 스캔 <span class="ref">:330-343</span></li>
+        <li>→ 느리지만 빈틈을 빠짐없이 검사하는 안전망</li>
+      </ul>
+    </div>
+  </div>
+  <p>후보 랭킹은 <b>(Y, X, 방향) 사전식 정렬</b> — 가장 낮고(아래) 가장 왼쪽 자리를 채택. 이것이 "Bottom-Left"의 정의다 <span class="ref">fastfloor.py:302</span>:</p>
+  <pre><code><span class="var">cands</span>.<span class="fn">sort</span>(key=<span class="kw">lambda</span> c:(c[<span class="num">0</span>], c[<span class="num">1</span>], c[<span class="num">2</span>]))   <span class="cmt"># (Y, X, orient) — 낮고 왼쪽 우선</span></code></pre>
+  <p>방향(orientation)은 별도 단계가 아니라 <b>후보 생성에 통합</b>된다 — 모든 회전을 후보로 펼친 뒤 위 정렬의 3번째 키로 동시에 고른다 <span class="ref">:267, :301-302</span>.</p>
+
+  <h3>2.5 충돌·크레인 검사 — <code>_ft_pair_ok</code></h3>
+  <p>후보를 채택하기 전, 기존에 놓인 블록들과 충돌하지 않는지 <code>_ft_pair_ok</code> <span class="ref">fastfloor.py:157-200</span>로 검사한다. 래스터 셀 교집합으로 5개 금지 조건(forbidden predicate)을 확인:</p>
+  <ul class="tight">
+    <li><b>동일층 충돌</b>(cond 5, <code>collide</code> <span class="ref">:196-199</span>) — 두 블록이 같은 시간에 같은 자리</li>
+    <li><b>크레인 수직접근 j≥k</b>(<code>obstruct</code> <span class="ref">:162, :186-195</span>) — 위에서 내려오는 크레인 경로가 막히면 금지. 정의: <code>obstruct(M,S) = ∃ k&lt;n(M), j∈[k,n(S)) : cells_M[k] ∩ cells_S[j] ≠ ∅</code></li>
+  </ul>
+  <p>bbox로 1차 prefilter 후 <span class="ref">:314-318</span>, 채택 직전 <code>_verify</code>가 float-world 래스터로 재검증 + <code>bay.contains_block</code>(베이 경계)까지 확인 <span class="ref">:246-264</span>.</p>
+
+  <h3>2.6 베이 병렬 + best-of race</h3>
+  <p>베이는 ①에서 이미 독립적으로 배정됐으므로 <b>베이끼리 상호작용이 없다</b>. 따라서 <code>_decode_bays_parallel</code> <span class="ref">fastfloor.py:1029</span>가 베이를 4-worker로 병렬 decode한다. 각 베이 안에서는 여러 order_key·시도를 <code>_decode_attempts</code>가 경쟁시켜 best를 채택 <span class="ref">:670-673</span>.</p>
+
+  <div class="callout goodbox">
+    <div class="h">✅ 2장 정리</div>
+    Fast-floor decode = <b>① 시간 고정 → ② 블록을 면적 큰 순으로 → ③ BL-abut/raster 후보 중 가장 낮고 왼쪽 자리에 → ④ 충돌·크레인 통과하면 놓고, 안 되면 시간을 미룸(tardiness)</b>. 베이별 병렬·온라인 그리디. 빠르고 항상 feasible하지만, <b>한 번 놓으면 안 옮기는</b>(append-only) 탓에 밀도가 ~80%에서 막힌다.
+  </div>
+</section>
+
+<!-- ========== 3 ========== -->
+<section id="whatis">
+  <h2><span class="n">3</span>CP-SAT란 무엇인가 — 그리디와 무엇이 다른가</h2>
+  <p class="lead">CP-SAT는 Google OR-Tools의 <b>제약 프로그래밍 + SAT 솔버</b>다. "변수·제약·목적함수"를 선언하면, 솔버가 <b>모든 가능성을 탐색해 (예산 내에서) 증명된 최적해 또는 그에 근접한 해</b>를 찾아준다. 그리디와의 결정적 차이는 <b>되돌아갈 수 있다(backtracking)</b>는 것이다.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="big" style="color:var(--warn)">그리디 (현재 decode)</div>
+      <ul class="tight">
+        <li>블록을 하나씩 보고 그 순간 최선의 자리에 <b>확정</b></li>
+        <li>한 번 놓으면 <b>다시 안 옮김</b> (append-only)</li>
+        <li>빠름. 항상 답이 나옴. 하지만 <b>지역 최적</b>에 갇힘</li>
+        <li>"지금 좋아 보이는 자리"가 나중에 다른 블록의 자리를 망쳐도 모름</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="big" style="color:var(--good)">CP-SAT</div>
+      <ul class="tight">
+        <li>모든 블록의 결정을 <b>동시에</b> 변수로 두고 탐색</li>
+        <li><b>제약 전파(propagation)</b>로 불가능한 조합을 가지치기</li>
+        <li>막다른 길이면 <b>되돌아가</b> 다른 조합 시도</li>
+        <li>예산 내 <b>전역 최적 또는 최적성 증명</b> 가능. 단 변수가 많으면 폭발</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>3.1 CP-SAT 모델의 3요소</h3>
+  <dl class="twocol-defs">
+    <dt>① 결정 변수 (decision variables)</dt>
+    <dd>솔버가 값을 정해야 하는 미지수. 정수 변수(예: <code>entry_time</code>), 불리언 변수(예: "블록 b를 베이 j에 = 0/1") 등.</dd>
+    <dt>② 제약 (constraints)</dt>
+    <dd>변수들이 지켜야 할 규칙. 선형 부등식, "둘 중 하나"(disjunction), reified("이 조건이 참이면 저 제약 적용") 등.</dd>
+    <dt>③ 목적함수 (objective)</dt>
+    <dd><code>Minimize(...)</code> / <code>Maximize(...)</code>. 우리 문제에선 tardiness 합, 부하 불균형, 선호 페널티 등.</dd>
+  </dl>
+
+  <h3>3.2 왜 "잘 푼다"고 느껴지나 — 그리고 무엇이 비용인가</h3>
+  <p>CP-SAT가 강력한 이유는 <b>제약 전파</b>다. 한 변수 값을 시도하면 그것이 강제하는 다른 변수 값들이 도미노처럼 확정되고, 모순이 나면 즉시 그 가지 전체를 버린다. 잘 구조화된 문제(변수 수가 적고 제약이 강한 propagation을 만드는)에서는 거대한 탐색 공간이 순식간에 줄어든다.</p>
+  <div class="callout warnbox">
+    <div class="h">⚠️ 단, 공짜가 아니다</div>
+    탐색 공간은 <b>변수 수와 제약의 결합 방식</b>에 지수적으로 민감하다. 변수가 많아지거나, 제약이 서로 곱해지면(예: "쌍마다 disjunction") 같은 CP-SAT도 예산 안에 못 푼다.
+    <b>이것이 §5(성공)와 §6(실패)를 가르는 단 하나의 축</b>이다.
+  </div>
+</section>
+
+<!-- ========== 4 ========== -->
+<section id="models">
+  <h2><span class="n">4</span>이 솔버의 CP-SAT 3종 — 정밀 비교</h2>
+  <p class="lead">정의는 전부 <code>src/myalgorithm.py</code>(배정·타이밍)와 <code>src/boxsolver.py</code>(box-decomp)에 있고, 나머지 모듈은 호출만 한다.</p>
+
+  <table>
+    <tr>
+      <th style="width:20%">모델</th>
+      <th>결정 변수</th>
+      <th>제약</th>
+      <th>차원</th>
+      <th style="width:13%">판정</th>
+    </tr>
+    <tr>
+      <td><b>A. 배정</b><br><span class="ref">myalgorithm.py:1615</span></td>
+      <td><code>x[b,j]</code> 불리언 (블록 b를 베이 j에)</td>
+      <td><code>Σⱼ x[b,j]=1</code>, 베이별 가중 부하 → <code>z2=max−min</code>, 선호 페널티. <b>기하 전혀 없음</b></td>
+      <td>순수 0-1 배정 ILP</td>
+      <td><span class="pill ok">잘 풀림</span></td>
+    </tr>
+    <tr>
+      <td><b>B. 타이밍 오라클</b><br><span class="ref">myalgorithm.py:2617</span></td>
+      <td>블록당 정수 <code>e[b]=entry</code> <b>딱 1개</b>. exit는 변수가 아니라 <code>e[b]+P</code></td>
+      <td>기하적으로 겹치는 <b>쌍에 대해서만</b> 시간 disjunction. 충돌 boolean은 <b>고정 layout에서 한 번만 precompute</b></td>
+      <td><b>1D disjunctive</b> tardiness</td>
+      <td><span class="pill ok">최적까지</span></td>
+    </tr>
+    <tr>
+      <td><b>C. box-decomp</b><br><span class="ref">boxsolver.py:301,454</span></td>
+      <td>블록당 정수 <code>tx, ty</code>(위치 2개) <b>+</b> <code>ev</code>(시간) — <b>동시에</b></td>
+      <td>모든 쌍에 대해 "x로 분리 OR y로 분리 OR 시간으로 분리". 폴리곤은 K개 rect로 분해 → rect-쌍마다 제약</td>
+      <td><b>joint (x, y, time) 3D</b></td>
+      <td><span class="pill no">폭발</span></td>
+    </tr>
+  </table>
+
+  <p>A와 B는 푼다. C는 작은 베이(≤60~70 블록)에서만 켜고도 자주 못 푼다. <b>차이의 본질은 §5·§6에서.</b></p>
+</section>
+
+<!-- ========== 5 ========== -->
+<section id="why">
+  <h2><span class="n">5</span>왜 타이밍 CP-SAT(B)는 강력한가 — decoupling의 마법</h2>
+  <p class="lead">사용자가 "CP-SAT가 obj를 크게 줄인다"고 본 그 컴포넌트가 바로 이 타이밍 오라클이다. 잘 푸는 비결은 <b>세 가지 구조적 환원</b>이며, docstring <span class="ref">myalgorithm.py:2625-2633</span>에 명시돼 있다.</p>
+
+  <div class="card">
+    <div class="big">① 모든 기하 검사가 시간과 무관 → 충돌 boolean이 <span style="color:var(--good)">상수</span>가 된다</div>
+    <p>layout(위치·방향)이 고정이므로, "블록 A와 B가 충돌하나? 크레인이 막나?"는 <b>entry 시각이 뭐든 답이 똑같다</b>. 그래서 쌍당 5개 충돌 boolean을 Shapely로 <b>딱 한 번 계산</b>하고 <span class="ref">:2838-2842</span>, 모델에는 정수 부등식만 남긴다.</p>
+  </div>
+  <div class="card">
+    <div class="big">② <code>exit = entry + P</code>가 WLOG 최적 → 블록당 변수 <span style="color:var(--good)">1개</span></div>
+    <p>블록은 들어오면 P만큼 머무르고 나가는 게 항상 최선이므로, exit를 따로 변수로 둘 필요가 없다. 블록당 미지수는 <code>entry</code> 하나뿐.</p>
+  </div>
+  <div class="card">
+    <div class="big">③ 남는 건 단일머신 tardiness → CP-SAT의 <span style="color:var(--good)">홈그라운드</span></div>
+    <p>정수 entry에 대한 interval disjunction = 전형적 단일머신 스케줄링. 게다가 <code>OGC_TIMING_DECOMP</code> <span class="ref">:2697,:2785-2827</span>가 상호작용 그래프의 connected component로 더 쪼개 서브문제를 작게 만든다 → 베이별 <b>최적</b>까지.</p>
+  </div>
+
+  <pre><code><span class="cmt"># 타이밍 오라클의 핵심: 충돌은 상수, entry만 변수</span>
+<span class="kw">for</span> (a, b) <span class="kw">in</span> interacting_pairs:          <span class="cmt"># 고정 layout에서 미리 추린 쌍만</span>
+    <span class="var">l1</span>, <span class="var">l2</span> = <span class="fn">precomputed_collision_bools</span>(a, b)   <span class="cmt"># ← 상수 (위치 고정이라)</span>
+    model.<span class="fn">Add</span>(...).<span class="fn">OnlyEnforceIf</span>(l).<span class="fn">AddBoolOr</span>([l1, l2])  <span class="cmt"># entry 시각으로만 충돌 회피</span>
+model.<span class="fn">Minimize</span>(<span class="fn">sum</span>(tardiness))</code></pre>
+
+  <div class="callout goodbox">
+    <div class="h">✅ 5장 정리</div>
+    타이밍 오라클은 <b>2D-어려운 공간을 고정하고, 1D-쉬운 시간만 푼다</b>. CP-SAT가 빛나는 건 정확히 이 환원 덕분 — 공간을 안 건드렸기 때문이다. <b>이 사실을 기억한 채 §6으로.</b>
+  </div>
+</section>
+
+<!-- ========== 6 ========== -->
+<section id="asym">
+  <h2><span class="n">6</span>비대칭 — 왜 decode에 CP-SAT를 넣으면 무너지나</h2>
+  <p class="lead">사용자의 질문 "fast-floor decode에 CP-SAT를 넣을 수 있나?"의 정직한 답: <b>그 시도는 이미 존재한다(<code>boxsolver.py</code> box-decomp), 그리고 그게 바로 터지는 모듈이다.</b> 왜인지가 이 문서의 클라이맥스다.</p>
+
+  <h3>6.1 위치를 변수로 만드는 순간, 상수가 결정 변수로 변질된다</h3>
+  <p>§5에서 타이밍이 깨끗했던 단 하나의 이유는 <b>충돌 boolean이 상수</b>였기 때문이다. 그런데 위치 <code>tx, ty</code>를 변수로 풀면, "A와 B가 분리됐나?"가 더 이상 상수가 아니라 <b>tx, ty의 함수인 결정 변수</b>가 된다 <span class="ref">boxsolver.py:376-379, 552-555</span>:</p>
+  <pre><code><span class="cmt"># box-decomp: 분리 여부 자체가 변수에 묶인 결정</span>
+model.<span class="fn">Add</span>(<span class="var">tx</span>[a] - <span class="var">tx</span>[c] &lt;= <span class="fn">floor</span>(minx_c - maxx_a)).<span class="fn">OnlyEnforceIf</span>(<span class="var">sep_x</span>)
+model.<span class="fn">AddBoolOr</span>([sep_x, sep_y, sep_time])   <span class="cmt"># 쌍마다 이런 disjunction</span></code></pre>
+  <p>그 결과 disjunctive 분기가 <b>위치 자유도와 곱해진다</b>. 타이밍에선 entry 하나당 분기였는데, 여기선 (tx, ty, ev) × 쌍마다 분리 boolean이 결합돼 탐색 공간이 폭발한다.</p>
+
+  <h3>6.2 이형 폴리곤 non-overlap은 더 비싸다</h3>
+  <p>블록이 사각형이 아니라 이형 폴리곤이라, 정확히 풀려면 footprint를 K개 rectangle로 분해하고 <b>rect-쌍마다</b> 분리 제약을 걸어야 한다. 쌍당 제약이 <code>|rects[a]| × |rects[c]|</code>로 늘어 전체는 <code>O(n² · K²)</code>. 코드는 이 폭발을 미리 알고, 모델을 짓기도 전에 거절한다 <span class="ref">boxsolver.py:507-512, 472-473</span>:</p>
+  <pre><code><span class="var">npairs</span> = <span class="fn">sum</span>(<span class="fn">len</span>(rects[a]) * <span class="fn">len</span>(rects[c]) <span class="kw">for</span> a, c <span class="kw">in</span> pairs)
+<span class="kw">if</span> <span class="var">npairs</span> > <span class="num">90000</span>:        <span class="cmt"># OGC_BOXDECOMP_CAP — 모델조차 안 짓고 포기</span>
+    <span class="kw">return</span> L0                  <span class="cmt"># 그리디 layout으로 fallback</span>
+<span class="cmt"># docstring: "K=2는 single-bbox를 이기지만 K=3은 9× 모델, CP-SAT가 예산 내 못 푼다"</span></code></pre>
+
+  <h3>6.3 크레인 j≥k를 정확히 넣으면 더 나빠진다</h3>
+  <p>그래서 box-decomp는 크레인을 직접 모델링하지 않고 <b>"co-present면 footprint를 완전히 분리"</b>라는 보수적 invariant로 우회한다 <span class="ref">boxsolver.py:304-308, 459-462</span>. 이건 안전하지만 <b>과도하게 보수적</b> — 같은 시간에 있으면 공간을 완전히 떼어놓으라는 강제라, 경쟁자(~95%)의 밀집 패킹을 못 만든다.</p>
+
+  <div class="callout badbox">
+    <div class="h">🔥 비대칭의 핵심 (한 문장)</div>
+    타이밍 오라클은 <b>2D-어려운 공간을 고정하고 1D-쉬운 시간을 푼다</b>. decode에 CP-SAT를 넣는 건 그 <b>정반대</b> — <code>entry=R</code>로 시간을 고정하고 <b>공간을 푼다</b>. 그런데 entry=R이면 모든 블록이 같은 시간대(co-present)라 시간 분리 탈출구마저 없는 <b>순수 2D 이형 nesting</b>이 된다(box-decomp보다 더 어려움). <b>쉬운 쪽을 풀어서 이득을 봤는데, 어려운 쪽을 풀려 하니 그 이득이 사라지는 것이다.</b>
+  </div>
+
+  <div class="card" style="border-color:rgba(248,81,73,.35)">
+    <div class="big">실측 위치</div>
+    box-decomp는 HYBRID(<code>src/myalgorithm.py</code>)에 best-of 후보로 이미 들어 있다. 작은 베이 prob_3/4/18 정도에서만 legacy 그리디를 이기고, congested·대형 베이는 그리디 BL이 이긴다. full set1 = 1,312,961 (old 1.39M에서 box가 −73K 기여). <b>즉 "decode에 CP-SAT"는 미답의 영역이 아니라, 이미 한계가 측정된 레버다.</b>
+  </div>
+</section>
+
+<!-- ========== 7 ========== -->
+<section id="next">
+  <h2><span class="n">7</span>그래서 진짜 레버는 — 그리고 CP-SAT를 굳이 쓴다면</h2>
+  <p class="lead">우리 그리디 BL도 box-decomp도 per-bay 패킹효율 ~80%에 막혀 있고 경쟁자는 ~95%다. 이 갭은 <b>풀 CP-SAT가 아니라 전용 2D nesting</b>(NFP / semi-discrete BLF / compaction)의 영역이다. CP-SAT를 그래도 공간에 쓰고 싶다면, <b>§5에서 통한 트릭 — "한 차원을 상수로 만들기" — 을 공간에 복제</b>해야 한다.</p>
+
+  <div class="grid2">
+    <div class="card" style="border-color:rgba(63,185,80,.4)">
+      <div class="big" style="color:var(--good)">A. semi-discrete shelf + 1D CP-SAT</div>
+      <p>y를 레벨(shelf)로 이산화 → 레벨 내 x-배치만 CP-SAT 1D. y를 고정하면 타이밍처럼 <b>한 축이 상수</b>가 되어 폭발 회피. 리서치 노트의 semi-discrete BLF가 바로 이것. <b>가장 유망하고 구조적으로 새로움.</b></p>
+    </div>
+    <div class="card" style="border-color:rgba(78,161,255,.4)">
+      <div class="big" style="color:var(--accent)">B. CP-SAT compaction LNS</div>
+      <p>그리디 BL layout을 <b>그대로 두고</b>, 소수의 movable 블록만 CP-SAT로 압축/재배치해 공간 회수. 이웃 고정 → 모델 작음. 밀도 회수 이득은 A보다 작을 수 있음.</p>
+    </div>
+  </div>
+
+  <div class="callout warnbox">
+    <div class="h">⚠️ 반증된 레버 — 다시 시도 금지</div>
+    메모리·<code>CLAUDE.md</code>상 <b>"exact box packer"(=box-decomp 풀 버전) · "finer-raster" · "LCA/contact-area 배치"</b>는 이미 반증됐다. A/B는 구조가 다르지만(한 축 고정 / 부분 LNS), 채택 판정은 반드시 <b>full set1(또는 ALL40)의 총 obj</b> 기준이어야 한다 — 개별 z나 단일 캡처 랭킹으로 판단 금지(사용자 측정 규칙).
+  </div>
+
+  <h3>요약 의사결정</h3>
+  <table>
+    <tr><th>질문</th><th>답</th></tr>
+    <tr><td>decode에 CP-SAT를 넣을 수 있나?</td><td><b>구조적으론 가능하고 이미 했다</b>(box-decomp). 단 풀 버전은 폭발 → 작은 베이만 이득.</td></tr>
+    <tr><td>왜 다른 CP-SAT(타이밍)는 강력한가?</td><td>공간을 <b>안 풀고</b> 고정해 1D로 환원했기 때문. decoupling이 비결.</td></tr>
+    <tr><td>그럼 밀도 갭의 진짜 레버는?</td><td>전용 2D nesting(NFP / semi-discrete BLF / compaction). CP-SAT를 쓴다면 <b>A(shelf+1D)</b>가 §5 트릭과 일치해 가장 유망.</td></tr>
+  </table>
+</section>
+
+<div class="foot">
+  <p>OGC2026 · Fast-Floor Decode &amp; CP-SAT 설명서 · 2026-06-16<br>
+  근거 파일: <span class="tag">src/fastfloor.py</span> <span class="tag">src/myalgorithm.py</span> <span class="tag">src/boxsolver.py</span> ·
+  모든 file:line은 읽기전용 코드분석 2건에서 추출. 실측 obj/한계는 <span class="tag">CLAUDE.md</span> · 메모리 기준.</p>
+  <p>※ 후속: box-decomp의 인스턴스별 timeout/UNSAT fallback 런타임 측정, <code>OGC_BD_CUMUL</code>/<code>OGC_BD_Z1ZERO</code> 보강의 실측 개선폭은 코드만으론 미확인(로그·HTML 정독 필요).</p>
+</div>
+
+</div>
+</body>
+</html>

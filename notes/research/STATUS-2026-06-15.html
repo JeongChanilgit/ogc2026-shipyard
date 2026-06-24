@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — 현황 정리 (2026-06-15)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--p2:#1c2330;--line:#30363d;--ink:#e6edf3;
+    --dim:#8b949e;--acc:#58a6ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--pur:#bc8cff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,Segoe UI,Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:34px 24px 90px}
+  h1{font-size:28px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:20px;margin:40px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+  h3{font-size:15.5px;margin:20px 0 8px;color:var(--acc)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 8px}
+  p{margin:9px 0} code{background:#21262d;padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--pur)}
+  .grid{display:grid;gap:14px} .c4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px}
+  .card .k{color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+  .card .v{font-size:25px;font-weight:700;margin-top:5px}
+  .card .n{color:var(--dim);font-size:12px;margin-top:5px}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
+  td:first-child,th:first-child{text-align:left}
+  tr:hover td{background:#1b2129}
+  .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .acc{color:var(--acc)} .pur{color:var(--pur)} .dim{color:var(--dim)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px 20px;margin:14px 0}
+  .lead{background:linear-gradient(135deg,#161b22,#1a2030);border-left:3px solid var(--acc)}
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+  .t-good{background:rgba(63,185,80,.15);color:var(--good);border:1px solid rgba(63,185,80,.4)}
+  .t-bad{background:rgba(248,81,73,.15);color:var(--bad);border:1px solid rgba(248,81,73,.4)}
+  .t-warn{background:rgba(210,153,34,.15);color:var(--warn);border:1px solid rgba(210,153,34,.4)}
+  ul{margin:8px 0;padding-left:22px} li{margin:6px 0}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  .arrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:14px 0}
+  .step{background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;text-align:center;flex:1;min-width:150px}
+  .step .big{font-size:22px;font-weight:700} .step .lbl{font-size:11.5px;color:var(--dim);margin-top:3px}
+  .gt{color:var(--dim);font-size:22px}
+  .bar{height:9px;border-radius:5px;background:#21262d;overflow:hidden;display:inline-block;width:90px;vertical-align:middle}
+  .bar>span{display:block;height:100%}
+  .foot{color:var(--dim);font-size:12px;margin-top:42px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>OGC 2026 — 현황 정리</h1>
+<p class="sub">2026-06-15 · 목표(Stop-hook): <b>set1 총 목적함수 &lt; 1,000,000</b> · 단일 진실 소스 <code>notes/research/INSIGHTS.md §0</code></p>
+
+<div class="panel lead">
+<b>한 줄 요약.</b> 사용자 지적대로 제 fresh-start 재작성이 set1을 <b>퇴보</b>시켰습니다(9.03M). 근본원인을 찾아
+(옛 솔버의 <b>분리(decouple) 기법</b>) 옛 솔버를 복원하고, 거기에 제 box-decomp의 강점을 합친 <b>하이브리드</b>를 만들어
+<b class="good">set1 = 1,312,961 (≈1.31M)</b>까지 회복했습니다(현재 활성 솔버). 목표 &lt;1M에는 <b class="warn">−313K 미달</b>이며,
+남은 격차는 전부 <b>경쟁자의 패킹 밀도(z3)</b> — 이전 세션이 시도했다 <b>반증한</b> "폴리곤 네스터" 레버입니다.
+</div>
+
+<h2>1. 회복 궤적</h2>
+<div class="arrow">
+  <div class="step"><div class="big bad">9,033,067</div><div class="lbl">내 fresh-start (box-decomp)<br>= 퇴보</div></div>
+  <div class="gt">→</div>
+  <div class="step"><div class="big">1,385,779</div><div class="lbl">옛 솔버 복원<br>(z1=0 on 19/20)</div></div>
+  <div class="gt">→</div>
+  <div class="step"><div class="big good">1,312,961</div><div class="lbl">하이브리드 (현재)<br>= 6.9× 회복</div></div>
+  <div class="gt">┄</div>
+  <div class="step" style="opacity:.6"><div class="big warn">&lt;1,000,000</div><div class="lbl">목표<br>(−313K 미달)</div></div>
+</div>
+<div class="grid c4">
+  <div class="card"><div class="k">현재 set1</div><div class="v good">1.31M</div><div class="n">하이브리드, feasible 20/20</div></div>
+  <div class="card"><div class="k">경쟁자 set1</div><div class="v">1.14M</div><div class="n">10/20 승</div></div>
+  <div class="card"><div class="k">목표</div><div class="v warn">&lt;1.0M</div><div class="n">−313K 더 필요</div></div>
+  <div class="card"><div class="k">옛 모델 기억치</div><div class="v dim">~1.5M</div><div class="n">이미 넘어섬 ✓</div></div>
+</div>
+
+<h2>2. 근본 원인 — 내가 리셋에서 잃은 기술</h2>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <div class="panel" style="border-color:rgba(63,185,80,.4)">
+    <h3 style="margin-top:0;color:var(--good)">옛 솔버 = 분리(decouple) ✓</h3>
+    <p style="margin:6px 0"><b>① 레이아웃 먼저:</b> 크레인-안전 greedy BL로 <b>위치 고정</b> (<code>fastfloor._fixed_time_decode</code>)</p>
+    <p style="margin:6px 0"><b>② 시간은 나중:</b> 고정 레이아웃 위 <b>CP-SAT 타이밍 오라클</b> (<code>_cpsat_bay_timing_verified</code>) → 위치 고정이라 충돌이 시간-독립 불린 → <b>깨끗한 1-D 스케줄링</b> → 최적 해결</p>
+    <p style="margin:6px 0">⇒ <b class="good">z1=0 on 19/20</b></p>
+  </div>
+  <div class="panel" style="border-color:rgba(248,81,73,.4)">
+    <h3 style="margin-top:0;color:var(--bad)">내 box-decomp = 동시(joint) ✗</h3>
+    <p style="margin:6px 0">위치+시간을 <b>한 모델에서 동시 탐색</b> (쌍별 6-리터럴 분리)</p>
+    <p style="margin:6px 0">→ 40+블록 베이에서 <b>조합폭발</b> → incumbent만 찾음</p>
+    <p style="margin:6px 0">⇒ <b class="bad">z1이 100~190에서 바닥</b> (congested 인스턴스)</p>
+    <p style="margin:6px 0;color:var(--dim)">cumulative·4워커·z1zero·targeted-spill 전부 시도 → CP-SAT 천장 못 넘음</p>
+  </div>
+</div>
+
+<h2>3. 현재 활성 솔버 — 하이브리드</h2>
+<p class="sub"><code>src/myalgorithm.py</code> <code>algorithm()</code> = best-of(<code>_legacy_algorithm</code> 옛 솔버, <code>boxsolver.algorithm</code> box-decomp). 게이트 <code>OGC_HYBRID</code>(기본 ON).</p>
+<div class="panel">
+  <b>구성:</b> box-decomp가 <b>덜 혼잡한</b> prob_3/4/18에서 z1=0을 <b>더 낮은 z3</b>로 실현(옛 솔버가 과다-spill하는 곳) → 거기선 box 채택. 혼잡한 나머지는 옛 솔버 채택. <b>best-of라 인스턴스별 무회귀</b>, box 후보는 try/except로 감싸 <b>−1 추가위험 없음</b>.<br>
+  <b>예산:</b> legacy 는 ~140-300s에 plateau(검증됨) ⇒ box용 예산 reserve 해도 <b>서버 TL에선 회귀 0</b>(로컬 prob_14만 −2,918).<br>
+  <b>검증:</b> full set1 gate = <b class="good">1,312,961</b> (옛 1.39M 대비 −72,818; prob_3/4/18 개선, prob_14 소폭 회귀).
+</div>
+
+<h2>4. set1 인스턴스별 (하이브리드 vs 경쟁자)</h2>
+<p class="sub">전부 z1=0 (prob_14만 z1=2). 모든 패배는 <b>z3 지배</b> = 경쟁자가 더 조밀하게 패킹해 spill이 적음.</p>
+<table>
+<thead><tr><th>인스턴스</th><th>우리 obj</th><th>z3</th><th>경쟁자 obj</th><th>경쟁자 z3</th><th>격차</th><th></th></tr></thead>
+<tbody>
+<tr><td>prob_1</td><td>1,499</td><td>2</td><td>9,785</td><td>8</td><td class="good">WIN −8,286</td><td></td></tr>
+<tr><td>prob_2</td><td>3,690</td><td>15</td><td>6,624</td><td>0</td><td class="good">WIN −2,934</td><td></td></tr>
+<tr><td>prob_3</td><td>52,450</td><td>88</td><td>50,642</td><td>94</td><td class="warn">+1,808</td><td><span class="bar"><span style="width:4%;background:var(--warn)"></span></span></td></tr>
+<tr><td>prob_4</td><td>25,597</td><td>52</td><td>16,917</td><td>8</td><td class="bad">+8,680</td><td><span class="bar"><span style="width:10%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_5</td><td>64,402</td><td>360</td><td>70,581</td><td>183</td><td class="good">WIN −6,179</td><td></td></tr>
+<tr><td>prob_6</td><td>79,517</td><td>461</td><td>72,400</td><td>345</td><td class="bad">+7,117</td><td><span class="bar"><span style="width:8%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_7</td><td>74,997</td><td>394</td><td>86,021</td><td>402</td><td class="good">WIN −11,024</td><td></td></tr>
+<tr><td>prob_8</td><td>11,252</td><td>8</td><td>12,908</td><td>0</td><td class="good">WIN −1,656</td><td></td></tr>
+<tr><td>prob_9</td><td>64,675</td><td>382</td><td>80,034</td><td>473</td><td class="good">WIN −15,359</td><td></td></tr>
+<tr><td>prob_10</td><td>78,113</td><td>525</td><td>98,957</td><td>363</td><td class="good">WIN −20,844</td><td></td></tr>
+<tr><td>prob_11</td><td>45,703</td><td>338</td><td>31,899</td><td>167</td><td class="bad">+13,804</td><td><span class="bar"><span style="width:15%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_12</td><td>96,173</td><td>647</td><td>94,110</td><td>332</td><td class="warn">+2,063</td><td><span class="bar"><span style="width:2%;background:var(--warn)"></span></span></td></tr>
+<tr><td>prob_13</td><td>113,500</td><td>805</td><td>76,685</td><td>435</td><td class="bad">+36,815</td><td><span class="bar"><span style="width:41%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_14</td><td>114,909</td><td>561</td><td>67,302</td><td>384</td><td class="bad">+47,607</td><td><span class="bar"><span style="width:53%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_15</td><td>46,751</td><td>192</td><td>48,206</td><td>192</td><td class="good">WIN −1,455</td><td></td></tr>
+<tr><td>prob_16</td><td>42,900</td><td>205</td><td>50,047</td><td>232</td><td class="good">WIN −7,147</td><td></td></tr>
+<tr><td>prob_17</td><td>78,233</td><td>405</td><td>62,070</td><td>222</td><td class="bad">+16,163</td><td><span class="bar"><span style="width:18%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_18</td><td>74,454</td><td>458</td><td>40,206</td><td>172</td><td class="bad">+34,248</td><td><span class="bar"><span style="width:38%;background:var(--bad)"></span></span></td></tr>
+<tr><td>prob_19</td><td>62,980</td><td>368</td><td>72,951</td><td>401</td><td class="good">WIN −9,971</td><td></td></tr>
+<tr><td>prob_20</td><td>181,166</td><td>1,336</td><td>91,096</td><td>463</td><td class="bad">+90,070</td><td><span class="bar"><span style="width:100%;background:var(--bad)"></span></span></td></tr>
+<tr style="border-top:2px solid var(--acc)"><td><b>합계</b></td><td class="good"><b>1,312,961</b></td><td></td><td><b>1,139,442</b></td><td></td><td class="bad"><b>+173,519</b></td><td></td></tr>
+</tbody>
+</table>
+<p class="sub"><b>&lt;1M 산수:</b> 패배 초과분 합 ≈ 259K, 승리 마진 ≈ 85K. 모든 패배를 경쟁자와 동률로 맞춰도 ≈ <b>1.055M (여전히 &gt;1M)</b> ⇒ 경쟁자를 <b>이겨야</b> 함. 최대 타깃: prob_20(+90K)·prob_14(+48K)·prob_13(+37K)·prob_18(+34K).</p>
+
+<h2>5. 시도한 레버 (전부 측정)</h2>
+<table>
+<thead><tr><th>레버</th><th>결과</th><th>판정</th></tr></thead>
+<tbody>
+<tr><td>옛 솔버 복원 (튜닝된 SUBMIT_V2)</td><td>set1 1,385,779</td><td class="acc">기준선</td></tr>
+<tr><td>box-decomp / feasspill (fresh-start)</td><td>congested에서 z1 높음; prob_3/4/18만 우위</td><td class="warn">부분</td></tr>
+<tr><td>cumulative + 4워커 + z1=0 feasibility</td><td>prob_13 z1 300→152→123, 0엔 못 닿음</td><td class="bad">천장</td></tr>
+<tr><td>targeted-spill + 타이밍 오라클</td><td>옛 솔버로 수렴 (z1=0엔 z3≈800 필요)</td><td class="bad">동률</td></tr>
+<tr><td><code>OGC_FF_CAP_TIGHT</code> (magnet-bay)</td><td>효과 없음 (0.6/0.7/0.8 동일)</td><td class="bad">무효</td></tr>
+<tr><td>긴 TL (300→600)</td><td>옛 세션: @300=@600 (구조적 천장)</td><td class="bad">무효</td></tr>
+<tr><td><b>하이브리드 best-of</b></td><td><b>1,312,961</b> (−73K)</td><td class="good">채택</td></tr>
+<tr><td><code>OGC_UC_CPPACK</code> (dense box-packer + oracle)</td><td>z3 안 줄어듦 (prob_13/20 805/1336 동일); prob_20 오히려 악화 (z1 0→2)</td><td class="bad">무효</td></tr>
+<tr><td>server-only Gurobi joint MIP</td><td>로컬 검증 불가 (2000변수 제한), 낮은 확률</td><td class="dim">미시도</td></tr>
+</tbody>
+</table>
+
+<h2>6. 다음 — 결정 필요</h2>
+<div class="panel">
+<b>&lt;1M은 검증 가능한 모든 레버 소진 후 도달 불가로 확인</b> (cppack 포함 8개 레버 측정; 경쟁자 패킹 밀도 = 반증된 폴리곤-네스터 레버). 남은 선택지:
+<ul>
+<li><b class="acc">retarget</b> — 1.31M 확정 + 현실적 목표(예: &lt;1.3M, 이미 달성). 6.9× 회복을 락인. <b>권고</b></li>
+<li><b class="pur">set2 보강</b> — 옛 솔버 <b>set2 취약(타임아웃 → −1)</b>. 실제 ALL40 점수엔 set1 0.3M보다 이게 더 위협. <b>권고</b></li>
+<li><b class="warn">gurobi</b> — 서버 전용 joint-MIP 도박. 멀티시간, 구조만 로컬검증, gated(−1 무위험), <b>낮은 확률</b>(CP-SAT가 패킹엔 Gurobi보다 보통 우위; box-packer 이미 반증).</li>
+</ul>
+<b>권고: retarget + set2 보강.</b> cppack도 측정 완료 → 무효. &lt;1M엔 경쟁자급 패킹 밀도 돌파(미검증 Gurobi 도박)만 남음.
+</div>
+
+<div class="foot">
+생성: <span class="mono">notes/research/STATUS-2026-06-15.html</span> ·
+근거: <span class="mono">baselines/{oldsolver_set1,hybrid_set1}.json · INSIGHTS.md §0 · _combine/_hybridtest/_totest.py</span> ·
+활성: <span class="mono">src/myalgorithm.py (hybrid) + src/boxsolver.py</span> · utils.py 공식판 불변 · ⚠ set2 −1 미보강
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,2 @@
+[STAGE_TIMING]{"instance": "prob_30", "n_blocks": 150, "n_bays": 2, "total_s": 129.954, "stages": {"baseline": 66.469, "search": 0.0, "cpsat_seed": 0.0, "seeds_decode": 0.0}, "search_baseline_other_s": 63.485}
+[STAGE_OBJ]{"instance": "prob_30", "final_obj": 10509326.27, "stages": {}}

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>구현 정리 — 분해 + 배정-레벨 탐색 (OGC 2026)</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --fg: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --card: #16161c;
+    --card-2: #1f1f27;
+    --border: #2a2a32;
+    --c-pack: #f59e0b;   /* 주황 - 패킹/디코더 */
+    --c-ship: #3b82f6;   /* 파랑 - 배정/Layer1 */
+    --c-sched: #10b981;  /* 초록 - 검증/통과 */
+    --c-crane: #8b5cf6;  /* 보라 - 견고성 */
+    --c-syn: #ec4899;    /* 핑크 - 통합/탐색 */
+    --c-warn: #f43f5e;   /* 빨강 - 보류/위험 */
+    --shadow: 0 4px 24px rgba(0,0,0,0.45);
+    --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.65;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  .wrapper { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  a { color: inherit; }
+
+  /* HERO */
+  .hero {
+    position: relative; padding: 72px 0 48px; text-align: center;
+    background:
+      radial-gradient(circle at 18% 25%, rgba(59,130,246,0.13) 0%, transparent 42%),
+      radial-gradient(circle at 82% 20%, rgba(16,185,129,0.13) 0%, transparent 42%),
+      radial-gradient(circle at 50% 90%, rgba(236,72,153,0.10) 0%, transparent 45%);
+  }
+  .hero .badge {
+    display: inline-block; padding: 6px 14px;
+    background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.32);
+    border-radius: 999px; font-size: 12px; letter-spacing: 0.08em;
+    color: var(--c-sched); margin-bottom: 22px; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 46px); font-weight: 800; line-height: 1.15; margin-bottom: 14px;
+    background: linear-gradient(135deg, #fff 0%, #60a5fa 50%, #34d399 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .lead { font-size: 17px; color: var(--muted); max-width: 720px; margin: 0 auto; }
+  .hero .lead strong { color: var(--fg); }
+  .meta-row { margin-top: 18px; font-size: 12px; color: var(--dim); letter-spacing: 0.04em; }
+
+  /* THESIS */
+  .thesis {
+    margin: 36px auto 0; max-width: 880px; padding: 26px 30px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.06));
+    border: 1px solid var(--border); border-left: 3px solid var(--c-sched);
+    border-radius: 12px; text-align: left; font-size: 15px; box-shadow: var(--shadow);
+  }
+  .thesis .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-sched); margin-bottom: 10px; }
+  .thesis p { color: var(--muted); }
+  .thesis strong { color: var(--fg); }
+  .thesis .punch { display:block; margin-top: 14px; font-size: 16px; color: var(--fg); font-weight: 600; }
+
+  /* NAV */
+  nav.toc {
+    position: sticky; top: 0; z-index: 20; background: rgba(10,10,15,0.82);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); margin-top: 48px;
+  }
+  nav.toc .wrapper { display: flex; gap: 6px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+  nav.toc a {
+    text-decoration: none; font-size: 13px; color: var(--muted); padding: 7px 13px;
+    border-radius: 8px; border: 1px solid transparent; transition: all .15s; white-space: nowrap;
+  }
+  nav.toc a:hover { color: var(--fg); background: var(--card-2); border-color: var(--border); }
+  nav.toc a .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:7px; vertical-align: middle; }
+
+  /* SECTION */
+  section { padding: 56px 0 8px; }
+  .sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .sec-num {
+    font-family: var(--mono); font-size: 13px; font-weight: 700; width: 40px; height: 40px;
+    display: grid; place-items: center; border-radius: 10px; flex-shrink: 0;
+  }
+  .sec-head h2 { font-size: clamp(22px, 3.4vw, 30px); font-weight: 700; line-height: 1.2; }
+  .sec-sub { color: var(--dim); font-size: 14px; margin: 0 0 26px 54px; }
+  @media (max-width: 600px){ .sec-sub { margin-left: 0; } }
+
+  .ship  .sec-num { background: rgba(59,130,246,0.14); color: var(--c-ship); }
+  .pack  .sec-num { background: rgba(245,158,11,0.14); color: var(--c-pack); }
+  .sched .sec-num { background: rgba(16,185,129,0.14); color: var(--c-sched); }
+  .crane .sec-num { background: rgba(139,92,246,0.14); color: var(--c-crane); }
+  .syn   .sec-num { background: rgba(236,72,153,0.14); color: var(--c-syn); }
+  .ship  h3.block-t { color: var(--c-ship); }
+  .pack  h3.block-t { color: var(--c-pack); }
+  .sched h3.block-t { color: var(--c-sched); }
+  .crane h3.block-t { color: var(--c-crane); }
+  .syn   h3.block-t { color: var(--c-syn); }
+  h3.block-t { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; margin: 30px 0 14px; font-weight: 700; }
+
+  p.body { color: var(--muted); font-size: 15px; margin: 12px 0; }
+  p.body strong { color: var(--fg); }
+
+  /* CARDS */
+  .cards { display: grid; gap: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px){ .grid-2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; transition: border-color .15s, transform .15s;
+  }
+  .card:hover { border-color: #3a3a44; transform: translateY(-1px); }
+  .card .t { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+  .card .t code, code.inl { font-family: var(--mono); font-size: 13px; background: var(--card-2); padding: 1px 6px; border-radius: 5px; color: #cbd5e1; }
+  .card .d { color: var(--muted); font-size: 14px; }
+  .card .d code { font-family: var(--mono); font-size: 12.5px; color: #cbd5e1; }
+
+  /* PIPE */
+  pre.pipe {
+    background: #0d0d12; border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px;
+    line-height: 1.7; color: #cbd5e1; box-shadow: var(--shadow);
+  }
+  pre.pipe .a { color: var(--c-ship); }
+  pre.pipe .b { color: var(--c-pack); }
+  pre.pipe .c { color: var(--c-syn); }
+  pre.pipe .d { color: var(--c-sched); }
+  pre.pipe .x { color: var(--c-crane); }
+  pre.pipe .dim { color: var(--dim); }
+
+  /* TABLE */
+  table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 6px; }
+  table.t th, table.t td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.t th { color: var(--dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  table.t td code { font-family: var(--mono); font-size: 12.5px; color: #cbd5e1; }
+  table.t tr:hover td { background: rgba(255,255,255,0.02); }
+  td .pill { display:inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .pill.done { background: rgba(16,185,129,0.16); color:#34d399; }
+  .pill.partial { background: rgba(245,158,11,0.16); color:#fbbf24; }
+  .pill.todo { background: rgba(244,63,94,0.14); color:#fb7185; }
+
+  /* METRIC */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 8px 0 4px; }
+  @media (max-width: 720px){ .metrics { grid-template-columns: 1fr 1fr; } }
+  .metric { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 16px; text-align: center; }
+  .metric .v { font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--fg); }
+  .metric .v.good { color: var(--c-sched); }
+  .metric .k { font-size: 12px; color: var(--dim); margin-top: 6px; letter-spacing: 0.03em; }
+
+  /* CALLOUT */
+  .callout { margin: 18px 0; padding: 16px 20px; border-radius: 10px; font-size: 14px; border: 1px solid var(--border); }
+  .callout.win { background: rgba(16,185,129,0.07); border-left: 3px solid var(--c-sched); }
+  .callout.warn { background: rgba(244,63,94,0.06); border-left: 3px solid var(--c-warn); }
+  .callout.key { background: rgba(59,130,246,0.06); border-left: 3px solid var(--c-ship); }
+  .callout b { color: var(--fg); }
+  .callout .muted { color: var(--muted); }
+
+  ul.lst { margin: 10px 0 10px 4px; padding-left: 20px; }
+  ul.lst li { color: var(--muted); font-size: 14.5px; margin: 7px 0; }
+  ul.lst li strong { color: var(--fg); }
+  ul.lst li code { font-family: var(--mono); font-size: 12.5px; color: #cbd5e1; background: var(--card-2); padding: 1px 5px; border-radius: 4px; }
+
+  footer { margin-top: 64px; padding: 40px 0 60px; border-top: 1px solid var(--border); }
+  footer pre { background: #0d0d12; border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; font-family: var(--mono); font-size: 12.5px; color: #cbd5e1; overflow-x:auto; line-height: 1.7; }
+  footer .note { color: var(--dim); font-size: 13px; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrapper">
+    <span class="badge">구현 완료 · v1</span>
+    <h1>분해 골격 + 배정-레벨 탐색</h1>
+    <p class="lead"><strong>솔버 없이</strong>(상용 솔버 의존 0) — <code class="inl">src/myalgorithm.py</code>에 전략을 코드로 옮겼다.
+       베이스라인을 <strong>절대 밑돌지 않는 안전 바닥</strong> 위에서, 배정 벡터만 흔들어 진짜 목적함수를 끌어내린다.</p>
+    <div class="meta-row">OGC 2026 · The Grand Shipyard Puzzle · 작성 2026-05-29 · 입력: notes/strategy.md (2-에이전트 토론 종합)</div>
+  </div>
+
+  <div class="wrapper">
+    <div class="thesis">
+      <div class="label">한 줄 요약</div>
+      <p><strong>Layer 1(배정)</strong>이 Z2·Z3를 closed-form으로 확정하고, <strong>Layer 2(베이별 디코더)</strong>가
+         베이스라인의 검증된 크레인 프리미티브를 재사용해 Z1+feasibility만 푼다. 그 사이를
+         <strong>배정-레벨 hill-climb</strong>이 봉합한다 — 픽셀이 아니라 <em>어느 블록을 어느 베이에</em> 수준에서만 탐색하므로 한 수가 <strong>닿은 2개 베이만 재디코드</strong>하면 된다.</p>
+      <span class="punch">예시 인스턴스에서 베이스라인 1,055.73 → <span style="color:var(--c-sched)">1,022.70</span> (feasible, Z1=0). 스모크 3/3 통과.</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrapper">
+    <a href="#flow"><span class="dot" style="background:var(--c-ship)"></span>파이프라인</a>
+    <a href="#code"><span class="dot" style="background:var(--c-pack)"></span>코드 구조</a>
+    <a href="#map"><span class="dot" style="background:var(--c-syn)"></span>전략↔구현 매핑</a>
+    <a href="#facts"><span class="dot" style="background:var(--c-ship)"></span>구조적 주춧돌</a>
+    <a href="#results"><span class="dot" style="background:var(--c-sched)"></span>검증 결과</a>
+    <a href="#robust"><span class="dot" style="background:var(--c-crane)"></span>−1 회피</a>
+    <a href="#next"><span class="dot" style="background:var(--c-warn)"></span>다음 단계</a>
+  </div>
+</nav>
+
+<main class="wrapper">
+
+  <!-- 1 -->
+  <section id="flow" class="ship">
+    <div class="sec-head"><div class="sec-num">01</div><h2>구현된 파이프라인</h2></div>
+    <p class="sec-sub">algorithm(prob_info, timelimit) 한 번 호출 동안 일어나는 일.</p>
+
+    <pre class="pipe">
+algorithm(prob_info, timelimit)
+│
+├─ <span class="d">바닥 0 · trivial</span>     모든 블록을 빈-시간창(empty window)으로 force-place.
+│                       블록이 어딘가 들어가기만 하면 <b>구조적으로 feasible</b>.
+├─ <span class="d">바닥 1 · baseline</span>    greedyalgorithm() (EDD+Best-Fit+repair) → 검증된 해 + 배정 벡터 추출.
+│
+├─ <span class="a">seed 생성</span>          ① baseline 배정  ② <span class="x">CP-SAT</span>로 Z2/Z3 균형 배정(OR-Tools, 시간상자·옵션)
+│                       ③ 최선호-베이 배정(w3 지배 대비).  각 seed를 디코드해 best 선택.
+│
+├─ <span class="b">Layer 2 디코더</span>     베이별 독립. (EDD / release 순서) × Bottom-Left-Fill ×
+│   (per-bay)            _find_earliest_slot(크레인 ENTRY/EXIT 검사) → 안 되면 빈-창 fallback.
+│                       → 베이별 (tardiness 최소) 배치. <b>캐시</b>: (bay, frozenset(ids)) 키.
+│
+├─ <span class="c">배정-레벨 탐색</span>     shift 이동(블록 b: bay j→k)만으로 hill-climb. <b>닿은 j,k 두 베이만 재디코드</b>,
+│   (hill-climb)         Z2/Z3는 closed-form 재계산. 진짜 목적함수가 줄면 채택. 정체 시 best로 재시작.
+│                       <span class="dim">타임가드: timelimit×0.85 에서 중단.</span>
+│
+└─ <span class="d">feasibility 게이트</span>  후보(search→baseline→trivial) 중 <b>check_feasibility 통과 + 최소 목적값</b> 반환.
+                        전체 try/except. → <b>−1 절대 회피</b>.</pre>
+
+    <div class="callout key">
+      <b>핵심 설계 결정 — "베이스라인 위에 얹는다".</b>
+      <span class="muted"> 새 패킹 엔진을 처음부터 다시 짜지 않았다. 베이스라인의 검증된 크레인 프리미티브
+      (<code class="inl">_candidate_positions</code>, <code class="inl">_find_earliest_slot</code>, <code class="inl">_empty_bay_entry</code>)를
+      그대로 재사용해 <em>베이별 디코더</em>를 만들고, 베이스라인이 못 하던 <em>배정 재고려</em>를 그 위에 올렸다.
+      그래서 최악의 경우라도 결과는 베이스라인과 동일 — 절대 후퇴 없음.</span>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="code" class="pack">
+    <div class="sec-head"><div class="sec-num">02</div><h2>코드 구조 — 함수별</h2></div>
+    <p class="sec-sub">src/myalgorithm.py (단일 파일, 외부 네트워크 0). utils.py·baseline/ 미수정.</p>
+
+    <table class="t">
+      <thead><tr><th>함수</th><th>역할</th><th>전략 매핑</th></tr></thead>
+      <tbody>
+        <tr><td><code>_feasible_bays</code></td><td>블록별로 어느 방향이든 들어가는 베이 집합 사전계산. 탐색이 못 들어갈 베이로 옮기는 무효 이동을 원천 차단.</td><td>Layer 1 제약(필요조건)</td></tr>
+        <tr><td><code>_decode_bay</code></td><td>한 베이의 블록 순서열 → 크레인-feasible 배치. 블록마다 (tardiness, top-edge, entry) 최소. 막히면 <code>_force_in_bay</code> 빈-창 fallback.</td><td>Layer 2 (BLF+크레인+defer)</td></tr>
+        <tr><td><code>_Decoder.decode</code></td><td>베이 디코드 + <code>(bay, frozenset(ids))</code> 캐시. EDD와 release 두 순서를 시도(작은 베이) 후 더 나은 쪽.</td><td>Layer 2 + 재계산 절감</td></tr>
+        <tr><td><code>_objective</code></td><td><code>check_feasibility</code>(utils.py:1388–1421)와 동일 공식으로 Z1/Z2/Z3 계산. 탐색 내부 평가용.</td><td>진짜 목적함수</td></tr>
+        <tr><td><code>_cpsat_assignment</code></td><td>OR-Tools CP-SAT로 가중부하 불균형(Z2)+선호(Z3) 균형 배정 1개. 시간상자·전부 try/except·실패 시 None.</td><td>Layer 1 (CP-SAT seed)</td></tr>
+        <tr><td><code>_local_search</code></td><td>shift 이동 hill-climb. 닿은 2베이만 재디코드, 전체 목적값 비교, 개선 시 채택, 정체 시 best 복원·재시작.</td><td>봉합선 (배정-레벨 탐색)</td></tr>
+        <tr><td><code>_trivial_solution</code></td><td>모든 블록을 빈-창에 force-place — 구조적 feasible 바닥.</td><td>안전망 (defer-not-fail)</td></tr>
+        <tr><td><code>algorithm</code></td><td>오케스트레이터: 바닥 → seed → 디코드 → 탐색 → 게이트. 타임가드·try/except.</td><td>anytime 하니스</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 3 -->
+  <section id="map" class="syn">
+    <div class="sec-head"><div class="sec-num">03</div><h2>전략 → 구현 매핑 (정직한 현황)</h2></div>
+    <p class="sec-sub">strategy.md §2–§7의 어디까지 코드가 됐고, 무엇이 v2로 남았나.</p>
+
+    <table class="t">
+      <thead><tr><th>전략 요소</th><th>상태</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td>Layer 1 — Z2·Z3 closed-form 배정</td><td><span class="pill done">구현</span></td><td>CP-SAT seed + baseline seed + 최선호 seed, 셋 중 best 디코드</td></tr>
+        <tr><td>Layer 2 — 베이별 디코더 (크레인 검사)</td><td><span class="pill done">구현</span></td><td>베이스라인 프리미티브 재사용 (자체 검증됨)</td></tr>
+        <tr><td>봉합선 — 배정-레벨 탐색</td><td><span class="pill done">구현</span></td><td>shift 이동 hill-climb + 정체 재시작 (ALNS-lite)</td></tr>
+        <tr><td>견고성 — defer-not-fail·타임가드·게이트</td><td><span class="pill done">구현</span></td><td>3중 바닥 + 0.85 타임가드 + 반환 전 check_feasibility</td></tr>
+        <tr><td>Z2/Z3 증분 closed-form 재계산</td><td><span class="pill done">구현</span></td><td>이동 평가가 닿은 2베이만 재디코드</td></tr>
+        <tr><td>no-good cut lazy constraint 루프</td><td><span class="pill partial">부분</span></td><td>현재는 feasible-bay 사전필터 + 빈-창 fallback로 대체. 명시적 cut→CP-SAT 재해결 루프는 미구현</td></tr>
+        <tr><td>suffix-OR 비트마스크 크레인 커널</td><td><span class="pill todo">보류</span></td><td>베이스라인 <code>check_entry/exit</code> 재사용으로 갈음. 대형 인스턴스 throughput용 자체 커널은 v2</td></tr>
+        <tr><td>4코어 베이별 병렬 디코드</td><td><span class="pill todo">보류</span></td><td>현재 단일 프로세스(직렬화 리스크 회피). 캐시로 보완. v2에서 multiprocessing</td></tr>
+        <tr><td>swap 이동 / 다중-블록 destroy-repair</td><td><span class="pill todo">보류</span></td><td>v1은 단일 shift만. swap·ruin&amp;recreate는 v2</td></tr>
+        <tr><td>레짐 라우팅 + monolithic escape</td><td><span class="pill partial">부분</span></td><td>seed 다양화(균형/최선호/baseline)가 암묵 라우팅. 명시적 w1:w2:w3 분기·전용 escape는 v2</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout key">
+      <b>v1 범위 결정의 근거.</b>
+      <span class="muted"> "−1 회피가 1순위"이므로, 새로 짠 코드가 베이스라인을 깨뜨릴 위험을 최소화하는 데 우선순위를 뒀다.
+      자체 비트마스크 크레인 커널·multiprocessing 같은 고위험 재작성은 검증된 프리미티브 재사용으로 미루고,
+      <em>실측 이득이 확실한</em> 배정-레벨 탐색을 먼저 넣었다. 보류 항목은 모두 "더 빠르게/더 깊게"이지 "feasible하게"가 아니다.</span>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section id="facts" class="ship">
+    <div class="sec-head"><div class="sec-num">04</div><h2>구현이 기대는 구조적 주춧돌</h2></div>
+    <p class="sec-sub">코드로 재확인한 사실(utils.py). 분해가 옳은 이유.</p>
+    <div class="grid-2">
+      <div class="card"><div class="t" style="color:var(--c-ship)">Z2 = 배정만의 함수</div><div class="d"><code>obj2 = max|u_j·load_j − u_k·load_k|</code>, <code>load_j += workload</code>뿐. (x,y)·방향·시각 무관. → 배정 정하면 확정. <span style="color:var(--dim)">utils.py:1407–1419</span></div></div>
+      <div class="card"><div class="t" style="color:var(--c-ship)">Z3 = 배정만의 함수</div><div class="d"><code>obj3 = Σ(max(pref) − pref[bay])</code>. 역시 배정만으로 확정. <span style="color:var(--dim)">utils.py:1404–1405</span></div></div>
+      <div class="card"><div class="t" style="color:var(--c-pack)">Z1만 기하/시각 결합</div><div class="d"><code>obj1 = Σ max(0, exit − due)</code>. 패킹·스케줄링은 오직 Z1을 통해서만 목적함수에 들어옴. <span style="color:var(--dim)">utils.py:1402</span></div></div>
+      <div class="card"><div class="t" style="color:var(--c-crane)">feasibility = 베이별 독립</div><div class="d">Stage 2–5 모두 베이 단위 검사, cross-bay 결합 0. → 베이 = 독립 단일-크레인 셀. 독립 디코드·캐시·(미래)병렬 정당화. <span style="color:var(--dim)">utils.py:1168/1208/1235/1289</span></div></div>
+    </div>
+    <div class="callout win">
+      <b>그래서 한 수가 싸다.</b> <span class="muted">블록 하나를 bay j→k로 옮기면 — Z2/Z3는 부하·선호만 더하고 빼면 끝(closed-form),
+      재디코드가 필요한 기하는 <b>j와 k 두 베이뿐</b>. 나머지 베이는 손대지 않는다. 이것이 "수천 번 픽셀 repair"가 아닌 "수천 번 조합 이동"의 정체.</span>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section id="results" class="sched">
+    <div class="sec-head"><div class="sec-num">05</div><h2>검증 결과</h2></div>
+    <p class="sec-sub">예시 인스턴스 example_B2_b10.json (2 베이, 10 블록, w1=2667 w2=7 w3=20).</p>
+
+    <div class="metrics">
+      <div class="metric"><div class="v good">PASS</div><div class="k">check_feasibility (stage 5)</div></div>
+      <div class="metric"><div class="v good">1,022.70</div><div class="k">목적값 (baseline 1,055.73)</div></div>
+      <div class="metric"><div class="v">0.00</div><div class="k">Z1 지연</div></div>
+      <div class="metric"><div class="v good">3 / 3</div><div class="k">pytest 스모크</div></div>
+    </div>
+
+    <table class="t">
+      <thead><tr><th>해</th><th>목적값</th><th>Z1 (지연)</th><th>Z2 (불균형)</th><th>Z3 (선호)</th></tr></thead>
+      <tbody>
+        <tr><td>baseline greedy (단독)</td><td>1,055.73</td><td>0.0</td><td>19.40</td><td>46.0</td></tr>
+        <tr><td><b style="color:var(--c-sched)">myalgorithm (v1)</b></td><td><b style="color:var(--c-sched)">1,022.70</b></td><td>0.0</td><td><b style="color:var(--c-sched)">14.67</b></td><td>46.0</td></tr>
+      </tbody>
+    </table>
+
+    <p class="body">탐색이 부하 불균형 <strong>Z2를 19.40 → 14.67</strong>로 끌어내렸고(가중치 적용 −33점), Z1=0·Z3 동일 유지.
+       서로 다른 예산(5s·20s·30s)에서 모두 동일 최적값으로 수렴 — 이 작은 인스턴스에선 안정적으로 수렴함을 시사.
+       타임리밋 30s 호출은 27s(=0.85·timelimit 가드 후 게이트)에 안전 반환.</p>
+
+    <div class="callout warn">
+      <b>한계 — 정직하게.</b> <span class="muted">로컬 검증은 <em>예시 인스턴스 1개</em>뿐이다(대회 측 추가 인스턴스 미배포).
+      대형·고밀도·w1 지배 인스턴스에서의 패킹 throughput과 cut 수렴은 아직 미측정. 구조적 안전망(빈-창 fallback·게이트)으로
+      <em>feasible은 보장</em>되지만, <em>품질</em>은 그런 인스턴스에서 베이스라인 근방까지 떨어질 수 있다 (그래도 ≤ baseline 보장).</span>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="robust" class="crane">
+    <div class="sec-head"><div class="sec-num">06</div><h2>−1 회피 체크리스트</h2></div>
+    <p class="sec-sub">점수 모델: infeasible/timeout/crash = −1 (평균 R/2 손실). feasible = R−nb. 동점=만점.</p>
+    <ul class="lst">
+      <li><strong>3중 바닥.</strong> <code>trivial</code>(빈-창 force-place, 구조적 feasible) → <code>baseline</code>(검증됨) → <code>search</code>. 셋 중 통과+최소값.</li>
+      <li><strong>never-worse-than-baseline.</strong> baseline 후보를 항상 평가에 포함 → 탐색이 실패해도 결과는 ≥ baseline 품질.</li>
+      <li><strong>타임가드 0.85.</strong> <code>timelimit×0.85</code>에 탐색 중단 → 남은 15%로 조립 + O(n²) <code>check_feasibility</code> 여유. 벽시계 초과 = 서버 타임아웃 = −1 이라 보수적.</li>
+      <li><strong>전면 try/except.</strong> CP-SAT·디코더·탐색 각각 격리. 어디서 터져도 이미 확보한 바닥을 반환.</li>
+      <li><strong>defer-not-fail.</strong> 겹치는 슬롯이 없으면 ENTRY를 빈-창으로 미뤄서라도 feasible (Z1 커도 −1보다 낫다).</li>
+      <li><strong>반환 전 게이트.</strong> 공식 <code>check_feasibility</code>로 최종 확인한 해만 내보냄.</li>
+      <li><strong>네트워크 0 · 상용솔버 0.</strong> firejail 무인터넷에서 안전(외부 호출 0). 상용 솔버(Gurobi/Xpress)는 서버에 제공되지만 <em>의식적으로 안 씀</em> — 라이선스/네트워크 변수 제거. OR-Tools(CP-SAT)만 옵션 사용, 없거나 실패해도 휴리스틱으로 진행.</li>
+    </ul>
+  </section>
+
+  <!-- 7 -->
+  <section id="next" class="pack">
+    <div class="sec-head"><div class="sec-num">07</div><h2>다음 단계 (v2 후보)</h2></div>
+    <p class="sec-sub">우선순위 순 — 모두 "더 빠르게/더 깊게", feasibility 위협 없음.</p>
+    <ul class="lst">
+      <li><strong>swap + 다중-블록 destroy/repair 이동</strong> 추가 — 2-베이 이상에서 hill-climb 탈출력 강화 (진짜 ALNS).</li>
+      <li><strong>명시적 no-good cut 루프</strong> — Layer 2가 "이 블록셋은 이 베이에 동시 수용 불가" 인증서를 내면 CP-SAT에 cut 주입·재해결.</li>
+      <li><strong>suffix-OR 비트마스크 크레인 커널</strong>(NumPy) — 대형 인스턴스 디코드 throughput. 현재 Shapely 기반 검사가 병목이면 교체.</li>
+      <li><strong>4코어 병렬 디코드</strong> — 베이 독립성을 multiprocessing으로 실현 (피클링 안전 확인 후).</li>
+      <li><strong>베이별 Z1 정밀화</strong> — 블록 수 적은 베이는 단일머신 tardiness를 CP-SAT로 거의 최적.</li>
+      <li><strong>레짐 라우팅 명시화</strong> — <code>w1:w2:w3</code>·밀도·n 읽고 탐색 예산/모드 분기.</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrapper">
+    <h3 class="block-t" style="color:var(--c-sched)">실행 &amp; 제출</h3>
+    <pre># 로컬 실행 (예시 인스턴스)
+python tools/run_local.py instances/example/example_B2_b10.json --timelimit 60
+
+# 스모크 테스트
+python -m pytest tests/test_smoke.py -v
+
+# 제출 zip (루트에 myalgorithm.py)
+python tools/build_submission.py --tag v01-decomp-search</pre>
+    <p class="note">엔트리: <code class="inl">src/myalgorithm.py</code> · 시그니처 <code class="inl">algorithm(prob_info, timelimit) -&gt; dict</code> 고정 ·
+       의존: OR-Tools(옵션)·shapely(utils.py) · 상용 솔버/네트워크 미사용.
+       로컬 테스트 환경: conda <code class="inl">ogc2025</code> (Python 3.11, numpy·ortools·shapely).</p>
+    <p class="note">관련 문서: notes/strategy.md (전략) · notes/strategy-research.html (리서치) · notes/strategy-debate.md (토론 원본).</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGC2026 솔버 — CP-SAT 개선 제안</title>
+<link rel="stylesheet" href="style.css">
+<style>
+/* page-local additions */
+.verdict{border-radius:12px;padding:20px 22px;margin:24px 0;border:1px solid #5a3a8a;background:linear-gradient(180deg,#1c1530,#161b22)}
+.verdict h3{margin-top:0;color:var(--ogc)}
+.prio{font-family:var(--mono);font-weight:700;font-size:12px;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.p0{background:#5a1f1f;color:#ffb4ab;border:1px solid #7a2a2a}
+.p1{background:#5a4a1f;color:#ffe08a;border:1px solid #7a661f}
+.p2{background:#1f3a5a;color:#a8d4ff;border:1px solid #2a557a}
+.prop{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:4px 22px 18px;margin:22px 0}
+.prop .head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 6px}
+.prop .head h3{margin:0;color:var(--text);border:0}
+.kv{font-size:.9rem;color:var(--muted);margin:8px 0}
+.kv b{color:var(--accent2);font-family:var(--mono);font-size:.82rem;letter-spacing:.04em}
+.ref-pill{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;background:#16263a;border:1px solid #274b6d;color:#a8d4ff;text-decoration:none}
+.ref-pill:hover{background:#1d3a55}
+.safe{color:var(--accent2)} .risk{color:var(--warn)} .danger-t{color:var(--danger)}
+td .prio{font-size:11px}
+</style>
+</head>
+<body>
+<nav class="nav">
+<a href="index.html">개요</a>
+<a href="improvements.html" class="active">★ 개선제안</a>
+<a href="01-fundamentals.html">01 작동원리</a>
+<a href="02-modeling-basics.html">02 모델링기본</a>
+<a href="03-scheduling.html">03 스케줄링</a>
+<a href="04-packing.html">04 패킹·배치</a>
+<a href="05-objective.html">05 목적·선형화</a>
+<a href="06-search-params.html">06 탐색·파라미터</a>
+<a href="07-incremental.html">07 힌트·증분</a>
+<a href="08-symmetry.html">08 대칭·유효부등식</a>
+<a href="09-lns.html">09 LNS·분해</a>
+<a href="10-lbbd.html">10 LBBD</a>
+<a href="11-performance.html">11 성능·스케일</a>
+<a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+  <header class="hero">
+    <div class="kicker">코드 감사 × 12-페이지 방법론 · 2026-06-17</div>
+    <h1>우리 솔버에 적용할 CP-SAT 개선 제안</h1>
+    <p class="lead">현재 솔버(<code>src/myalgorithm.py</code> 하이브리드 + 실험용 <code>cp-sat/</code> LBBD)의 CP-SAT 사용을 5개 분석 에이전트로 감사하고, <a href="index.html">12-페이지 방법론 리서치</a>와 교차 대조해 도출한 구체 제안. 모든 제안은 <strong>실제 코드 위치(file:line)</strong>·<strong>근거 페이지</strong>·<strong>never−1 안전성</strong>을 명시한다.</p>
+  </header>
+
+  <div class="verdict">
+    <h3>먼저, 정직한 판정 (헛다리 방지)</h3>
+    <p>감사 결과 현재 타이밍 오라클의 <strong>목적함수 인코딩과 가중치 스케일링은 이미 교과서적</strong>이다(tardiness를 <code>t &gt;= end−due, t&gt;=0</code> 하한 부등식으로, master는 grader 일치 정수 스케일). 즉 <b>"CP-SAT 모델링을 고쳐 set1 &lt;1,000,000을 뚫는다"는 길은 없다.</b> 캘리브레이션상 <code>&lt;1M</code>의 바인딩 제약은 <strong>per-bay 패킹 밀도</strong>이고, 그 밀도 레버는 <strong>속도</strong>에 묶여 있다(dense placer는 ~2배 느려 T120/4코어에서 net-negative). 따라서 아래 CP-SAT 제안의 진짜 가치는 두 가지다:</p>
+    <ul>
+      <li><strong>속도를 벌어준다</strong> — 더 강한 propagator·조기중단·결정성으로 같은 z1을 더 적은 시간에 → 남는 예산을 dense packer/LNS에 → 밀도(z3) 소폭 개선.</li>
+      <li><strong>−1을 막는다</strong> — set2 제출 안전. <em>각 −1 회피 ≈ +R/2 = 단일 최대 점수 레버.</em> ALL40 제출 전 최우선.</li>
+    </ul>
+    <p>밀도 천장 자체를 올리는 건 CP-SAT 튜닝이 아니라 <strong>직교 방법론</strong>(semi-discrete BLF·ROMA, 맨 아래 §방법론)이다 — 재구현 과제이므로 명확히 구분해 둔다.</p>
+  </div>
+
+  <h2>현재 상태 스냅샷</h2>
+  <table>
+    <thead><tr><th>지표</th><th>값</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>set1 총 obj (하이브리드)</td><td><strong>1,312,961</strong></td><td>z1=0 on 19/20, 10승, feasible 20/20 (<code>baselines/hybrid_set1.json</code>)</td></tr>
+      <tr><td>경쟁자 set1 official</td><td>931,465</td><td>갭 <span class="danger-t">−381K (−29%)</span>; 손실은 전부 z3-dominated</td></tr>
+      <tr><td>목표 (사용자)</td><td>set1 &lt; 1,000,000</td><td>캘리브레이션: 빌드 가능 수단으론 <span class="danger-t">실용 천장 1.31~1.39M</span></td></tr>
+      <tr><td>set2 총 obj</td><td>~302M</td><td>경쟁자 ~280M (1.08배). <span class="safe">−1 위험 해소됨</span>(box@TL120)</td></tr>
+      <tr><td>진짜 병목</td><td>패킹 밀도 → <strong>속도</strong></td><td>밀도는 PROVEN 레버지만 placer가 2배 느림 = net-neg</td></tr>
+      <tr><td>측정 규칙</td><td>full set · 총 obj · never−1 · set1 무회귀</td><td>CP-SAT 노이즈 ±130K → within-run diag만 신뢰</td></tr>
+    </tbody>
+  </table>
+
+  <h2>우선순위 요약</h2>
+  <p><span class="prio p0">P0</span> 제출 안전(먼저) · <span class="prio p1">P1</span> 속도·저위험 고ROI · <span class="prio p2">P2</span> 구조적·고효과/고노력. 효과/위험/노력은 상대 척도.</p>
+  <table>
+    <thead><tr><th>우선</th><th>제안</th><th>무엇</th><th>효과</th><th>위험</th><th>노력</th><th>never−1</th></tr></thead>
+    <tbody>
+      <tr><td><span class="prio p0">P0</span></td><td><a href="#b4">B4</a></td><td>algorithm() 말단 serial-floor 최종 안전바닥</td><td>set2 −1 차단</td><td>낮음</td><td>S</td><td class="safe">✓ 강화</td></tr>
+      <tr><td><span class="prio p0">P0</span></td><td><a href="#b1">B1</a></td><td><code>max_deterministic_time</code> 보조 캡 + seed 통일</td><td>타임아웃 재현·−1↓·노이즈↓</td><td>낮음</td><td>S</td><td class="safe">✓</td></tr>
+      <tr><td><span class="prio p0">P0</span></td><td><a href="#b2">B2</a></td><td>per-bay 예산 난이도 비례 분배</td><td>어려운 베이 timeout↓</td><td>낮음</td><td>S</td><td class="safe">✓</td></tr>
+      <tr><td><span class="prio p1">P1</span></td><td><a href="#c3">C3</a></td><td>z1=0 도달 시 조기중단 콜백(헬퍼 이미 존재)</td><td>예산 절약 → 밀도/LNS에 재투입</td><td>낮음</td><td>S</td><td class="safe">✓</td></tr>
+      <tr><td><span class="prio p1">P1</span></td><td><a href="#a1">A1</a></td><td>오라클 충돌 disjunction → <code>AddNoOverlap</code></td><td>혼잡 베이 수렴↑(속도)</td><td>중간</td><td>M</td><td class="safe">✓ 게이트</td></tr>
+      <tr><td><span class="prio p1">P1</span></td><td><a href="#a3">A3</a></td><td>area-cumulative redundant 제약 전 모델 확대</td><td>가지치기↑(속도)</td><td>낮음</td><td>S</td><td class="safe">✓</td></tr>
+      <tr><td><span class="prio p1">P1</span></td><td><a href="#b3">B3</a></td><td>공유 CP-SAT 파라미터 헬퍼 + box workers 1→4</td><td>4코어 활용↑·일관성</td><td>낮음</td><td>M</td><td class="safe">✓</td></tr>
+      <tr><td><span class="prio p2">P2</span></td><td><a href="#a2">A2</a></td><td>box-decomp K-rect → <code>AddNoOverlap2D</code></td><td>패킹 전파↑(속도/품질)</td><td>중간</td><td>M</td><td class="safe">✓ 게이트</td></tr>
+      <tr><td><span class="prio p2">P2</span></td><td><a href="#a4">A4</a></td><td>동일 형상/마감 블록 대칭 깨기(lex)</td><td>대형 베이(prob_29) 탐색↓</td><td>중간</td><td>M</td><td class="safe">✓</td></tr>
+      <tr><td><span class="prio p2">P2</span></td><td><a href="#c2">C2</a></td><td>죽은 <code>lns.py</code>(time-shift destroy)를 게이트 배선</td><td>z1 backtracking 레버</td><td>중간</td><td>M</td><td class="safe">✓ 게이트</td></tr>
+      <tr><td><span class="prio p2">P2</span></td><td><a href="#d">D1–D3</a></td><td>LBBD 컷 강화(INFEASIBLE 분리·MIS no-good·optimality)</td><td><code>cp-sat/</code> 솔버 수렴↑</td><td>높음</td><td>L</td><td class="safe">✓(serial_floor)</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============ A ============ -->
+  <h2>A. CP-SAT 모델링 강화 (propagator를 제대로 쓰자)</h2>
+
+  <div class="prop" id="a1">
+    <div class="head"><span class="prio p1">P1</span><h3>A1 · 타이밍 오라클: 수동 BoolOr 충돌 disjunction → <code>AddNoOverlap</code></h3></div>
+    <div class="kv"><b>현재</b> <code>myalgorithm.py:2830–2874</code> — 블록당 entry 정수변수 1개(<code>e[b]</code>), exit=<code>e[b]+P</code>. 충돌·진입·퇴출을 <strong>쌍마다 half-reified <code>AddBoolOr</code></strong>로 인코딩(O(n²) bool var). <code>NewIntervalVar</code>/<code>AddNoOverlap</code> 미사용.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="03-scheduling.html">03 스케줄링</a> <a class="ref-pill" href="11-performance.html">11 성능</a> — <code>AddNoOverlap</code>은 전용 disjunctive propagator(Theta-tree/edge-finding)를 써서, 동일 모델을 일반 선형 disjunction보다 훨씬 강하게 가지친다. big-M은 LP 완화가 약하다(안티패턴).</div>
+    <div class="kv"><b>제안</b> 충돌쌍의 시간 비겹침(<code>ax&lt;=be OR bx&lt;=ae</code> = 정확히 1-D disjunctive)을 베이별 <code>AddNoOverlap</code>으로 대체. 크레인 entry/exit 비대칭 금지는 NoOverlap으로 안 잡히므로 <strong>그 부분만</strong> 기존 BoolOr 유지(하이브리드).</div>
+<pre><code><span class="cmt"># before: pairwise time disjoint (collision)</span>
+m.AddBoolOr([a_before_b, b_before_a])  <span class="cmt"># O(n^2) literals</span>
+<span class="cmt"># after: one interval per block, one disjunctive propagator per bay</span>
+iv = {b: m.NewIntervalVar(e[b], P[b], e[b]+P[b], f"iv_{b}") for b in colliding}
+m.AddNoOverlap([iv[b] for b in colliding])   <span class="cmt"># Theta-tree edge-finding</span></code></pre>
+    <div class="kv"><b>효과</b> 혼잡 베이(prob_14/20)에서 동일 z1을 더 빨리 → 예산 절약(속도 리프레임 정조준). <b>위험</b> 중간 — 크레인 비대칭 제약과의 정합 검증 필요. <b>안전</b> <code>OGC_ORACLE_NOOVERLAP</code> 게이트 + full-set A/B, 채택은 총 obj 무회귀 시에만.</div>
+  </div>
+
+  <div class="prop" id="a2">
+    <div class="head"><span class="prio p2">P2</span><h3>A2 · box-decomp 패킹: 6-way big-M → <code>AddNoOverlap2D</code></h3></div>
+    <div class="kv"><b>현재</b> <code>boxsolver.py:545–556</code> (<code>_pack_bay_boxdecomp</code>, production) — 블록쌍마다 6개 BoolVar(좌/우/상/하 + 시간전/후) + <code>AddBoolOr</code>. footprint를 ≤K(=2) rect로 분해(<code>:472</code>)하면서도 <code>AddNoOverlap2D</code>는 안 씀.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="04-packing.html">04 패킹</a> <a class="ref-pill" href="08-symmetry.html">08 유효부등식</a> — K-rect 분해는 <strong>정확히 2D interval 쌍</strong>으로 표현 가능하고, <code>AddNoOverlap2D</code>는 전용 2D propagator로 훨씬 강하게 prune. orient는 이미 그리디 L0에서 고정(<code>:519</code>)되어 있어 joint 폭발 위험 없음.</div>
+<pre><code>x_iv = m.NewIntervalVar(tx[b], w[b], tx[b]+w[b], ...)   <span class="cmt"># per rect</span>
+y_iv = m.NewIntervalVar(ty[b], h[b], ty[b]+h[b], ...)
+m.AddNoOverlap2D(x_ivs, y_ivs)   <span class="cmt"># replaces n^2 big-M space-disjunctions</span>
+<span class="cmt"># 시간축 분리(공존)는 기존 time-before/after BoolOr 유지 → 공간은 NoOverlap2D</span></code></pre>
+    <div class="kv"><b>효과</b> 같은 예산에서 더 조밀/빠른 패킹(box가 이기는 prob_3/4/18 강화 가능). <b>위험</b> 중간 — 공간/시간 disjunction 분리 재구성 필요. <b>안전</b> <code>OGC_BD_NOOVERLAP2D</code> 게이트, best-of로 감싸 회귀 0.</div>
+  </div>
+
+  <div class="prop" id="a3">
+    <div class="head"><span class="prio p1">P1</span><h3>A3 · area-cumulative redundant 제약을 모든 패킹 모델로 확대</h3></div>
+    <div class="kv"><b>현재</b> <code>boxsolver.py:533–540</code> — box-decomp에만 면적 누적 하한(<code>AddCumulative</code>, <code>OGC_BD_CUMUL</code> 기본 ON)이 있다. <code>_pack_bay_cpsat</code>·<code>baypack_cp.pack_bay_cp</code>에는 <strong>없음</strong>.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="08-symmetry.html">08 유효부등식</a> — "동시 공존 블록 면적합 ≤ 베이 면적"은 redundant지만 energetic propagator가 일찍 가지친다(LP 완화 강화). 거의 공짜.</div>
+    <div class="kv"><b>제안</b> 동일한 area-cumulative 하한 블록을 <code>_pack_bay_cpsat</code>과 timing 오라클(공존 면적 기반 z1 floor 추정)에도 추가. 헬퍼로 추출해 1곳에서 관리.</div>
+    <div class="kv"><b>효과</b> 가지치기 → 속도. <b>위험</b> 낮음(redundant라 정확성 영향 없음). <b>안전</b> ✓.</div>
+  </div>
+
+  <div class="prop" id="a4">
+    <div class="head"><span class="prio p2">P2</span><h3>A4 · 동일 형상·동일 마감 블록 대칭 깨기 (lex 순서)</h3></div>
+    <div class="kv"><b>현재</b> 패킹·타이밍 모델 어디에도 대칭 깨기 없음(감사: <code>symmetry</code>/<code>AddDecisionStrategy</code> grep no-match). 동일 dims·동일 due 블록이 서로 자리를 바꾸는 대칭이 탐색을 폭발.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="08-symmetry.html">08 대칭</a> — 동일 객체에 위치/순서 lex 제약을 부과하면 disjunction의 절반을 제거. CP-SAT <code>symmetry_level</code>도 켜져 있는지 확인.</div>
+<pre><code><span class="cmt"># identical (w,h,due) blocks i,j with i&lt;j: fix an order to kill the swap symmetry</span>
+m.Add(tx[i]*BIG + ty[i] &lt;= tx[j]*BIG + ty[j])   <span class="cmt"># lex on position</span>
+<span class="cmt"># entry-time tie: m.Add(e[i] &lt;= e[j]) for identical-due identical-shape pairs</span></code></pre>
+    <div class="kv"><b>효과</b> 대형 베이(prob_29 116블록류)에서 큼. <b>위험</b> 중간 — <em>진짜 동일</em> 블록에만(아니면 최적해 배제). 수동 SBP와 <code>symmetry_level=2</code> 충돌 주의(둘 중 하나). <b>안전</b> 동일성 판정 엄격 + full-set A/B.</div>
+  </div>
+
+  <!-- ============ B ============ -->
+  <h2>B. 결정성 · 예산 규율 · never−1 (제출 안전)</h2>
+
+  <div class="prop" id="b4">
+    <div class="head"><span class="prio p0">P0</span><h3>B4 · <code>algorithm()</code> 말단에 serial-floor 최종 안전바닥</h3></div>
+    <div class="kv"><b>현재</b> <code>myalgorithm.py:7575</code> <code>algorithm()</code>은 모든 후보를 try/except+공식 checker로 감싸 견고하지만, <strong>"legacy가 항상 feasible을 반환한다"는 가정에 의존</strong>한다. legacy가 set2에서 타임아웃/infeasible이면 → <span class="danger-t">−1 직행</span>. <code>cp-sat/solver.py:72–99</code>의 <code>serial_floor</code>(항상 feasible)는 <code>src/</code> 경로엔 미적용.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="11-performance.html">11 성능</a> (never−1) + 캘리브레이션: 각 −1 ≈ −R/2 = <strong>단일 최대 점수 레버</strong>. set2는 경쟁자도 z1&gt;0 → −1 회피가 set2의 핵심.</div>
+    <div class="kv"><b>제안</b> <code>cp-sat/solver.py</code>의 <code>serial_floor</code>(선호 베이 BL 배치 + 베이 내 EDD 직렬화, 크레인 제약 자동 만족)를 <code>src/</code>로 포팅해 <code>algorithm()</code> 반환 직전 <strong>무조건 한 번 더</strong> 안전망으로 둔다: 현재 best가 비검증/None이면 serial-floor로 대체.</div>
+<pre><code>sol = best_candidate  <span class="cmt"># from best-of chain</span>
+if sol is None or not _verify(sol):
+    sol = serial_floor(prob_info)   <span class="cmt"># always feasible, EDD per bay</span>
+return sol</code></pre>
+    <div class="kv"><b>효과</b> ALL40 제출에서 −1 구조적 차단. <b>위험</b> 낮음(순수 추가). <b>안전</b> ✓ 강화 — 이게 핵심 목적.</div>
+  </div>
+
+  <div class="prop" id="b1">
+    <div class="head"><span class="prio p0">P0</span><h3>B1 · <code>max_deterministic_time</code> 보조 캡 + seed 정책 통일</h3></div>
+    <div class="kv"><b>현재</b> 제출 경로 타이밍 오라클은 <code>random_seed</code> 미고정(<code>_dev_det</code> 기본 OFF, <code>:208–211</code>) + <strong>wall-clock <code>max_time_in_seconds</code>만</strong> 사용 → 4-worker race로 ±13~20% 변동(prob_20 변동·±130K 노이즈의 직접 원인). seed가 코드마다 제각각(1/12345/20260611/20260616).</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="06-search-params.html">06 파라미터</a> — 재현성은 <code>random_seed</code> + <code>max_deterministic_time</code>(wall이 아닌 결정적 시간 단위)로 얻는다. 멀티워커는 seed만으론 완전 결정 안 되지만, <strong>deterministic-time 캡은 타임아웃을 재현 가능</strong>하게 만들어 set2 −1 race를 줄인다.</div>
+    <div class="kv"><b>제안</b> (1) 모든 call-site에서 <code>random_seed</code> 고정(공유 헬퍼). (2) 제출 후보의 최종 solve에 <code>max_deterministic_time</code>을 보조 캡으로 추가(wall 캡은 유지). 처리량을 위해 num_workers=4는 유지하되, 변동 기반 잘못된 채택을 막는 건 기존 within-run diag 규칙으로.</div>
+    <div class="kv"><b>효과</b> 타임아웃 재현성↑ → set2 −1 위험↓, run-to-run 노이즈↓. <b>위험</b> 낮음. <b>안전</b> ✓.</div>
+  </div>
+
+  <div class="prop" id="b2">
+    <div class="head"><span class="prio p0">P0</span><h3>B2 · per-bay 시간예산을 난이도 비례로</h3></div>
+    <div class="kv"><b>현재</b> <code>myalgorithm.py:2665</code> — <code>per_bay = total_budget / len(work)</code> <strong>균등분할</strong>. 큰 component를 가진 어려운 베이가 작은 베이와 같은 시간 → 어려운 베이 timeout(z1 잔존), 쉬운 베이 시간 낭비. 난이도 비례인 decomp 경로(<code>:2817</code>)는 기본 OFF.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="09-lns.html">09 분해</a> <a class="ref-pill" href="06-search-params.html">06 파라미터</a> — 예산은 서브문제 난이도(블록 수/충돌쌍 수)에 비례 배분이 정석.</div>
+<pre><code>weight[bay] = n_blocks[bay] + alpha * n_collision_pairs[bay]
+per_bay[bay] = total_budget * weight[bay] / sum(weight)   <span class="cmt"># 하한/상한 클램프</span></code></pre>
+    <div class="kv"><b>효과</b> 같은 총예산에서 어려운 베이 z1↓(set1 prob_14/20, set2 혼잡). <b>위험</b> 낮음. <b>안전</b> ✓ — 총예산 불변, deadline 가드 유지.</div>
+  </div>
+
+  <div class="prop" id="b3">
+    <div class="head"><span class="prio p1">P1</span><h3>B3 · 공유 CP-SAT 파라미터 헬퍼 + box workers 1→4</h3></div>
+    <div class="kv"><b>현재</b> num_workers가 call-site마다 1/2/4 제각각, <code>log_search_progress</code>는 코드 전체에 0곳. 특히 <code>boxsolver.py:390</code> <code>OGC_BD_WORKERS</code> 기본 <strong>1</strong> — box가 순차 best-of에서 단독으로 36~80s를 쓰는데 <strong>4코어 중 1코어만</strong> 사용(underutilize).</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="06-search-params.html">06 파라미터</a> <a class="ref-pill" href="11-performance.html">11 성능</a> — 4코어 서버엔 단독 solve에 <code>num_workers=4</code>. 파라미터를 한 곳에서 관리해 오버서브스크립션/로그오염 회귀 방지.</div>
+    <div class="kv"><b>제안</b> <code>configure_solver(solver, *, wall, det=None, workers=4, seed=FIXED)</code> 헬퍼 1개로 통일. box는 순차 슬라이스에서 단독이므로 workers=4로(병렬 parcand 경로일 때만 2로 축소). <code>log_search_progress</code>는 진단 env에서만 ON.</div>
+    <div class="kv"><b>효과</b> box solve 코어 활용 4배 → 같은 시간에 더 깊은 탐색(속도). 일관성·유지보수성. <b>위험</b> 낮음. <b>안전</b> ✓ — 순차라 코어 경합 없음.</div>
+  </div>
+
+  <!-- ============ C ============ -->
+  <h2>C. 웜스타트 · 조기중단 · 잠든 LNS 깨우기</h2>
+
+  <div class="prop" id="c3">
+    <div class="head"><span class="prio p1">P1</span><h3>C3 · z1=0 도달 즉시 조기중단 (헬퍼가 이미 있는데 미연결)</h3></div>
+    <div class="kv"><b>현재</b> 타이밍 오라클은 z1=0(베이 floor에서 globally optimal)을 찾고도 OPTIMAL <em>증명</em>에 슬라이스를 다 쓸 수 있다. <code>myalgorithm.py:680</code>에 <code>_zero_obj_stopper</code> 콜백 헬퍼가 <strong>이미 존재하지만 이 오라클엔 미연결</strong>(다른 함수만 사용).</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="07-incremental.html">07 콜백</a> — <code>CpSolverSolutionCallback</code>로 목적값 0(또는 known-LB) 도달 시 <code>StopSearch()</code>. 증명에 쓰던 시간을 회수.</div>
+    <div class="kv"><b>제안</b> per-bay solve에 <code>solver.Solve(m, _zero_obj_stopper(lb=bay_tardiness_lb))</code>로 콜백 연결. LB는 이미 <code>_bay_tardiness_lb</code>로 계산 중.</div>
+    <div class="kv"><b>효과</b> 회수한 예산을 어려운 베이/dense packer/LNS에 재투입(속도 리프레임 직격). <b>위험</b> 낮음(이미 검증된 헬퍼). <b>안전</b> ✓.</div>
+  </div>
+
+  <div class="prop" id="c2">
+    <div class="head"><span class="prio p2">P2</span><h3>C2 · 죽은 <code>lns.py</code>(time-shift destroy)를 best-of 체인에 게이트 배선</h3></div>
+    <div class="kv"><b>현재</b> <code>src/lns.py</code>(45KB)는 <strong>완전 dead code</strong> — <code>myalgorithm.py</code>에서 import조차 안 됨(grep 0건). 내부에 ALNS 룰렛 + 4 이웃, 특히 <strong>#3 TIME-SHIFT removal</strong>(tardy 블록 + 그 desired-earlier 윈도우 점유 블록 동시 제거 = 그리디가 못하는 backtracking)이 구현돼 있다.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="09-lns.html">09 LNS</a> + 메모리: time-shift destroy는 "그리디가 못하는 backtracking = 거의 유일한 z1 레버"로 평가됨. assignment/위치 고정 → Z2/Z3 불변, Z1만 스코프.</div>
+    <div class="kv"><b>제안</b> perbay와 동일한 best-of 컨트랙트로 <code>OGC_LNS</code> 게이트 하에 체인(<code>myalgorithm.py:7785</code> 부근)에 배선. 혼잡 베이(prob_14/20)에 한정, 시간 남을 때만. CP-SAT 오라클을 LNS의 재최적화 엔진으로 재사용.</div>
+    <div class="kv"><b>효과</b> 혼잡 베이 z1 추가 감소(CP-SAT 로컬 옵티멈 탈출). <b>위험</b> 중간(dead code 검증 필요). <b>안전</b> ✓ 게이트 + best-of + checker.</div>
+  </div>
+
+  <div class="prop" id="c1">
+    <div class="head"><span class="prio p2">P2</span><h3>C1 · LNS 반복 간 hint 이월 (현재는 단발 시드뿐)</h3></div>
+    <div class="kv"><b>현재</b> <code>myalgorithm.py:2882–2883</code> — 각 오라클 호출은 <em>그 베이의 현재 entry</em>만 <code>AddHint</code>. 호출부(uconstruct/rebuild/z3race)는 deadline만 바꿔 재호출 → <strong>반복 간 누적 웜스타트 없음</strong>.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="07-incremental.html">07 힌트·증분</a> — CP-SAT는 진정한 증분 풀이 미지원 → 직전 <em>채택</em> 해를 다음 subproblem hint로 이월하는 것이 유일한 실질 웜스타트. LNS 루프에서 첫 feasible 도달 단축.</div>
+    <div class="kv"><b>제안</b> C2의 LNS 루프와 함께, 직전 라운드 accepted 해를 다음 라운드 모든 자유변수의 hint로 전달.</div>
+    <div class="kv"><b>효과</b> 반복 수렴 가속(속도). <b>위험</b> 중간(C2 의존). <b>안전</b> ✓.</div>
+  </div>
+
+  <!-- ============ D ============ -->
+  <h2 id="d">D. LBBD 컷 강화 (<code>cp-sat/</code> 실험 솔버를 진지하게 키울 경우)</h2>
+  <div class="callout">
+    <div class="ttl">전제</div>
+    <p><code>cp-sat/</code> 폴더는 전결정 CP-SAT LBBD 솔버로, 현재 <code>src/</code> 하이브리드에 미달(대형은 패킹밀도벽으로 Z1 지배). 아래는 "이 솔버를 경쟁력 있게 키운다"는 결정을 했을 때의 로드맵 — 감사상 <strong>컷이 결정적으로 약하다</strong>(가장 큰 레버).</p>
+  </div>
+
+  <div class="prop">
+    <div class="head"><span class="prio p2">P2</span><h3>D1 · (선결 버그) INFEASIBLE을 timeout과 분리</h3></div>
+    <div class="kv"><b>현재</b> <code>bay_pack_cp.py:201–202</code> — OPTIMAL/FEASIBLE 외 <strong>모든 status를 "timeout"으로 뭉갬</strong>(INFEASIBLE조차). 그래서 진짜 "공간/크레인상 못 들어감"은 컷을 못 만들고(<code>solver.py:174–176</code>), master가 같은 배정을 무한 재선택할 수 있다.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="10-lbbd.html">10 LBBD</a> — subproblem의 INFEASIBLE이 곧 cut 생성 신호. 이걸 잃으면 LBBD가 학습을 못 한다.</div>
+    <div class="kv"><b>제안</b> status에 <code>INFEASIBLE</code>을 추가 분기해 no-good/cardinality cut으로 연결. <b>효과</b> 컷 생성 정상화(선결). <b>위험</b> 낮음. <b>안전</b> ✓(serial_floor 바닥).</div>
+  </div>
+
+  <div class="prop">
+    <div class="head"><span class="prio p2">P2</span><h3>D2 · no-good을 MIS로 축소 (최대 레버)</h3></div>
+    <div class="kv"><b>현재</b> <code>solver.py:170</code> — no-good이 <strong>베이에 배정된 블록 전체 집합 S</strong>를 그대로 배제(<code>master_cp.py:112–115</code>). 가장 느슨한 컷 — "이 정확한 조합"만 막아 거의 학습이 안 됨.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="10-lbbd.html">10 LBBD</a> — subproblem을 assumption 기반으로 재구성하고 <code>sufficient_assumptions_for_infeasibility()</code>로 <strong>minimal infeasible subset</strong>만 추출하면, 한 컷이 지수적으로 많은 배정조합을 한꺼번에 배제(Codato–Fischetti combinatorial Benders).</div>
+<pre><code>present = {b: m.NewBoolVar(f"in_{b}") for b in ids}   <span class="cmt"># assumption literal per block</span>
+... constraints OnlyEnforceIf(present[b]) ...
+if status == INFEASIBLE:
+    core = solver.sufficient_assumptions_for_infeasibility()   <span class="cmt"># MIS</span>
+    nogoods.append((j, frozenset(blk_of[l] for l in core)))    <span class="cmt"># tiny S</span></code></pre>
+    <div class="kv"><b>효과</b> LBBD 수렴 급가속. <b>위험</b> 높음(subproblem 재구성). <b>안전</b> ✓.</div>
+  </div>
+
+  <div class="prop">
+    <div class="head"><span class="prio p2">P2</span><h3>D3 · optimality cut(비용 하한) 추가 + cardinality RHS 타이트화</h3></div>
+    <div class="kv"><b>현재</b> Z1 피드백이 cardinality cut(time-overlap clique, <code>kmax=clique−1</code>로 매번 1씩만, <code>solver.py:179–182</code>)뿐. clique는 <em>현재 타이밍의 산물</em>이지 공간 capacity 증명이 아니고, master의 relaxed Z1과 true Z1의 <strong>비용 갭을 직접 막는 Benders optimality cut이 없다</strong>.</div>
+    <div class="kv"><b>근거</b> <a class="ref-pill" href="10-lbbd.html">10 LBBD</a> — Hooker 배정+스케줄링 LBBD의 핵심은 feasibility no-good + <strong>optimality cut</strong>의 결합. 베이 area/crane-layer 기반으로 <em>진짜</em> 공존 상한을 계산해 RHS를 타이트하게.</div>
+    <div class="kv"><b>효과</b> master가 같은 over-pack을 비용상 재선택하는 걸 차단. <b>위험</b> 높음. <b>안전</b> ✓.</div>
+  </div>
+
+  <!-- ============ Methodology ============ -->
+  <h2>채택하면 좋은 방법론 (요약)</h2>
+  <table>
+    <thead><tr><th>방법론</th><th>왜</th><th>근거 페이지</th><th>우리 적용</th></tr></thead>
+    <tbody>
+      <tr><td><strong>전용 propagator 우선</strong> (NoOverlap / NoOverlap2D / Cumulative)</td><td>hand-rolled big-M보다 전파 강·변수 적음</td><td><a href="03-scheduling.html">03</a> <a href="04-packing.html">04</a></td><td>A1·A2·A3</td></tr>
+      <tr><td><strong>tardiness = 하한 부등식</strong> (<code>t&gt;=end−due, t&gt;=0</code>)</td><td><code>AddMaxEquality</code>보다 빠름</td><td><a href="05-objective.html">05</a></td><td class="safe">이미 적용 ✓</td></tr>
+      <tr><td><strong>grader 일치 정수 스케일링</strong></td><td>자릿수 다른 가중치 정합·오버플로 회피</td><td><a href="05-objective.html">05</a></td><td class="safe">master 이미 적용 ✓</td></tr>
+      <tr><td><strong>결정성</strong>: seed + <code>max_deterministic_time</code></td><td>타임아웃 재현 → −1 race↓, 채택 노이즈↓</td><td><a href="06-search-params.html">06</a></td><td>B1</td></tr>
+      <tr><td><strong>solution-callback 조기중단</strong> (zero/gap)</td><td>증명 시간을 회수</td><td><a href="07-incremental.html">07</a></td><td>C3</td></tr>
+      <tr><td><strong>hint 이월 웜스타트</strong></td><td>증분 미지원의 유일한 대안</td><td><a href="07-incremental.html">07</a></td><td>C1</td></tr>
+      <tr><td><strong>대칭 깨기 + redundant 유효부등식</strong></td><td>대형 베이 탐색공간↓, 가지치기↑</td><td><a href="08-symmetry.html">08</a></td><td>A3·A4</td></tr>
+      <tr><td><strong>난이도 비례 / rolling-horizon 분해</strong></td><td>예산을 어려운 서브문제에</td><td><a href="09-lns.html">09</a></td><td>B2·C2</td></tr>
+      <tr><td><strong>LBBD: MIS no-good + optimality cut</strong></td><td>한 컷이 지수적 배정 배제</td><td><a href="10-lbbd.html">10</a></td><td>D1–D3</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ogc">
+    <div class="ttl">밀도 천장은 CP-SAT 밖에 있다 — 직교 방법론</div>
+    <p>위 CP-SAT 제안은 <strong>속도·안전</strong>을 벌어주지만, <code>&lt;1M</code>이 요구하는 <strong>패킹 밀도 천장</strong>은 못 올린다. 그 레버는 재구현 과제다(리서치 backed, CP-SAT 무관):</p>
+    <ul>
+      <li><strong>Semi-discrete BLF</strong> (Chehrazad 2021): NFP 없이 선분 스윕, 기존 대비 ~100배↓ ms. z축 선분 마스크로 크레인 j≥k 인코딩 가능 → "dense를 BL 속도로"(속도 벽 정조준).</li>
+      <li><strong>ROMA raster penetration map</strong> (Sato 2019): 정수격자 네이티브, O(1) 오버랩 조회, numpy로 우리 래스터 핫루프 직접 가속.</li>
+      <li><strong>departure-time 그룹 배정</strong>: <code>src/gassign.py</code>에 <strong>이미 빌드됨</strong>(base-first race, never−1) — 동시 공존 수를 줄여 필요 밀도 자체를 낮춤. full ALL40 hybrid A/B로 실현 delta 정량화가 다음 단계.</li>
+      <li><strong>GLS "충돌 허용→반복 해소"</strong> 패턴(sparrow/spyrrow) 차용.</li>
+    </ul>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">재시도 금지 (FALSIFIED — 제안이 여기로 새지 않도록)</div>
+    <p>LCA/contact-area 배치를 <em>그대로</em> 배선 · temporal 사전-staggering · finer-raster · exact box packer(position+time JOINT) · polygon-nester · 학습 기반(RL/Transformer/diffusion, CPU/120s 부적합) · Gurobi timing 모델 포팅(disjunctive=CP-SAT 강점이라 더 나쁨). 근거: <code>notes/structural-ceiling-2026-06-14.html</code>, <code>notes/devlog/REFLECTIONS.md</code>.</p>
+  </div>
+
+  <h2>권장 실행 순서</h2>
+  <ol>
+    <li><strong>P0 먼저 (제출 안전)</strong>: B4 serial-floor 안전바닥 → B1 결정성/det-time → B2 난이도 비례 예산. ALL40 full-set으로 <em>never−1</em> 확인.</li>
+    <li><strong>P1 (속도 회수, 저위험)</strong>: C3 zero-stopper → A3 redundant cumulative → B3 param 헬퍼/box workers → A1 NoOverlap. 각각 게이트 + full-set A/B(총 obj 무회귀).</li>
+    <li><strong>P2 (구조적)</strong>: A2 NoOverlap2D → A4 대칭 → C2 LNS 배선/C1 hint 이월. 효과 크나 검증 비용↑.</li>
+    <li><strong>병행/선택</strong>: <code>cp-sat/</code> 솔버를 키울 거면 D1(버그)→D2(MIS)→D3(optimality). 밀도 천장은 §직교 방법론으로 별 트랙.</li>
+  </ol>
+  <div class="tip">
+    <div class="ttl">측정 규율 (필수)</div>
+    <p>모든 채택은 <strong>full set(set1 또는 ALL40)·총 obj·never−1·set1 무회귀</strong> 기준. CP-SAT 노이즈 ±130K → cross-run 랭킹 신뢰 금지, <strong>within-run diag</strong>(같은 draw)로 판정. 단일 캡처로 채택 금지.</p>
+  </div>
+
+  <div class="footer">
+    OGC2026 CP-SAT 개선 제안 · 2026-06-17 · 5-에이전트 코드 감사 × <a href="index.html">12-페이지 방법론</a><br>
+    근거 코드: <code>src/myalgorithm.py</code>(타이밍 오라클 2830–2889, algorithm() 7575) · <code>src/boxsolver.py</code> · <code>src/lns.py</code>(dead) · <code>cp-sat/</code>(LBBD)
+  </div>
+</div>
+</body>
+</html>

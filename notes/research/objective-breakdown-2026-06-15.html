@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — 전 문제 목적함수 분해 (z1·z2·z3) + 경쟁자 비교</title>
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #1c2128;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --text-muted:#8b949e;
+    --text-dim:  #6e7681;
+    --accent:    #58a6ff;
+    --green:     #3fb950;
+    --red:       #f85149;
+    --yellow:    #d29922;
+    --purple:    #bc8cff;
+    --teal:      #39d0d8;
+    --blue-tint: #1a2e4a;
+    --purple-tint:#2a1f3d;
+    --teal-tint: #0f2d2e;
+    --win-row:   #0d2018;
+    --near-row:  #1a1d10;
+    --mono:      'SFMono-Regular', 'Cascadia Code', 'Consolas', 'Liberation Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 24px;
+  }
+
+  /* ── HEADER ── */
+  .page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 20px;
+    font-family: var(--mono);
+  }
+
+  /* ── HERO STRIP ── */
+  .hero-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .hero-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    flex: 1 1 160px;
+    min-width: 140px;
+  }
+  .hero-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 4px;
+  }
+  .hero-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .hero-value.green { color: var(--green); }
+  .hero-value.accent { color: var(--accent); }
+  .hero-value.yellow { color: var(--yellow); }
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+  .hero-caption {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.7;
+  }
+  .hero-caption strong { color: var(--text); }
+
+  /* ── SECTION HEADING ── */
+  .section-heading {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  /* ── TABLES ── */
+  .tbl-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 28px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 8px 10px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th:first-child, th.left { text-align: left; }
+  td {
+    padding: 6px 10px;
+    text-align: right;
+    border-bottom: 1px solid #21262d;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  td.left { text-align: left; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── ROW HIGHLIGHTS ── */
+  tr.row-win td { background: var(--win-row); }
+  tr.row-near td { background: var(--near-row); }
+  tr.row-win:hover td { background: #0f2820; }
+  tr.row-near:hover td { background: #1e2110; }
+
+  /* ── DOMINANT CELL HIGHLIGHTS ── */
+  .dom-z1 {
+    background: var(--blue-tint);
+    color: #79c0ff;
+    font-weight: 700;
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+  .dom-z2 {
+    background: var(--teal-tint);
+    color: var(--teal);
+    font-weight: 700;
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+  .dom-z3 {
+    background: var(--purple-tint);
+    color: var(--purple);
+    font-weight: 700;
+    border-radius: 3px;
+    padding: 1px 4px;
+  }
+
+  /* ── VERDICT CELLS ── */
+  .verdict-win {
+    background: #1a3a22;
+    color: var(--green);
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: .05em;
+    text-align: center;
+    display: inline-block;
+    min-width: 52px;
+  }
+  .verdict-loss {
+    background: #2d1317;
+    color: var(--red);
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-align: center;
+    display: inline-block;
+    min-width: 52px;
+  }
+  .verdict-near {
+    background: #2a2510;
+    color: var(--yellow);
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-align: center;
+    display: inline-block;
+    min-width: 52px;
+  }
+
+  /* inst label */
+  .inst-lbl {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .set2-lbl { color: #d2a8ff; }
+  .w-cell { color: var(--text-dim); font-size: 11px; }
+  .n-cell  { color: var(--text-muted); }
+
+  /* ── DIVIDER ── */
+  .section-sep { margin: 32px 0 20px; }
+
+  /* ── INSIGHT BOX ── */
+  .insight-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .insight-box h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--yellow);
+    margin-bottom: 10px;
+  }
+  .insight-box p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 6px;
+  }
+  .insight-box p:last-child { margin-bottom: 0; }
+  .insight-box strong { color: var(--text); }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+
+  /* ── NOTE STRIP ── */
+  .note-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    line-height: 1.7;
+  }
+  .note-strip strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 32px;
+    font-size: 11px;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">OGC 2026 — 전 문제 목적함수 분해 (z1·z2·z3) + 경쟁자 비교</div>
+<div class="page-sub">baseline c12 &nbsp;·&nbsp; obj = w1·z1(tardiness) + w2·z2(load imbalance) + w3·z3(preference) &nbsp;·&nbsp; As-of 2026-06-15</div>
+
+<!-- ── HERO ── -->
+<div class="hero-strip">
+  <div class="hero-card">
+    <div class="hero-label">Total Objective (ALL 40)</div>
+    <div class="hero-value accent">326,042,311</div>
+    <div class="hero-sub">set1 + set2 combined</div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-label">Feasible</div>
+    <div class="hero-value green">40 / 40</div>
+    <div class="hero-sub">never −1 &nbsp;✓</div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-label">Set1 Wins vs Competitor</div>
+    <div class="hero-value yellow">3 / 20</div>
+    <div class="hero-sub">prob_1, prob_2, prob_8</div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-label">Set1 Total (ours)</div>
+    <div class="hero-value">9,033,067</div>
+    <div class="hero-sub">vs comp 1,139,442</div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-label">Competitor Set1 Total</div>
+    <div class="hero-value">1,139,442</div>
+    <div class="hero-sub">set2: no reference</div>
+  </div>
+  <div class="hero-card">
+    <div class="hero-label">Set2 Total (ours)</div>
+    <div class="hero-value">317,009,244</div>
+    <div class="hero-sub">prob_21..40 (no comp)</div>
+  </div>
+</div>
+
+<div class="hero-caption">
+  <strong>z1</strong> = Σ tardiness (needs packing + schedule) &nbsp;|&nbsp;
+  <strong>z2</strong> = max bay load imbalance &nbsp;|&nbsp;
+  <strong>z3</strong> = Σ preference deviation.
+  w1 is often huge (hundreds → tens of thousands) so residual z1 dominates.
+  Highlighted cell = dominant weighted contribution for that row
+  (<span class="dom-z1" style="font-size:11px">z1</span> blue · <span class="dom-z2" style="font-size:11px">z2</span> teal · <span class="dom-z3" style="font-size:11px">z3</span> purple).
+  Row shading: <span style="background:#0d2018;padding:1px 6px;border-radius:3px;font-size:11px">WIN</span>
+  green · <span style="background:#1a1d10;padding:1px 6px;border-radius:3px;font-size:11px">≤5% gap</span> amber.
+</div>
+
+<!-- ── LEGEND ── -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1a2e4a;border:1px solid #79c0ff"></div> z1-dominant (tardiness × huge w1)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0f2d2e;border:1px solid #39d0d8"></div> z2-dominant (load imbalance)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2a1f3d;border:1px solid #bc8cff"></div> z3-dominant (preference penalty)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0d2018;border:1px solid #3fb950"></div> WIN row</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a1d10;border:1px solid #d29922"></div> near-miss row (gap ≤ 5%)</div>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SECTION 1: SET 1 — comparison table
+═══════════════════════════════════════════════════ -->
+<div class="section-heading">Section 1 — Set 1 (prob_1..20): Our Solver vs Competitor</div>
+<div class="section-note">
+  Full per-instance breakdown. Colored verdict: <strong style="color:var(--green)">WIN</strong> = our obj &lt; competitor.
+  Gap% = (our − comp) / comp × 100 — negative means we win.
+  Bold/tinted z values = largest weighted contribution (c1/c2/c3) for that row.
+</div>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr>
+  <th class="left">Instance</th>
+  <th>n / bays</th>
+  <th>w1 / w2 / w3</th>
+  <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">— OUR SOLVER —</th>
+  <th style="text-align:right">OUR obj</th>
+  <th colspan="3" style="text-align:center;border-left:1px solid var(--border)">— COMPETITOR —</th>
+  <th style="text-align:right">comp obj</th>
+  <th style="text-align:center">verdict</th>
+</tr>
+<tr>
+  <th class="left"></th>
+  <th></th>
+  <th></th>
+  <th style="border-left:1px solid var(--border)">z1</th>
+  <th>z2</th>
+  <th>z3</th>
+  <th></th>
+  <th style="border-left:1px solid var(--border)">z1</th>
+  <th>z2</th>
+  <th>z3</th>
+  <th></th>
+  <th></th>
+</tr>
+</thead>
+<tbody>
+
+<!-- prob_1: c1=0, c2=2065, c3=0 → z2 dominant → WIN -->
+<tr class="row-win">
+  <td class="left"><span class="inst-lbl">prob_1</span></td>
+  <td class="n-cell">100 / 2</td>
+  <td class="w-cell">29091 / 7 / 200</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td><span class="dom-z2">295</span></td>
+  <td>0</td>
+  <td><strong>2,065</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>1,398</td>
+  <td>8</td>
+  <td><strong>9,785</strong></td>
+  <td style="text-align:center"><span class="verdict-win">WIN −78.9%</span></td>
+</tr>
+
+<!-- prob_2: c1=0, c2=6620, c3=0 → z2 dominant → WIN -->
+<tr class="row-win">
+  <td class="left"><span class="inst-lbl">prob_2</span></td>
+  <td class="n-cell">100 / 3</td>
+  <td class="w-cell">29091 / 10 / 150</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td><span class="dom-z2">662</span></td>
+  <td>0</td>
+  <td><strong>6,620</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>662</td>
+  <td>0</td>
+  <td><strong>6,624</strong></td>
+  <td style="text-align:center"><span class="verdict-win">WIN −0.1%</span></td>
+</tr>
+
+<!-- prob_3: c1=0, c2=39250, c3=13200 → z2 dominant → near-miss +3.6% -->
+<tr class="row-near">
+  <td class="left"><span class="inst-lbl">prob_3</span></td>
+  <td class="n-cell">100 / 3</td>
+  <td class="w-cell">26667 / 10 / 150</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td><span class="dom-z2">3,925</span></td>
+  <td>88</td>
+  <td><strong>52,450</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,654</td>
+  <td>94</td>
+  <td><strong>50,642</strong></td>
+  <td style="text-align:center"><span class="verdict-near">+3.6%</span></td>
+</tr>
+
+<!-- prob_4: c1=0, c2=15197, c3=10400 → z2 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_4</span></td>
+  <td class="n-cell">100 / 2</td>
+  <td class="w-cell">21918 / 7 / 200</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td><span class="dom-z2">2,171</span></td>
+  <td>52</td>
+  <td><strong>25,597</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>2,188</td>
+  <td>8</td>
+  <td><strong>16,917</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+51.3%</span></td>
+</tr>
+
+<!-- prob_5: c1=96000, c2=29631, c3=44700 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_5</span></td>
+  <td class="n-cell">150 / 3</td>
+  <td class="w-cell">16000 / 7 / 150</td>
+  <td style="border-left:1px solid var(--border)"><span class="dom-z1">6</span></td>
+  <td>4,233</td>
+  <td>298</td>
+  <td><strong>170,331</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>6,162</td>
+  <td>183</td>
+  <td><strong>70,581</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+141.3%</span></td>
+</tr>
+
+<!-- prob_6: c1=29630, c2=18711, c3=68250 → z3 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_6</span></td>
+  <td class="n-cell">150 / 3</td>
+  <td class="w-cell">29630 / 7 / 150</td>
+  <td style="border-left:1px solid var(--border)">1</td>
+  <td>2,673</td>
+  <td><span class="dom-z3">455</span></td>
+  <td><strong>116,591</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>2,950</td>
+  <td>345</td>
+  <td><strong>72,400</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+61.0%</span></td>
+</tr>
+
+<!-- prob_7: c1=0, c2=6930, c3=105750 → z3 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_7</span></td>
+  <td class="n-cell">150 / 3</td>
+  <td class="w-cell">17778 / 7 / 150</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>990</td>
+  <td><span class="dom-z3">705</span></td>
+  <td><strong>112,680</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,675</td>
+  <td>402</td>
+  <td><strong>86,021</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+31.0%</span></td>
+</tr>
+
+<!-- prob_8: c1=0, c2=9652, c3=1600 → z2 dominant → WIN -->
+<tr class="row-win">
+  <td class="left"><span class="inst-lbl">prob_8</span></td>
+  <td class="n-cell">150 / 2</td>
+  <td class="w-cell">10000 / 4 / 200</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td><span class="dom-z2">2,413</span></td>
+  <td>8</td>
+  <td><strong>11,252</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,227</td>
+  <td>0</td>
+  <td><strong>12,908</strong></td>
+  <td style="text-align:center"><span class="verdict-win">WIN −12.8%</span></td>
+</tr>
+
+<!-- prob_9: c1=146663, c2=9950, c3=48750 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_9</span></td>
+  <td class="n-cell">200 / 3</td>
+  <td class="w-cell">13333 / 5 / 150</td>
+  <td style="border-left:1px solid var(--border)"><span class="dom-z1">11</span></td>
+  <td>1,990</td>
+  <td>325</td>
+  <td><strong>205,363</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>1,817</td>
+  <td>473</td>
+  <td><strong>80,034</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+156.6%</span></td>
+</tr>
+
+<!-- prob_10: c1=0, c2=6300, c3=96292 → z3 dominant → near-miss +3.7% -->
+<tr class="row-near">
+  <td class="left"><span class="inst-lbl">prob_10</span></td>
+  <td class="n-cell">200 / 4</td>
+  <td class="w-cell">14545 / 7 / 133</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>900</td>
+  <td><span class="dom-z3">724</span></td>
+  <td><strong>102,592</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>7,240</td>
+  <td>363</td>
+  <td><strong>98,957</strong></td>
+  <td style="text-align:center"><span class="verdict-near">+3.7%</span></td>
+</tr>
+
+<!-- prob_11: c1=548568, c2=5089, c3=15428 → z1 dominant (massive) -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_11</span></td>
+  <td class="n-cell">200 / 4</td>
+  <td class="w-cell">22857 / 7 / 133</td>
+  <td style="border-left:1px solid var(--border)"><span class="dom-z1">24</span></td>
+  <td>727</td>
+  <td>116</td>
+  <td><strong>569,085</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>1,385</td>
+  <td>167</td>
+  <td><strong>31,899</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+1684.0%</span></td>
+</tr>
+
+<!-- prob_12: c1=306852, c2=13006, c3=1018647 → z3 dominant (massive) -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_12</span></td>
+  <td class="n-cell">200 / 4</td>
+  <td class="w-cell">21918 / 7 / 133</td>
+  <td style="border-left:1px solid var(--border)">14</td>
+  <td>1,858</td>
+  <td><span class="dom-z3">7,659</span></td>
+  <td><strong>1,338,505</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>7,136</td>
+  <td>332</td>
+  <td><strong>94,110</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+1322.3%</span></td>
+</tr>
+
+<!-- prob_13: c1=465125, c2=9035, c3=1210965 → z3 dominant (massive) -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_13</span></td>
+  <td class="n-cell">250 / 4</td>
+  <td class="w-cell">18605 / 5 / 133</td>
+  <td style="border-left:1px solid var(--border)">25</td>
+  <td>1,807</td>
+  <td><span class="dom-z3">9,105</span></td>
+  <td><strong>1,685,125</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,766</td>
+  <td>435</td>
+  <td><strong>76,685</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+2097.5%</span></td>
+</tr>
+
+<!-- prob_14: c1=942234, c2=5855, c3=1173858 → z3 dominant (massive) -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_14</span></td>
+  <td class="n-cell">250 / 4</td>
+  <td class="w-cell">17778 / 5 / 133</td>
+  <td style="border-left:1px solid var(--border)">53</td>
+  <td>1,171</td>
+  <td><span class="dom-z3">8,826</span></td>
+  <td><strong>2,121,947</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,246</td>
+  <td>384</td>
+  <td><strong>67,302</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+3052.9%</span></td>
+</tr>
+
+<!-- prob_15: c1=59260, c2=19815, c3=38171 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_15</span></td>
+  <td class="n-cell">250 / 4</td>
+  <td class="w-cell">14815 / 5 / 133</td>
+  <td style="border-left:1px solid var(--border)"><span class="dom-z1">4</span></td>
+  <td>3,963</td>
+  <td>287</td>
+  <td><strong>117,246</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>4,534</td>
+  <td>192</td>
+  <td><strong>48,206</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+143.2%</span></td>
+</tr>
+
+<!-- prob_16: c1=0, c2=13300, c3=45885 → z3 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_16</span></td>
+  <td class="n-cell">250 / 4</td>
+  <td class="w-cell">8889 / 5 / 133</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>2,660</td>
+  <td><span class="dom-z3">345</span></td>
+  <td><strong>59,185</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,838</td>
+  <td>232</td>
+  <td><strong>50,047</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+18.3%</span></td>
+</tr>
+
+<!-- prob_17: c1=87273, c2=25284, c3=33915 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_17</span></td>
+  <td class="n-cell">300 / 4</td>
+  <td class="w-cell">9697 / 4 / 133</td>
+  <td style="border-left:1px solid var(--border)"><span class="dom-z1">9</span></td>
+  <td>6,321</td>
+  <td>255</td>
+  <td><strong>146,472</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>8,136</td>
+  <td>222</td>
+  <td><strong>62,070</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+136.0%</span></td>
+</tr>
+
+<!-- prob_18: c1=0, c2=13540, c3=60914 → z3 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_18</span></td>
+  <td class="n-cell">300 / 4</td>
+  <td class="w-cell">13333 / 4 / 133</td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>3,385</td>
+  <td><span class="dom-z3">458</span></td>
+  <td><strong>74,454</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>4,332</td>
+  <td>172</td>
+  <td><strong>40,206</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+85.2%</span></td>
+</tr>
+
+<!-- prob_19: c1=42668, c2=14512, c3=72884 → z3 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_19</span></td>
+  <td class="n-cell">300 / 4</td>
+  <td class="w-cell">10667 / 4 / 133</td>
+  <td style="border-left:1px solid var(--border)">4</td>
+  <td>3,628</td>
+  <td><span class="dom-z3">548</span></td>
+  <td><strong>130,064</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>4,941</td>
+  <td>401</td>
+  <td><strong>72,951</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+78.3%</span></td>
+</tr>
+
+<!-- prob_20: c1=613341, c2=21852, c3=1350250 → z3 dominant (massive) -->
+<tr>
+  <td class="left"><span class="inst-lbl">prob_20</span></td>
+  <td class="n-cell">300 / 5</td>
+  <td class="w-cell">26667 / 6 / 125</td>
+  <td style="border-left:1px solid var(--border)">23</td>
+  <td>3,642</td>
+  <td><span class="dom-z3">10,802</span></td>
+  <td><strong>1,985,443</strong></td>
+  <td style="border-left:1px solid var(--border)">0</td>
+  <td>5,537</td>
+  <td>463</td>
+  <td><strong>91,096</strong></td>
+  <td style="text-align:center"><span class="verdict-loss">+2079.5%</span></td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="note-strip">
+  <strong>Wins &amp; near-misses (z1=0):</strong> prob_1 (WIN −78.9%), prob_2 (WIN −0.1%), prob_8 (WIN −12.8%) and near-misses prob_3 (+3.6%), prob_10 (+3.7%) all have z1=0 — the objective is decided by z2/z3 micro-differences.
+  <strong>Stubborn laggards:</strong> prob_11/12/13/14/20 keep large residual z1 (×huge w1) driving multi-million objectives — these dominate set1_total.
+  prob_12/13/14/20 are doubly hurt: both z1 &gt; 0 and z3 exploded (×100–133) versus competitor's z3 ≈ 300–460.
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SECTION 2: SET 2
+═══════════════════════════════════════════════════ -->
+<div class="section-sep"></div>
+<div class="section-heading">Section 2 — Set 2 (prob_21..40): Our Values Only</div>
+<div class="section-note">
+  set2 (prob_21..40): no competitor reference table — we minimize total objective only.
+  Dominant-term highlighting applies. z1 is large across most set2 instances (multi-layer, larger blocks).
+</div>
+
+<div class="tbl-wrap">
+<table>
+<thead>
+<tr>
+  <th class="left">Instance</th>
+  <th>n / bays</th>
+  <th>w1 / w2 / w3</th>
+  <th>z1</th>
+  <th>z2</th>
+  <th>z3</th>
+  <th>obj</th>
+  <th>c1 (w1·z1)</th>
+  <th>c2 (w2·z2)</th>
+  <th>c3 (w3·z3)</th>
+</tr>
+</thead>
+<tbody>
+
+<!-- prob_21: c1=3093256, c2=13550, c3=714150 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_21</span></td>
+  <td class="n-cell">100 / 3</td>
+  <td class="w-cell">13333 / 10 / 150</td>
+  <td><span class="dom-z1">232</span></td>
+  <td>1,355</td>
+  <td>4,761</td>
+  <td><strong>3,820,956</strong></td>
+  <td>3,093,256</td>
+  <td>13,550</td>
+  <td>714,150</td>
+</tr>
+
+<!-- prob_22: c1=1279968, c2=8784, c3=812000 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_22</span></td>
+  <td class="n-cell">100 / 2</td>
+  <td class="w-cell">13333 / 3 / 400</td>
+  <td><span class="dom-z1">96</span></td>
+  <td>2,928</td>
+  <td>2,030</td>
+  <td><strong>2,100,752</strong></td>
+  <td>1,279,968</td>
+  <td>8,784</td>
+  <td>812,000</td>
+</tr>
+
+<!-- prob_23: c1=8338785, c2=18795, c3=661200 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_23</span></td>
+  <td class="n-cell">100 / 2</td>
+  <td class="w-cell">13559 / 7 / 200</td>
+  <td><span class="dom-z1">615</span></td>
+  <td>2,685</td>
+  <td>3,306</td>
+  <td><strong>9,018,780</strong></td>
+  <td>8,338,785</td>
+  <td>18,795</td>
+  <td>661,200</td>
+</tr>
+
+<!-- prob_24: c1=1413298, c2=6385, c3=1301400 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_24</span></td>
+  <td class="n-cell">100 / 3</td>
+  <td class="w-cell">13333 / 5 / 300</td>
+  <td><span class="dom-z1">106</span></td>
+  <td>1,277</td>
+  <td>4,338</td>
+  <td><strong>2,721,083</strong></td>
+  <td>1,413,298</td>
+  <td>6,385</td>
+  <td>1,301,400</td>
+</tr>
+
+<!-- prob_25: c1=572286, c2=1000, c3=68880 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_25</span></td>
+  <td class="n-cell">100 / 2</td>
+  <td class="w-cell">667 / 1 / 20</td>
+  <td><span class="dom-z1">858</span></td>
+  <td>1,000</td>
+  <td>3,444</td>
+  <td><strong>642,166</strong></td>
+  <td>572,286</td>
+  <td>1,000</td>
+  <td>68,880</td>
+</tr>
+
+<!-- prob_26: c1=26999325, c2=13832, c3=900300 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_26</span></td>
+  <td class="n-cell">150 / 3</td>
+  <td class="w-cell">13333 / 7 / 150</td>
+  <td><span class="dom-z1">2,025</span></td>
+  <td>1,976</td>
+  <td>6,002</td>
+  <td><strong>27,913,457</strong></td>
+  <td>26,999,325</td>
+  <td>13,832</td>
+  <td>900,300</td>
+</tr>
+
+<!-- prob_27: c1=51438714, c2=3604, c3=2468800 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_27</span></td>
+  <td class="n-cell">150 / 2</td>
+  <td class="w-cell">13333 / 2 / 400</td>
+  <td><span class="dom-z1">3,858</span></td>
+  <td>1,802</td>
+  <td>6,172</td>
+  <td><strong>53,911,118</strong></td>
+  <td>51,438,714</td>
+  <td>3,604</td>
+  <td>2,468,800</td>
+</tr>
+
+<!-- prob_28: c1=7746473, c2=2364, c3=1623600 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_28</span></td>
+  <td class="n-cell">150 / 3</td>
+  <td class="w-cell">13333 / 3 / 300</td>
+  <td><span class="dom-z1">581</span></td>
+  <td>788</td>
+  <td>5,412</td>
+  <td><strong>9,372,437</strong></td>
+  <td>7,746,473</td>
+  <td>2,364</td>
+  <td>1,623,600</td>
+</tr>
+
+<!-- prob_29: c1=0, c2=5097, c3=1947600 → z3 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_29</span></td>
+  <td class="n-cell">150 / 3</td>
+  <td class="w-cell">13333 / 3 / 300</td>
+  <td>0</td>
+  <td>1,699</td>
+  <td><span class="dom-z3">6,492</span></td>
+  <td><strong>1,952,697</strong></td>
+  <td>0</td>
+  <td>5,097</td>
+  <td>1,947,600</td>
+</tr>
+
+<!-- prob_30: c1=12333025, c2=4436, c3=876000 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_30</span></td>
+  <td class="n-cell">150 / 2</td>
+  <td class="w-cell">13333 / 4 / 200</td>
+  <td><span class="dom-z1">925</span></td>
+  <td>1,109</td>
+  <td>4,380</td>
+  <td><strong>13,213,461</strong></td>
+  <td>12,333,025</td>
+  <td>4,436</td>
+  <td>876,000</td>
+</tr>
+
+<!-- prob_31: c1=17132905, c2=7323, c3=3490758 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_31</span></td>
+  <td class="n-cell">200 / 4</td>
+  <td class="w-cell">13333 / 3 / 267</td>
+  <td><span class="dom-z1">1,285</span></td>
+  <td>2,441</td>
+  <td>13,074</td>
+  <td><strong>20,630,986</strong></td>
+  <td>17,132,905</td>
+  <td>7,323</td>
+  <td>3,490,758</td>
+</tr>
+
+<!-- prob_32: c1=7785888, c2=20545, c3=173400 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_32</span></td>
+  <td class="n-cell">200 / 3</td>
+  <td class="w-cell">3333 / 5 / 600</td>
+  <td><span class="dom-z1">2,336</span></td>
+  <td>4,109</td>
+  <td>289</td>
+  <td><strong>7,979,833</strong></td>
+  <td>7,785,888</td>
+  <td>20,545</td>
+  <td>173,400</td>
+</tr>
+
+<!-- prob_33: c1=18540927, c2=34440, c3=13650 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_33</span></td>
+  <td class="n-cell">200 / 3</td>
+  <td class="w-cell">6667 / 10 / 150</td>
+  <td><span class="dom-z1">2,781</span></td>
+  <td>3,444</td>
+  <td>91</td>
+  <td><strong>18,589,017</strong></td>
+  <td>18,540,927</td>
+  <td>34,440</td>
+  <td>13,650</td>
+</tr>
+
+<!-- prob_34: c1=2229777, c2=13111, c3=93275 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_34</span></td>
+  <td class="n-cell">200 / 4</td>
+  <td class="w-cell">3333 / 7 / 533</td>
+  <td><span class="dom-z1">669</span></td>
+  <td>1,873</td>
+  <td>175</td>
+  <td><strong>2,336,163</strong></td>
+  <td>2,229,777</td>
+  <td>13,111</td>
+  <td>93,275</td>
+</tr>
+
+<!-- prob_35: c1=7653142, c2=1095, c3=951150 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_35</span></td>
+  <td class="n-cell">200 / 3</td>
+  <td class="w-cell">13333 / 5 / 150</td>
+  <td><span class="dom-z1">574</span></td>
+  <td>219</td>
+  <td>6,341</td>
+  <td><strong>8,605,387</strong></td>
+  <td>7,653,142</td>
+  <td>1,095</td>
+  <td>951,150</td>
+</tr>
+
+<!-- prob_36: c1=340170, c2=1798, c3=169832 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_36</span></td>
+  <td class="n-cell">250 / 4</td>
+  <td class="w-cell">667 / 1 / 13</td>
+  <td><span class="dom-z1">510</span></td>
+  <td>1,798</td>
+  <td>13,064</td>
+  <td><strong>511,800</strong></td>
+  <td>340,170</td>
+  <td>1,798</td>
+  <td>169,832</td>
+</tr>
+
+<!-- prob_37: c1=10965570, c2=58340, c3=40200 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_37</span></td>
+  <td class="n-cell">250 / 3</td>
+  <td class="w-cell">3333 / 4 / 600</td>
+  <td><span class="dom-z1">3,290</span></td>
+  <td>14,585</td>
+  <td>67</td>
+  <td><strong>11,064,110</strong></td>
+  <td>10,965,570</td>
+  <td>58,340</td>
+  <td>40,200</td>
+</tr>
+
+<!-- prob_38: c1=82144613, c2=3470, c3=2723700 → z1 dominant (the giant) -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_38</span></td>
+  <td class="n-cell">250 / 3</td>
+  <td class="w-cell">13333 / 2 / 300</td>
+  <td><span class="dom-z1">6,161</span></td>
+  <td>1,735</td>
+  <td>9,079</td>
+  <td><strong>84,871,783</strong></td>
+  <td>82,144,613</td>
+  <td>3,470</td>
+  <td>2,723,700</td>
+</tr>
+
+<!-- prob_39: c1=31385882, c2=1536, c3=1441500 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_39</span></td>
+  <td class="n-cell">250 / 3</td>
+  <td class="w-cell">13333 / 4 / 150</td>
+  <td><span class="dom-z1">2,354</span></td>
+  <td>384</td>
+  <td>9,610</td>
+  <td><strong>32,828,918</strong></td>
+  <td>31,385,882</td>
+  <td>1,536</td>
+  <td>1,441,500</td>
+</tr>
+
+<!-- prob_40: c1=4769717, c2=1431, c3=153192 → z1 dominant -->
+<tr>
+  <td class="left"><span class="inst-lbl set2-lbl">prob_40</span></td>
+  <td class="n-cell">250 / 4</td>
+  <td class="w-cell">667 / 1 / 13</td>
+  <td><span class="dom-z1">7,151</span></td>
+  <td>1,431</td>
+  <td>11,784</td>
+  <td><strong>4,924,340</strong></td>
+  <td>4,769,717</td>
+  <td>1,431</td>
+  <td>153,192</td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     SECTION 3: INSIGHT BOX
+═══════════════════════════════════════════════════ -->
+<div class="section-sep"></div>
+<div class="section-heading">Section 3 — What the Breakdown Shows</div>
+<div class="section-note" style="margin-bottom:12px"></div>
+
+<div class="insight-box">
+  <h3>Insight Summary</h3>
+  <p>
+    <strong>z1 is largely conquered on set1</strong> (z1=0 on prob_1/2/3/4/7/8/10/16/18 — roughly half). For these instances wins and near-misses are decided by z2 (load balance) + z3 (preference) micro-differences where our packing produces better load distribution (prob_1 −78.9%, prob_8 −12.8%) or nearly ties (prob_2 −0.1%).
+  </p>
+  <p>
+    <strong>The remaining large set1 objectives (prob_11/12/13/14/20)</strong> are residual-z1 × huge w1 on congested bays. Even small z1 (e.g. prob_11 z1=24, w1=22857) generates 548K in c1 alone — 96% of that instance's total. prob_12/13/14/20 suffer a double blow: both z1&gt;0 (crane blocking) and z3 has exploded 10–30× above competitor, suggesting bay assignments are systematically wrong for preference on the hardest multi-layer instances.
+  </p>
+  <p>
+    <strong>On set2</strong>, the objective is almost universally z1-dominated. Only prob_29 (z1=0, z3-dominant) and prob_29 represent cases where crane scheduling was achieved but preference deviation remains large. The single biggest contributor is <strong>prob_38</strong> (250 blocks / 3 bays, w1=13333, z1=6161 → c1=82M, 97% of set2 leader).
+    prob_27 (3,858 blocks, 51M) and prob_39 (31M) are next. Solving set2 z1 is the single highest-leverage action for total objective reduction.
+  </p>
+  <p>
+    <strong>z2 (load imbalance) is never the primary driver</strong> — it contributes at most ~20% (prob_1, prob_3) and is usually &lt;5%. The competitive gap on set1 is structurally about z1 persistence on large instances and z3 preference assignment quality on the ≥200-block problems.
+  </p>
+</div>
+
+<div class="footer">
+  Data source: <code>notes/research/_alldata.json</code> &nbsp;|&nbsp; Generated: 2026-06-15 &nbsp;|&nbsp; All numbers rounded to integers (gap_pct to 1 decimal). Weights shown as-is.
+</div>
+
+</body>
+</html>

@@ -1,0 +1,2 @@
+[DBG] USE_GUIDE=1 guide dist=[51, 60, 49, 40]
+[DBG] after placement state dist=[60, 60, 43, 37] ovf=26

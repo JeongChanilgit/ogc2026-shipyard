@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OGC2026 Packing Visualizer</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #0b0e14; color: #d7dde8;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #app { position: fixed; inset: 0; display: flex; }
+  #canvas-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
+  canvas { display: block; }
+  #panel {
+    flex: 0 0 320px; max-width: 40vw; overflow-y: auto; padding: 14px 16px;
+    background: #11151f; border-left: 1px solid #232a3a; box-sizing: border-box;
+  }
+  #panel h1 { font-size: 14px; margin: 0 0 4px; color: #8fb7ff; }
+  #panel h2 { font-size: 12px; margin: 16px 0 6px; color: #6fa3ff;
+    text-transform: uppercase; letter-spacing: .08em; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  button {
+    background: #1c2435; color: #cfe0ff; border: 1px solid #2c3650;
+    border-radius: 6px; padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  button:hover { background: #26314a; }
+  button.active { background: #3457a6; border-color: #4f79d6; color: #fff; }
+  #timeslider { width: 100%; }
+  .stat { display: flex; justify-content: space-between; gap: 8px;
+    padding: 2px 0; font-size: 12px; border-bottom: 1px dotted #232a3a; }
+  .stat .k { color: #93a0b8; }
+  .stat .v { color: #e8eefb; text-align: right; word-break: break-all; }
+  #eventlabel { min-height: 18px; font-size: 12px; color: #ffd479; margin-top: 6px; }
+  #legend { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
+  .legitem { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
+  #statsbox { font-size: 11px; }
+  #overlay { position: absolute; left: 10px; top: 10px; font-size: 12px;
+    color: #9fb0cc; background: rgba(11,14,20,.6); padding: 6px 9px; border-radius: 6px;
+    pointer-events: none; }
+  .muted { color: #67718a; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="canvas-wrap">
+    <div id="overlay">drag = rotate &middot; wheel = zoom &middot; right-drag = pan</div>
+  </div>
+  <div id="panel">
+    <h1 id="title">OGC2026 Packing</h1>
+    <div class="muted" id="bayinfo"></div>
+
+    <h2>Time</h2>
+    <input id="timeslider" type="range" min="0" max="0" step="1" value="0" />
+    <div class="row">
+      <button id="btn-prev">&laquo; Prev</button>
+      <button id="btn-play">Play</button>
+      <button id="btn-next">Next &raquo;</button>
+    </div>
+    <div id="eventlabel"></div>
+
+    <h2>Views</h2>
+    <div class="row">
+      <button id="view-top">Top (x-y)</button>
+      <button id="view-front">Front (x-z)</button>
+      <button id="view-side">Side (y-z)</button>
+      <button id="view-iso" class="active">Iso</button>
+    </div>
+
+    <h2>Readout</h2>
+    <div class="stat"><span class="k">time</span><span class="v" id="r-time">-</span></div>
+    <div class="stat"><span class="k">blocks present</span><span class="v" id="r-count">-</span></div>
+    <div class="stat"><span class="k">tardy blocks</span><span class="v" id="r-tardy">-</span></div>
+    <div class="stat"><span class="k">floor utilization</span><span class="v" id="r-util">-</span></div>
+
+    <h2>Legend</h2>
+    <div id="legend"></div>
+
+    <h2>Stats</h2>
+    <div id="statsbox"></div>
+  </div>
+</div>
+
+<script>const TRACE = {"instance": "prob_38 bay0  |  obj=62162996.0 z1=4526.0 z2=1269 z3=6051.0 feasible=True", "bay": {"id": 0, "width": 68, "height": 16, "max_layer": 2}, "blocks": {"160": {"orient_idx": 2, "layers": [[[0.0, 0.0], [-5.7363, -0.1694], [-8.8101, -0.5324], [-9.3429, -7.6495], [-6.2014, -7.2719], [-2.008, -6.9658], [-0.4256, -6.0962]], [[6.217, 0.9011], [0.0, 0.0], [-5.7363, -0.1694], [-8.8101, -0.5324], [-9.3429, -7.6495], [-6.2014, -7.2719], [-2.008, -6.9658], [6.1562, -2.4793]]], "release": 1, "due": 27, "proc": 24, "wrong_bay": true}, "230": {"orient_idx": 6, "layers": [[[0.0, 0.0], [9.6145, -1.3469], [10.9597, -15.1286], [9.6002, -15.1108], [0.0373, -1.9103]], [[0.0, 0.0], [9.6145, -1.3469], [10.9597, -15.1286], [9.6002, -15.1108], [0.0373, -1.9103]]], "release": 2, "due": 29, "proc": 24, "wrong_bay": false}, "109": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-5.8773, -0.0749], [-8.9876, -0.1416], [-9.2631, 3.7801], [-6.291, 3.8698]], [[0.0, 0.0], [-5.8773, -0.0749], [-12.0979, -0.2084], [-15.1522, -0.1454], [-15.2817, 3.8469], [-12.2353, 3.6904], [-6.291, 3.8698]]], "release": 3, "due": 30, "proc": 26, "wrong_bay": true}, "21": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-10.638, -0.8067], [-11.3314, 7.8635], [-1.0946, 6.7512]], [[9.4908, 6.9949], [0.0, 0.0], [-10.638, -0.8067], [-11.3314, 7.8635], [-1.0946, 6.7512]]], "release": 5, "due": 38, "proc": 24, "wrong_bay": false}, "80": {"orient_idx": 0, "layers": [[[0.0, 0.0], [2.0707, 0.2043], [2.1615, 3.6388], [2.2849, 6.7783], [2.5341, 8.5531], [0.4301, 8.5287], [0.3837, 6.9355], [0.1161, 3.5584]], [[0.0, 0.0], [2.0707, 0.2043], [2.1615, 3.6388], [2.2232, 5.2086], [0.2499, 5.2469], [0.1161, 3.5584]]], "release": 6, "due": 25, "proc": 15, "wrong_bay": false}, "156": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-9.8334, 6.0387], [-14.5607, 2.7755], [-2.6713, -0.0261]], [[0.0, 0.0], [-9.8334, 6.0387], [-19.0159, 6.0023], [-27.929, 6.4364], [-27.9349, 5.9269], [-2.6713, -0.0261]]], "release": 7, "due": 33, "proc": 25, "wrong_bay": true}, "150": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-8.5648, 0.1172], [-9.1076, 5.7167], [-0.4712, 5.3826]], [[0.0, 0.0], [-8.5648, 0.1172], [-16.2497, 0.3654], [-17.2384, 5.2216], [-9.1076, 5.7167], [-0.4712, 5.3826]]], "release": 8, "due": 27, "proc": 18, "wrong_bay": false}, "78": {"orient_idx": 0, "layers": [[[0.0, 0.0], [0.078, 2.3565], [3.0693, 2.0916], [4.6018, 2.1758], [4.5361, 1.1156], [1.1078, -0.0455]], [[0.0, 0.0], [-3.1185, -0.2584], [-2.8679, 2.319], [0.078, 2.3565], [3.0693, 2.0916], [4.6018, 2.1758], [4.5361, 1.1156], [1.1078, -0.0455]]], "release": 10, "due": 26, "proc": 14, "wrong_bay": false}, "39": {"orient_idx": 4, "layers": [[[0.0, 0.0], [5.0063, 0.2424], [9.9696, -0.0403], [14.4943, 0.4734], [15.0091, -3.4659], [10.3857, -3.464], [5.4774, -3.2387], [0.3192, -3.6049]]], "release": 10, "due": 30, "proc": 20, "wrong_bay": true}, "111": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-3.329, 0.0993], [-7.5788, 0.0639], [-11.2166, -0.1107], [-11.2639, 3.7816], [-7.8437, 3.3682], [-3.6316, 3.7997], [0.1495, 3.7703]]], "release": 14, "due": 36, "proc": 17, "wrong_bay": true}, "136": {"orient_idx": 6, "layers": [[[0.0, 0.0], [5.7204, 0.2364], [10.9414, 0.5526], [6.2464, 4.7031], [-0.0606, 1.5444]], [[0.0, 0.0], [5.7204, 0.2364], [5.3754, 4.2668], [-0.0606, 1.5444]]], "release": 15, "due": 32, "proc": 15, "wrong_bay": true}, "56": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-1.9155, 0.1083], [-5.5063, -0.0932], [-5.9518, 3.7368], [-1.9489, 3.9235], [-0.1696, 3.7341]], [[-1.9155, 0.1083], [-5.5063, -0.0932], [-5.9518, 3.7368], [-1.9489, 3.9235]]], "release": 18, "due": 41, "proc": 16, "wrong_bay": true}, "249": {"orient_idx": 5, "layers": [[[0.0, 0.0], [-2.987, -2.7214], [-0.419, -5.8136], [2.2354, -3.0324]], [[0.0, 0.0], [-2.987, -2.7214], [-5.8342, -5.6875], [-0.419, -5.8136], [2.2354, -3.0324]]], "release": 20, "due": 37, "proc": 16, "wrong_bay": false}, "82": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-5.0689, -0.1148], [-9.7089, -0.0466], [-14.9529, 0.322], [-15.4616, 4.0968], [-9.9217, 4.3699], [-5.0859, 4.4132], [-0.0421, 4.3018]], [[5.4077, 0.1492], [0.0, 0.0], [-5.0689, -0.1148], [-9.7089, -0.0466], [-14.9529, 0.322], [-15.4616, 4.0968], [-9.9217, 4.3699], [-5.0859, 4.4132], [-0.0421, 4.3018]]], "release": 9, "due": 48, "proc": 30, "wrong_bay": false}, "117": {"orient_idx": 4, "layers": [[[0.0, 0.0], [7.5661, 0.3153], [8.6267, -7.6914], [0.1617, -7.4782]], [[0.0, 0.0], [7.5661, 0.3153], [8.6267, -7.6914], [0.1617, -7.4782]]], "release": 18, "due": 34, "proc": 14, "wrong_bay": true}, "114": {"orient_idx": 6, "layers": [[[0.0, 0.0], [-0.1278, -6.9631], [6.823, -7.8931], [6.8435, -0.1397]], [[0.0, 0.0], [-0.1278, -6.9631], [6.823, -7.8931], [6.8435, -0.1397]]], "release": 19, "due": 40, "proc": 21, "wrong_bay": true}, "229": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-0.1697, 3.4037], [-2.1436, 3.3738], [-4.5375, 3.4425], [-5.5658, 3.4212], [-5.4785, 2.7998], [-0.9825, -0.0293]], [[-5.4785, 2.7998], [-2.0281, 0.6286], [-2.1436, 3.3738], [-4.5375, 3.4425], [-5.5658, 3.4212]]], "release": 29, "due": 45, "proc": 15, "wrong_bay": true}, "74": {"orient_idx": 4, "layers": [[[0.0, 0.0], [-5.1068, -3.7609], [-0.0021, -3.6576], [4.4738, -0.5246], [1.9331, 0.1216]], [[0.0, 0.0], [-5.1068, -3.7609], [-0.0021, -3.6576], [5.7071, -3.6625], [11.0981, -3.8324], [11.2211, -2.2407], [1.9331, 0.1216]]], "release": 25, "due": 53, "proc": 23, "wrong_bay": true}, "132": {"orient_idx": 6, "layers": [[[0.0, 0.0], [9.5989, 0.7051], [17.9104, 1.0174], [22.6071, 1.6081], [22.639, 8.8257], [22.3133, 8.8083], [-0.0127, 0.2574]], [[0.0, 0.0], [9.5989, 0.7051], [17.9104, 1.0174], [17.8583, 7.102], [-0.0127, 0.2574]]], "release": 15, "due": 50, "proc": 27, "wrong_bay": true}, "35": {"orient_idx": 5, "layers": [[[0.0, 0.0], [7.9154, -5.7296], [13.859, -0.997], [10.8385, 1.7015], [2.277, 2.4226]]], "release": 15, "due": 49, "proc": 29, "wrong_bay": true}, "68": {"orient_idx": 2, "layers": [[[0.0, 0.0], [-4.6476, -0.058], [-9.0176, -0.3912], [-13.5557, -4.0465], [-8.9838, -3.7374], [-7.5519, -3.7356], [-2.881, -2.3413]], [[0.0, 0.0], [-4.6476, -0.058], [-9.0176, -0.3912], [-8.9838, -3.7374], [-7.5519, -3.7356], [-2.881, -2.3413]]], "release": 22, "due": 41, "proc": 16, "wrong_bay": false}, "238": {"orient_idx": 4, "layers": [[[0.0, 0.0], [4.9237, 0.1284], [10.3154, 0.345], [16.0491, -0.0653], [16.0065, -3.7047], [10.9749, -3.7162], [5.4259, -4.0788], [0.4805, -3.6662]], [[0.0, 0.0], [4.9237, 0.1284], [10.9749, -3.7162], [5.4259, -4.0788], [0.4805, -3.6662]]], "release": 21, "due": 42, "proc": 18, "wrong_bay": false}, "179": {"orient_idx": 2, "layers": [[[0.0, 0.0], [3.2051, -7.4445], [-2.2451, -6.9317], [-2.0096, 0.1159]], [[-2.3161, -14.8466], [-2.2451, -6.9317], [1.3556, -3.1485], [3.5059, -8.143]]], "release": 17, "due": 55, "proc": 27, "wrong_bay": true}, "151": {"orient_idx": 7, "layers": [[[0.0, 0.0], [2.1597, 2.2474], [4.6907, 4.7007], [7.0925, 7.2554], [8.4222, 1.3639], [5.8217, -0.9947]], [[-2.1946, -2.6253], [0.0, 0.0], [2.1597, 2.2474], [4.6907, 4.7007], [7.0925, 7.2554], [8.4222, 1.3639], [5.8217, -0.9947], [3.5861, -3.5793]]], "release": 19, "due": 47, "proc": 24, "wrong_bay": true}, "58": {"orient_idx": 6, "layers": [[[0.0, 0.0], [-0.0547, 4.0144], [2.5297, 4.2314], [2.4213, 0.1824]], [[0.0, 0.0], [-0.0547, 4.0144], [2.5297, 4.2314], [5.2101, 0.4055], [2.4213, 0.1824]]], "release": 28, "due": 49, "proc": 15, "wrong_bay": false}, "178": {"orient_idx": 0, "layers": [[[0.0, 0.0], [2.6135, 0.1744], [5.4966, 0.0178], [8.2727, -0.1228], [8.2491, -0.4995], [2.3966, -2.5167]], [[0.0, 0.0], [2.6135, 0.1744], [5.4966, 0.0178], [5.4265, -1.4724], [2.3966, -2.5167]]], "release": 43, "due": 58, "proc": 15, "wrong_bay": true}, "164": {"orient_idx": 4, "layers": [[[0.0, 0.0], [4.5814, 2.201], [4.3296, -0.2175], [1.2425, -0.41], [-0.0372, -0.2714]], [[5.9041, 2.2762], [5.7035, -0.2897], [4.3296, -0.2175], [1.2425, -0.41], [-0.0372, -0.2714], [0.0, 0.0], [4.7727, 2.2929]]], "release": 44, "due": 61, "proc": 14, "wrong_bay": true}, "27": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-0.1857, 6.636], [-5.989, 6.4262], [-5.7984, 3.7449], [-2.4218, -0.012]], [[0.0, 0.0], [-0.1857, 6.636], [-5.989, 6.4262], [-5.7984, 3.7449], [-2.4218, -0.012]]], "release": 41, "due": 63, "proc": 18, "wrong_bay": false}, "124": {"orient_idx": 4, "layers": [[[0.0, 0.0], [-4.5285, -0.0417], [-4.357, -6.2311], [0.2272, -6.4734], [9.4848, -6.4861], [9.0113, -2.099], [1.8413, 0.0813]], [[0.0, 0.0], [-4.5285, -0.0417], [-4.357, -6.2311], [0.2272, -6.4734], [9.4848, -6.4861], [18.4712, -6.0075], [18.3644, -4.9432], [1.8413, 0.0813]]], "release": 32, "due": 68, "proc": 27, "wrong_bay": true}, "148": {"orient_idx": 6, "layers": [[[0.0, 0.0], [0.1344, -5.1694], [2.02, -5.1327], [3.8674, -5.4675], [4.0016, -0.3114], [1.8653, -0.2253]], [[-3.8991, 0.4353], [-3.753, -4.8507], [-1.7511, -5.2061], [2.02, -5.1327], [3.8674, -5.4675], [4.0016, -0.3114], [1.8653, -0.2253], [-1.8654, 0.2253]]], "release": 39, "due": 68, "proc": 22, "wrong_bay": true}, "161": {"orient_idx": 4, "layers": [[[0.0, 0.0], [5.3295, -0.0114], [5.6349, -3.9553], [0.486, -4.3247]], [[0.0, 0.0], [5.3295, -0.0114], [5.6349, -3.9553], [0.486, -4.3247]]], "release": 45, "due": 65, "proc": 14, "wrong_bay": true}, "193": {"orient_idx": 4, "layers": [[[0.0, 0.0], [1.753, 0.2036], [1.7809, -3.7683], [0.0136, -3.7855], [-3.7105, -3.6577], [-7.5347, -3.8325], [-11.3577, -3.9096], [-11.2599, -3.1303], [-1.0901, 0.0534]], [[0.0, 0.0], [0.0136, -3.7855], [-3.7105, -3.6577], [-7.5347, -3.8325], [-11.3577, -3.9096], [-11.2599, -3.1303], [-1.0901, 0.0534]]], "release": 44, "due": 62, "proc": 15, "wrong_bay": true}, "203": {"orient_idx": 4, "layers": [[[0.0, 0.0], [4.9506, -0.1469], [5.1941, -3.8009], [0.0327, -3.4965]], [[0.0, 0.0], [4.9506, -0.1469], [9.7597, 0.1696], [10.1781, -3.8996], [5.1941, -3.8009], [0.0327, -3.4965]]], "release": 43, "due": 62, "proc": 17, "wrong_bay": true}, "197": {"orient_idx": 0, "layers": [[[0.0, 0.0], [2.3957, 2.9668], [4.789, 2.9854], [7.0794, 2.9296], [8.4142, 2.9145], [8.4041, 2.6675], [1.3322, -0.0078]], [[8.4041, 2.6675], [2.2616, 0.3438], [2.3957, 2.9668], [4.789, 2.9854], [7.0794, 2.9296], [8.4142, 2.9145]]], "release": 46, "due": 68, "proc": 16, "wrong_bay": false}, "119": {"orient_idx": 6, "layers": [[[0.0, 0.0], [-0.5795, -10.4604], [9.1532, -11.0169], [8.6312, -0.566]], [[0.0, 0.0], [-0.5795, -10.4604], [9.1532, -11.0169], [8.6312, -0.566]]], "release": 36, "due": 55, "proc": 19, "wrong_bay": true}, "167": {"orient_idx": 2, "layers": [[[0.0, 0.0], [3.7337, -1.1065], [1.9328, -2.6629], [-1.1452, -2.3878], [-4.3655, -2.2445], [-1.3627, 0.0473]]], "release": 34, "due": 51, "proc": 15, "wrong_bay": false}, "62": {"orient_idx": 2, "layers": [[[0.0, 0.0], [-0.1435, -3.0608], [-0.0077, -5.7926], [-2.5849, -5.9889], [-2.7212, -3.1889]], [[0.0, 0.0], [-0.1435, -3.0608], [-0.0077, -5.7926], [0.0417, -7.1367], [-2.5589, -7.3451], [-2.5849, -5.9889], [-2.7212, -3.1889]]], "release": 43, "due": 60, "proc": 14, "wrong_bay": true}, "22": {"orient_idx": 6, "layers": [[[0.0, 0.0], [-2.9196, 4.1626], [1.2017, 4.1706], [0.6608, -0.0241]], [[-4.7171, 8.6632], [0.8056, 8.2021], [1.2017, 4.1706], [0.6608, -0.0241], [0.0, 0.0], [-4.7882, 6.8267]]], "release": 40, "due": 61, "proc": 20, "wrong_bay": false}, "130": {"orient_idx": 2, "layers": [[[0.0, 0.0], [-5.5915, -0.8624], [-5.6197, -10.3716], [-4.4117, -10.279], [0.1069, -2.52]], [[0.0, 0.0], [-5.5915, -0.8624], [-5.6197, -10.3716], [-4.4117, -10.279], [0.1069, -2.52]]], "release": 42, "due": 65, "proc": 17, "wrong_bay": true}, "223": {"orient_idx": 4, "layers": [[[0.0, 0.0], [-2.9634, 0.0238], [-6.3919, -0.1906], [-9.3001, -0.2717], [-9.2862, 0.8901], [-2.9273, 2.4018]], [[0.139, 2.3497], [3.1786, 2.4406], [2.8069, -0.1634], [0.0, 0.0], [-2.9634, 0.0238], [-6.3919, -0.1906], [-9.3001, -0.2717], [-9.2862, 0.8901], [-2.7209, 2.4509]]], "release": 39, "due": 56, "proc": 16, "wrong_bay": true}, "168": {"orient_idx": 6, "layers": [[[0.0, 0.0], [5.4038, -6.5911], [10.5299, -6.7058], [16.798, -6.8829], [21.8071, -7.711], [21.5342, -1.5535], [16.5225, -1.1372], [10.8538, -0.4978], [5.4381, -0.4148]], [[0.0, 0.0], [5.4038, -6.5911], [10.5299, -6.7058], [16.798, -6.8829], [21.8071, -7.711], [21.5342, -1.5535], [16.5225, -1.1372], [10.8538, -0.4978], [5.4381, -0.4148]]], "release": 36, "due": 63, "proc": 24, "wrong_bay": true}, "242": {"orient_idx": 2, "layers": [[[0.0, 0.0], [2.9952, -1.5313], [0.1775, -3.8757], [-3.9841, -3.7809], [-3.9683, 0.5445]]], "release": 35, "due": 53, "proc": 18, "wrong_bay": false}, "112": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-0.165, 3.4371], [-5.8721, 3.2802], [-11.3285, 3.48], [-14.1826, 3.377], [-14.0765, 2.0908], [-1.1189, -0.0116]], [[0.0, 0.0], [-0.165, 3.4371], [-5.8721, 3.2802], [-11.3285, 3.48], [-17.0368, 3.274], [-21.8365, 3.3499], [-1.1189, -0.0116]]], "release": 38, "due": 52, "proc": 14, "wrong_bay": true}, "165": {"orient_idx": 6, "layers": [[[0.0, 0.0], [-0.1, -9.9046], [3.3638, -9.8969], [9.1663, -10.854], [15.9831, -11.0116], [21.565, -11.2858], [22.4966, -2.2306], [16.1015, -1.3406], [9.7396, -0.8702], [3.0379, -0.2072]], [[0.0, 0.0], [-0.1, -9.9046], [3.3638, -9.8969], [9.1663, -10.854], [15.9831, -11.0116], [9.7396, -0.8702], [3.0379, -0.2072]]], "release": 20, "due": 52, "proc": 28, "wrong_bay": true}, "71": {"orient_idx": 0, "layers": [[[0.0, 0.0], [-9.4065, 0.2822], [-18.1273, -0.0865], [-8.2887, 7.1311], [-0.2927, 7.2135], [9.2251, 7.0729], [8.7022, 1.7343], [0.1088, 0.0001]], [[0.0, 0.0], [-9.4065, 0.2822], [-18.1273, -0.0865], [-8.2887, 7.1311], [-0.2927, 7.2135], [9.2251, 7.0729], [18.0449, 7.1671], [17.2731, 3.464], [0.1088, 0.0001]]], "release": 22, "due": 56, "proc": 29, "wrong_bay": true}, "4": {"orient_idx": 6, "layers": [[[0.0, 0.0], [3.7069, -0.3299], [3.8073, -1.4766], [3.8316, -3.9636], [3.7621, -6.2275], [3.5114, -6.1996], [-0.0094, -0.5066]], [[3.5114, -6.1996], [0.362, -1.1072], [3.8073, -1.4766], [3.8316, -3.9636], [3.7621, -6.2275]]], "release": 33, "due": 55, "proc": 16, "wrong_bay": true}, "36": {"orient_idx": 6, "layers": [[[0.0, 0.0], [0.313, -12.8601], [9.5005, -13.827], [8.8649, -0.1436]], [[0.0, 0.0], [0.313, -12.8601], [9.5005, -13.827], [18.2333, -0.4857], [8.8649, -0.1436]]], "release": 19, "due": 51, "proc": 29, "wrong_bay": true}, "11": {"orient_idx": 2, "layers": [[[0.0, 0.0], [-2.5259, -0.1987], [-7.6585, -0.2501], [-12.6837, -0.1103], [-13.298, -5.4736], [0.0154, -0.6646]], [[0.0, 0.0], [-2.5259, -0.1987], [-7.6585, -0.2501], [-12.6837, -0.1103], [-18.716, -0.7811], [-18.5258, -6.8094], [-16.3896, -6.5904], [0.0154, -0.6646]]], "release": 29, "due": 60, "proc": 22, "wrong_bay": false}, "96": {"orient_idx": 1, "layers": [[[0.0, 0.0], [-6.2606, 5.49], [-11.6933, 0.2613], [-10.4651, -0.9251], [-1.3044, -1.1299]], [[0.0, 0.0], [-6.2606, 5.49], [-11.6933, 0.2613], [-10.4651, -0.9251], [-1.3044, -1.1299]]], "release": 33, "due": 49, "proc": 16, "wrong_bay": true}, "187": {"orient_idx": 5, "layers": [[[0.0, 0.0], [-3.6627, -1.2373], [-2.2757, -2.2312], [0.1811, -0.1929]], [[-6.8706, -2.7866], [-4.6943, -4.771], [-2.2757, -2.2312], [0.1811, -0.1929], [-0.7823, -0.2643], [-6.163, -2.0818]]], "release": 35, "due": 53, "proc": 15, "wrong_bay": true}, "66": {"orient_idx": 4, "layers": [[[0.0, 0.0], [3.3332, -0.2261], [3.1478, -6.9815], [-0.1944, -6.9485], [-6.9622, -6.9891], [-13.5766, -6.5012], [-19.4457, -6.5441], [-19.3977, -4.1876], [-5.3961, 0.3532]], [[0.0, 0.0], [3.3332, -0.2261], [3.1478, -6.9815], [-0.1944, -6.9485], [-6.9622, -6.9891], [-11.3064, -1.5636], [-5.3961, 0.3532]]], "release": 47, "due": 72, "proc": 24, "wrong_bay": false}, "61": {"orient_idx": 4, "layers": [[[0.0, 0.0], [0.3308, -6.637], [3.3564, -7.1379], [10.7451, -6.8594], [16.9202, -6.5929], [23.4729, -7.0944], [23.2025, -3.7612], [11.3742, -0.127], [9.8103, -0.1287], [3.2251, 0.0739]]], "release": 34, "due": 66, "proc": 28, "wrong_bay": false}, "46": {"orient_idx": 6, "layers": [[[0.0, 0.0], [-2.5128, 0.099], [-15.2263, 3.7522], [-8.8476, 7.9698], [-0.3005, 6.8489], [9.0737, 6.674], [9.0076, -0.2113]], [[0.0, 0.0], [-2.5128, 0.099], [-15.2263, 3.7522], [-8.8476, 7.9698], [-0.3005, 6.8489], [9.0737, 6.674], [9.0076, -0.2113]]], "release": 46, "due": 85, "proc": 29, "wrong_bay": false}, "33": {"orient_idx": 0, "layers": [[[0.0, 0.0], [1.2545, 13.2126], [18.7579, 13.2435], [18.4461, 8.6877], [6.393, 0.178]], [[0.0, 0.0], [1.2545, 13.2126], [18.7579, 13.2435], [18.4461, 8.6877], [6.393, 0.178]]], "release": 42, "due": 75, "proc": 28, "wrong_bay": true}, "213": {"orient_idx": 4, "layers": [[[0.0, 0.0], [4.628, 0.009], [3.5896, -7.8624], [-0.867, -7.5106], [-9.7445, -7.834], [-15.4226, -3.2728], [-5.5606, 0.257]]], "release": 13, "due": 41, "proc": 27, "wrong_bay": true}}, "events": [{"t": 1, "type": "ENTRY", "block_id": 160, "x": 12, "y": 15}, {"t": 2, "type": "ENTRY", "block_id": 230, "x": 57, "y": 16}, {"t": 3, "type": "ENTRY", "block_id": 109, "x": 35, "y": 12}, {"t": 5, "type": "ENTRY", "block_id": 21, "x": 38, "y": 1}, {"t": 6, "type": "ENTRY", "block_id": 80, "x": 0, "y": 0}, {"t": 7, "type": "ENTRY", "block_id": 156, "x": 59, "y": 9}, {"t": 8, "type": "ENTRY", "block_id": 150, "x": 27, "y": 0}, {"t": 10, "type": "ENTRY", "block_id": 78, "x": 6, "y": 5}, {"t": 10, "type": "ENTRY", "block_id": 39, "x": 49, "y": 4}, {"t": 14, "type": "ENTRY", "block_id": 111, "x": 25, "y": 6}, {"t": 15, "type": "ENTRY", "block_id": 136, "x": 48, "y": 4}, {"t": 18, "type": "ENTRY", "block_id": 56, "x": 44, "y": 8}, {"t": 20, "type": "ENTRY", "block_id": 249, "x": 45, "y": 6}, {"t": 21, "type": "EXIT", "block_id": 80}, {"t": 24, "type": "EXIT", "block_id": 78}, {"t": 25, "type": "EXIT", "block_id": 160}, {"t": 25, "type": "ENTRY", "block_id": 82, "x": 16, "y": 10}, {"t": 25, "type": "ENTRY", "block_id": 117, "x": 0, "y": 8}, {"t": 26, "type": "EXIT", "block_id": 230}, {"t": 26, "type": "EXIT", "block_id": 150}, {"t": 26, "type": "ENTRY", "block_id": 114, "x": 61, "y": 16}, {"t": 29, "type": "EXIT", "block_id": 109}, {"t": 29, "type": "EXIT", "block_id": 21}, {"t": 30, "type": "EXIT", "block_id": 39}, {"t": 30, "type": "EXIT", "block_id": 136}, {"t": 30, "type": "ENTRY", "block_id": 229, "x": 68, "y": 1}, {"t": 30, "type": "ENTRY", "block_id": 74, "x": 54, "y": 4}, {"t": 31, "type": "EXIT", "block_id": 111}, {"t": 31, "type": "ENTRY", "block_id": 132, "x": 9, "y": 0}, {"t": 31, "type": "ENTRY", "block_id": 35, "x": 18, "y": 13}, {"t": 31, "type": "ENTRY", "block_id": 68, "x": 22, "y": 10}, {"t": 32, "type": "EXIT", "block_id": 156}, {"t": 32, "type": "ENTRY", "block_id": 238, "x": 44, "y": 12}, {"t": 32, "type": "ENTRY", "block_id": 179, "x": 34, "y": 15}, {"t": 34, "type": "EXIT", "block_id": 56}, {"t": 34, "type": "ENTRY", "block_id": 151, "x": 36, "y": 5}, {"t": 36, "type": "EXIT", "block_id": 249}, {"t": 36, "type": "ENTRY", "block_id": 58, "x": 42, "y": 0}, {"t": 39, "type": "EXIT", "block_id": 117}, {"t": 43, "type": "ENTRY", "block_id": 178, "x": 1, "y": 5}, {"t": 44, "type": "ENTRY", "block_id": 164, "x": 1, "y": 1}, {"t": 45, "type": "EXIT", "block_id": 229}, {"t": 47, "type": "EXIT", "block_id": 114}, {"t": 47, "type": "EXIT", "block_id": 68}, {"t": 47, "type": "ENTRY", "block_id": 27, "x": 68, "y": 9}, {"t": 50, "type": "EXIT", "block_id": 238}, {"t": 50, "type": "ENTRY", "block_id": 124, "x": 49, "y": 11}, {"t": 50, "type": "ENTRY", "block_id": 148, "x": 58, "y": 15}, {"t": 50, "type": "ENTRY", "block_id": 161, "x": 48, "y": 16}, {"t": 51, "type": "EXIT", "block_id": 58}, {"t": 53, "type": "EXIT", "block_id": 74}, {"t": 53, "type": "ENTRY", "block_id": 193, "x": 66, "y": 4}, {"t": 53, "type": "ENTRY", "block_id": 203, "x": 42, "y": 4}, {"t": 53, "type": "ENTRY", "block_id": 197, "x": 53, "y": 1}, {"t": 55, "type": "EXIT", "block_id": 82}, {"t": 55, "type": "ENTRY", "block_id": 119, "x": 1, "y": 16}, {"t": 58, "type": "EXIT", "block_id": 132}, {"t": 58, "type": "EXIT", "block_id": 151}, {"t": 58, "type": "EXIT", "block_id": 178}, {"t": 58, "type": "EXIT", "block_id": 164}, {"t": 58, "type": "ENTRY", "block_id": 167, "x": 38, "y": 3}, {"t": 58, "type": "ENTRY", "block_id": 62, "x": 18, "y": 8}, {"t": 58, "type": "ENTRY", "block_id": 22, "x": 43, "y": 4}, {"t": 58, "type": "ENTRY", "block_id": 130, "x": 16, "y": 11}, {"t": 59, "type": "EXIT", "block_id": 179}, {"t": 59, "type": "ENTRY", "block_id": 223, "x": 43, "y": 13}, {"t": 60, "type": "EXIT", "block_id": 35}, {"t": 60, "type": "ENTRY", "block_id": 168, "x": 12, "y": 16}, {"t": 64, "type": "EXIT", "block_id": 161}, {"t": 65, "type": "EXIT", "block_id": 27}, {"t": 68, "type": "EXIT", "block_id": 193}, {"t": 69, "type": "EXIT", "block_id": 197}, {"t": 70, "type": "EXIT", "block_id": 203}, {"t": 70, "type": "ENTRY", "block_id": 242, "x": 48, "y": 4}, {"t": 70, "type": "ENTRY", "block_id": 112, "x": 68, "y": 1}, {"t": 72, "type": "EXIT", "block_id": 148}, {"t": 72, "type": "EXIT", "block_id": 62}, {"t": 73, "type": "EXIT", "block_id": 167}, {"t": 74, "type": "EXIT", "block_id": 119}, {"t": 75, "type": "EXIT", "block_id": 130}, {"t": 75, "type": "EXIT", "block_id": 223}, {"t": 77, "type": "EXIT", "block_id": 124}, {"t": 77, "type": "ENTRY", "block_id": 165, "x": 45, "y": 16}, {"t": 78, "type": "EXIT", "block_id": 22}, {"t": 78, "type": "ENTRY", "block_id": 71, "x": 26, "y": 1}, {"t": 78, "type": "ENTRY", "block_id": 4, "x": 41, "y": 16}, {"t": 84, "type": "EXIT", "block_id": 168}, {"t": 84, "type": "EXIT", "block_id": 112}, {"t": 84, "type": "ENTRY", "block_id": 36, "x": 0, "y": 16}, {"t": 84, "type": "ENTRY", "block_id": 11, "x": 37, "y": 16}, {"t": 84, "type": "ENTRY", "block_id": 96, "x": 44, "y": 10}, {"t": 84, "type": "ENTRY", "block_id": 187, "x": 31, "y": 13}, {"t": 88, "type": "EXIT", "block_id": 242}, {"t": 94, "type": "EXIT", "block_id": 4}, {"t": 99, "type": "EXIT", "block_id": 187}, {"t": 100, "type": "EXIT", "block_id": 96}, {"t": 105, "type": "EXIT", "block_id": 165}, {"t": 105, "type": "ENTRY", "block_id": 66, "x": 64, "y": 7}, {"t": 106, "type": "EXIT", "block_id": 11}, {"t": 107, "type": "EXIT", "block_id": 71}, {"t": 107, "type": "ENTRY", "block_id": 61, "x": 18, "y": 9}, {"t": 107, "type": "ENTRY", "block_id": 46, "x": 42, "y": 6}, {"t": 113, "type": "EXIT", "block_id": 36}, {"t": 113, "type": "ENTRY", "block_id": 33, "x": 0, "y": 1}, {"t": 129, "type": "EXIT", "block_id": 66}, {"t": 135, "type": "EXIT", "block_id": 61}, {"t": 136, "type": "EXIT", "block_id": 46}, {"t": 136, "type": "ENTRY", "block_id": 213, "x": 63, "y": 8}, {"t": 141, "type": "EXIT", "block_id": 33}, {"t": 163, "type": "EXIT", "block_id": 213}], "stats": {"mode": "prob_38 bay0  |  obj=62162996.0 z1=4526.0 z2=1269 z3=6051.0 feasible=True", "n": 55}};</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ---------------------------------------------------------------------------
+// Data prep
+// ---------------------------------------------------------------------------
+const GAP = 8;   // world-unit spacing between adjacent bays along +X
+
+// Normalize bays to a list (backward compat: a single "bay" -> one-element list).
+let bayList = TRACE.bays;
+if (!bayList || !bayList.length) {
+  bayList = [TRACE.bay || { width: 10, height: 10, max_layer: 1 }];
+}
+bayList = bayList.map((b, j) => ({
+  id: (b.id !== undefined ? b.id : j),
+  width: b.width, height: b.height,
+  max_layer: Math.max(1, b.max_layer || 1),
+}));
+
+// X-offset of each bay = cumulative widths of preceding bays + GAP per gap.
+const bayOffset = [];
+{
+  let acc = 0;
+  for (let j = 0; j < bayList.length; j++) {
+    bayOffset.push(acc);
+    acc += bayList[j].width + GAP;
+  }
+}
+// Overall extent used for camera framing / lights / grid spans.
+const totalW = bayOffset.length
+  ? bayOffset[bayOffset.length - 1] + bayList[bayList.length - 1].width
+  : 10;
+const maxH = Math.max(1, ...bayList.map(b => b.height));
+const maxL = Math.max(1, ...bayList.map(b => b.max_layer));
+
+const blocks = TRACE.blocks || {};
+const events = (TRACE.events || []).slice().sort((a, b) => a.t - b.t);
+
+// Distinct sorted event times (the slider domain).
+const times = Array.from(new Set(events.map(e => e.t))).sort((a, b) => a - b);
+if (times.length === 0) times.push(0);
+
+// Per-block ENTRY (x,y), bay index, and presence interval [entry, exit).
+const placement = {};   // id -> {x, y, bay, entry, exit}
+for (const ev of events) {
+  const id = String(ev.block_id);
+  if (!placement[id]) placement[id] = { x: 0, y: 0, bay: 0, entry: null, exit: null };
+  if (ev.type === 'ENTRY') {
+    placement[id].entry = ev.t;
+    placement[id].x = (ev.x || 0);
+    placement[id].y = (ev.y || 0);
+  } else if (ev.type === 'EXIT') {
+    placement[id].exit = ev.t;
+  }
+}
+// Bay index comes from the block def (multi-bay) or defaults to 0 (single-bay).
+for (const id of Object.keys(blocks)) {
+  if (!placement[id]) placement[id] = { x: 0, y: 0, bay: 0, entry: null, exit: null };
+  const bj = blocks[id].bay;
+  placement[id].bay = (typeof bj === 'number' && bj >= 0 && bj < bayList.length) ? bj : 0;
+}
+
+// TARDY: exit time strictly greater than the block's due date.
+const tardy = {};   // id -> bool
+for (const id of Object.keys(blocks)) {
+  const p = placement[id] || {};
+  const due = blocks[id].due;
+  tardy[id] = (p.exit !== null && p.exit !== undefined && due !== undefined && due !== null
+               && p.exit > due);
+}
+
+function presentAt(id, t) {
+  const p = placement[id];
+  if (!p || p.entry === null) return false;
+  if (t < p.entry) return false;
+  if (p.exit !== null && t >= p.exit) return false;
+  return true;
+}
+
+// Deterministic color per block id (HSL from a string hash). Slightly desaturated so
+// the tardy crimson stands out against the on-time palette.
+function colorFor(id) {
+  const s = String(id);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const hue = h % 360;
+  const sat = 42 + (h >> 8) % 20;        // 42-62% (desaturated)
+  const lit = 50 + (h >> 16) % 12;       // 50-62%
+  return new THREE.Color('hsl(' + hue + ',' + sat + '%,' + lit + '%)');
+}
+
+// 3-status block colors (priority: tardy > wrong_bay > ok).
+//   tardy (exit > due)      -> red    (z1)
+//   else wrong_bay === true -> blue   (z3, assigned bay != preferred bay)
+//   else                    -> green  (ok)
+const STATUS_TARDY = new THREE.Color('#e2245a');   // red    (matches TARDY_COLOR)
+const STATUS_WRONG = new THREE.Color('#3a7bd5');   // royalblue
+const STATUS_OK    = new THREE.Color('#3cb371');   // mediumseagreen
+function statusColor(id) {
+  if (tardy[id]) return STATUS_TARDY;
+  const bd = blocks[id] || {};
+  if (bd.wrong_bay === true) return STATUS_WRONG;
+  return STATUS_OK;
+}
+
+// Shoelace area of a (possibly concave) open polygon ring.
+function polyArea(ring) {
+  let a = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const [x1, y1] = ring[i];
+    const [x2, y2] = ring[(i + 1) % ring.length];
+    a += x1 * y2 - x2 * y1;
+  }
+  return Math.abs(a) / 2;
+}
+
+// ---------------------------------------------------------------------------
+// Scene
+// ---------------------------------------------------------------------------
+const wrap = document.getElementById('canvas-wrap');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0b0e14');
+
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 5000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+wrap.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+
+// The center of the whole layout, used as the orbit target / look-at for all views.
+const cx = totalW / 2, cy = maxH / 2, cz = maxL / 2;
+controls.target.set(cx, cy, cz);
+
+// Lights (scaled to the whole multi-bay extent).
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+dir.position.set(totalW, maxH * 1.5, maxL * 6 + 8);
+scene.add(dir);
+const dir2 = new THREE.DirectionalLight(0x88aaff, 0.35);
+dir2.position.set(-totalW, -maxH, maxL * 4);
+scene.add(dir2);
+
+// Text-sprite helper (used for axis labels and per-bay name labels).
+function makeLabel(text, color, scale) {
+  const px = Math.max(64, text.length * 36);
+  const c = document.createElement('canvas');
+  c.width = px; c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color; ctx.font = 'bold 48px monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, px / 2, 34);
+  const tex = new THREE.CanvasTexture(c);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
+  const sx = (scale || 2);
+  spr.scale.set(sx * (px / 64), sx, 1);
+  return spr;
+}
+
+// One wireframe box + floor grid + "bay <id>" label per bay, at its X-offset.
+for (let j = 0; j < bayList.length; j++) {
+  const b = bayList[j];
+  const ox = bayOffset[j];
+  const bw = b.width, bh = b.height, bl = b.max_layer;
+
+  // Wireframe box (ox,0,0)..(ox+bw,bh,bl).
+  const box = new THREE.BoxGeometry(bw, bh, bl);
+  const edges = new THREE.EdgesGeometry(box);
+  const line = new THREE.LineSegments(
+    edges, new THREE.LineBasicMaterial({ color: 0x4a597a }));
+  line.position.set(ox + bw / 2, bh / 2, bl / 2);
+  scene.add(line);
+
+  // Faint floor grid (z = 0) spanning this bay's footprint.
+  const mat = new THREE.LineBasicMaterial({ color: 0x222d44 });
+  const pts = [];
+  for (let x = 0; x <= bw; x++) { pts.push(ox + x, 0, 0, ox + x, bh, 0); }
+  for (let y = 0; y <= bh; y++) { pts.push(ox + 0, y, 0, ox + bw, y, 0); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  scene.add(new THREE.LineSegments(geo, mat));
+
+  // "bay <id>" label above the box.
+  const lbl = makeLabel('bay ' + b.id, '#9fc0ff', Math.max(2.5, bw * 0.05));
+  lbl.position.set(ox + bw / 2, bh + 2.5, bl + 1.5);
+  scene.add(lbl);
+}
+
+// Axis labels x / y / z via sprite canvases, plus an origin axes helper.
+{
+  const ax = makeLabel('x', '#ff7b7b', Math.max(2, totalW * 0.02));
+  ax.position.set(totalW + 1.5, 0, 0); scene.add(ax);
+  const ay = makeLabel('y', '#7bff9d', Math.max(2, totalW * 0.02));
+  ay.position.set(0, maxH + 1.5, 0); scene.add(ay);
+  const az = makeLabel('z', '#7bb6ff', Math.max(2, totalW * 0.02));
+  az.position.set(0, 0, maxL + 1.5); scene.add(az);
+  const axesHelper = new THREE.AxesHelper(Math.max(totalW, maxH, maxL) * 0.3);
+  scene.add(axesHelper);
+}
+
+// ---------------------------------------------------------------------------
+// Block meshes (built once, toggled by visibility per time step).
+// ---------------------------------------------------------------------------
+const blockGroups = {};   // id -> THREE.Group
+
+const TARDY_COLOR = new THREE.Color('#e2245a');   // crimson
+
+function buildBlockMesh(id, def) {
+  const group = new THREE.Group();
+  const p = placement[id] || { x: 0, y: 0, bay: 0 };
+  const ox = bayOffset[p.bay] || 0;          // bay x-offset -> world frame
+  const isTardy = !!tardy[id];
+  const col = statusColor(id);   // 3-status: tardy(red) > wrong_bay(blue) > ok(green)
+  const mat = new THREE.MeshStandardMaterial({
+    color: col, transparent: true, opacity: isTardy ? 0.82 : 0.58,
+    roughness: 0.6, metalness: 0.05, side: THREE.DoubleSide,
+    emissive: isTardy ? new THREE.Color('#7a0d2b') : new THREE.Color('#000000'),
+    emissiveIntensity: isTardy ? 0.9 : 0.0,
+  });
+  const edgeMat = new THREE.LineBasicMaterial({
+    color: isTardy ? new THREE.Color('#ff7da0') : col.clone().offsetHSL(0, 0, 0.15) });
+
+  const layers = def.layers || [];
+  for (let l = 0; l < layers.length; l++) {
+    const ring = layers[l];
+    if (!ring || ring.length < 3) continue;
+    const shape = new THREE.Shape();
+    shape.moveTo(ring[0][0], ring[0][1]);
+    for (let i = 1; i < ring.length; i++) shape.lineTo(ring[i][0], ring[i][1]);
+    shape.closePath();   // ExtrudeGeometry handles concave shapes via tessellation
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 1, bevelEnabled: false });
+    // Shape is in local XY; extrude grows along +Z. Layer l sits at z in [l, l+1].
+    // World x = bay offset + local + ENTRY.x ; world y = local + ENTRY.y.
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(ox + p.x, p.y, l);
+    group.add(mesh);
+    const eg = new THREE.EdgesGeometry(geo);
+    const el = new THREE.LineSegments(eg, edgeMat);
+    el.position.copy(mesh.position);
+    group.add(el);
+  }
+  // Block-id number label at the footprint centroid, floating just above the top layer.
+  const ring0 = layers[0] || [];
+  if (ring0.length) {
+    let sx = 0, sy = 0;
+    for (const v of ring0) { sx += v[0]; sy += v[1]; }
+    sx /= ring0.length; sy /= ring0.length;
+    const lbl = makeLabel(String(id), isTardy ? '#ffe1ea' : '#ffffff', 2.2);
+    lbl.position.set(ox + p.x + sx, p.y + sy, layers.length + 0.35);
+    lbl.renderOrder = 999;
+    group.add(lbl);
+  }
+  group.userData.id = id;
+  group.visible = false;
+  return group;
+}
+
+for (const id of Object.keys(blocks)) {
+  const grp = buildBlockMesh(id, blocks[id]);
+  blockGroups[id] = grp;
+  scene.add(grp);
+}
+
+// ---------------------------------------------------------------------------
+// Time / animation state
+// ---------------------------------------------------------------------------
+let timeIdx = 0;
+let playing = false;
+let lastTick = 0;
+const PLAY_INTERVAL_MS = 900;
+
+function currentTime() { return times[timeIdx]; }
+
+// Total tardy count is fixed (independent of time).
+const TOTAL_TARDY = Object.keys(blocks).filter(id => tardy[id]).length;
+// Sum of all bay floor areas (denominator for utilization across the layout).
+const TOTAL_FLOOR = bayList.reduce((s, b) => s + b.width * b.height, 0);
+
+function updateScene() {
+  const t = currentTime();
+  let count = 0;
+  let tardyHere = 0;
+  let usedArea = 0;
+  for (const id of Object.keys(blockGroups)) {
+    const here = presentAt(id, t);
+    blockGroups[id].visible = here;
+    if (here) {
+      count++;
+      if (tardy[id]) tardyHere++;
+      const layers = (blocks[id].layers) || [];
+      if (layers.length && layers[0] && layers[0].length >= 3) {
+        usedArea += polyArea(layers[0]);
+      }
+    }
+  }
+  const util = TOTAL_FLOOR > 0 ? (100 * usedArea / TOTAL_FLOOR) : 0;
+
+  document.getElementById('r-time').textContent = String(t);
+  document.getElementById('r-count').textContent = String(count);
+  document.getElementById('r-util').textContent = util.toFixed(1) + ' %';
+  document.getElementById('r-tardy').textContent =
+    String(tardyHere) + ' present  /  ' + String(TOTAL_TARDY) + ' total';
+  document.getElementById('timeslider').value = String(timeIdx);
+
+  // Event label: what happened exactly at this time.
+  const here = events.filter(e => e.t === t);
+  if (here.length) {
+    document.getElementById('eventlabel').textContent =
+      here.map(e => e.type + ' block ' + e.block_id +
+        (e.type === 'ENTRY' ? ' @ (' + (e.x||0) + ',' + (e.y||0) + ')' : '')).join('   |   ');
+  } else {
+    document.getElementById('eventlabel').textContent = '';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// View presets
+// ---------------------------------------------------------------------------
+function frameDistance() {
+  return Math.max(totalW, maxH, maxL) * 1.2 + 8;
+}
+function setView(name) {
+  const d = frameDistance();
+  controls.target.set(cx, cy, cz);
+  if (name === 'top') {            // look down -z (x-y plane)
+    camera.position.set(cx, cy, cz + d);
+    camera.up.set(0, 1, 0);
+  } else if (name === 'front') {   // look along -y (x-z plane)
+    camera.position.set(cx, cy - d, cz);
+    camera.up.set(0, 0, 1);
+  } else if (name === 'side') {    // look along -x (y-z plane)
+    camera.position.set(cx - d, cy, cz);
+    camera.up.set(0, 0, 1);
+  } else {                          // iso 3/4
+    camera.position.set(cx + d * 0.8, cy - d * 0.8, cz + d * 0.7);
+    camera.up.set(0, 0, 1);
+  }
+  camera.lookAt(cx, cy, cz);
+  controls.update();
+  for (const b of ['top', 'front', 'side', 'iso'])
+    document.getElementById('view-' + b).classList.toggle('active', b === name);
+}
+
+// ---------------------------------------------------------------------------
+// UI wiring
+// ---------------------------------------------------------------------------
+const slider = document.getElementById('timeslider');
+slider.max = String(times.length - 1);
+slider.addEventListener('input', () => { timeIdx = parseInt(slider.value, 10) || 0; updateScene(); });
+
+document.getElementById('btn-prev').addEventListener('click', () => {
+  timeIdx = Math.max(0, timeIdx - 1); updateScene();
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  timeIdx = Math.min(times.length - 1, timeIdx + 1); updateScene();
+});
+const playBtn = document.getElementById('btn-play');
+playBtn.addEventListener('click', () => {
+  playing = !playing;
+  playBtn.textContent = playing ? 'Pause' : 'Play';
+  playBtn.classList.toggle('active', playing);
+  lastTick = performance.now();
+});
+
+document.getElementById('view-top').addEventListener('click', () => setView('top'));
+document.getElementById('view-front').addEventListener('click', () => setView('front'));
+document.getElementById('view-side').addEventListener('click', () => setView('side'));
+document.getElementById('view-iso').addEventListener('click', () => setView('iso'));
+
+// Title / bay info / legend / stats.
+document.getElementById('title').textContent =
+  'OGC2026 • ' + (TRACE.instance || 'instance');
+document.getElementById('bayinfo').textContent =
+  bayList.length + ' bay' + (bayList.length === 1 ? '' : 's') + '  —  ' +
+  bayList.map(b => b.width + '×' + b.height + '×' + b.max_layer + 'L').join('   ');
+
+{
+  const leg = document.getElementById('legend');
+  // 3-status legend (priority: tardy > wrong_bay > ok).
+  const statusLegend = [
+    ['#e2245a', 'tardy (z1)',     '#ff9db6'],
+    ['#3a7bd5', 'wrong bay (z3)', '#a9c8ff'],
+    ['#3cb371', 'ok',             '#9fe4bf'],
+  ];
+  for (const [bg, label, fg] of statusLegend) {
+    const item = document.createElement('div');
+    item.className = 'legitem';
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = bg;
+    const txt = document.createElement('span');
+    txt.textContent = label;
+    txt.style.color = fg;
+    item.appendChild(sw); item.appendChild(txt);
+    leg.appendChild(item);
+  }
+}
+{
+  const box = document.getElementById('statsbox');
+  const stats = TRACE.stats || {};
+  const keys = Object.keys(stats);
+  if (!keys.length) {
+    box.innerHTML = '<div class="muted">(no stats)</div>';
+  } else {
+    for (const k of keys) {
+      const v = stats[k];
+      const row = document.createElement('div');
+      row.className = 'stat';
+      const vs = (typeof v === 'object') ? JSON.stringify(v) : String(v);
+      row.innerHTML = '<span class="k"></span><span class="v"></span>';
+      row.children[0].textContent = k;
+      row.children[1].textContent = vs;
+      box.appendChild(row);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resize + render loop
+// ---------------------------------------------------------------------------
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+
+function loop(now) {
+  if (playing && now - lastTick >= PLAY_INTERVAL_MS) {
+    lastTick = now;
+    timeIdx = (timeIdx + 1) % times.length;
+    updateScene();
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+resize();
+setView('iso');
+updateScene();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

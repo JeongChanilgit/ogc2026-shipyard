@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>perbay 상세 해설 — OGC 2026 per-bay joint CP-SAT polish</title>
+<style>
+  :root{
+    --bg:#0e1117; --panel:#161b22; --panel2:#1c2230; --ink:#e6edf3; --dim:#9da7b3;
+    --line:#2b3340; --accent:#58a6ff; --good:#3fb950; --warn:#d29922; --bad:#f85149;
+    --space:#7ee787; --time:#79c0ff; --mut:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.3px}
+  h2{font-size:20px;margin:38px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+  h3{font-size:16px;margin:20px 0 6px;color:var(--accent)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 18px}
+  p{margin:8px 0}
+  code{background:#222b38;padding:1px 6px;border-radius:5px;font-family:"SF Mono",Consolas,monospace;font-size:13px;color:#c9d6e4}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;vertical-align:middle}
+  .t-space{background:rgba(126,231,135,.16);color:var(--space)}
+  .t-time{background:rgba(121,192,255,.16);color:var(--time)}
+  .t-gate{background:rgba(210,153,34,.16);color:var(--warn)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .lead{font-size:16px;color:#cdd9e5}
+  .kbd{font-family:"SF Mono",Consolas,monospace;font-size:12.5px;color:#9fb3c8}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:#1b2230;color:#cdd9e5;font-weight:600}
+  td code{font-size:12px}
+  .flow{display:flex;flex-direction:column;gap:0}
+  .step{position:relative;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:9px;padding:12px 14px;margin:0 0 26px}
+  .step:after{content:"▼";position:absolute;left:24px;bottom:-22px;color:var(--line);font-size:14px}
+  .step:last-child:after{display:none}
+  .step .n{display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;
+    background:var(--accent);color:#04101f;font-weight:800;font-size:12px;margin-right:8px}
+  .step.gate{border-left-color:var(--warn)}
+  .step.gate .n{background:var(--warn)}
+  .muted{color:var(--dim);font-size:13px}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 2px;font-size:13px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+  svg{display:block;max-width:100%}
+  .cap{color:var(--dim);font-size:12.5px;text-align:center;margin:4px 0 0}
+  .note{border-left:3px solid var(--good);background:rgba(63,185,80,.07);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+  .note.warn{border-left-color:var(--warn);background:rgba(210,153,34,.07)}
+  .note.bad{border-left-color:var(--bad);background:rgba(248,81,73,.07)}
+  ul{margin:8px 0 8px 2px;padding-left:20px}
+  li{margin:4px 0}
+  .pill{font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>perbay — per-bay <span style="color:var(--space)">공간</span>+<span style="color:var(--time)">시간</span> JOINT 재배치 폴리시</h1>
+<p class="sub">OGC 2026 · <code>src/perbay.py</code> (612줄) 상세 해설 · 2026-06-19 · 현 프로덕션의 마지막 폴리시 단계 (<code>OGC_PERBAY</code> 기본 ON)</p>
+
+<div class="panel lead">
+perbay는 완성된 해(best-of winner)를 받아, <b>tardy한 베이를 하나씩</b> CP-SAT로 다시 풀어
+<b>각 블록의 위치 (x,y)·방향·진입시각을 동시에(joint)</b> 재배치한다. 목표는 그 베이의 <b>지각합(Z1)을 줄이는 것</b>뿐.
+<span class="tag t-space">공간</span> 베이 배정은 안 바꾸므로 <b>Z2(부하불균형)·Z3(선호)는 수학적으로 불변</b> — 오직 Z1만 움직인다.
+워밍스타트 + 엄격개선 게이트라 <b>최악의 경우 입력 해를 그대로 반환</b>(절대 나빠지지 않음).
+</div>
+
+<!-- ============================================================ -->
+<h2>0. 파이프라인 어디에 있나</h2>
+<p>set2(T≥200) 경로: gassign-first가 <b>배정(B1)→위치배치(B2)→타이밍(B3)</b>으로 해를 만들고, box가 별도 후보를 내서 best-of.
+그 <b>승자 위에</b> perbay가 마지막으로 한 번 더 베이별 폴리시를 건다.</p>
+
+<div class="panel">
+<svg viewBox="0 0 1000 150" role="img" aria-label="pipeline">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#9da7b3"/>
+    </marker>
+  </defs>
+  <!-- gassign group -->
+  <rect x="8" y="40" width="430" height="70" rx="10" fill="none" stroke="#2b3340" stroke-dasharray="4 3"/>
+  <text x="223" y="34" fill="#9da7b3" font-size="12" text-anchor="middle">gassign-first (LBBD)</text>
+  <g font-size="12.5" fill="#e6edf3" text-anchor="middle">
+    <rect x="20"  y="55" width="120" height="40" rx="8" fill="#1c2230" stroke="#2b3340"/>
+    <text x="80"  y="73">B1 배정</text><text x="80" y="88" font-size="10" fill="#9da7b3">master+cut</text>
+    <rect x="158" y="55" width="120" height="40" rx="8" fill="#1c2230" stroke="#7ee787"/>
+    <text x="218" y="73">B2 위치배치</text><text x="218" y="88" font-size="10" fill="#7ee787">fastfloor BL</text>
+    <rect x="296" y="55" width="120" height="40" rx="8" fill="#1c2230" stroke="#79c0ff"/>
+    <text x="356" y="73">B3 타이밍</text><text x="356" y="88" font-size="10" fill="#79c0ff">CP-SAT 시간</text>
+  </g>
+  <line x1="140" y1="75" x2="156" y2="75" stroke="#9da7b3" marker-end="url(#ar)"/>
+  <line x1="278" y1="75" x2="294" y2="75" stroke="#9da7b3" marker-end="url(#ar)"/>
+  <!-- box best-of -->
+  <line x1="438" y1="75" x2="476" y2="75" stroke="#9da7b3" marker-end="url(#ar)"/>
+  <rect x="478" y="55" width="120" height="40" rx="8" fill="#1c2230" stroke="#2b3340"/>
+  <text x="538" y="73" fill="#e6edf3" font-size="12.5" text-anchor="middle">box best-of</text>
+  <text x="538" y="88" fill="#9da7b3" font-size="10" text-anchor="middle">승자 선택</text>
+  <!-- perbay -->
+  <line x1="598" y1="75" x2="636" y2="75" stroke="#9da7b3" marker-end="url(#ar)"/>
+  <rect x="638" y="48" width="150" height="54" rx="10" fill="#23310f" stroke="#3fb950" stroke-width="2"/>
+  <text x="713" y="70" fill="#7ee787" font-size="14" font-weight="700" text-anchor="middle">perbay 폴리시</text>
+  <text x="713" y="88" fill="#9da7b3" font-size="10.5" text-anchor="middle">tardy 베이 재배치</text>
+  <!-- out -->
+  <line x1="788" y1="75" x2="826" y2="75" stroke="#9da7b3" marker-end="url(#ar)"/>
+  <rect x="828" y="55" width="120" height="40" rx="8" fill="#1c2230" stroke="#2b3340"/>
+  <text x="888" y="79" fill="#e6edf3" font-size="12.5" text-anchor="middle">제출 해</text>
+  <text x="888" y="130" fill="#9da7b3" font-size="11" text-anchor="middle">(이후 B4 serial-floor 안전망)</text>
+</svg>
+<p class="cap">perbay는 "leftover wall"(gassign+box가 쓰고 남은 시간)에서 돈다. 시간이 없으면 그냥 건너뛴다(입력 해 유지).</p>
+</div>
+
+<!-- ============================================================ -->
+<h2>1. 핵심 아이디어 — 왜 "joint"인가 (B3와의 차이)</h2>
+<p>B3(<code>_cpsat_bay_timing_verified</code>)는 <b>위치를 고정</b>하고 진입시각만 다시 푼다. 그래서 두 블록이 공간에서 겹치면
+"한쪽을 <span class="t-time">시간</span>적으로 미루는" 길밖에 없다 → 지각 발생. perbay는 <b>위치·방향까지 같이</b> 움직여서,
+충돌하는 블록을 <span class="t-space">공간</span>적으로 옆으로 밀어 <b>동시에 공존</b>시킬 수 있다 → 미루지 않아도 됨 → 지각↓.</p>
+
+<div class="grid2">
+  <div class="panel">
+    <h3 style="color:var(--time)">B3 (시간만) — 위치 고정</h3>
+    <svg viewBox="0 0 360 170" aria-label="B3 time-only">
+      <!-- bay -->
+      <rect x="20" y="20" width="150" height="100" fill="#0c1117" stroke="#2b3340"/>
+      <text x="95" y="14" fill="#9da7b3" font-size="11" text-anchor="middle">공간 (고정 위치)</text>
+      <rect x="30" y="60" width="55" height="50" fill="#1f6feb55" stroke="#79c0ff"/>
+      <text x="57" y="89" fill="#cde" font-size="11" text-anchor="middle">A</text>
+      <rect x="60" y="35" width="55" height="50" fill="#f8514955" stroke="#f85149"/>
+      <text x="88" y="64" fill="#fdd" font-size="11" text-anchor="middle">B</text>
+      <text x="95" y="138" fill="#f85149" font-size="10.5" text-anchor="middle">A·B 공간겹침 → 동시 불가</text>
+      <!-- timeline -->
+      <line x1="200" y1="50" x2="345" y2="50" stroke="#3a4452"/>
+      <rect x="205" y="40" width="50" height="20" fill="#1f6feb55" stroke="#79c0ff"/><text x="230" y="55" font-size="10" fill="#cde" text-anchor="middle">A</text>
+      <rect x="262" y="40" width="60" height="20" fill="#f8514955" stroke="#f85149"/><text x="292" y="55" font-size="10" fill="#fdd" text-anchor="middle">B(미룸)</text>
+      <text x="272" y="80" fill="#9da7b3" font-size="10" text-anchor="middle">시간</text>
+      <text x="272" y="110" fill="#d29922" font-size="10.5" text-anchor="middle">B를 뒤로 밀어 회피</text>
+      <text x="272" y="126" fill="#d29922" font-size="10.5" text-anchor="middle">→ B 지각 가능</text>
+    </svg>
+  </div>
+  <div class="panel">
+    <h3 style="color:var(--space)">perbay (공간+시간) — 위치도 이동</h3>
+    <svg viewBox="0 0 360 170" aria-label="perbay joint">
+      <rect x="20" y="20" width="150" height="100" fill="#0c1117" stroke="#2b3340"/>
+      <text x="95" y="14" fill="#9da7b3" font-size="11" text-anchor="middle">공간 (위치 재배치)</text>
+      <rect x="28" y="60" width="50" height="50" fill="#1f6feb55" stroke="#79c0ff"/>
+      <text x="53" y="89" fill="#cde" font-size="11" text-anchor="middle">A</text>
+      <rect x="110" y="60" width="50" height="50" fill="#3fb95055" stroke="#3fb950"/>
+      <text x="135" y="89" fill="#dfd" font-size="11" text-anchor="middle">B</text>
+      <text x="95" y="138" fill="#3fb950" font-size="10.5" text-anchor="middle">옆으로 밀어 공간분리 → 동시 OK</text>
+      <line x1="200" y1="50" x2="345" y2="50" stroke="#3a4452"/>
+      <rect x="205" y="40" width="50" height="20" fill="#1f6feb55" stroke="#79c0ff"/><text x="230" y="55" font-size="10" fill="#cde" text-anchor="middle">A</text>
+      <rect x="205" y="63" width="58" height="20" fill="#3fb95055" stroke="#3fb950"/><text x="234" y="78" font-size="10" fill="#dfd" text-anchor="middle">B</text>
+      <text x="272" y="80" fill="#9da7b3" font-size="10" text-anchor="middle">시간</text>
+      <text x="272" y="110" fill="#3fb950" font-size="10.5" text-anchor="middle">둘 다 일찍 진입</text>
+      <text x="272" y="126" fill="#3fb950" font-size="10.5" text-anchor="middle">→ 지각 없음</text>
+    </svg>
+  </div>
+</div>
+<p class="muted">즉 perbay의 추가 레버 = <b>"미룰래(time) vs 옆으로 비킬래(space)"를 CP-SAT가 같이 고른다.</b>
+크레인/충돌 제약으로 묶여 지각하던 베이가 공간 재배치로 풀릴 수 있다.</p>
+
+<!-- ============================================================ -->
+<h2>2. <code>improve()</code> — 오케스트레이션 (베이별 루프 + 게이트)</h2>
+<p class="muted">입력: <code>prob_info</code>, 현재 해 <code>sol</code>, 시간예산 <code>time_budget</code>. 출력: 개선된 해 또는 입력 해 그대로.</p>
+
+<div class="flow">
+  <div class="step"><span class="n">1</span><b>해 파싱</b> → 베이별 레코드 <code>{j: {block: rec}}</code> 로 정리. rec = 위치·방향·진입/퇴출.</div>
+  <div class="step"><span class="n">2</span><b>work 베이 선별</b>: 각 베이의 현재 지각 <code>cur_tard = Σ max(0, exit − due)</code> 계산.
+    <span class="tag t-gate">필터</span> <code>cur_tard = 0</code> 인 베이는 제외 — 지각이 0이면 재배치로 더 못 줄임.</div>
+  <div class="step"><span class="n">3</span><b>payoff 정렬</b>: <code>cur_tard</code> 큰 베이부터(내림차순). 한정된 예산을 지각 큰 베이에 먼저 투입.</div>
+  <div class="step gate"><span class="n">4</span><b>크기 필터</b> <span class="tag t-gate">−1/속도 보호</span>: 블록 수 <code>n &gt; maxn</code>(기본 100) 베이는 skip — 쌍별 disjunction이 <code>O(n²)</code>라 너무 큰 베이는 CP-SAT가 못 푼다.</div>
+  <div class="step"><span class="n">5</span><b>베이별 예산 배분</b>: <code>per_bay = (남은시간) / (남은 work 베이 수)</code>, 상한 <code>bay_cap</code>(기본 20s). <code>per_bay &lt; 0.5s</code> 거나 데드라인 &lt; 1s 면 skip.</div>
+  <div class="step"><span class="n">6</span><b>베이 풀기</b>: <code>_solve_bay(...)</code> 호출(아래 §3). 개선된 레이아웃을 반환하면 그 베이만 교체(변경된 베이만 deep-copy).</div>
+  <div class="step gate"><span class="n">7</span><b>채택 게이트</b> <span class="tag t-gate">never-worse</span>: 하나라도 개선됐으면 새 해 반환, 아니면 <b>입력 해 그대로</b>. 모든 단계 <code>try/except</code> — 절대 예외 전파 안 함.</div>
+</div>
+
+<div class="note">바깥(myalgorithm)에도 한 겹 더: perbay 결과는 <b>공식 <code>check_feasibility</code> 통과 + 총 obj 엄격 개선</b>일 때만 채택된다. 즉 <b>이중 게이트</b>(perbay 내부 베이별 + 바깥 전체 obj).</div>
+
+<!-- ============================================================ -->
+<h2>3. <code>_solve_bay()</code> — 한 베이의 JOINT CP-SAT 모델 (핵심)</h2>
+<p>한 베이의 블록들에 대해 <b>(x, y, 방향, 진입시각)을 동시에</b> 정해 그 베이의 지각합을 최소화한다.</p>
+
+<h3>3.1 결정 변수 (블록 b마다)</h3>
+<table>
+<tr><th>변수</th><th>의미</th><th>비고</th></tr>
+<tr><td><code>oi[b]</code></td><td>방향 (0..O−1)</td><td>IntVar</td></tr>
+<tr><td><code>Wv[b], Hv[b]</code></td><td>선택된 방향의 폭·높이</td><td><code>AddElement(oi, w_list, Wv)</code> — 방향에 따라 폭/높이가 따라옴(채널링)</td></tr>
+<tr><td><code>xl[b], yl[b]</code></td><td>bbox 좌·하단 좌표</td><td>위치. <code>anchor = bbox − offset</code> 으로 환산</td></tr>
+<tr><td><code>entry[b]</code></td><td>진입시각 (R..Hmax)</td><td>퇴출 = entry + P (WLOG 최적)</td></tr>
+<tr><td><code>tard[b]</code></td><td>지각 = max(0, entry+P−D)</td><td>목적함수 항</td></tr>
+</table>
+
+<h3>3.2 제약 ① 베이 경계 + 보수적 정수 bbox <span class="tag t-space">공간</span></h3>
+<p><code>xl + Wv ≤ W</code>, <code>yl + Hv ≤ H</code>. 핵심 안전장치(BUG-1): 채커는 <b>float 폴리곤</b>으로 검사하므로,
+정수 bbox가 그 float 폴리곤을 <b>보수적으로 포함</b>해야 한다 → <code>_orient_geom</code>이 min-offset은 <b>floor</b>, 최대범위는 <b>ceil</b>로 둘러싼다.
+그래서 <b>정수 non-overlap ⟹ float non-overlap</b>, <b>정수 in-bounds ⟹ float in-bounds</b>.</p>
+<div class="panel" style="text-align:center">
+<svg viewBox="0 0 340 130" aria-label="conservative bbox">
+  <rect x="60" y="20" width="220" height="90" fill="none" stroke="#3fb950" stroke-width="2"/>
+  <text x="170" y="14" fill="#3fb950" font-size="11" text-anchor="middle">정수 bbox (floor/ceil로 바깥 둘러쌈)</text>
+  <polygon points="80,70 120,30 230,40 250,90 150,100" fill="#79c0ff33" stroke="#79c0ff"/>
+  <text x="165" y="72" fill="#9fd" font-size="11" text-anchor="middle">실제 float 폴리곤</text>
+  <text x="170" y="125" fill="#9da7b3" font-size="10.5" text-anchor="middle">bbox가 폴리곤을 항상 포함 → 정수로 안 겹치면 실제로도 안 겹침</text>
+</svg>
+</div>
+
+<h3>3.3 제약 ② 쌍별 분리 — 6개 disjunct 중 하나 <span class="tag t-space">공간</span><span class="tag t-time">시간</span></h3>
+<p>모든 블록쌍 (a,b)에 대해 <code>AddBoolOr([sx_ab, sx_ba, sy_ab, sy_ba, st_ab, st_ba])</code> — 아래 6가지 중 <b>최소 하나</b>가 성립해야 한다.
+이게 <b>안전 모델</b>: 두 공존 블록의 bbox가 (x,y)에서 안 겹치면 <b>어느 층에서도</b> 충돌·크레인 방해가 불가능하다. 따라서
+"모든 순간 공간 분리" <b>또는</b> "시간 분리(한쪽이 끝난 뒤 다른쪽 시작)" 면 항상 feasible.</p>
+
+<div class="panel">
+<svg viewBox="0 0 900 200" aria-label="6 disjuncts">
+  <!-- helper: small bay with two blocks -->
+  <g font-size="11" text-anchor="middle">
+    <!-- 1 sx_ab : a left of b -->
+    <text x="80" y="16" fill="#7ee787">① a가 b 왼쪽</text>
+    <rect x="30" y="28" width="100" height="60" fill="#0c1117" stroke="#2b3340"/>
+    <rect x="38" y="40" width="30" height="36" fill="#1f6feb55" stroke="#79c0ff"/><text x="53" y="62" fill="#cde">a</text>
+    <rect x="90" y="40" width="30" height="36" fill="#f8514955" stroke="#f85149"/><text x="105" y="62" fill="#fdd">b</text>
+    <text x="80" y="103" fill="#9da7b3" font-size="9.5">xl_a+W_a ≤ xl_b</text>
+    <!-- 2 sx_ba : b left of a -->
+    <text x="230" y="16" fill="#7ee787">② b가 a 왼쪽</text>
+    <rect x="180" y="28" width="100" height="60" fill="#0c1117" stroke="#2b3340"/>
+    <rect x="188" y="40" width="30" height="36" fill="#f8514955" stroke="#f85149"/><text x="203" y="62" fill="#fdd">b</text>
+    <rect x="240" y="40" width="30" height="36" fill="#1f6feb55" stroke="#79c0ff"/><text x="255" y="62" fill="#cde">a</text>
+    <text x="230" y="103" fill="#9da7b3" font-size="9.5">xl_b+W_b ≤ xl_a</text>
+    <!-- 3 sy_ab : a below b -->
+    <text x="380" y="16" fill="#7ee787">③ a가 b 아래</text>
+    <rect x="330" y="28" width="100" height="60" fill="#0c1117" stroke="#2b3340"/>
+    <rect x="365" y="58" width="30" height="24" fill="#1f6feb55" stroke="#79c0ff"/><text x="380" y="76" fill="#cde">a</text>
+    <rect x="365" y="32" width="30" height="22" fill="#f8514955" stroke="#f85149"/><text x="380" y="49" fill="#fdd">b</text>
+    <text x="380" y="103" fill="#9da7b3" font-size="9.5">yl_a+H_a ≤ yl_b</text>
+    <!-- 4 sy_ba : b below a -->
+    <text x="530" y="16" fill="#7ee787">④ b가 a 아래</text>
+    <rect x="480" y="28" width="100" height="60" fill="#0c1117" stroke="#2b3340"/>
+    <rect x="515" y="58" width="30" height="24" fill="#f8514955" stroke="#f85149"/><text x="530" y="76" fill="#fdd">b</text>
+    <rect x="515" y="32" width="30" height="22" fill="#1f6feb55" stroke="#79c0ff"/><text x="530" y="49" fill="#cde">a</text>
+    <text x="530" y="103" fill="#9da7b3" font-size="9.5">yl_b+H_b ≤ yl_a</text>
+    <!-- 5 st_ab : a before b in time -->
+    <text x="680" y="16" fill="#79c0ff">⑤ a→b (시간)</text>
+    <line x1="630" y1="62" x2="745" y2="62" stroke="#3a4452"/>
+    <rect x="635" y="52" width="40" height="20" fill="#1f6feb55" stroke="#79c0ff"/><text x="655" y="67" fill="#cde">a</text>
+    <rect x="690" y="52" width="48" height="20" fill="#f8514955" stroke="#f85149"/><text x="714" y="67" fill="#fdd">b</text>
+    <text x="688" y="103" fill="#9da7b3" font-size="9.5">entry_b ≥ a_exit</text>
+    <!-- 6 st_ba : b before a in time -->
+    <text x="828" y="16" fill="#79c0ff">⑥ b→a (시간)</text>
+    <line x1="775" y1="62" x2="890" y2="62" stroke="#3a4452"/>
+    <rect x="780" y="52" width="44" height="20" fill="#f8514955" stroke="#f85149"/><text x="802" y="67" fill="#fdd">b</text>
+    <rect x="838" y="52" width="44" height="20" fill="#1f6feb55" stroke="#79c0ff"/><text x="860" y="67" fill="#cde">a</text>
+    <text x="833" y="103" fill="#9da7b3" font-size="9.5">entry_a ≥ b_exit</text>
+  </g>
+  <text x="450" y="135" fill="#e6edf3" font-size="13" text-anchor="middle" font-weight="600">AddBoolOr( ①∨②∨③∨④ &nbsp;[공간 분리] &nbsp; ∨ &nbsp; ⑤∨⑥ &nbsp;[시간 분리] )</text>
+  <text x="450" y="160" fill="#9da7b3" font-size="11.5" text-anchor="middle">하나만 성립하면 그 쌍은 안전. ①~④를 쓰면 공존 가능(지각↓), ⑤⑥은 미루기(지각↑ 가능).</text>
+  <text x="450" y="182" fill="#7ee787" font-size="11.5" text-anchor="middle">CP-SAT가 베이 전체 지각이 최소가 되도록 쌍마다 어느 disjunct를 쓸지 자동 선택.</text>
+</svg>
+</div>
+<div class="legend">
+  <span><span class="sw" style="background:#7ee787"></span>공간 분리 (①~④) — 동시 공존, 지각 안 늘림</span>
+  <span><span class="sw" style="background:#79c0ff"></span>시간 분리 (⑤⑥) — 순차, 지각 늘 수 있음</span>
+</div>
+
+<h3>3.4 제약 ③ 크레인 (T6) — 기본 OFF</h3>
+<p><code>OGC_PERBAY_CRANE</code> 기본 OFF. 켜면 "안전한 다층 LIFO 공존"(작은 블록이 큰 블록 발자국 안에 층층이 nest)을 추가 disjunct로 허용하려 했으나,
+nest 여부가 <b>방향·오프셋(=결정변수)에 의존</b>해 precompute가 불가능 → 보수적 분리 모델만 쓴다(항상 feasible 유지). 그래서 perbay는
+"공간을 떼거나 시간을 미루거나"만 하고, 크레인 적재 공존은 안 쓴다(약간 보수적, 대신 안전).</p>
+
+<h3>3.5 목적 · 워밍스타트 · 채택 게이트</h3>
+<div class="grid2">
+<div class="panel">
+<b>목적함수</b>
+<p><code>Minimize Σ tard[b]</code> — 이 베이의 총 지각만. (Z2/Z3는 배정 고정이라 손댈 수 없음.)</p>
+<b>워밍스타트 <span class="tag t-gate">never-worse 핵심</span></b>
+<p><code>AddHint</code>로 현재 레이아웃(방향·위치·진입)을 즉시 feasible 인컴번트로 준다 → CP-SAT는 <b>폴리시만</b> 하지, 현재보다 나쁜 해를 보고하지 않는다.</p>
+</div>
+<div class="panel">
+<b>솔버</b>
+<p><span class="pill">max_time = per_bay</span><span class="pill">workers 4</span><span class="pill">seed 12345 (결정적)</span></p>
+<b>채택 게이트</b>
+<ul>
+<li>status가 OPTIMAL/FEASIBLE 아니면 → <code>None</code></li>
+<li><code>new_tard ≥ cur_bay_tard</code> (엄격 개선 아니면) → <code>None</code> (기각)</li>
+<li>개선됐을 때만 <code>(anchor_x = xl − offx, …)</code> 환산해 새 베이 레코드 반환</li>
+</ul>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. 안전성 요약 (왜 절대 −1/회귀가 없나)</h2>
+<table>
+<tr><th>속성</th><th>보장 방법</th></tr>
+<tr><td>예외 안 터짐</td><td>모든 경로 <code>try/except</code> → 최악의 경우 입력 해 그대로 반환</td></tr>
+<tr><td>시간 초과 안 함</td><td><code>time.monotonic()</code> 데드라인 + 베이별 예산 상한 + 큰 베이 skip(maxn)</td></tr>
+<tr><td>해가 나빠지지 않음</td><td>워밍스타트(현재 해가 인컴번트) + 베이별 엄격개선 게이트 + <b>바깥 obj 게이트</b></td></tr>
+<tr><td>실현가능 유지</td><td>보수적 정수 bbox + 6-disjunct 분리(공간 또는 시간) → 반환 레이아웃은 항상 feasible, 바깥에서 공식 채커 재확인</td></tr>
+<tr><td>Z2/Z3 불변</td><td>베이 배정 고정 — 블록이 베이를 안 떠나므로 부하·선호 항 변화 없음</td></tr>
+</table>
+
+<h2>5. 주요 노브 (env)</h2>
+<table>
+<tr><th>flag</th><th>기본</th><th>역할</th></tr>
+<tr><td><code>OGC_PERBAY</code></td><td>ON</td><td>perbay 폴리시 단계 전체 on/off</td></tr>
+<tr><td><code>OGC_PERBAY_MAXN</code></td><td>100</td><td>블록 수 이 값 초과 베이는 skip(쌍별 O(n²) 폭발 방지)</td></tr>
+<tr><td><code>OGC_PERBAY_BAY_S</code></td><td>20</td><td>베이당 CP-SAT 시간 상한(초)</td></tr>
+<tr><td><code>OGC_PERBAY_WORKERS</code></td><td>4</td><td>CP-SAT 워커 수</td></tr>
+<tr><td><code>OGC_PERBAY_CRANE</code></td><td>OFF</td><td>(미구현) 다층 LIFO 크레인 공존 허용</td></tr>
+<tr><td><code>OGC_PERBAY_FORCE_S</code></td><td>0</td><td>진단용: leftover 무시하고 perbay에 전용 시간 강제 부여</td></tr>
+</table>
+
+<h2>6. 측정된 성격 (per-bay 연구 LEDGER 요약)</h2>
+<ul>
+<li>per-bay Z1 감소폭은 <b>베이 의존적: −1% ~ −19%</b>. 회복 여지가 있는 베이(예: prob_39 b0, 80블록 −17%)에선 크고, 이미 포화된 베이(prob_26/27)에선 ~−1%.</li>
+<li>정렬(order)이 거의 공짜 레버: COVERT 정렬이 EDD를 큰 폭으로 이김. CP-SAT 4워커 비결정성으로 run-to-run 변동 ±15~35 존재(평균내면 실재 이득).</li>
+<li>큰 베이(≥~100블록)는 쌍별 모델이 커져 CP-SAT가 좋은 해를 못 찾음 → maxn으로 skip(그래서 큰 set2 베이엔 효과 제한적).</li>
+<li>2026-06-19: perbay를 windowed relayout으로 <b>대체</b>(C)하면 작은 혼잡 베이에서 더 나빠짐 → <b>perbay가 더 강한 폴리시</b>임이 확인됨(relayout이 −2.6M post-hoc로 이긴 건 perbay <b>위에 추가</b>했을 때뿐).</li>
+</ul>
+
+<p class="muted" style="margin-top:26px;border-top:1px solid var(--line);padding-top:14px">
+소스: <code>src/perbay.py</code> · 연구 LEDGER <code>notes/research/perbay/LEDGER.md</code> · 통합 지점 <code>src/myalgorithm.py</code>(per-bay 폴리시 슬롯).
+이 문서는 코드 정독 기반 해설(2026-06-19).</p>
+
+</div>
+</body>
+</html>

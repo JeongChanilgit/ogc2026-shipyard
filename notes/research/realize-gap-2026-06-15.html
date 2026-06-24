@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — Cycle 13–14: The Realize Gap</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --line:#30363d;
+    --ink:#e6edf3; --dim:#8b949e; --acc:#58a6ff; --good:#3fb950; --warn:#d29922;
+    --bad:#f85149; --pur:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,Segoe UI,Roboto,"Malgun Gothic",sans-serif;}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 24px 80px}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:20px;margin:38px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--acc)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 8px}
+  p{margin:8px 0}
+  code{background:#21262d;padding:1px 6px;border-radius:5px;font-size:13px;color:var(--pur)}
+  .grid{display:grid;gap:14px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card .k{color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .card .v{font-size:25px;font-weight:700;margin-top:4px}
+  .card .n{color:var(--dim);font-size:12px;margin-top:4px}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+  th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  td:first-child,th:first-child{text-align:left}
+  tr:hover td{background:#1b2129}
+  .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .pur{color:var(--pur)}
+  .acc{color:var(--acc)}
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;
+    vertical-align:middle}
+  .t-rej{background:rgba(248,81,73,.15);color:var(--bad);border:1px solid rgba(248,81,73,.4)}
+  .t-marg{background:rgba(210,153,34,.15);color:var(--warn);border:1px solid rgba(210,153,34,.4)}
+  .t-key{background:rgba(88,166,255,.15);color:var(--acc);border:1px solid rgba(88,166,255,.4)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:14px 0}
+  .lead{background:linear-gradient(135deg,#161b22,#1a2030);border-left:3px solid var(--acc)}
+  .bar{height:11px;border-radius:6px;background:#21262d;overflow:hidden;display:inline-block;
+    width:140px;vertical-align:middle}
+  .bar>span{display:block;height:100%}
+  ul{margin:8px 0;padding-left:22px} li{margin:5px 0}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .foot{color:var(--dim);font-size:12px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+  .pill{font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Realize Gap <span class="tag t-key">CYCLE 13–14</span></h1>
+<p class="sub">OGC 2026 · 2026-06-15 · 가설 루프: WHY-분석 → box-decomp CP-SAT → LNS · 단일 진실 소스 <code>notes/research/INSIGHTS.md</code></p>
+
+<div class="panel lead">
+<b>한 줄 요약.</b> set1 격차(9.03M vs 경쟁자 1.14M, 7.9×)의 85%는 5개 인스턴스에 몰려 있고,
+근본 원인은 <b>배정이 아니라 "realize 격차"</b> — 선호 근처에서 <span class="acc">z1≈0이 면적상 가능한데도</span>
+우리 패커가 z1을 못 내린다. 두 realize 엔진을 시험: <b>box-decomp CP-SAT</b>가 최강 프런티어(prob_11 z1 108→50)지만
+<b>z1=0은 못 깸</b>(CP-SAT 쌍별-분리 구조적 천장). <b>LNS</b>는 그리디보다 겨우 나아 <span class="bad">기각</span>.
+</div>
+
+<div class="grid cards">
+  <div class="card"><div class="k">우리 set1 총합</div><div class="v">9.03M</div><div class="n">c12 · feasible 40/40</div></div>
+  <div class="card"><div class="k">경쟁자 set1 총합</div><div class="v good">1.14M</div><div class="n">넘어야 할 바 (7.9×)</div></div>
+  <div class="card"><div class="k">5개 = set1의</div><div class="v warn">85%</div><div class="n">prob_11/12/13/14/20</div></div>
+  <div class="card"><div class="k">realize 격차</div><div class="v pur">z1≈0 미실현</div><div class="n">면적상 가능, 패커가 못함</div></div>
+</div>
+
+<h2>1. 5개 하드 인스턴스 — 무엇이 격차를 만드나</h2>
+<p class="sub">c12 현재값 vs 경쟁자. <b>prob_11</b>은 순수 z1-bound(우리 z3가 이미 경쟁자보다 낮음), 나머지 4개는 z3 과다-spill 지배.</p>
+<table>
+<thead><tr><th>인스턴스</th><th>w1</th><th>우리 obj</th><th>경쟁자 obj</th><th>격차</th><th>우리 z1</th><th>우리 z3</th><th>경쟁자 z3</th><th>진단</th></tr></thead>
+<tbody>
+<tr><td>prob_11</td><td>22,857</td><td>569,085</td><td class="good">31,899</td><td class="bad">+1684%</td><td>24</td><td class="good">116</td><td>167</td><td class="acc">순수 z1-bound</td></tr>
+<tr><td>prob_12</td><td>21,918</td><td>1,338,505</td><td class="good">94,110</td><td class="bad">+1322%</td><td>14</td><td class="bad">7,659</td><td>332</td><td class="warn">z3 과다-spill</td></tr>
+<tr><td>prob_13</td><td>18,605</td><td>1,685,125</td><td class="good">76,685</td><td class="bad">+2097%</td><td>25</td><td class="bad">9,105</td><td>435</td><td class="warn">z3 과다-spill</td></tr>
+<tr><td>prob_14</td><td>17,778</td><td>2,121,947</td><td class="good">67,302</td><td class="bad">+3053%</td><td>53</td><td class="bad">8,826</td><td>384</td><td class="warn">z3 과다-spill</td></tr>
+<tr><td>prob_20</td><td>26,667</td><td>1,985,443</td><td class="good">91,096</td><td class="bad">+2079%</td><td>23</td><td class="bad">10,802</td><td>463</td><td class="warn">z3 과다-spill</td></tr>
+</tbody>
+</table>
+
+<h2>2. WHY-분석 <span class="tag t-key">결정적</span></h2>
+<p class="sub">두 가지 값싼 디코드-없는 진단. 질문: 선호 근처에서 z1=0이 실현 가능한가?</p>
+
+<h3>2A. 에너제틱 추론 — 면적·시간 하한 (sound)</h3>
+<p>진짜 폴리곤 풋프린트로, 선호 배정에서 z1=0은 거의 모든 베이에서 <b>면적상 실현 가능</b>. 용량 초과 베이를 푸는 데
+필요한 <b>강제 최소 spill은 z3 ≤ 39</b>. 경쟁자는 z3 167–463. 우리 c12는 7659–10802 (20배+ 과다).</p>
+<table>
+<thead><tr><th>인스턴스</th><th>z1=0@선호 면적가능?</th><th>강제 z3 하한</th><th>경쟁자 z3</th><th>우리 c12 z3</th><th>과다-spill</th></tr></thead>
+<tbody>
+<tr><td>prob_11</td><td class="good">YES (전 베이 0.00)</td><td>0</td><td>167</td><td class="good">116</td><td>—</td></tr>
+<tr><td>prob_12</td><td class="warn">NO (베이 2,3)</td><td>2</td><td>332</td><td class="bad">7,659</td><td class="bad">~23×</td></tr>
+<tr><td>prob_13</td><td class="good">YES (전 베이 0.00)</td><td>0</td><td>435</td><td class="bad">9,105</td><td class="bad">~21×</td></tr>
+<tr><td>prob_14</td><td class="warn">NO (베이 3)</td><td>6</td><td>384</td><td class="bad">8,826</td><td class="bad">~23×</td></tr>
+<tr><td>prob_20</td><td class="warn">NO (베이 1, 비율 1.19)</td><td>39</td><td>463</td><td class="bad">10,802</td><td class="bad">~23×</td></tr>
+</tbody>
+</table>
+
+<h3>2B. 패커 천장 — 선호 배정에서 우리 최고 패커가 실제로 도달하는 z1</h3>
+<p>그런데 우리 패커(bbox/cells/cpsat)는 선호 배정에서 z1을 <b>76–1411</b>까지밖에 못 내린다. 면적상 가능한 0과 거대한 간극.
+<b>FRESH §4</b>: "tardy 블록이 대기하는데 베이는 75–94% 비어 있다" → 면적이 아니라 <b>배치/스케줄링 결함</b>.</p>
+<table>
+<thead><tr><th>인스턴스</th><th>최고 모드</th><th>z1 @선호</th><th>obj @선호</th><th>경쟁자 obj</th><th>면적가능 z1</th></tr></thead>
+<tbody>
+<tr><td>prob_11</td><td>cpsat</td><td class="warn">76</td><td>1.75M</td><td class="good">31.9K</td><td>0</td></tr>
+<tr><td>prob_12</td><td>cpsat</td><td class="warn">397</td><td>8.76M</td><td class="good">94K</td><td>0</td></tr>
+<tr><td>prob_13</td><td>cells</td><td class="warn">347</td><td>6.50M</td><td class="good">76.7K</td><td>0</td></tr>
+<tr><td>prob_14</td><td>cells</td><td class="warn">398</td><td>7.11M</td><td class="good">67.3K</td><td>0</td></tr>
+<tr><td>prob_20</td><td>cells</td><td class="bad">1411</td><td>37.7M</td><td class="good">91K</td><td>0</td></tr>
+</tbody>
+</table>
+<div class="panel"><b>결론:</b> set1 격차는 <b>realize 격차 = 베이별 패킹/스케줄링 약점</b>. 배정은 멀쩡(선호 근처가 면적가능).
+reassign LS는 패커가 못 내리는 z1을 배정 이동으로 쫓다가 z3를 ~10K로 과다-spill (obj-게이트라 그나마 채택될 뿐).</div>
+
+<h2>3. 두 realize 엔진 시험 (사용자 지시: 둘 다)</h2>
+<h3>prob_11 — 선호 배정에서 z1 (충분한 예산)</h3>
+<p class="sub">낮을수록 좋음. 면적가능 z1=0. 막대는 그리디 cells(94) 대비.</p>
+<table>
+<thead><tr><th>엔진</th><th>z1 @선호</th><th></th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>greedy cells</td><td>94</td><td><span class="bar"><span style="width:100%;background:#8b949e"></span></span></td><td>그리디 BL 기준선</td></tr>
+<tr><td>cpsat (단일 bbox)</td><td>61</td><td><span class="bar"><span style="width:65%;background:#58a6ff"></span></span></td><td>전역 CP-SAT, 느슨한 bbox</td></tr>
+<tr><td class="pur"><b>box-decomp K=2</b></td><td class="good"><b>50</b></td><td><span class="bar"><span style="width:53%;background:#3fb950"></span></span></td><td class="good">최강 프런티어 (타이트 셀 기하 + 전역)</td></tr>
+<tr><td>box-decomp K=3</td><td>68</td><td><span class="bar"><span style="width:72%;background:#d29922"></span></span></td><td>모델 9× → CP-SAT가 못 풂 (역효과)</td></tr>
+<tr><td>LNS (ruin-recreate)</td><td class="bad">93</td><td><span class="bar"><span style="width:99%;background:#f85149"></span></span></td><td class="bad">그리디 수준 — 기각</td></tr>
+</tbody>
+</table>
+
+<div class="grid cards">
+  <div class="card" style="border-color:rgba(210,153,34,.4)">
+    <div class="k">box-decomp CP-SAT <span class="tag t-marg">FRONTIER</span></div>
+    <div class="v">z1 108→50</div>
+    <div class="n">최강 realize 엔진. K=2가 단일-bbox(61) 이김. <b>그러나 z1=0은 못 깸</b> — CP-SAT 쌍별-분리 구조적 천장. K=3 역효과. <span class="acc">gated OFF</span> (<code>OGC_BOXDECOMP</code>), 라이브 default = c12.</div>
+  </div>
+  <div class="card" style="border-color:rgba(248,81,73,.4)">
+    <div class="k">per-bay LNS <span class="tag t-rej">REJECTED</span></div>
+    <div class="v bad">z1 108→93</div>
+    <div class="n">그리디보다 겨우 나음. tardiness는 release 시간창의 <b>전역 과다-구독</b>인데 small-K ruin은 전체 스케줄을 재구성 못함. 전역 솔버(CP-SAT)가 더 잘함. <span class="bad">gated OFF</span>.</div>
+  </div>
+</div>
+
+<div class="panel"><b>realize 엔진은 전역 솔버를 원한다, 로컬 탐색이 아니라.</b> box-decomp(전역)가 bay0를 ~47로,
+LNS(로컬)는 90에 머문다. CP-SAT 계열이 맞는 방향. 단 어느 것도 z1=0(절대 바)엔 못 닿는다 — 경쟁자는 분명히 가진 무언가.</div>
+
+<h2>4. box-decomp 풀-파이프라인 게이트 <span id="gate-tag" class="tag t-key">NET −21%</span></h2>
+<p class="sub">진짜 질문: box-decomp가 풀 파이프라인(base pool + reassign + obj-게이트)에서 <b>net obj를 줄이나?</b>
+5개 타깃, 풀 <code>algorithm()</code>, TL=180s, BD off vs on. <b class="good">답: YES.</b></p>
+<table>
+<thead><tr><th>인스턴스</th><th>BD off obj</th><th>BD on obj</th><th>z1 off→on</th><th>Δobj</th><th>z3 (불변)</th></tr></thead>
+<tbody>
+<tr><td>prob_11</td><td>546,228</td><td>546,228</td><td>23→23</td><td class="dim">0</td><td>116</td></tr>
+<tr><td>prob_12</td><td>1,338,505</td><td>1,141,243</td><td>14→<b>5</b></td><td class="good">−197K</td><td>7,659</td></tr>
+<tr><td>prob_13</td><td>1,685,125</td><td><b>1,238,605</b></td><td>25→<b>1</b></td><td class="good">−446K</td><td>9,105</td></tr>
+<tr><td>prob_14</td><td>2,086,391</td><td><b>1,517,495</b></td><td>51→<b>19</b></td><td class="good">−569K</td><td>8,826</td></tr>
+<tr><td>prob_20</td><td>1,985,443</td><td><b>1,585,438</b></td><td>23→<b>8</b></td><td class="good">−400K</td><td>10,802</td></tr>
+<tr style="border-top:2px solid var(--acc)"><td><b>TOTAL(5)</b></td><td><b>7,641,692</b></td><td class="good"><b>6,029,009</b></td><td>—</td><td class="good"><b>−1.61M (−21.1%)</b></td><td class="bad">불변</td></tr>
+</tbody>
+</table>
+<div class="panel"><b>해석:</b> box-decomp는 <b>z1을 무너뜨려</b>(reassign된 배정 위에서도 14→5, 25→1, 51→19, 23→8) net <span class="good">−21%</span>.
+회귀 0(prob_11 불변). <b>그러나 z3는 그대로</b>(7659–10802) — 지배 잔여항은 여전히 z3 과다-spill.
+⇒ box-decomp <span class="good">채택 후보</span>(풀 ALL40 게이트 진행 중, replace-cpsat 설계로 회귀 벡터 차단). <b>다음 큰 레버 = 정확-z1 reassign(#2)로 z3 잡기.</b></div>
+<p class="sub">⏳ 풀 ALL40 채택 게이트(TL=120, BD-on replace-cpsat vs c12) 백그라운드 진행 중 — 회귀·타임아웃 스크린.</p>
+
+<h2>5. 다음 가설 (백로그 재정렬)</h2>
+<ul>
+<li><b class="acc">box-decomp 채택 판정</b> — 게이트가 net+ 면 gated 채택(서버 롱-TL용). net~0 이면 보류.</li>
+<li><b>정확-z1 reassign (#2)</b> — reassign의 bbox-프록시를 box-decomp/cells 정확 디코드로 교체 → z3 과다-spill 억제 (prob_12/13/14/20 지배 항).</li>
+<li><b>비-CP-SAT 전역 realize</b> — 경쟁자의 z1=0 방법 추정: 구성적 휴리스틱(ATC) + 강한 스케줄러, 또는 서버 풀-Gurobi MIP.</li>
+<li><b class="bad">기각/보류</b>: LNS(로컬, #1), box-decomp K=3, 단일-bbox 후보 튜닝.</li>
+</ul>
+
+<div class="foot">
+생성: <span class="mono">notes/research/realize-gap-2026-06-15.html</span> ·
+근거: <span class="mono">_whyhard.py · _prefpack.py · _lnstest.py · _bdgate.py</span> ·
+기록: <span class="mono">INSIGHTS.md §0/§4 cycle 13–14</span> ·
+gate: c12 default(BD/LNS off) 라이브 불변 · never −1
+</div>
+
+</div>
+</body>
+</html>

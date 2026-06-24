@@ -1,0 +1,27 @@
+{
+  "_source": "KakaoTalk_20260611_091349930.jpg — 다른 참가자 full-20 성적 스크린샷 (2026-06-11). objective_official 기준. prob_11/17은 shipped 칸 판독 불확실(낮은 쪽을 target으로).",
+  "_goal": "tl=600s per instance, win (strictly lower official obj) on >= 15/20 instances",
+  "_weights_check": "prob_13: 5*3765.93 + 133*435 = 76684.65 == official 76684.66; our obj=200621 = 5*1368+133*1457 — same instance weights, obj comparable",
+  "competitor": {
+    "prob_1":  {"obj": 9785.44,  "z1": 0, "z2_unfloored": 1397.92, "z3": 8,   "wall_s": 8.1},
+    "prob_2":  {"obj": 6624.39,  "z1": 0, "z2_unfloored": 662.44,  "z3": 0,   "wall_s": 4.7},
+    "prob_3":  {"obj": 50641.7,  "z1": 0, "z2_unfloored": 3654.17, "z3": 94,  "wall_s": 5.58},
+    "prob_4":  {"obj": 16916.6,  "z1": 0, "z2_unfloored": 2188.09, "z3": 8,   "wall_s": 7.53},
+    "prob_5":  {"obj": 70580.5,  "z1": 0, "z2_unfloored": 6161.5,  "z3": 183, "wall_s": 5.51},
+    "prob_6":  {"obj": 72400.43, "z1": 0, "z2_unfloored": 2950.06, "z3": 345, "wall_s": 32.25},
+    "prob_7":  {"obj": 86021.48, "z1": 0, "z2_unfloored": 3674.5,  "z3": 402, "wall_s": 18.35},
+    "prob_8":  {"obj": 12908.48, "z1": 0, "z2_unfloored": 3227.12, "z3": 0,   "wall_s": 4.51},
+    "prob_9":  {"obj": 80034.1,  "z1": 0, "z2_unfloored": 1816.82, "z3": 473, "wall_s": 44.94},
+    "prob_10": {"obj": 98956.99, "z1": 0, "z2_unfloored": 7239.71, "z3": 363, "wall_s": 9.02},
+    "prob_11": {"obj": 31899.0,  "z1": 0, "z2_unfloored": 1384.85, "z3": 167, "wall_s": 11.64, "_note": "official 판독 31998.94 vs shipped 31899 — 낮은 쪽 채택"},
+    "prob_12": {"obj": 94110.23, "z1": 0, "z2_unfloored": 7136.32, "z3": 332, "wall_s": 11.79},
+    "prob_13": {"obj": 76684.66, "z1": 0, "z2_unfloored": 3765.93, "z3": 435, "wall_s": 17.42},
+    "prob_14": {"obj": 67302.09, "z1": 0, "z2_unfloored": 3246.02, "z3": 384, "wall_s": 13.54},
+    "prob_15": {"obj": 48206.1,  "z1": 0, "z2_unfloored": 4534.02, "z3": 192, "wall_s": 11.24},
+    "prob_16": {"obj": 50047.16, "z1": 0, "z2_unfloored": 3838.23, "z3": 232, "wall_s": 7.53},
+    "prob_17": {"obj": 62070.0,  "z1": 0, "z2_unfloored": 8136.33, "z3": 222, "wall_s": 8.84, "_note": "official 판독 62871.32 vs shipped 62070 — 낮은 쪽 채택"},
+    "prob_18": {"obj": 40205.85, "z1": 0, "z2_unfloored": 4332.46, "z3": 172, "wall_s": 28.48},
+    "prob_19": {"obj": 72950.75, "z1": 0, "z2_unfloored": 4941.44, "z3": 401, "wall_s": 12.23},
+    "prob_20": {"obj": 91096.34, "z1": 0, "z2_unfloored": 5536.89, "z3": 463, "wall_s": 46.69}
+  }
+}

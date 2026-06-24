@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>x+t CP-SAT — 정밀 해부 & 개선안 · 2026-06-24</title>
+<style>
+  html{-webkit-text-size-adjust:100%}
+  :root{--bg:#0e1014;--panel:#181b22;--ink:#e9ecf2;--mut:#9aa3b2;--line:#2a2f3a;
+        --t:#3fd0d8;--x:#c79cff;--acc:#6cb0ff;--win:#3fb950;--warn:#e3b341;--bad:#f06b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16.5px/1.72 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:20px 16px 80px;max-width:760px;margin:0 auto}
+  h1{font-size:23px;line-height:1.3;margin:4px 0 2px}
+  h2{font-size:19px;margin:34px 0 8px;padding-top:16px;border-top:1px solid var(--line);color:var(--acc)}
+  h3{font-size:16px;margin:18px 0 4px;color:var(--ink)}
+  h3.t{color:var(--t)} h3.x{color:var(--x)}
+  .sub{color:var(--mut);font-size:13.5px;margin:0 0 14px}
+  p{margin:9px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;
+       font:13px ui-monospace,Consolas,monospace;color:#dbe3ef;word-break:break-word}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+  .key{background:#0f1722;border:1px solid #23414e;border-left:4px solid var(--acc);border-radius:10px;padding:13px 15px;margin:13px 0}
+  .tbox{background:#0c1717;border-left:4px solid var(--t)}
+  .xbox{background:#150f1d;border-left:4px solid var(--x)}
+  .wbox{background:#1c1708;border-left:4px solid var(--warn)}
+  .gbox{background:#0c1a10;border-left:4px solid var(--win)}
+  .bbox{background:#1d1010;border-left:4px solid var(--bad)}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      font:12.5px/1.62 ui-monospace,Consolas,monospace;color:#cfd8e6;margin:9px 0}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:6px 0}
+  .mut{color:var(--mut)} b.t{color:var(--t)} b.x{color:var(--x)} b.g{color:var(--win)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:8px 0}
+  th,td{padding:7px 6px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 8px;margin-right:6px}
+  .p1{background:#13351f;color:#7ee2a4} .p2{background:#2a2140;color:#c79cff}
+  .p3{background:#10293a;color:#7fc2ff} .p4{background:#2a2410;color:#e3c341}
+  .tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:6px;padding:0 7px;color:var(--mut);margin-left:6px}
+  .ok{color:var(--win)} .no{color:var(--bad)}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin:9px 0}
+  .step .n{display:inline-block;background:var(--acc);color:#06121f;font-weight:700;font-size:12px;
+           border-radius:6px;padding:1px 7px;margin-right:6px}
+  .ref{color:var(--mut);font-size:12px;margin-top:6px}
+</style></head><body>
+
+<h1>x+t CP-SAT — 정밀 해부 &amp; 개선안</h1>
+<p class="sub">엔진 <code>crane_repack_bay()</code> · v3pp/crane_cpsat.py · 제출본 기준 · 2026-06-24</p>
+
+<div class="key">
+<b>한 줄 정의</b><br>
+한 베이를 대상으로, <b>각 블록의 위치(x, 선택적 y·방향)와 진입시각(t)을 동시에</b> 골라
+<b>크레인 j≥k 규칙을 만족하면서 지각합 z1을 최소화</b>하는 CP-SAT 재배치 패스.
+핵심 트릭은 <b>"기하는 미리 계산, CP-SAT는 시간만 푼다"</b> 라는 디커플링.
+</div>
+
+<h2>1. 왜 이 구조인가 — 디커플링 철학</h2>
+<div class="card">
+이 문제는 한 결정 안에 <b>3개의 NP-hard</b>가 묶여 있다: (a) 이형 폴리곤 패킹(위치·방향), (b) 크레인 수직접근 j≥k(누가 누구를 막나), (c) tardiness 스케줄링(시각). 셋을 한 모델에 통째로 넣으면 폭발한다(과거 box-decomp가 위치+시간 JOINT 탐색하다 폭발 → 폐기).<br><br>
+이 엔진의 해법은 <b>분리</b>다:
+<ul>
+<li><b>기하·크레인(a·b)</b> = <b>오프라인 사전계산</b>. 공식 체커로 "이 포즈에서 누가 누구를 막나"를 시간-무관 불리언으로 굳힌다. → CP-SAT가 폴리곤·크레인을 직접 풀지 않는다.</li>
+<li><b>스케줄링(c)</b> = CP-SAT가 푸는 유일한 부분. 깔끔한 <b>1-D disjunctive tardiness</b> 문제. 베이당 수십 블록도 ~1초 OPTIMAL.</li>
+</ul>
+이것이 <code>_cpsat_bay_timing_verified</code>(타이밍 오라클, 위치 고정)를 <b>위치 선택까지 일반화</b>한 것이다.
+</div>
+
+<h2>2. t 범위 vs x 범위 — 핵심 비대칭</h2>
+<div class="card">
+<table>
+<tr><th></th><th class="t">t (entry 시각)</th><th class="x">x·y·o (포즈)</th></tr>
+<tr><td class="mut">범위</td><td>release R[b] ~ H</td><td>좌벽~우벽 [x_lb, x_ub] (전 구간)</td></tr>
+<tr><td class="mut">해상도</td><td><b class="t">모든 정수</b> (full IntVar)</td><td><b class="x">소수 이산 후보</b> (n개 균등 샘플)</td></tr>
+<tr><td class="mut">변수형</td><td><code>e[b]=NewIntVar(R,H)</code></td><td><code>sel[b][ci]</code> Bool, ExactlyOne</td></tr>
+<tr><td class="mut">왜</td><td>1-D라 싸다 → 다 본다</td><td>x마다 크레인관계 변함 → 사전계산 위해 고정 필요</td></tr>
+</table>
+<b>t는 연속처럼 촘촘, x는 듬성한 이산 후보.</b> H = <code>현재 makespan + maxP</code> (안전 상한).
+<div class="ref">crane_cpsat.py:543 (entry IntVar R..H) · :509–511 (H) · :82–101 (_x_anchors) · :536–537 (sel ExactlyOne)</div>
+</div>
+
+<h2>3. 모델 정밀 해부</h2>
+
+<h3>3.1 변수</h3>
+<pre>sel[b][ci] : Bool   블록 b가 후보 ci 선택 (FREE 블록만, ExactlyOne)
+e[b]       : IntVar  진입시각 [R[b], H]   (FROZEN이면 정수 상수)
+exit[b]    = e[b] + P[b]                  P=처리시간(고정, 관측 exit-entry)
+tard[b]    : IntVar  >= e[b] + P[b] - D[b]   (D=due, 0과 max)
+목적       : minimize  Σ tard[b]   (= z1, FREE 블록만)</pre>
+
+<h3 class="x">3.2 후보 생성 — 합집합이지 격자가 아니다</h3>
+<div class="card xbox">
+<pre>후보[b] = {현재 포즈}                        ← ci=0, 항상 포함
+        ∪ {x-이동: 현재 y·o 고정, x를 n_xcand개 균등샘플}
+        ∪ {y-이동: 현재 x·o 고정, y를 n_ycand개}
+        ∪ {o-변형: 다른 방향, x·y는 그 방향 유효범위로 clamp, 자기 shape}</pre>
+개수 = <b>1 + (n_xcand−1) + n_ycand + n_ocand</b> (덧셈). 격자 곱(K_x·K_y·K_o)이 아니라 <b>축별 합집합</b>이라 후보 수가 폭발하지 않는다. o-변형만 자기 재방향 BlockShape를 들고 다님(x·y변형은 현재 shape 공유).
+<div class="ref">crane_cpsat.py:203–299 (_build_candidates) · :218–223 (union 수식)</div>
+</div>
+
+<h3 class="t">3.3 크레인 5불리언 사전계산 (Step B)</h3>
+<div class="card tbox">
+모든 <b>(블록쌍 a&lt;b, 후보조합 ci_a×ci_b)</b>에 대해 공식 체커(<code>fast=True</code>)로 5개 시간-무관 불리언:
+<pre>coll  : 같은 층 footprint 겹침      → 시간도 겹치면 안 됨
+ba_e  : b가 a의 진입경로 막음        ab_e : a가 b의 진입경로 막음
+ba_x  : b가 a의 퇴출경로 막음        ab_x : a가 b의 퇴출경로 막음</pre>
+5개 다 False인 조합은 저장 안 함(모델에서 제외). 포즈→Block 객체 캐시로 동일포즈 재생성 방지.
+<div class="ref">crane_cpsat.py:306–361 (_precompute_combos) · :353–357 (5 check_* 호출) · :358 (all-False skip)</div>
+</div>
+
+<h3 class="t">3.4 gated time-disjunction (Step C)</h3>
+<div class="card">
+저장된 각 (쌍, 조합)을 entry 시각의 OR 제약으로. <b>해당 후보를 둘 다 골랐을 때만</b> 작동하도록 <code>sel</code>을 gate로 붙인다:
+<pre>coll  → ax ≤ be  ∨  bx ≤ ae           (시간 분리; 크레인 config 흡수)
+ba_e  → ae ≤ be−1 ∨ ae ≥ bx           (a가 먼저 ∨ b 나간 뒤)
+ab_e  → be ≤ ae−1 ∨ be ≥ ax
+ba_x  → ax ≤ be  ∨  ax ≥ bx(+1 co-exit)
+ab_x  → bx ≤ ae  ∨  bx ≥ ax(+1 co-exit)
+   각 제약: .OnlyEnforceIf([리터럴] + gate),  gate=[sel[a][ci_a], sel[b][ci_b]]</pre>
+ax = ae+P[a], bx = be+P[b]. FROZEN 블록은 sel 없음(ci=0 고정)이라 gate에서 빠지고 entry는 상수로 식에 들어간다. <code>_CRANE_COEXIT=True</code>면 퇴출 disjunction에 +1(strict).
+<div class="ref">crane_cpsat.py:552–593 (gated disjunctions) · :69–71 (_CRANE_COEXIT)</div>
+</div>
+
+<h3 class="g">3.5 never-worse 보장 (구조적)</h3>
+<div class="card gbox">
+<ul>
+<li><b>후보 0 = 현재 포즈</b> → 현재 해가 모델 안에서 표현 가능 → CP-SAT 최적 z1 ≤ 현재 z1.</li>
+<li><b>AddHint(sel[b][0]=1, e[b]=현재 entry)</b> → warm start, 못 풀어도 현재 해 보장.</li>
+<li>불리언이 <b>공식 체커</b>에서 나오므로 채택된 어떤 이동도 <b>크레인-feasible</b> (bbox 모델과 달리 거짓양성 없음).</li>
+</ul>
+즉 <b>베이 단위로 절대 나빠지지 않는다.</b> 루프 레벨에서 다시 전체 obj(z1+z2+z3) &amp; feasible 게이트로 한 번 더 거른다.
+</div>
+
+<h2>4. 운영 모드</h2>
+<table>
+<tr><th>모드</th><th>무엇</th><th>근거</th></tr>
+<tr><td><b>windowing</b></td><td>tardy 근처만 active(다후보), 나머지 candidate0만. <code>OGC_PP_WINDOW</code>: <b>x</b>(x-bbox 근접·기본) / <b>t</b>(시간 co-present) / <b>xt</b>(x AND time)</td><td>:181–200</td></tr>
+<tr><td><b>LNS</b></td><td><code>free_ids</code> 주면 그 집합만 FREE(다후보+entry IntVar+tardy항), 나머지 FROZEN(포즈·시각 상수). frozen-frozen 쌍은 precompute 통째 skip</td><td>:343–346, :523–545</td></tr>
+<tr><td><b>COMBO_CAP</b></td><td>조합수 &gt; 20만이면 후보 <b>o→y→x 순</b>으로 축소(o가 가장 투기적이라 먼저 버림)</td><td>:75, :444–463</td></tr>
+<tr><td><b>txyo 루프</b></td><td>postproc가 z1&gt;0 베이마다 한 패스=한 축: x→(K,0,0), y→(0,K,0), o→(0,0,K). <b>entry는 어느 패스든 항상 자유</b> → 모든 패스가 timing 겸함. 순수 timing=(0,0,0)</td><td>postproc._run_loop</td></tr>
+</table>
+<p class="mut" style="font-size:13.5px">⚠ non-LNS에서는 <b>모든 블록 is_free=True</b> — windowing은 후보 <b>개수</b>만 줄이고 FREE/FROZEN을 가르지 않는다. 즉 windowed-out 블록도 entry는 여전히 자유변수라 timing은 베이 전체가 재최적화된다(타이밍이 싸기 때문). FROZEN 상수화는 LNS 모드에서만.</p>
+
+<h2>5. 실측 프로파일 — 진짜 벽은 사전계산이 아니다</h2>
+<div class="card bbox">
+<b>실측(prob_38, 2026-06-24 PM):</b>
+<table>
+<tr><th>구간</th><th>비중</th><th>레버</th></tr>
+<tr><td><b>CP-SAT solve</b></td><td>42%</td><td rowspan="2" style="vertical-align:middle"><b class="no">disjunction ~2만개 ↓</b><br>(numpy 가속 불가)</td></tr>
+<tr><td><b>CP-SAT 모델빌드</b></td><td>30%</td></tr>
+<tr><td>shapely 사전계산</td><td>17%</td><td><b class="ok">AABB prefilter 이미 채택 → −45%</b></td></tr>
+<tr><td>greedy/numpy</td><td>5%</td><td>—</td></tr>
+</table>
+<b>지배 비용은 Step B 사전계산이 아니라 CP-SAT solve+모델빌드 = 72%</b>이고, 그 크기는 <b>모델의 disjunction 수(~2만)에 비례</b>한다. 사전계산(17%)은 <b>AABB 컬럼 prefilter(<code>OGC_PRECOMP_AABB=1</code>)가 이미 −45%</b> 깎아 부차적 비용이 됐다(출력 byte-identical·obj 무해).
+<br><br>
+<b>패스시간 ∝ 베이 블록수</b>: 112블록 39s/패스, 59블록 17s/패스. cross-bay·moveall은 0.03s/회로 무료. 1라운드(9패스) 250s에 −2.3M, x-pass가 패스당 최대(~627K), 개선은 <b>앞 라운드에 집중</b>. → 큰 set2 베이는 <b>패스가 비싸 라운드 수가 제한</b>되는 게 병목.
+<div class="ref">근거: 메모리 v6v7-moveall-aabb-speed-2026-06-24 (프로파일) · docs/timing-and-obj-breakdown-2026-06-24.html</div>
+</div>
+<p class="mut" style="font-size:13.5px">⚠ 정정: repack 엔진(txyo 루프 + cross-bay + moveall + AABB)은 <b>이미 라이브</b>(v6 제출 zip 포함). 과거 "relayout 라이브 배선 회귀"(2026-06-19)는 별 경로였고, 현재 txyo repack은 프로덕션에서 돌고 있다. 남은 과제는 통합이 아니라 <b>큰 베이에서 패스를 싸게 만들어(=disjunction↓) 더 깊이 도는 것</b> + ALL40 never−1 검증 후 제출.</p>
+
+<h2>6. 약점 진단</h2>
+<table>
+<tr><th>#</th><th>약점</th><th>결과</th></tr>
+<tr><td>W1</td><td>모델 크기(disjunction ~2만)가 active 블록·후보 수에 비례 → <b>패스시간 ∝ 베이블록수</b>(112블록 39s)</td><td>큰 set2 베이는 패스가 비싸 <b>라운드 수 제한</b> (개선은 앞 라운드 집중인데 깊이 못 돔)</td></tr>
+<tr><td>W2</td><td>x-anchor가 [x_lb,x_ub] <b>균등 샘플</b> — 크레인 불리언이 실제로 바뀌는 위치(blocker 경계)를 모름</td><td>진짜 좋은 x가 후보 사이에 있으면 놓침, 헛후보 낭비</td></tr>
+<tr><td>W3</td><td>축별 합집합이라 한 후보는 한 축만 이동 — <b>대각(x AND y 동시) 이동 불가</b></td><td>x-only·y-only로 안 풀리는 lock 미해소</td></tr>
+<tr><td>W4</td><td>active 선택이 기본 <b>x-bbox 근접</b> 휴리스틱 — 실제 크레인 blocker가 아닐 수 있음</td><td>관련없는 블록에 후보 낭비 + 진짜 blocker 누락 가능</td></tr>
+<tr><td>W5</td><td>목적이 <b>z1-only</b>. 매 패스마다 모델 from-scratch 재빌드</td><td>low-w1 인스턴스서 z2 악화로 게이트 거부(헛solve) + 패스간 재계산 낭비</td></tr>
+</table>
+
+<h2>7. 개선 방안</h2>
+<p class="mut">원칙: <b>full set 총 obj·never−1</b>로만 판정(사용자 규칙), <b>답지 보고 set 분기 금지</b>(단일 config). 반증된 레버(밀도패커·재배정·LCA·finer-raster·crossbay)는 재시도하지 않는다 — 아래는 <b>검증된 repack 레버를 (1) 라이브 affordable 하게, (2) 더 날카롭게</b> 만드는 방향이다.</p>
+
+<div class="card gbox">
+<span class="pill p1">P1 · 高확신</span><b>disjunction 수 ↓ → 패스를 싸게 (72% 직격)</b> <span class="tag">W1</span>
+<p>실측상 비용의 72%가 CP-SAT solve+빌드이고 그 크기는 disjunction 수(~2만)에 비례. <b>이걸 줄이면 같은 wall에 더 많은 라운드/베이</b>를 돈다. (사전계산 prefilter는 <span class="ok">AABB로 이미 −45% 채택</span> — 17%짜리라 추가 이득 작음.)</p>
+<ul>
+<li><b>① active-set cap (미구현, 최우선).</b> active 블록 수에 상한을 두면 multi-candidate 블록이 줄어 combos·disjunction이 직접 감소. z1 기여 큰 tardy/blocker 우선으로 cap 내 선발 → 큰 베이에서도 패스시간 bounded. <b>패스시간 ∝ 블록수 병목을 정면으로 깬다.</b></li>
+<li><b>② OGC_PP_K (후보수, A/B 대기).</b> K5→3이면 combos ~44%로 줄어 disjunction↓. 품질(reach) trade-off를 15분 full-set A/B로 — net 이득이면 단일 config 채택.</li>
+<li><b>③ 패스·라운드 간 precompute 메모이제이션.</b> <code>(bay_id, a, b, pose_a, pose_b)→5불리언</code> 캐시. txyo 4패스 + 다라운드에서 안 움직인 쌍(대다수)은 재계산 0 → <b>모델빌드 30% 구간</b> 단축. 출력 불변.</li>
+<li><b>④ 비트마스크 prefilter (OGC_PRECOMP_BITMASK, 미벤치).</b> 셀단위 footprint 비트셋 AND — AABB보다 정밀(saturated interlock까지 잡음), stored 동일·출력동일 기대. 사전계산(17%) 정밀화 — 부차적이지만 AABB의 과-prune을 보정.</li>
+</ul>
+<b>기대</b>: 큰 set2 베이 패스시간 단축 → 라운드 수↑(개선이 앞 라운드 집중이므로 라운드를 더 도는 게 곧 obj↓). <b>리스크 낮음</b>: ②만 품질 trade-off(A/B로 판정), ①③④는 결과 거의 불변·never-worse 유지.
+</div>
+
+<div class="card xbox">
+<span class="pill p2">P2 · 투기적(A/B 필수)</span><b>conflict-aware 후보 시딩</b> <span class="tag">W2</span><span class="tag">W3</span>
+<p>균등샘플 대신 <b>크레인 불리언이 flip 하는 위치</b>를 노린다 — repack의 목적이 "막는 놈을 비키기"이므로.</p>
+<ul>
+<li><b>① boolean-flip anchor.</b> tardy 블록의 <b>현재 blocker들의 x-span</b>을 구해, 그 blocker를 flush-left/flush-right로 비켜서는 x(블록 footprint를 blocker 경계 바로 옆)를 후보로 추가. "boolean이 바뀌는 곳"을 직접 샘플.</li>
+<li><b>② BL-probe joint seed (W3 대각이동).</b> 축별 합집합의 사각지대(x AND y 동시 이동)를 메우려, tardy 블록에 한해 <b>값싼 BL/gap-probe로 찾은 최선 빈 자리 (x,y)</b>를 후보 <b>몇 개만</b> 주입. 격자 폭발 없이(추가 상수개) 대각 이웃 진입.</li>
+</ul>
+<b>구분</b>: 이건 <b>CP-SAT selection var의 이산 후보를 어디서 뽑나</b>의 문제 — 반증된 "finer-raster"(그리디 플로어 래스터)나 "LCA/contact-area 배치"(constructive 스코어러)와 <b>다른 메커니즘</b>. <b>리스크 중</b>: 후보 수↑면 P1로 상쇄해야 하고, full-set A/B에서 falsify될 수 있음(정직히 베팅).
+</div>
+
+<div class="card">
+<span class="pill p3">P3 · 中확신</span><b>active = 실제 현재 blocker (정확 인과집합)</b> <span class="tag">W4</span>
+<p>기본 active 선택은 x-bbox 근접 휴리스틱(:191). 대신 <b>현재 포즈의 사전계산 불리언에서 tardy 블록을 실제로 막는 쌍</b>만 active로. 인과적으로 정확하고 더 작은 모델. xt 모드(이미 구현됨)를 기본으로 올리는 것도 한 단계 — 크레인 co-presence는 본질적으로 시간 문제라 x-bbox보다 정확.</p>
+<b>리스크 낮음</b>: 더 작은 모델·더 정확한 타겟. 단 active가 너무 좁아 연쇄 blocker(blocker의 blocker)를 놓치면 1-hop으론 부족 → k-hop 확장 옵션.
+</div>
+
+<div class="card wbox">
+<span class="pill p4">P4 · 보조</span><b>weight-aware 목적 + tighter bounds</b> <span class="tag">W5</span>
+<ul>
+<li>베이 repack에서 <b>z3는 상수</b>(베이 고정), z2만 entry 분포에 따라 약간 변함. low-w1 인스턴스(w1=667)에선 z1-only가 싼 항을 과최적화해 z2 악화 → 게이트 거부. <b>z2 프록시(베이 내 동시작업 peak 페널티)를 작은 가중으로</b> 더하면 게이트 통과율↑. (단 z1 지배 set2에선 영향 미미 — 단일 config로 weight-adaptive하게.)</li>
+<li><b>entry 상한 타이트화</b>: H=makespan+maxP는 느슨. 블록별 <code>e[b] ≤ due[b] + slack</code> 류 상한으로 도메인 축소 → CP-SAT 가속(미세).</li>
+</ul>
+<b>리스크 낮음·이득 작음</b>. P1·P2 이후 마무리 튜닝.
+</div>
+
+<h2>8. 우선순위 &amp; 검증 프로토콜</h2>
+<div class="key">
+<b>순서</b>: <b class="g">P1(비용절감)</b> 먼저 — 이게 되어야 P2·P3의 후보·active 확장을 예산 안에서 감당하고, 무엇보다 <b>검증된 레버를 라이브로 배선(PENDING 해소)</b>한다. 그 다음 P3(작고 안전) → P2(reach, 베팅) → P4(마무리).<br><br>
+<b>검증</b>(사용자 규칙 준수):
+<ul>
+<li>판정 기준 = <b>full set(ALL40) 총 obj</b>, 개별 z 아님.</li>
+<li><b>never −1</b> 최우선 — feasible 40/40, wall 예산 내. P1은 출력 byte-identical이라 회귀 0 보장; P2/P3은 gated additive로 never-worse 유지.</li>
+<li><b>답지 보고 튜닝 금지</b> — set1/set2 config 분기 X, 단일 config가 솔브시점 적응(혼잡 프록시·베이크기 게이트).</li>
+<li>코드 변경은 실행중 런 멈추고. 게이트 env는 기본 보존(프로덕션 무영향).</li>
+</ul>
+</div>
+
+<div class="card">
+<b>요약</b> — x+t CP-SAT은 "기하 사전계산 + 시간 CP-SAT" 디커플링으로 <b>never-worse·크레인-feasible</b>한 강력한 repack이고 <b>이미 프로덕션</b>(v6)에서 돈다. 한계는 (1) 패스시간이 베이블록수에 비례해 <b>큰 베이서 라운드 수 제한</b>, (2) 균등 x-후보의 <b>약한 이웃</b>, (3) 대각이동 불가. 실측상 72%가 CP-SAT solve+빌드(=disjunction 수)이므로 <b>P1(active-cap·K↓·precompute 메모)으로 패스를 싸게</b> 만들어 더 깊이 도는 것이 가장 높고 안전한 레버다. P2(conflict-aware 후보)는 reach 개선이나 full-set A/B로 falsify 가능성 정직히 인정.
+</div>
+
+<p class="ref" style="margin-top:24px">근거 코드: v3pp/crane_cpsat.py — crane_repack_bay(:378–670)·_build_candidates(:203–299)·_precompute_combos(:306–361)·gated disjunctions(:552–593)·never-worse hint(:610–615)·_active_window(:181–200)·COMBO_CAP(:75,444–463) · postproc._run_loop(txyo) · ptiming.parallel_timing<br>
+근거 기록: notes 메모리 — relayout-wiring-falsified-2026-06-19 · SESSION-HANDOFF-2026-06-18(PENDING) · v3-crane-aware-cpsat-repack-2026-06-20 · z1-localization-2026-06-22(z1=co-presence floor)</p>
+
+</body></html>

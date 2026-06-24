@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC 2026 제출본 v1·v2·v3 알고리즘 해부 (zip 추출)</title>
+<style>
+  :root{--bg:#0e1016;--card:#171a24;--card2:#1e2230;--ink:#e8eaf0;--mut:#98a1b6;--line:#2b3146;
+        --v1:#5b8cff;--v2:#3cc98b;--v3:#c77dff;--time:#f5a623;--gate:#e2245a;--warn:#f1c40f;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.6 -apple-system,
+       "Segoe UI",Roboto,"Malgun Gothic",sans-serif;padding:0 0 90px}
+  header{padding:34px 6vw 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#14171f,#0e1016)}
+  h1{margin:0 0 6px;font-size:25px;letter-spacing:-.4px}
+  .sub{color:var(--mut);font-size:13.5px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 6vw}
+  h2{font-size:21px;margin:36px 0 4px;padding-top:10px;display:flex;align-items:center;gap:10px}
+  h2 .tag{font-size:12px;font-weight:800;padding:3px 11px;border-radius:6px;letter-spacing:.5px}
+  .t1{background:rgba(91,140,255,.16);color:#9db8ff;border:1px solid #34487f}
+  .t2{background:rgba(60,201,139,.16);color:#67d9a6;border:1px solid #2c7a55}
+  .t3{background:rgba(199,125,255,.16);color:#d4a6f0;border:1px solid #6d4a8f}
+  h3{font-size:15.5px;color:#ccd3e8;margin:22px 0 8px}
+  .lead{color:var(--mut);margin:4px 0 14px;max-width:900px}
+  /* stage flow */
+  .flow{display:flex;flex-direction:column;gap:0;margin:14px 0;max-width:940px}
+  .stage{position:relative;background:var(--card);border:1px solid var(--line);border-left-width:5px;
+         border-radius:10px;padding:11px 16px 11px 18px;margin:0}
+  .stage + .stage{margin-top:22px}
+  .stage + .stage::before{content:"▼";position:absolute;top:-19px;left:26px;color:var(--mut);font-size:12px}
+  .stage .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .stage .id{font-weight:800;font-size:13px;font-variant-numeric:tabular-nums;
+             background:#0e1016;border:1px solid var(--line);border-radius:5px;padding:1px 7px}
+  .stage .nm{font-weight:700;font-size:14.5px}
+  .stage .loc{margin-left:auto;color:var(--mut);font:11.5px ui-monospace,Consolas,monospace}
+  .stage .body{color:#c2c9da;margin-top:5px;font-size:13.5px}
+  .stage .io{color:var(--mut);font-size:12px;margin-top:4px}
+  .stage .io b{color:#b9c2d8}
+  .s-assign{border-left-color:var(--v1)} .s-pack{border-left-color:var(--v2)}
+  .s-time{border-left-color:var(--time)} .s-gate{border-left-color:var(--gate)}
+  .s-prep{border-left-color:var(--mut)} .s-pp{border-left-color:var(--v3)}
+  .star{color:var(--warn);font-weight:800}
+  .key{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:14px 0}
+  .key h4{margin:0 0 8px;font-size:14px;color:#dfe5f3}
+  code{background:#0c0e14;border:1px solid var(--line);border-radius:4px;padding:1px 5px;
+       font:12.5px ui-monospace,Consolas,monospace;color:#bcd0ff}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}
+  th,td{padding:8px 11px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+  thead th{color:var(--mut);font-weight:600;border-bottom:2px solid var(--line)}
+  .good{color:#67d9a6;font-weight:700}.bad{color:#ff6b8a;font-weight:700}
+  ul{margin:8px 0;padding-left:20px}li{margin:5px 0}
+  .mut{color:var(--mut)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;font-size:12px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .callout{border-left:4px solid var(--warn);background:#1b1c22;padding:12px 16px;margin:14px 0;border-radius:0 8px 8px 0}
+  .callout.q{border-left-color:var(--v2);background:#141d18}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+  .foot{color:var(--mut);font-size:12px;border-top:1px solid var(--line);margin-top:42px;padding-top:16px}
+  .pipe{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;font-size:13px}
+  .pbox{border:1px solid var(--line);border-radius:8px;padding:8px 13px;background:var(--card)}
+  .pbox b{display:block;font-size:13.5px}.pbox small{color:var(--mut)}
+  .arr{color:var(--mut);font-size:18px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>OGC 2026 제출본 — v1 · v2 · v3 알고리즘 해부</h1>
+    <div class="sub">소스: <code>v-v3postproc-seq-20260621-203920.zip</code> 추출 코드 직접 분석 · 2026-06-22 · file:line 근거</div>
+    <div class="legend" style="margin-top:12px">
+      <span><i class="sw" style="background:var(--v1)"></i>배정(assignment)</span>
+      <span><i class="sw" style="background:var(--v2)"></i>패킹/배치(layout)</span>
+      <span><i class="sw" style="background:var(--time)"></i>타이밍(timing)</span>
+      <span><i class="sw" style="background:var(--gate)"></i>게이트/검증</span>
+      <span><i class="sw" style="background:var(--v3)"></i>후처리(postproc)</span>
+      <span><i class="sw" style="background:var(--mut)"></i>전처리/기타</span>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+
+<section>
+  <h2>0. 전체 오케스트레이션 — 셋이 어떻게 합쳐지나 <span class="tag t1">myalgorithm.py</span></h2>
+  <p class="lead">제출 엔트리 <code>algorithm(prob_info, timelimit)</code>는 v1·v2·v3를 <b>순차 + best-of</b>로 묶는다.
+  v2와 v1은 각각 독립 해를 내고 더 나은 것(전체 obj)을 고르며, v3는 그 위에 얹는 후처리다.</p>
+  <div class="pipe">
+    <div class="pbox"><b>① v2 (빠름)</b><small>cap=0.6·TL<br>먼저 완주</small></div>
+    <span class="arr">→</span>
+    <div class="pbox"><b>② v1 (lion's share)</b><small>hard_deadline−60s<br>best-of(v1,v2)</small></div>
+    <span class="arr">→</span>
+    <div class="pbox"><b>③ baseline 폴백</b><small>둘 다 실패 시<br>절대 −1 방지</small></div>
+    <span class="arr">→</span>
+    <div class="pbox" style="border-color:var(--v3)"><b>④ v3 postproc</b><small>leftover &gt;20s<br>AND z1&gt;0일 때만</small></div>
+  </div>
+  <p class="mut" style="font-size:12.5px"><code>myalgorithm.py:66-191</code> · <span class="bad">현재 제출본 이슈</span>:
+  v2 cap이 0.6·TL이라 긴 TL서 과다(360s@600), v1이 lion's share를 먹어 ④postproc는 leftover(~60s)만 받고
+  <b>z1=0이면 통째 SKIP</b>(set1은 후처리 안 받음). → 별도 분석 참조.</p>
+</section>
+
+<!-- ============ V1 ============ -->
+<section>
+  <h2><span class="tag t1">v1</span> solver_orig — "디커플링: 위치 먼저 고정 → 시간 따로 최적"</h2>
+  <p class="lead">NP-hard 결합(위치+시간 동시)을 둘로 쪼갠다: <b>greedy BL로 위치(x,y,방향)를 고정</b>하고,
+  그 위에서 <b>CP-SAT 타이밍 오라클이 entry/exit만 1-D로 최적</b>화. 핵심은 <span class="star">S4→S5</span>.
+  <span class="mut">(set2 서버경로는 gassign-first가 우선하나 동일 코어 공유.)</span></p>
+  <div class="flow">
+    <div class="stage s-gate"><div class="hd"><span class="id">S1</span><span class="nm">trivial floor (never−1 바닥)</span><span class="loc">solver_orig.py:2468</span></div>
+      <div class="body">완전 시간 직렬화(베이당 한 번에 1블록) — 충돌·크레인 자명히 feasible한 하한. 절대 −1 방지용.</div></div>
+    <div class="stage s-assign"><div class="hd"><span class="id">S2</span><span class="nm">배정 (CP-SAT) — 어느 블록이 어느 베이</span><span class="loc">:1645 / fastfloor.py:925</span></div>
+      <div class="body">CP-SAT로 블록→베이. 목적 = <b>z2(부하)+z3(선호)만</b>. 동시면적 cumulative 제약(<code>cap 0.85</code>).
+      <span class="bad">★z1-blind</span>: 크레인 체인 길이(블록 수) 제한 없음.</div>
+      <div class="io"><b>in</b> blocks·bays · <b>out</b> assign[b]=j</div></div>
+    <div class="stage s-pack"><div class="hd"><span class="id">S3</span><span class="nm">entry-target + anticipatory spill</span><span class="loc">fastfloor.py:940</span></div>
+      <div class="body">베이별 목표 진입시각(α=0.85) 산출, tardy 예상 베이에서 due 큰 블록을 여유 베이로 미리 이동(2라운드).</div></div>
+    <div class="stage s-pack"><div class="hd"><span class="id">S4</span><span class="nm">★ greedy crane-aware BL 레이아웃 (위치 고정)</span><span class="loc">fastfloor.py:577</span></div>
+      <div class="body"><b>시간을 먼저 entry=R/exit=R+P로 고정</b>하고 <b>위치(x,y,방향)만</b> bottom-left로 탐색.
+      후보마다 시간겹치는 블록과 크레인 j≥k 5술어(<code>_ft_pair_ok</code>) 검사 → 통과 자리만 채택 = <b>구성상 crane-safe</b>.
+      자리 막히면 시간으로 미룸(<code>delayed/forced</code>) = <span class="bad">여기서 z1 발생</span>.</div>
+      <div class="io"><b>out</b> 블록별 {x,y,orient, entry,exit} (위치 확정)</div></div>
+    <div class="stage s-time"><div class="hd"><span class="id">S5</span><span class="nm">★ per-bay CP-SAT 타이밍 오라클 (재타이밍)</span><span class="loc">:2727 (모델 2958-3048)</span></div>
+      <div class="body">위치 고정한 채 <b>entry만</b> 재최적화. 변수=정수 entry e[b]; 위치고정→기하/크레인 술어가 시간독립→쌍별 5불리언 사전계산→
+      disjunction(<code>ax≤be ∨ bx≤ae</code> 등); 목적 <code>min Σ tardy</code>. <b>z2·z3 불변</b>, 베이별 tardiness 최적.</div>
+      <div class="io"><b>out</b> z1 최소화된 entry/exit (1-D disjunctive optimal)</div></div>
+    <div class="stage s-gate"><div class="hd"><span class="id">S6</span><span class="nm">검색/repair (cum_level·crossbay·z1_repair·ALNS·ban-race)</span><span class="loc">:4647-4827</span></div>
+      <div class="body">배정-레벨 hill-climb + 재디코드, 공식 게이트로 best-of. 절대 floor 아래로 안 감.</div></div>
+    <div class="stage s-gate"><div class="hd"><span class="id">S7</span><span class="nm">gate 반환</span><span class="loc">:5669</span></div>
+      <div class="body">check_feasibility 통과 + floor보다 나은 것만 반환, 아니면 floor. <code>−1</code> 하드가드.</div></div>
+  </div>
+  <div class="two">
+    <div class="key"><h4 class="good">왜 set1 강 (z1=0, 19/20)</h4>
+      set1은 작고 저압력 → S4 greedy BL이 <b>모든 블록을 entry=R에 crane-safe 배치</b>(공간 충분, delayed/forced 거의 없음).
+      레이아웃이 충분히 좋으니 S5 타이밍오라클이 그 위 tardiness를 <b>최적=0</b>으로 마감. z3는 S2가 선호를 직접 목적에 넣고 spill이 적어 유지.</div>
+    <div class="key"><h4 class="bad">왜 set2 약 (z1 지배)</h4>
+      병목 = <b>S2 배정 + S4 BL</b>(S5 아님). S2가 z1-blind라 선호-magnet 베이가 블록의 57~59% 흡수 → 단일 크레인이 115+ 블록 직렬화.
+      S4도 고압력·멀티레이어서 밀려 레이아웃에 z1 내장. <b>S5는 위치 고정이라 구조적 z1을 못 고침.</b></div>
+  </div>
+</section>
+
+<!-- ============ V2 ============ -->
+<section>
+  <h2><span class="tag t2">v2</span> unified_greedy — "배정 단계를 없앤 단일 전역 그리디 패커"</h2>
+  <p class="lead">별도 배정 단계가 <b>없다</b>. 블록을 order-blend 순으로 꺼내 <b>모든 fit 베이에 실제로 놓아보고</b>(place_one)
+  marginal obj(w1·tardy+w2·Δz2+w3·Δz3)가 최소인 베이+위치에 <b>그대로 commit</b> → 베이 배정이 패킹에서 <b>emergent</b>.
+  타이밍은 <span class="star">v1과 동일한 오라클</span>을 쓴다.</p>
+  <div class="flow">
+    <div class="stage s-prep"><div class="hd"><span class="id">0</span><span class="nm">shape/fit 전처리</span><span class="loc">unified_greedy.py:108</span></div>
+      <div class="body">방향별 shape 빌드, 블록별 bbox가 들어가는 fit 베이 목록.</div></div>
+    <div class="stage s-prep"><div class="hd"><span class="id">1</span><span class="nm">순서 결정 — order-blend</span><span class="loc">:154</span></div>
+      <div class="body">key = <code>R + 0.5·P</code> (due tiebreak). "언제 들어올 수 있나(R)+얼마나 머무나(P)" 혼합 → 공간 빨리 비우는 블록 먼저 → co-presence↓.
+      <span class="mut">set2서 EDD 대비 +9.2%.</span></div></div>
+    <div class="stage s-assign"><div class="hd"><span class="id">2</span><span class="nm">CP-SAT 가이드라인 (권고 배정)</span><span class="loc">cpsat_guideline.py:58</span></div>
+      <div class="body">z2·z3 최소 배정을 CP-SAT로 풀어 <code>guide[i]</code> 생성. <b>강제 아님, nudge일 뿐</b>(동률·tiebreak를 z2/z3로 밈). z1 무관.</div></div>
+    <div class="stage s-pack"><div class="hd"><span class="id">3</span><span class="nm">★ 전역 Pass B (배치=배정 emergent)</span><span class="loc">:207-246</span></div>
+      <div class="body">각 블록을 모든 fit 베이에 <code>place_one</code>(품질위치: contact-max·diverse·FFT마스크)로 시도 → marginal obj 최소 베이+위치에
+      <b>영구 commit</b>(<code>state[j].placed.append</code>). <span class="bad">★재패킹/재배정 없음.</span> 가이드 이탈 누적 시 receding-horizon 재계획.</div>
+      <div class="io"><b>out</b> 블록별 위치 확정(단일패스)</div></div>
+    <div class="stage s-pack"><div class="hd"><span class="id">4</span><span class="nm">결과 직출력 (재패킹 생략)</span><span class="loc">:363-375</span></div>
+      <div class="body">GLOBAL 분기: Pass B 위치를 그대로 results로. <span class="bad">v1의 per-bay best-of/descent 압축 단계 없음.</span></div></div>
+    <div class="stage s-time"><div class="hd"><span class="id">5</span><span class="nm">병렬 per-bay CP-SAT 타이밍 (= v1과 동일 오라클)</span><span class="loc">ptiming.py:46 → solver_orig.py:2727</span></div>
+      <div class="body">위치 고정한 채 베이별 독립 CP-SAT로 entry/exit 최적(4코어 병렬). <b>v1과 동일한 <code>_cpsat_bay_timing_verified</code>.</b></div></div>
+    <div class="stage s-prep"><div class="hd"><span class="id">6·7</span><span class="nm">(옵션) FIXOPT / LNS — 기본 OFF</span><span class="loc">:421 / :519</span></div>
+      <div class="body">제출 설정에선 비활성.</div></div>
+  </div>
+  <div class="callout">
+    <b>핵심: 타이밍은 v1=v2로 동일.</b> 둘 다 같은 CP-SAT 타이밍 오라클을 쓴다. 따라서 <b>같은 위치면 z1도 같다</b> —
+    set1에서 v2가 v1보다 obj가 높은 건 <span class="bad">타이밍 품질이 아니라, 어떤 블록이 어느 베이 어디에 놓였나(배정+패킹 밀도)</span>의 차이다.
+  </div>
+  <div class="two">
+    <div class="key"><h4 class="good">왜 set2 강</h4>
+      규모가 크고 혼잡 → v1의 정교한 per-bay 최적화가 타임아웃·붕괴하는 반면, v2의 빠른 전역 그리디가 <b>−1을 피하며 안정적으로 채움</b>.
+      전역 동시비교+contact-max로 한 베이 밀도도 준수.</div>
+    <div class="key"><h4 class="bad">왜 set1 약 (사용자 핵심 질문)</h4>
+      (i) <b>단일패스 commit</b>(<code>:235</code>) — 한 번 놓으면 재배정·재패킹 없음. 빡빡한 선호 베이에서 먼저 온 블록이 좋은 자리 선점 →
+      뒤 블록은 선호 베이 못 들어가(z3↑) 또는 늦게 들어가(z1↑). (ii) <b>per-bay 끝까지 압축 단계 생략</b>(<code>:363</code>) → 밀도가 v1보다 낮음.</div>
+  </div>
+</section>
+
+<!-- ============ V3 ============ -->
+<section>
+  <h2><span class="tag t3">v3</span> postproc — "best-of 해 위, 크레인-인지 CP-SAT 재배치 (never-worse)"</h2>
+  <p class="lead">best-of 해를 받아 <b>per-bay 분해 → 축별 좌표하강(x/y/o)+cross-bay move/swap 라운드 루프</b>로 다듬는다.
+  모든 시도는 <b>공식 채커 전체 obj에서 strictly 개선+feasible일 때만 채택</b>(never-worse).</p>
+  <div class="flow">
+    <div class="stage s-prep"><div class="hd"><span class="id">A</span><span class="nm">deserialize (해 → per-bay placed)</span><span class="loc">adapter.py:40</span></div>
+      <div class="body">ENTRY/EXIT op → 블록별 pose+entry/exit 복원, sh/world 재빌드, 베이별 그룹화 (serialize 역함수).</div></div>
+    <div class="stage s-gate"><div class="hd"><span class="id">B</span><span class="nm">base 게이트</span><span class="loc">postproc.py:187</span></div>
+      <div class="body">공식 채커로 base obj 계산. 비실현이면 <b>원본 그대로 반환</b>(재직렬화 위험 회피).</div></div>
+    <div class="stage s-pack"><div class="hd"><span class="id">C1</span><span class="nm">SPATIAL 좌표하강 — for axis in x,y,o</span><span class="loc">postproc.py:85-115</span></div>
+      <div class="body">z1&gt;0 베이를 z1 내림차순, 각 베이서 <code>crane_repack_bay</code>를 <b>x→y→o 한 축씩</b> 호출, 매 trial 게이트.</div></div>
+    <div class="stage s-pack"><div class="hd"><span class="id">C2</span><span class="nm">CROSS-BAY move/swap (bpass)</span><span class="loc">postproc.py:117-170</span></div>
+      <div class="body">타겟 = <b>tardy AND wrong-bay</b> 블록(z3 기여 내림차순). <code>try_move</code>(선호 베이로, free_ids={b}로 그 블록만 자유) →
+      실패 시 <code>try_swap</code>(파트너와 교환, 부하보존). z3↓ z1 wash.</div></div>
+    <div class="stage s-gate"><div class="hd"><span class="id">C↻</span><span class="nm">라운드 반복 (수렴/deadline까지)</span><span class="loc">postproc.py:72-172</span></div>
+      <div class="body">한 라운드 = C1+C2. 라운드에 아무것도 안 채택되면 종료.</div></div>
+    <div class="stage s-gate"><div class="hd"><span class="id">D</span><span class="nm">최종 게이트 + serialize</span><span class="loc">postproc.py:198-205</span></div>
+      <div class="body">base 대비 strictly 개선+feasible일 때만 serialize 반환, 아니면 원본. 전체 try/except로 <b>어떤 실패도 원본 반환</b>.</div></div>
+  </div>
+  <div class="key"><h4>엔진: <code>crane_repack_bay</code> (crane_cpsat.py:333) — never-worse가 구성적으로 보장되는 이유</h4>
+    <ul>
+      <li><b>위치 후보</b>(<code>_build_candidates</code>): 블록마다 <span class="star">candidate 0 = 현재 pose</span> + active 블록에만 선형합집합 <code>{현재}∪{x시프트}∪{y시프트}∪{방향변형}</code> (격자곱 아님 → 폭발 방지, <code>_COMBO_CAP=200k</code>).</li>
+      <li><b>크레인 5불리언</b>(<code>_precompute_combos</code>): 모든 쌍×후보조합에 <b>공식 check 함수</b>로 (coll, entry차단×2, exit차단×2) 사전계산. 시간-독립이라 가능. = bbox 근사 아닌 <b>진짜 크레인 feasibility</b>.</li>
+      <li><b>CP-SAT</b>: <code>sel[b][ci]</code>(위치선택 ExactlyOne) + <code>e[b]</code>(entry) 동시 결정, 5불리언을 sel로 게이트한 disjunction, <code>min Σtardy</code>.</li>
+      <li><b>never-worse</b>: cand0=현재 pose + <code>AddHint</code> 워밍 → 현재해가 모델 내 feasible → CP-SAT 최적 tardy ≤ 현재. 채택 위치는 공식 check라 항상 crane-safe.</li>
+    </ul>
+  </div>
+  <div class="two">
+    <div class="key"><h4>왜 축 분리(x/y/o)가 monolithic보다 2배</h4>
+      한 축만 열면 후보가 선형(블록당 ~K개) → 조합 폭발 없음 → CP-SAT가 1-D 부분문제를 <b>OPTIMAL</b>까지. monolithic(동시)은 combo-cap에 막혀 suboptimal.
+      게이트가 매 패스 never-worse라 t→x→y→o 누적이 안전. <span class="mut">(t=(0,0,0)=순수 타이밍; 단 제출 루프는 x/y/o만 돌고 t는 각 패스 entry IntVar에 내장.)</span></div>
+    <div class="key"><h4>cross-bay의 z3 레버</h4>
+      이미 tardy인 블록은 z1이 이미 발생 → 선호 베이로 옮겨도 z1 wash, z3(선호편차)만 down. free_ids로 도착 베이 기존 블록을 동결해 다른 z1 안 건드림.</div>
+  </div>
+</section>
+
+<!-- ============ 비교 + 질문 ============ -->
+<section>
+  <h2>비교 — v1 vs v2 (같은 타이밍, 다른 배정·패킹)</h2>
+  <table>
+    <thead><tr><th>차원</th><th>v1 (solver_orig)</th><th>v2 (unified_greedy)</th></tr></thead>
+    <tbody>
+      <tr><td>배정 (블록→베이)</td><td>전용 CP-SAT 단계(z2+z3, z1-blind)</td><td><b>emergent</b> — 패킹 commit에서 자동 결정(가이드는 nudge)</td></tr>
+      <tr><td>패킹 (위치)</td><td>per-bay greedy BL + best-of/descent <b>압축</b></td><td>전역 단일패스 contact-max, <b>재패킹 없음</b></td></tr>
+      <tr><td>타이밍 (entry/exit)</td><td colspan="2" style="text-align:center"><b class="good">동일</b> — <code>_cpsat_bay_timing_verified</code> (1-D disjunctive optimal)</td></tr>
+      <tr><td>구조</td><td><b>2단계 분리</b>(배정→압축) — 정교하지만 규모서 붕괴</td><td><b>단일패스</b> — 빠르고 −1 안전, 덜 정교</td></tr>
+      <tr><td>set1</td><td class="good">강 (z1=0, 낮은 z3)</td><td class="bad">약 (밀도↓ → z3↑·z1↑)</td></tr>
+      <tr><td>set2</td><td class="bad">약 (z1-blind magnet + BL 붕괴)</td><td class="good">강 (안정 충전, 빠름)</td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="border:0">❓ set1을 v2로 "완벽하게" 풀 수 있나 — 분석</h2>
+  <div class="callout q">
+    <b>핵심 진단</b>: v2가 set1에서 지는 건 <b>타이밍이 아니다</b>(v1과 동일 오라클). 원인은 v2 Pass B의
+    <b>① 단일패스 commit(재배정·재패킹 없음)</b>과 <b>② per-bay 압축 단계 부재</b> 둘뿐. 즉 v2는 빡빡한 선호 베이를
+    v1만큼 <b>조밀하게</b> 못 채워, 블록이 선호 베이 밖으로 밀리고(z3↑) 늦게 들어간다(z1↑).
+  </div>
+  <h3>그래서 v2로 set1을 잡으려면 — 후보 방향</h3>
+  <ul>
+    <li><b>A. v2 + per-bay 압축 후처리</b>: Pass B 뒤에 v1식 per-bay best-of/descent(또는 v3 crane_repack을 <b>z1=0에도</b> full-obj로) 1패스. 밀도를 끌어올려 선호 베이 수용↑ → z3·z1 회수. <span class="mut">(현 v3 postproc는 z1-gate라 set1 스킵 — 이걸 풀면 됨.)</span></li>
+    <li><b>B. v2 commit을 재배정 가능하게</b>: 단일패스 영구 commit 대신, 선호 베이 경쟁이 생기면 이미 놓인 블록을 밀어내고 재배치(local repacking). myopic marginal을 look-ahead로.</li>
+    <li><b>C. v2 + 명시적 z3 floor</b>: 가이드라인을 nudge가 아니라 제약으로 — 선호 베이 용량을 예약해 뒤 블록이 들어갈 자리 보장.</li>
+    <li><b>D. 현실 인정</b>: set1은 v1이 이미 z1=0·강함. "v2로 set1 완벽"이 목표라면 결국 v2에 v1의 2단계(정밀배정+압축)를 이식하는 것 = v1에 수렴. <b>오히려 best-of로 set1=v1·set2=v2를 라우팅</b>하는 게 실용적.</li>
+  </ul>
+  <p class="mut">다음 실험 후보: <b>A</b>(v3 postproc의 z1-gate 제거 + full-obj를 set1에 적용)가 가장 싸고 직접적 — set1 z2/z3를 never-worse로 깎을 수 있는지 측정. 현재 돌고 있는 fix 런이 정확히 그 방향(z1-gate 제거).</p>
+</section>
+
+<div class="foot">
+  분석: zip 추출 코드(<code>_v3sub_extracted/</code>) 직접 정독, 3개 code-analyzer 병렬. 모든 단계 file:line 근거.
+  타이밍 오라클 공유(v1=v2=<code>_cpsat_bay_timing_verified</code>)가 핵심 통찰. 관련 메모리: ogc2026-z1-localization · ogc2026-v2-global-passB · ogc2026-v3-crane-aware-cpsat-repack.
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 per-bay single-leg (set2)</title>
+<style>
+ :root{--good:#1a7f37;--bad:#b91c1c;--neu:#6b7280;}
+ *{box-sizing:border-box;}
+ body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;
+      background:#f1f5f9;color:#0f172a;font-size:13px;line-height:1.4;}
+ header{background:#0f172a;color:#e2e8f0;padding:18px 24px;}
+ header h1{margin:0 0 4px;font-size:20px;}
+ header .cfg{color:#94a3b8;font-size:12px;}
+ .wrap{padding:20px 24px;max-width:1500px;margin:0 auto;}
+ .cards{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 22px;}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;
+       min-width:200px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+ .card h3{margin:0 0 8px;font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.04em;}
+ .card .big{font-size:22px;font-weight:700;}
+ .card p{margin:3px 0;}
+ .card.alarm{border-color:var(--bad);}
+ .card.alarm .big{color:var(--bad);}
+ table{border-collapse:collapse;width:100%;background:#fff;font-size:12px;
+       box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:6px;overflow:hidden;}
+ th,td{padding:5px 8px;border-bottom:1px solid #eef2f7;text-align:left;}
+ th{background:#1e293b;color:#e2e8f0;font-weight:600;cursor:pointer;
+    position:sticky;top:0;white-space:nowrap;}
+ td.num{text-align:right;font-variant-numeric:tabular-nums;}
+ td.small{font-size:11px;color:#475569;}
+ td.inst{font-weight:600;}
+ tr.good td{background:#f0fdf4;}
+ tr.bad td{background:#fef2f2;}
+ tr.neu td{background:#fff;}
+ .good{color:var(--good);} .bad{color:var(--bad);font-weight:700;} .muted,.neu{color:var(--neu);}
+ h2{margin:26px 0 10px;font-size:16px;border-bottom:2px solid #cbd5e1;padding-bottom:5px;}
+ details{background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin:6px 0;padding:6px 12px;}
+ summary{cursor:pointer;font-size:12px;}
+ table.detail{margin:8px 0;width:auto;min-width:520px;}
+ .findings{background:#fff;border-left:4px solid #2563eb;padding:12px 18px;border-radius:0 6px 6px 0;}
+ .findings li{margin:4px 0;}
+ .note{color:#64748b;font-size:11px;margin:8px 0 0;}
+</style></head><body>
+<header><h1>OGC2026 per-bay SINGLE-LEG marginal &mdash; set2</h1>
+<div class="cfg">instances=prob_29 (n=1) &middot; TL=40.0s &middot; tag=smoke &middot; generated=2026-06-16 23:41:24</div></header><div class='wrap'><div class='cards'><div class='card'><h3>perbay marginal gain (clean)</h3><p class='big good'>-146,663</p><p class='muted'>&Sigma; w1&middot;&Delta;z1 within-run, noise-free</p></div><div class='card'><h3>Fire rate</h3><p class='big'>1/1</p><p class='muted'>improve() fired on at least one bay</p></div><div class='card '><h3>Feasibility (set2 safety)</h3><p class='big'>1/1</p><p class='muted'>ALL feasible</p></div><div class='card '><h3>Max wall</h3><p class='big'>37.7s</p><p class='muted'>TL=40.0s (OK &le; TL)</p></div><div class='card'><h3>&Sigma; final obj (feasible)</h3><p class='big'>1,466,734</p><p class='muted'>pre-perbay &Sigma;: 1,613,397</p><p class='muted'>competitor &Sigma;: 1,328,458</p></div></div><h2>Findings (auto-generated)</h2><div class='findings'><ul><li>Total perbay marginal gain (clean within-run): 146,663 = sum of w1*(z1_before - z1_after) over all fired runs.</li><li>perbay fire-rate: 1/1 instances had improve() fire (at least one work-bay solved).</li><li>perbay helped most on: prob_29 (-146,663).</li><li>No bays were skipped_maxn (MAXN large enough for every tardy bay).</li><li>No infeasible instances: every set2 solve was feasible (never -1).</li><li>Max wall over all runs: 37.7s (TL was 40.0s).</li><li>Context: our &amp;Sigma; final obj over feasible w/ competitor data = 1,466,734 vs competitor &amp;Sigma; = 1,328,458.</li></ul></div><h2>Per-instance</h2><table id='tbl'><thead><tr><th onclick='sortT(0)'>instance</th><th onclick='sortT(1)'>n_blk</th><th onclick='sortT(2)'>n_bay</th><th onclick='sortT(3)'>w1</th><th>fired?</th><th onclick='sortT(5)'>bays&uarr;</th><th>z1 before&rarr;after</th><th onclick='sortT(7)'>&Delta;z1</th><th onclick='sortT(8)'>marginal gain</th><th onclick='sortT(9)'>marginal %</th><th onclick='sortT(10)'>final obj</th><th>feas</th><th onclick='sortT(12)'>wall</th><th onclick='sortT(13)'>comp obj</th></tr></thead><tbody><tr class='good'><td class='inst'>prob_29</td><td class='num'>150</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>yes</td><td class='num'>2</td><td class='num small'>18&rarr;7</td><td class='num'>11</td><td class='num good'>-146,663</td><td class='num'>9.09%</td><td class='num'>1,466,734</td><td class='num good'>yes</td><td class='num'>37.7</td><td class='num'>1,328,458</td></tr></tbody></table><p class='note'>marginal gain = w1&middot;(z1_before&minus;z1_after) read from perbay telemetry (noise-free, within the SAME run). pre_obj = final_obj + marginal_gain. Baseline reference (tl120_all40_fixed.json) is box-OFF (set2=4.24B) and LOOSE; the authoritative perbay number is this within-run marginal.</p><h2>Per-bay detail (where perbay engaged vs skipped)</h2><details><summary><b>prob_29</b> &mdash; calls=1, fired=yes, bays improved=2, skipped_maxn=0, z1 18&rarr;7, &Delta;z1=11, gain=-146,663, bay-wall&Sigma;=6.0s</summary><table class='detail'><thead><tr><th>bay</th><th>n_blocks</th><th>cur_tard</th><th>new_tard</th><th>&Delta;tard</th><th>wall(s)</th><th>status</th></tr></thead><tbody><tr><td class='num'>1</td><td class='num'>58</td><td class='num'>14</td><td class='num'>5</td><td class='num good'>-9</td><td class='num'>3.20</td><td class='good'>improved</td></tr><tr><td class='num'>2</td><td class='num'>31</td><td class='num'>4</td><td class='num'>2</td><td class='num good'>-2</td><td class='num'>2.84</td><td class='good'>improved</td></tr></tbody></table></details>
+<script>
+function sortT(c){
+ var t=document.getElementById('tbl'),b=t.tBodies[0],r=[].slice.call(b.rows);
+ var asc=t.getAttribute('data-c')==c&&t.getAttribute('data-a')!='1';
+ t.setAttribute('data-c',c);t.setAttribute('data-a',asc?'1':'0');
+ r.sort(function(x,y){
+  var a=x.cells[c].innerText.replace(/[,%\s]/g,''),d=y.cells[c].innerText.replace(/[,%\s]/g,'');
+  var na=parseFloat(a),nb=parseFloat(d);
+  if(!isNaN(na)&&!isNaN(nb))return asc?na-nb:nb-na;
+  return asc?a.localeCompare(d):d.localeCompare(a);
+ });
+ r.forEach(function(x){b.appendChild(x);});
+}
+</script></div></body></html>

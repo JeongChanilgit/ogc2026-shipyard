@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — 가설 설정 & 검증 핸드오프 (좌하단 천장 격파)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--p2:#1c2330;--line:#30363d;--ink:#e6edf3;
+    --dim:#8b949e;--acc:#58a6ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--pur:#bc8cff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,Segoe UI,Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1160px;margin:0 auto;padding:34px 24px 100px}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:20px;margin:38px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 8px}
+  p{margin:8px 0} code{background:#21262d;padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--pur)}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px 20px;margin:14px 0}
+  .lead{background:linear-gradient(135deg,#161b22,#1a2030);border-left:3px solid var(--bad)}
+  .hyp{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:0;margin:13px 0;overflow:hidden}
+  .hh{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--p2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .hid{font-weight:700;font-size:15px} .htitle{font-weight:600}
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
+  .tA{background:rgba(63,185,80,.15);color:var(--good);border:1px solid rgba(63,185,80,.4)}
+  .tB{background:rgba(88,166,255,.15);color:var(--acc);border:1px solid rgba(88,166,255,.4)}
+  .tC{background:rgba(188,140,255,.15);color:var(--pur);border:1px solid rgba(188,140,255,.4)}
+  .hb{padding:12px 16px;font-size:13.5px}
+  .hb div{margin:5px 0} .lbl{color:var(--dim);font-weight:600;display:inline-block;min-width:74px}
+  .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .acc{color:var(--acc)} .pur{color:var(--pur)} .dim{color:var(--dim)}
+  .grid{display:grid;gap:13px} .c3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  ul{margin:6px 0;padding-left:20px} li{margin:4px 0}
+  .mono{font-family:ui-monospace,Menlo,monospace} .small{font-size:12px}
+  .foot{color:var(--dim);font-size:12px;margin-top:44px;border-top:1px solid var(--line);padding-top:14px}
+  .step{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:6px;background:var(--p2);border:1px solid var(--line);font-weight:700;font-size:12px;margin-right:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>가설 설정 &amp; 검증 핸드오프 — 좌하단 천장을 격파한다</h1>
+<p class="sub">2026-06-15 · 지시: "무슨일이있어도 경쟁자 추월(set1). 13개 리서치로 가설+검증." · 현재 하이브리드 1,312,961 · 경쟁자 1,139,442 · 상세 레버: <code>notes/NEXT-EXPLORATION-HANDOFF-2026-06-15.html</code></p>
+
+<div class="panel lead">
+<b>H0 — 확정 진단 (모든 가설의 근본).</b> 현재 두 패커(<code>fastfloor._ft_search_pos</code>, box-decomp <code>_bl_fit_cells</code>)는
+<b>좌하단(Bottom-Left) 그리디</b>다: 후보(벽+맞닿는 모서리+그리드폴백)를 <code>(Y,X)</code> 오름차순 정렬해 <b>가장 낮고-왼쪽인 feasible 위치를 첫 번째로</b> 채택, 블록을 하나씩, 백트래킹·전역밀도목적 없음.
+⇒ 틈(gap)을 남기고 → spill 과다 → <b>z3 패배</b>. 경쟁자는 이걸 안 한다. <b>아래 H1~H13은 전부 "좌하단 그리디를 [방법]으로 대체/보강하면 밀도↑ → z3↓ → 경쟁자 추월"을 검증한다.</b>
+</div>
+
+<div class="panel">
+<b>공통 검증 프로토콜 (모든 가설).</b>
+<div><span class="step">1</span><b>단일-베이 self-test</b>: 한 베이에 고정 블록셋을 패킹 → <b>밀도(점유 블록 수 또는 잔여 면적)</b> + ft_tard을 BL 대비 측정. (가장 빠른 신호)</div>
+<div><span class="step">2</span><b>mini-gate</b>: prob_13/14/20(최대 z3 격차)에 적용 → z3·obj가 떨어지나? (fail-fast 선별)</div>
+<div><span class="step">3</span><b>full set1 gate</b>: <code>_fstest.py</code>/<code>eval.py --set SET1</code> vs <code>baselines/hybrid_set1.json</code>. <b>채택 게이트.</b></div>
+<b>게이트(공통):</b> set1 총 obj↓ · feasible 유지 · <b>never −1</b>(wall≤TL) · best-of 무회귀 · <code>OGC_*</code> gated · INSIGHTS 기록(반증도 보존). 측정은 env python 직접 실행(<span class="mono">…/envs/ogc2025/python.exe</span>; conda run = 4워커 CP-SAT 크래시).
+</div>
+
+<h2>Phase 1 — 빠른 검증 (좌하단 직접 대체)</h2>
+
+<div class="hyp">
+<div class="hh"><span class="hid">H1</span><span class="tag tB">B · 최대레버</span><span class="htitle">spyrrow/sparrow (SOTA 네스팅, 전역 GLS) → 베이 패킹을 전역 최적으로 대체</span></div>
+<div class="hb">
+<div><span class="lbl">가설</span>좌하단 그리디 대신 sparrow의 Guided-Local-Search 전역 압착을 쓰면 같은 블록을 2~4× 조밀하게 → spill 급감 → z3가 경쟁자 수준으로.</div>
+<div><span class="lbl">예측</span>prob_13 z3 805→≤450, prob_20 z3 1336→≤500, obj가 경쟁자 근접/추월.</div>
+<div><span class="lbl">검증</span>① <b>eval env(Linux x86_64, py3.12) wheel 설치 가능?</b> 먼저 확인(사용자 승인 필요 — 외부패키지). ② 베이 footprint→spyrrow Item 변환, 가장 붐비는 시간슬롯 기준 패킹, 밀도 vs BL. ③ 통과 시 zip에 wheel bundle(서버 무인터넷).</div>
+<div><span class="lbl">리스크</span>wheel 플랫폼/번들 · 정적 패킹이라 시간슬롯 분리 필요 · 15MB 제한.</div>
+</div>
+</div>
+
+<div class="hyp">
+<div class="hh"><span class="hid">H2</span><span class="tag tA">A · 즉시</span><span class="htitle">Diagonal-Fill — 좌하단에 우상단(TR) 후보 추가 (Kwon&Lee 2015)</span></div>
+<div class="hb">
+<div><span class="lbl">가설</span>BL 단일 방향 대신 BL+TR 양방향 슬라이드 후보를 더하면 양끝에서 채워 틈↓ → 밀도↑.</div>
+<div><span class="lbl">예측</span>congested 베이에서 ft_tard·z3 소폭~중폭 감소, 무회귀.</div>
+<div><span class="lbl">검증</span><code>_ft_search_pos</code> 후보생성에 우상단 벽/모서리 + TR 정렬키 추가(또는 BL/TR 두 정렬 best-of). 단일-베이 밀도 측정 → mini-gate.</div>
+<div><span class="lbl">리스크</span>낮음(작은 변경). 후보 4096 상한 관리.</div>
+</div>
+</div>
+
+<div class="hyp">
+<div class="hh"><span class="hid">H3</span><span class="tag tA">A</span><span class="htitle">NFP-BLF — 실제 폴리곤 No-Fit-Polygon 후보 (bbox/셀 → 폴리곤 인터로킹)</span></div>
+<div class="hb">
+<div><span class="lbl">가설</span>bbox/unit-cell 충돌은 폴리곤보다 큰 영역을 금지 → 오목부에 들어갈 블록을 막는다. NFP 경계 후보(맞닿는 실제 위치)를 쓰면 인터로킹 → 밀도↑.</div>
+<div><span class="lbl">예측</span>오목 블록 많은 베이에서 밀도 유의 향상, z3↓.</div>
+<div><span class="lbl">검증</span><code>pyclipper.MinkowskiSum</code>으로 쌍별 NFP 사전계산, 후보=NFP 꼭짓점, <code>shapely.intersects</code> 정확 검사. 단일-베이 밀도 vs BL. (오목 폴리곤은 볼록분해.) ※ 외부패키지 pyclipper 승인 필요.</div>
+<div><span class="lbl">리스크</span>오목 분해 복잡도 · NFP 전처리 O(n²) 시간.</div>
+</div>
+</div>
+
+<div class="hyp">
+<div class="hh"><span class="hid">H4</span><span class="tag tA">A</span><span class="htitle">CP-SAT add_no_overlap_2d + energetic 파라미터 — box-decomp z1 천장 재시도</span></div>
+<div class="hb">
+<div><span class="lbl">가설</span>box-decomp의 수동 BoolOr(약한 전파) 대신 <code>add_no_overlap_2d</code> + <code>use_energetic_reasoning_in_no_overlap_2d</code>·<code>use_area_energetic_reasoning</code>·<code>use_timetabling</code>를 쓰면 강한 전파로 z1 천장(100~190) 돌파.</div>
+<div><span class="lbl">예측</span>prob_13 preferred z1 152→대폭↓ (이전 cumulative로 300→152까지 됨, 더 내려갈지).</div>
+<div><span class="lbl">검증</span>box-decomp rect-decomp을 interval로 재배선, 시간겹침 쌍 조건부 2d-no-overlap. prob_13 preferred z1 측정 vs 152.</div>
+<div><span class="lbl">리스크</span>재formulation 공수 · no_overlap_2d는 직사각형만 → rect-decomp 품질 의존.</div>
+</div>
+</div>
+
+<div class="hyp">
+<div class="hh"><span class="hid">H7</span><span class="tag tB">A/B</span><span class="htitle">GRASP/Beam 배치 순서 최적화 — 순서가 BL 밀도를 30~50% 좌우</span></div>
+<div class="hb">
+<div><span class="lbl">가설</span>같은 BL 패커라도 블록 투입 순서를 바꾸면 밀도가 크게 달라진다. 현 best-of-5-orders를 GRASP(랜덤그리디+LS)/beam으로 확장하면 더 조밀한 순서 발견.</div>
+<div><span class="lbl">예측</span>congested 베이 ft_tard 추가 감소(현 5-orders 너머).</div>
+<div><span class="lbl">검증</span><code>_pack_bay_copresent</code>의 orders 생성을 GRASP/beam으로 교체, best-of. 단일-베이 → mini-gate.</div>
+<div><span class="lbl">리스크</span>낮음. 시간예산(순서×패킹).</div>
+</div>
+</div>
+
+<h2>Phase 2 — 밀도 강화 로컬서치</h2>
+<div class="grid c3">
+  <div class="panel"><b>H5 · Raster Penetration Map (FFT)</b><br><span class="small">고해상도 IFR∧¬NFR 비트마스크(5~10px/단위), NFR을 FFT cross-correlation O(N log N)로. 옛 "굵은 unit-raster" 반증과 다름. <b>예측:</b> 더 촘촘한 충돌→밀도↑. <b>검증:</b> numpy 비트맵, 단일-베이 밀도.</span></div>
+  <div class="panel"><b>H6 · Jostle / Ejection-Chain</b><br><span class="small">놓인 블록 빼고 큰 블록 삽입→쫓겨난 것 재삽입 연쇄. 그리디 순서 고착 탈출. <b>예측:</b> 초기해 대비 밀도↑. <b>검증:</b> NFP+shapely, SA 외부루프, 단일-베이.</span></div>
+  <div class="panel"><b>H11 · ALNS 밀도 (PSLAP)</b><br><span class="small">창 내 k블록 위치+ENTRY 동시 파괴-수리(현 reassign의 공간-인식판). <b>예측:</b> 전역 재배치로 z3↓. <b>검증:</b> <code>_solve_reassign</code> 확장, full set1.</span></div>
+</div>
+
+<h2>Phase 3 — 구조적 (높은 천장, 큰 공수)</h2>
+<div class="grid c3">
+  <div class="panel"><b>H8 · LBBD (branch-and-check)</b><br><span class="small">마스터(CP-SAT 배정+시간) ↔ 서브(폴리곤 비겹침) no-good cut 피드백. <b>EJOR-2024 구조 동일.</b> 타이밍 결정 시 배치가능성 인식 = 경쟁자 핵심 루프. <b>검증:</b> 마스터+shapely 서브+lazy cut, mini-gate.</span></div>
+  <div class="panel"><b>H9 · GLS-STA 4D (Caprace)</b><br><span class="small">조선 실증 +12.7%. FLS를 블록 경계점만 탐색. <b>크레인-후크-높이 = OGC 크레인 직접대응(문헌 유일).</b> <b>검증:</b> scipy/numpy GLS, f=Σoverlap 최소화.</span></div>
+  <div class="panel"><b>H10 · Gurobi separation-line MIP</b><br><span class="small">쌍별 분리직선/수직슬라이스 = SOTA 불규칙패킹 MIP. <b>서버 풀-Gurobi</b> 소형베이 정확해. <b>검증:</b> 베이별 10~30블록, 로컬은 구조만(2000변수).</span></div>
+  <div class="panel"><b>H12 · 표준각(15°) 근사 + GA</b><br><span class="small">폴리곤을 15°배수 내각으로 단순화→준직사각형. <b>검증:</b> 이산화+GA, 정수격자 정합.</span></div>
+  <div class="panel"><b>H13 · 3D-sRCPSP cumulative</b><br><span class="small">co-present Σarea ≤ bay area energetic(이미 box-decomp에 cumulative 추가됨)을 확장. <b>검증:</b> OR-Tools cumulative, 근사 하한.</span></div>
+</div>
+
+<div class="panel lead" style="border-left-color:var(--bad)">
+<b>⚠ 병행 필수 — set2 −1 (실측).</b> legacy가 set2 시간초과: prob_25 <b>183.7s@TL120</b>, prob_26 <b>161.6s@TL120</b> → 서버면 <b>−1</b>. 모든 신규 패커는 set2에서도 <b>never −1</b> 보장(하드 데드라인+fallback). ALL40 실점수엔 set1 0.3M보다 이게 더 위협.
+</div>
+
+<h2>실행 순서</h2>
+<div class="panel">
+<b>1.</b> H2(Diagonal-Fill)·H7(순서) — 즉시, 외부패키지 불필요, 좌하단 직접 보강 → 빠른 신호.<br>
+<b>2.</b> H1(spyrrow)·H3(NFP) — 외부패키지(<b>사용자 승인 필요</b>: spyrrow/pyclipper). 최대 밀도 레버.<br>
+<b>3.</b> H4(CP-SAT energetic)·H5(raster-FFT)·H6(jostle) — 중간 공수.<br>
+<b>4.</b> H8(LBBD)·H9(GLS-STA)·H11(ALNS)·H10(Gurobi) — 구조적, 높은 천장.<br>
+각 가설: 단일-베이→mini-gate→full set1. 통과분만 gated 채택. <b>반증도 INSIGHTS에 기록.</b>
+</div>
+
+<div class="foot">
+생성: <span class="mono">notes/HYPOTHESES-VERIFY-2026-06-15.html</span> · H0 근거: <span class="mono">fastfloor._ft_search_pos:231-366 (BL 정렬·first-feasible) · _bl_fit_cells (순수 BL)</span> · 리서치: web-researcher ×3 · 다음: H2/H7부터 (외부패키지 불요)
+</div>
+
+</div>
+</body>
+</html>

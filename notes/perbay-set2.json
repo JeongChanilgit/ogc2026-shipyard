@@ -1,0 +1,107 @@
+{
+  "config": {
+    "instances_spec": "prob_29",
+    "timelimit": 40.0,
+    "tag": "smoke",
+    "generated": "2026-06-16 23:41:24"
+  },
+  "totals": {
+    "instances_spec": "prob_29",
+    "timelimit": 40.0,
+    "n_instances": 1,
+    "sum_marginal_gain": 146663.0,
+    "n_fired": 1,
+    "n_feasible": 1,
+    "n_bays_improved": 2,
+    "n_bays_skipped_maxn": 0,
+    "max_wall": 37.70299999997951,
+    "sum_final_obj": 1466734.0,
+    "sum_pre_obj": 1613397.0,
+    "sum_competitor_obj": 1328458.38,
+    "sum_final_obj_with_comp": 1466734.0
+  },
+  "instances": [
+    {
+      "instance": "prob_29",
+      "n_blocks": 150,
+      "n_bays": 3,
+      "w1": 13333,
+      "w2": 3,
+      "w3": 300,
+      "final_obj": 1466734.0,
+      "final_obj1": 7.0,
+      "final_obj2": 501,
+      "final_obj3": 4573.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 37.70299999997951,
+      "fired": true,
+      "n_bays_improved": 2,
+      "n_bays_skipped_maxn": 0,
+      "z1_before": 18.0,
+      "z1_after": 7.0,
+      "dz1": 11.0,
+      "marginal_gain": 146663.0,
+      "pre_obj": 1613397.0,
+      "marginal_pct": 0.0909032308848969,
+      "n_calls": 1,
+      "sum_bay_wall": 6.047000000020489,
+      "bay_records": [
+        {
+          "bay": 1,
+          "n_blocks": 58,
+          "cur_tard": 14.0,
+          "new_tard": 5.0,
+          "wall": 3.202999999979511,
+          "status": "improved",
+          "err": null
+        },
+        {
+          "bay": 2,
+          "n_blocks": 31,
+          "cur_tard": 4.0,
+          "new_tard": 2.0,
+          "wall": 2.844000000040978,
+          "status": "improved",
+          "err": null
+        }
+      ],
+      "telemetry_raw": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 5.975,
+          "n_blocks_total": 150,
+          "n_bays_total": 3,
+          "n_work_bays": 2,
+          "fired": true,
+          "total_wall": 6.047000000020489,
+          "z1_before": 18.0,
+          "z1_after": 7.0,
+          "bays": [
+            {
+              "bay": 1,
+              "n_blocks": 58,
+              "cur_tard": 14.0,
+              "new_tard": 5.0,
+              "wall": 3.202999999979511,
+              "status": "improved",
+              "err": null
+            },
+            {
+              "bay": 2,
+              "n_blocks": 31,
+              "cur_tard": 4.0,
+              "new_tard": 2.0,
+              "wall": 2.844000000040978,
+              "status": "improved",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "competitor_obj": 1328458.38,
+      "baseline_obj": 664968.0
+    }
+  ]
+}

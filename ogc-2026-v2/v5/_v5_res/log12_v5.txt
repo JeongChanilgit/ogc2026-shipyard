@@ -1,0 +1,163 @@
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 8
+  [precompute] blocks=67 active=67 tardy=28 cands_total=584 (x+517 y+0 o+0) combos=167976 stored=14281 poses=584 wall=4.14s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.51s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 8
+  [precompute] blocks=67 active=67 tardy=0 cands_total=547 (x+480 y+0 o+0) combos=147367 stored=12477 poses=547 wall=3.75s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.89s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [precompute] blocks=63 active=63 tardy=29 cands_total=613 (x+550 y+0 o+0) combos=184896 stored=22047 poses=613 wall=6.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=2.70s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [precompute] blocks=63 active=63 tardy=0 cands_total=572 (x+509 y+0 o+0) combos=160993 stored=19032 poses=572 wall=5.26s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.47s
+  [precompute] blocks=36 active=36 tardy=10 cands_total=626 (x+342 y+177 o+71) combos=190470 stored=52676 poses=626 wall=12.08s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=13.55s
+  [precompute] blocks=36 active=36 tardy=2 cands_total=615 (x+334 y+174 o+71) combos=183835 stored=50389 poses=615 wall=11.66s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=10.09s
+  [precompute] blocks=34 active=34 tardy=11 cands_total=589 (x+322 y+165 o+68) combos=168348 stored=51951 poses=589 wall=11.28s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=12.25s
+  [precompute] blocks=34 active=34 tardy=1 cands_total=584 (x+317 y+165 o+68) combos=165503 stored=49782 poses=584 wall=10.56s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=6.53s
+[v5] init+step2 obj=197755.0 (128s)
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 8
+  [precompute] blocks=67 active=67 tardy=0 cands_total=547 (x+480 y+0 o+0) combos=147367 stored=12477 poses=547 wall=3.59s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.99s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 8
+  [precompute] blocks=67 active=67 tardy=0 cands_total=547 (x+480 y+0 o+0) combos=147367 stored=12477 poses=547 wall=3.84s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.92s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [precompute] blocks=63 active=63 tardy=0 cands_total=572 (x+509 y+0 o+0) combos=160993 stored=19032 poses=572 wall=5.22s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.56s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [precompute] blocks=63 active=63 tardy=0 cands_total=572 (x+509 y+0 o+0) combos=160993 stored=19032 poses=572 wall=5.09s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.66s
+  [precompute] blocks=36 active=36 tardy=1 cands_total=612 (x+332 y+173 o+71) combos=182047 stored=50227 poses=612 wall=12.39s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=13.02s
+  [precompute] blocks=36 active=36 tardy=1 cands_total=607 (x+327 y+173 o+71) combos=179087 stored=49414 poses=607 wall=11.50s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=9.23s
+  [precompute] blocks=34 active=34 tardy=1 cands_total=578 (x+310 y+166 o+68) combos=162115 stored=47216 poses=578 wall=10.81s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=9.48s
+  [precompute] blocks=34 active=34 tardy=1 cands_total=578 (x+310 y+166 o+68) combos=162115 stored=46834 poses=578 wall=10.34s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=4.78s
+[v5] round1 tardy=2 obj=175837.0 best=175837.0 (243s)
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 8
+  [precompute] blocks=67 active=67 tardy=0 cands_total=547 (x+480 y+0 o+0) combos=147367 stored=12477 poses=547 wall=3.69s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.92s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 8
+  [precompute] blocks=67 active=67 tardy=0 cands_total=547 (x+480 y+0 o+0) combos=147367 stored=12477 poses=547 wall=3.86s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.97s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [precompute] blocks=63 active=63 tardy=0 cands_total=572 (x+509 y+0 o+0) combos=160993 stored=19032 poses=572 wall=5.62s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.52s
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ocand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 5
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 4
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 3
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 2
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 1
+  [guard] combo count exceeded cap 200000; shrunk n_ycand -> 0
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 9
+  [precompute] blocks=63 active=63 tardy=0 cands_total=572 (x+509 y+0 o+0) combos=160993 stored=19032 poses=572 wall=5.16s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.59s
+  [precompute] blocks=36 active=36 tardy=1 cands_total=606 (x+326 y+173 o+71) combos=178498 stored=49107 poses=606 wall=12.17s
+  [CP-SAT] status=FEASIBLE obj=40.0 wall=7.41s
+  [precompute] blocks=36 active=36 tardy=1 cands_total=606 (x+326 y+173 o+71) combos=178498 stored=49107 poses=606 wall=11.38s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=5.73s
+[v5] round2 tardy=2 obj=767623.0 best=175837.0 (309s)
+[v5] DONE best=175837.0 rounds=2 (309s)
+RESULT prob_12 [v5]: obj=175837.0 z1=4.0 z3=577.0 feas=True wall=310.2s

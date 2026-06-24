@@ -1,0 +1,32 @@
+[
+  {
+    "prob": 38,
+    "bay": 2,
+    "blocks": 107,
+    "z1_before": 2033,
+    "z1_after": 1930,
+    "delta": -103,
+    "status": "FEASIBLE",
+    "wall_s": 253.3
+  },
+  {
+    "prob": 27,
+    "bay": 1,
+    "blocks": 99,
+    "z1_before": 1659,
+    "z1_after": 1582,
+    "delta": -77,
+    "status": "FEASIBLE",
+    "wall_s": 253.3
+  },
+  {
+    "prob": 31,
+    "bay": 3,
+    "blocks": 67,
+    "z1_before": 159,
+    "z1_after": 155,
+    "delta": -4,
+    "status": "FEASIBLE",
+    "wall_s": 252.0
+  }
+]

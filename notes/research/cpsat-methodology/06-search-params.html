@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>06 탐색·파라미터 — CP-SAT 방법론</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html" class="active">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+<header class="hero">
+  <div class="kicker">CP-SAT Methodology · Chapter 06</div>
+  <h1>탐색 전략 &amp; 솔버 파라미터 튜닝</h1>
+  <p class="lead">
+    OR-Tools CP-SAT의 300개 이상 파라미터 중 실무에서 가장 중요한 것들 — 시간·종료 제어,
+    병렬 포트폴리오, 프리솔브, LP/컷, 탐색 분기 전략, 결정론적 재현, 로그 해독 — 을
+    실측 파라미터명과 Python 코드로 정리한다.
+  </p>
+</header>
+
+<!-- OGC2026 callout -->
+<div class="callout ogc">
+  <div class="ttl">OGC 2026 관련성</div>
+  <p style="margin:0">
+    <strong>평가 서버: 4 CPU 코어, 16 GB RAM, 인스턴스당 수 분~30 분.</strong><br>
+    핵심 적용: <code>num_workers = 4</code>(또는 <code>8</code> + <code>interleave_search</code>),
+    <code>max_time_in_seconds</code>를 남은 벽시계에 맞게 적응 설정,
+    <code>log_search_progress = True</code>로 고원(plateau) 조기 감지,
+    <code>random_seed</code>로 결정론적 재현.
+    <br><br>
+    운영 노트: <strong>4-worker CP-SAT는 <code>conda run</code>으로 실행 시 크래시 발생</strong> →
+    반드시 <code>C:/Users/peter/anaconda3/envs/ogc2025/python.exe</code> 직접 호출로 우회.
+    현재 <code>src/</code> 하이브리드 솔버는 이 방식으로 안정 동작 확인.
+  </p>
+</div>
+
+<!-- ────────────── 1. 종료 제어 ────────────── -->
+<h2 id="termination">1. 시간·종료 제어</h2>
+
+<h3><code>max_time_in_seconds</code></h3>
+<p>
+  벽시계 기준 최대 실행 시간. 기본값: 무한대(<code>inf</code>).
+  이 값을 설정하지 않으면 복잡한 모델은 무한 실행된다.
+</p>
+<pre><code>solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 120.0  <span class="cmt"># 2분 제한</span>
+
+<span class="cmt"># 남은 시간 기반 적응 설정 (OGC 패턴)</span>
+import time
+_start = time.time()
+def remaining(reserve=5.0):
+    return max(1.0, timelimit - (time.time() - _start) - reserve)
+
+solver.parameters.max_time_in_seconds = remaining(reserve=10.0)</code></pre>
+
+<div class="tip"><div class="ttl">Best Practice</div>
+  개발 중엔 60~300초로 시작, 제출 전 실제 인스턴스 크기에 맞게 확장.
+  <code>SolveWithSolutionCallback</code>에서 콜백으로 남은 시간을 추적하면 더 정밀하다.
+</div>
+
+<h3><code>stop_after_first_solution</code></h3>
+<p>
+  첫 번째 실현 가능한 해를 발견한 즉시 탐색 중단. 기본값: <code>False</code>.
+  목적함수가 있어도 최적화 없이 즉시 반환한다.
+</p>
+<pre><code>solver.parameters.stop_after_first_solution = True
+<span class="cmt"># feasibility check, warm-start seed 확보에 유용</span></code></pre>
+
+<div class="pitfall"><div class="ttl">함정</div>
+  <strong>최적화 문제에서 무심코 ON</strong>하면 매우 나쁜 초기해로 제출된다.
+  warm-start 힌트 검증(<code>fix_variables_to_their_hinted_value</code>)과 조합할 때만 의도적으로 사용.
+</div>
+
+<h3><code>relative_gap_limit</code> / <code>absolute_gap_limit</code></h3>
+<p>
+  <code>relative_gap_limit</code>: <code>|obj - bound| / max(1, |obj|) ≤ limit</code> 이면 조기 종료.
+  기본값: <code>0.0</code> (비활성).<br>
+  <code>absolute_gap_limit</code>: <code>|obj - bound| ≤ limit</code> 이면 종료.
+  기본값: <code>1e-4</code> (정수 문제에서는 사실상 최적 수렴과 동일).
+</p>
+<pre><code>solver.parameters.relative_gap_limit = 0.02   <span class="cmt"># 최적의 2% 이내면 종료</span>
+solver.parameters.absolute_gap_limit  = 1000  <span class="cmt"># 1000 단위 이내면 종료</span></code></pre>
+
+<div class="pitfall"><div class="ttl">함정</div>
+  <code>relative_gap_limit = 0.05</code>처럼 크게 잡으면 아직 개선 여지가 많을 때 조기 종료된다.
+  경쟁 상황(OGC처럼 상대 점수 방식)에서는 절대 갭 기준이 더 직관적.
+  "갭 = 0%"는 증명된 최적을 의미하지만, 바운드 자체가 느슨할 수 있다.
+</div>
+
+<!-- ────────────── 2. 병렬 파라미터 ────────────── -->
+<h2 id="parallel">2. 병렬 워커 &amp; 포트폴리오</h2>
+
+<h3><code>num_workers</code> (구 <code>num_search_workers</code>)</h3>
+<p>
+  병렬 실행 스레드 수. 기본값: <code>0</code> (자동 → 모든 논리 코어 사용).
+  <code>num_search_workers</code>는 <strong>deprecated</strong>이지만 <code>num_workers=0</code>일 때는 여전히 읽힌다.
+</p>
+<pre><code>solver.parameters.num_workers = 4   <span class="cmt"># 4코어 서버에서 권장</span>
+<span class="cmt"># 구형 코드 호환 (deprecated, 피할 것)</span>
+<span class="cmt"># solver.parameters.num_search_workers = 4</span></code></pre>
+
+<p><strong>워커 수에 따른 서브솔버 포트폴리오 (실측, Laurent Perron 확인)</strong>:</p>
+<table>
+  <tr><th>workers</th><th>활성 서브솔버</th></tr>
+  <tr><td>1</td><td>default_lp 단독 (결정론적)</td></tr>
+  <tr><td>2~4</td><td>default_lp + no_lp + LNS workers (rnd_var, rnd_cst, graph_var, graph_cst, rins, rens)</td></tr>
+  <tr><td>5~7</td><td>위 + first_solution subsolver 추가</td></tr>
+  <tr><td>8~9</td><td>위 + max_lp + fixed + pseudo_costs + core + feasibility_pump</td></tr>
+  <tr><td>9+</td><td>위 + quick_restart</td></tr>
+  <tr><td>11+</td><td>위 + quick_restart_no_lp</td></tr>
+  <tr><td>13+</td><td>위 + probing + lb_tree_search</td></tr>
+  <tr><td>32+</td><td>전체 15개 full-problem solver + 증가된 first-solution workers</td></tr>
+</table>
+
+<div class="tip"><div class="ttl">4코어 최적 설정 (OGC 서버 기준)</div>
+<pre><code><span class="cmt"># 옵션 A: 4 workers — 보수적, 메모리 안전</span>
+solver.parameters.num_workers = 4
+
+<span class="cmt"># 옵션 B: 8 workers + interleave — 더 많은 전략 다양성</span>
+<span class="cmt"># (컨텍스트 스위칭 오버헤드 있지만 LNS 다양성 ↑)</span>
+solver.parameters.num_workers = 8
+solver.parameters.interleave_search = True</code></pre>
+  Laurent Perron: OR-Tools 튜닝은 <strong>8 및 16 workers</strong>를 주요 타깃으로 한다.
+  4코어 실제 실행에서는 8 workers + interleave가 pure 4 workers보다
+  LNS 다양성 확보 면에서 우위일 수 있다.
+</div>
+
+<div class="pitfall"><div class="ttl">함정: workers 과다 설정 시 메모리 폭발</div>
+  각 워커는 독립적인 모델 복사본과 LP relaxation을 유지한다.
+  대형 모델(수만 변수)에서 workers = 32로 설정하면 수십 GB RAM이 필요할 수 있다.
+  OGC 서버 16 GB 제한 → <code>max_memory_in_mb = 12000</code>으로 안전망 설정 권장.
+</div>
+
+<h3><code>interleave_search</code></h3>
+<p>
+  기본값: <code>False</code>. <code>True</code>로 설정하면 모든 주요 탐색 전략을 인터리빙하여
+  <code>num_workers</code>로 배분한다. 고정 스레드 할당 대신 Round-Robin 방식으로
+  서브솔버를 번갈아 실행 → 적은 코어 수에서도 다양한 전략 실험 가능.
+</p>
+<pre><code>solver.parameters.interleave_search = True
+solver.parameters.num_workers = 8  <span class="cmt"># 인터리빙 효과 극대화</span></code></pre>
+
+<h3><code>subsolvers</code> / <code>extra_subsolvers</code> / <code>ignore_subsolvers</code></h3>
+<p>
+  포트폴리오 서브솔버 커스터마이징. <code>subsolvers</code>는 전체 목록 교체,
+  <code>extra_subsolvers</code>는 기본 목록 앞에 추가, <code>ignore_subsolvers</code>는 glob 패턴으로 제외.
+</p>
+
+<p>알려진 서브솔버 이름 (로그에서 확인 가능):</p>
+<ul>
+  <li><strong>Full-problem solvers</strong>: <code>default_lp</code>, <code>max_lp</code>, <code>no_lp</code>,
+    <code>fixed</code>, <code>pseudo_costs</code>, <code>core</code>, <code>lb_tree_search</code>,
+    <code>quick_restart</code>, <code>quick_restart_no_lp</code>, <code>probing</code></li>
+  <li><strong>LNS (incomplete) solvers</strong>: <code>rnd_var_lns_default</code>, <code>rnd_cst_lns_default</code>,
+    <code>graph_var_lns_default</code>, <code>graph_cst_lns_default</code>, <code>rins_lns_default</code>,
+    <code>rens_lns_default</code>, <code>feasibility_pump</code></li>
+</ul>
+
+<pre><code>from ortools.sat import sat_parameters_pb2
+
+<span class="cmt"># 특정 서브솔버 비활성화 (예: LP 없는 순수 CP 모드)</span>
+solver.parameters.ignore_subsolvers.append("max_lp")
+solver.parameters.ignore_subsolvers.append("*lp*")  <span class="cmt"># glob 지원</span>
+
+<span class="cmt"># 커스텀 서브솔버 추가 (패킹 문제에서 유용)</span>
+custom = sat_parameters_pb2.SatParameters()
+custom.name = "custom_no_lp_lns"
+custom.linearization_level = 0
+custom.use_lns_only = True
+solver.parameters.subsolver_params.append(custom)
+solver.parameters.extra_subsolvers.append("custom_no_lp_lns")</code></pre>
+
+<div class="pitfall"><div class="ttl">함정: 과도한 서브솔버 튜닝</div>
+  Laurent Perron: "Fine-tuning such a solver is not a simple task, and often you do more harm than good
+  by tinkering around." 기본 포트폴리오는 수년간 광범위한 벤치마킹으로 최적화된 것이다.
+  특수 문제 구조(예: packing + crane)가 있을 때만 커스터마이징을 시도하라.
+</div>
+
+<h3><code>use_lns_only</code></h3>
+<p>
+  기본값: <code>False</code>. <code>True</code>로 설정하면 불완전한 LNS 휴리스틱 솔버만 실행.
+  최적성 보장 없음 → 반드시 <code>max_time_in_seconds</code>와 함께 사용.
+</p>
+<pre><code>solver.parameters.use_lns_only = True
+solver.parameters.max_time_in_seconds = 60.0  <span class="cmt"># 종료 조건 필수</span></code></pre>
+
+<!-- ────────────── 3. 프리솔브 ────────────── -->
+<h2 id="presolve">3. 프리솔브</h2>
+
+<h3><code>cp_model_presolve</code></h3>
+<p>
+  기본값: <code>True</code>. 풀기 전 제약 전파·변수 도메인 축소·등가 치환 수행.
+  복잡한 모델에서 10~100배 이상 성능 차이를 만들 수 있다.
+</p>
+<pre><code>solver.parameters.cp_model_presolve = False  <span class="cmt"># 비활성 (보통 권장 안 함)</span>
+solver.parameters.max_presolve_iterations = 3  <span class="cmt"># 기본값 = 3 (반복 횟수 제한)</span>
+solver.parameters.cp_model_probing_level = 1   <span class="cmt"># 0=none, 1=light, 2=aggressive</span>
+solver.parameters.presolve_probing_deterministic_time_limit = 5.0  <span class="cmt"># 초</span></code></pre>
+
+<div class="pitfall"><div class="ttl">함정: 프리솔브 비활성화 시 성능 역전</div>
+  프리솔브를 끄면 디버깅 속도는 빨라지지만 실제 어려운 인스턴스에서
+  솔버가 수렴하지 못하는 경우가 많다.
+  <strong>힌트(hint) 사용 시 프리솔브가 힌트 feasibility를 손상시키는 알려진 버그</strong>가 있었음 →
+  <code>keep_all_feasible_solutions_in_presolve = True</code>로 완화 가능.
+</div>
+
+<!-- ────────────── 4. LP·컷 ────────────── -->
+<h2 id="lp-cut">4. LP 이완 &amp; 컷</h2>
+
+<h3><code>linearization_level</code></h3>
+<p>
+  내부 LP relaxation의 선형화 수준. 서브솔버 이름과 직접 대응:
+</p>
+<table>
+  <tr><th>값</th><th>서브솔버</th><th>의미</th></tr>
+  <tr><td><code>0</code></td><td>no_lp</td><td>LP 완전 비활성. 순수 CP. 빠르지만 바운드 약함</td></tr>
+  <tr><td><code>1</code></td><td>default_lp</td><td>기본 LP 이완. 균형 (기본값)</td></tr>
+  <tr><td><code>2</code></td><td>max_lp</td><td>최대 LP 이완. 바운드 강함, 메모리·시간 증가</td></tr>
+</table>
+<pre><code>solver.parameters.linearization_level = 1  <span class="cmt"># 기본 (대부분의 경우 최적)</span>
+<span class="cmt"># max_lp는 포트폴리오에서 max_lp 서브솔버가 담당하므로</span>
+<span class="cmt"># 전역으로 2로 올리는 것보다 workers 늘려 자동 포함되게 하는 편이 낫다</span></code></pre>
+
+<h3><code>symmetry_level</code></h3>
+<p>
+  대칭 탐지 수준. 기본값: <code>1</code> (경량).
+</p>
+<table>
+  <tr><th>값</th><th>동작</th></tr>
+  <tr><td><code>0</code></td><td>대칭 탐지 비활성</td></tr>
+  <tr><td><code>1</code></td><td>기본 (기본값)</td></tr>
+  <tr><td><code>2</code></td><td>중간 수준 대칭 탐지</td></tr>
+  <tr><td><code>3</code></td><td>대형 문제 강제 활성 — 단, <strong>하드코딩된 1초 시간 제한</strong> 내에서만 실행</td></tr>
+</table>
+
+<div class="pitfall"><div class="ttl">함정: symmetry_level=3의 함정</div>
+  GitHub #4419: <code>symmetry_level=3</code>은 대형 모델에서 1초 결정론적 시간 제한 때문에
+  완전한 대칭 탐지 전에 타임아웃된다. 이 제한은 현재 설정 불가능.
+  특정 문제에서는 이 제한을 늘리면 solve time이 크게 줄어드는 사례가 보고됨.
+</div>
+
+<!-- ────────────── 5. 탐색 분기 ────────────── -->
+<h2 id="branching">5. 탐색 분기 전략</h2>
+
+<h3><code>search_branching</code> 열거형</h3>
+<p>
+  CP-SAT의 분기 전략을 제어한다. 기본값: <code>AUTOMATIC_SEARCH</code>.
+</p>
+
+<table>
+  <tr><th>값</th><th>Python 상수</th><th>설명</th></tr>
+  <tr><td>0</td><td><code>cp_model.AUTOMATIC_SEARCH</code></td><td>자동 선택 (권장 기본값)</td></tr>
+  <tr><td>1</td><td><code>cp_model.FIXED_SEARCH</code></td><td>AddDecisionStrategy를 정확히 따름</td></tr>
+  <tr><td>2</td><td><code>cp_model.PORTFOLIO_SEARCH</code></td><td>다수 전략 포트폴리오</td></tr>
+  <tr><td>3</td><td><code>cp_model.LP_SEARCH</code></td><td>LP 이완 해 기반 분기</td></tr>
+  <tr><td>4</td><td><code>cp_model.PSEUDO_COST_SEARCH</code></td><td>의사비용 기반 (MIP 스타일)</td></tr>
+  <tr><td>5</td><td><code>cp_model.PORTFOLIO_WITH_QUICK_RESTART_SEARCH</code></td><td>포트폴리오 + 빠른 재시작</td></tr>
+  <tr><td>6</td><td><code>cp_model.NO_SEARCH</code></td><td>탐색 없음 (프리솔브만)</td></tr>
+</table>
+
+<pre><code>solver.parameters.search_branching = cp_model.AUTOMATIC_SEARCH  <span class="cmt"># 기본</span>
+solver.parameters.search_branching = cp_model.FIXED_SEARCH       <span class="cmt"># 사용자 전략 강제</span>
+solver.parameters.search_branching = cp_model.PORTFOLIO_SEARCH   <span class="cmt"># 다양성 극대화</span></code></pre>
+
+<div class="pitfall"><div class="ttl">함정: FIXED_SEARCH는 hint 없으면 위험</div>
+  <code>FIXED_SEARCH</code>는 <code>AddDecisionStrategy</code>로 지정된 변수들만 순서대로 분기한다.
+  전략에서 누락된 변수가 있으면 탐색이 막히거나 첫 해를 못 찾는다.
+  반드시 <strong>모든 결정 변수</strong>를 커버하는 완전한 전략과 함께 사용하라.
+</div>
+
+<!-- ────────────── 6. AddDecisionStrategy ────────────── -->
+<h2 id="decision-strategy">6. <code>AddDecisionStrategy</code></h2>
+
+<p>
+  변수 선택(variable selection)과 값 선택(domain reduction)을 사용자가 직접 제어.
+  <code>search_branching = FIXED_SEARCH</code>와 함께 사용해야 효력이 있다.
+</p>
+
+<h3>시그니처</h3>
+<pre><code>model.AddDecisionStrategy(
+    variables,           <span class="cmt"># List[IntVar] — 분기 변수 목록</span>
+    variable_selection,  <span class="cmt"># VariableSelectionStrategy</span>
+    domain_reduction     <span class="cmt"># DomainReductionStrategy</span>
+)</code></pre>
+
+<h3>변수 선택 전략 (<code>VariableSelectionStrategy</code>)</h3>
+<table>
+  <tr><th>상수</th><th>의미</th></tr>
+  <tr><td><code>cp_model.CHOOSE_FIRST</code></td><td>목록 순서대로 첫 번째 미결정 변수 선택 (예측 가능, 가장 빠름)</td></tr>
+  <tr><td><code>cp_model.CHOOSE_LOWEST_MIN</code></td><td>도메인 하한이 가장 낮은 변수 선택</td></tr>
+  <tr><td><code>cp_model.CHOOSE_HIGHEST_MAX</code></td><td>도메인 상한이 가장 높은 변수 선택</td></tr>
+  <tr><td><code>cp_model.CHOOSE_MIN_DOMAIN_SIZE</code></td><td>도메인 크기가 가장 작은 변수 선택 (Fail-First)</td></tr>
+  <tr><td><code>cp_model.CHOOSE_MAX_DOMAIN_SIZE</code></td><td>도메인 크기가 가장 큰 변수 선택</td></tr>
+</table>
+
+<h3>값(도메인) 선택 전략 (<code>DomainReductionStrategy</code>)</h3>
+<table>
+  <tr><th>상수</th><th>의미</th></tr>
+  <tr><td><code>cp_model.SELECT_MIN_VALUE</code></td><td>도메인 최솟값 시도 (최소화 문제 기본)</td></tr>
+  <tr><td><code>cp_model.SELECT_MAX_VALUE</code></td><td>도메인 최댓값 시도</td></tr>
+  <tr><td><code>cp_model.SELECT_LOWER_HALF</code></td><td>하위 절반 도메인으로 분기</td></tr>
+  <tr><td><code>cp_model.SELECT_UPPER_HALF</code></td><td>상위 절반 도메인으로 분기</td></tr>
+  <tr><td><code>cp_model.SELECT_MEDIAN_VALUE</code></td><td>도메인 중앙값 시도</td></tr>
+</table>
+
+<h3>실용 예제 — 스케줄링 시작 시간 우선 결정</h3>
+<pre><code>from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+n_jobs = 5
+starts = [model.NewIntVar(0, 1000, f"start_{i}") for i in range(n_jobs)]
+ends   = [model.NewIntVar(0, 1000, f"end_{i}")   for i in range(n_jobs)]
+
+<span class="cmt"># 시작 시간을 오름차순으로 결정 → 빠른 초기해 확보</span>
+model.AddDecisionStrategy(
+    starts,
+    cp_model.CHOOSE_LOWEST_MIN,   <span class="cmt"># 가장 이른 시작 가능 job 먼저</span>
+    cp_model.SELECT_MIN_VALUE     <span class="cmt"># 가능한 가장 빨리 배정</span>
+)
+
+solver = cp_model.CpSolver()
+solver.parameters.search_branching = cp_model.FIXED_SEARCH
+solver.parameters.max_time_in_seconds = 60.0
+status = solver.Solve(model)
+print(solver.StatusName(status))</code></pre>
+
+<h3>다단계 전략 (위치 → 시간 순서 보장)</h3>
+<pre><code><span class="cmt"># 1단계: 배정 변수 (어떤 베이에 넣을지) → CHOOSE_FIRST로 순서 고정</span>
+model.AddDecisionStrategy(
+    bay_assignments,
+    cp_model.CHOOSE_FIRST,
+    cp_model.SELECT_MIN_VALUE
+)
+<span class="cmt"># 2단계: 타이밍 변수 → 배정 확정 후 최솟값 탐색</span>
+model.AddDecisionStrategy(
+    start_times,
+    cp_model.CHOOSE_LOWEST_MIN,
+    cp_model.SELECT_MIN_VALUE
+)
+<span class="cmt"># 여러 AddDecisionStrategy 호출 → 앞 전략 변수가 모두 결정된 후 다음 전략 사용</span></code></pre>
+
+<div class="tip"><div class="ttl">Best Practice: AUTOMATIC vs FIXED</div>
+  CP-SAT 자동 전략은 수년간의 벤치마킹으로 튜닝되어 있다.
+  도메인 지식이 있을 때만 (예: "시작 시간 먼저, 작은 값부터") FIXED를 쓴다.
+  <code>AUTOMATIC_SEARCH</code> + 힌트(<code>AddHint</code>) 조합이 대부분의 경우 FIXED보다 낫다.
+</div>
+
+<!-- ────────────── 7. 결정론 ────────────── -->
+<h2 id="determinism">7. 결정론적 재현</h2>
+
+<h3><code>random_seed</code></h3>
+<p>
+  솔버 내부 난수 생성기 초기화 시드. 기본값: <code>1</code>.
+  <strong>단일 워커</strong>(<code>num_workers=1</code>)에서만 완전 결정론적 재현이 보장된다.
+  멀티 워커는 스레드 인터리빙 때문에 결정론적이지 않다.
+</p>
+<pre><code><span class="cmt"># 완전 결정론적 재현 (디버깅, 논문 실험 재현)</span>
+solver.parameters.num_workers = 1
+solver.parameters.random_seed = 42
+
+<span class="cmt"># 다양한 시드로 best-of-N 앙상블</span>
+best_obj = float('inf')
+best_sol = None
+for seed in [1, 42, 123, 456, 789]:
+    s = cp_model.CpSolver()
+    s.parameters.num_workers = 4
+    s.parameters.max_time_in_seconds = 30.0
+    s.parameters.random_seed = seed
+    status = s.Solve(model)
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        if s.ObjectiveValue() &lt; best_obj:
+            best_obj = s.ObjectiveValue()
+            best_sol = s</code></pre>
+
+<div class="tip"><div class="ttl">OGC 결정론화 전략</div>
+  제출 전 로컬 재현을 위해 <code>num_workers=1, random_seed=1</code>로 한 번 실행해 솔루션 검증.
+  실제 서버 제출은 <code>num_workers=4</code> + 고정 시드로 안정성 확보.
+  CP-SAT 결과의 <code>±130K</code> 노이즈 (메모리에서 확인)는 대부분 멀티스레드 비결정성에서 기인.
+</div>
+
+<!-- ────────────── 8. 로그 읽기 ────────────── -->
+<h2 id="logging">8. 로그: <code>log_search_progress</code> 읽기</h2>
+
+<h3>활성화</h3>
+<pre><code>solver.parameters.log_search_progress = True   <span class="cmt"># stdout/stderr 출력</span>
+
+<span class="cmt"># 커스텀 콜백으로 캡처 (파일 저장 등)</span>
+solver.log_callback = lambda msg: print(f"[CPSAT] {msg}", flush=True)
+solver.parameters.log_to_stdout = False   <span class="cmt"># 콜백 전용으로 전환</span></code></pre>
+
+<h3>로그 형식 해독</h3>
+<p>각 이벤트 행은 다음 구조를 따른다:</p>
+<pre><code><span class="cmt"># 형식: EVENT | TIME | BEST_OBJ | SEARCH_RANGE | [SUBSOLVER_INFO]</span>
+
+#1  0.12s best:2150 next:[1800,2149] default_lp (fixed_bools=28/918)
+#2  1.84s best:1890 next:[1800,1889] rins_lns_default
+#Bound 8.73s best:1890 next:[1891,1890] lb_tree_search (nodes=13/18 rc=0 decisions=133)
+#Model 12.4s  vars:450/918 constraints:302/1100</code></pre>
+
+<table>
+  <tr><th>필드</th><th>의미</th></tr>
+  <tr><td><code>#N</code></td><td>N번째 개선 솔루션 발견 이벤트</td></tr>
+  <tr><td><code>#Bound</code></td><td>하한(bound) 개선 이벤트 — 증명된 최적 범위가 좁아짐</td></tr>
+  <tr><td><code>#Model</code></td><td>프리솔브/모델 변경 이벤트</td></tr>
+  <tr><td><code>best:X</code></td><td>현재까지 발견된 최선 목적함수 값 (incumbent)</td></tr>
+  <tr><td><code>next:[L,U]</code></td><td>최적이 이 범위에 있음이 증명됨. 갭 = U - L</td></tr>
+  <tr><td>서브솔버 이름</td><td>개선을 만든 솔버 (예: <code>lb_tree_search</code>, <code>quick_restart_no_lp</code>)</td></tr>
+  <tr><td><code>fixed_bools=28/918</code></td><td>전체 변수 중 이 시점에서 고정된 변수 수</td></tr>
+  <tr><td><code>nodes=13/18</code></td><td>탐색 트리 노드 현재/총 (tree search 전용)</td></tr>
+</table>
+
+<h3>로그로 고원(plateau) 감지</h3>
+<pre><code><span class="cmt"># 고원 신호: #N 이벤트가 오랫동안 없고 #Bound 만 발생</span>
+<span class="cmt"># → incumbent 개선 없이 bound 만 좁혀지는 중</span>
+<span class="cmt"># → 만약 bound가 incumbent에 수렴하지 않으면 구조적 어려움</span>
+
+<span class="cmt"># 실용 패턴: best와 next 하한의 갭 추적</span>
+class GapMonitor(cp_model.CpSolverSolutionCallback):
+    def on_solution_callback(self):
+        gap = abs(self.objective_value - self.best_objective_bound)
+        rel_gap = gap / max(1.0, abs(self.objective_value))
+        print(f"t={self.wall_time:.1f}s  obj={self.objective_value:.0f}"
+              f"  bound={self.best_objective_bound:.0f}  gap={rel_gap:.2%}")</code></pre>
+
+<div class="tip"><div class="ttl">로그 분석 도구</div>
+  CP-SAT Primer는 <strong>Log Analyzer</strong> 도구를 권장한다: bound·gap·모델 변경을 시간 축으로
+  시각화. 이벤트 기반 로그를 수동으로 읽기 어려울 때 필수.
+</div>
+
+<!-- ────────────── 9. 메모리 제한 ────────────── -->
+<h2 id="memory">9. 메모리 제한</h2>
+<pre><code>solver.parameters.max_memory_in_mb = 10000  <span class="cmt"># 기본값 10000 MB (10 GB)</span>
+<span class="cmt"># OGC 서버 16 GB 중 OS·Python 오버헤드 제외 안전 설정</span>
+solver.parameters.max_memory_in_mb = 12000</code></pre>
+
+<p>
+  메모리 제한 초과 시 솔버는 현재 최선 해를 반환하거나 <code>UNKNOWN</code> 상태로 종료.
+  크래시 대신 graceful termination이 보장된다.
+</p>
+
+<!-- ────────────── 10. 완전 설정 예제 ────────────── -->
+<h2 id="full-example">10. 완전 설정 예제 (OGC 패턴)</h2>
+<pre><code>from ortools.sat.python import cp_model
+import time
+
+def build_solver(timelimit: float, seed: int = 1) -> cp_model.CpSolver:
+    solver = cp_model.CpSolver()
+    p = solver.parameters
+
+    <span class="cmt"># ── 종료 제어 ──────────────────────────────────</span>
+    p.max_time_in_seconds   = max(1.0, timelimit - 10.0)  <span class="cmt"># 10초 reserve</span>
+    p.relative_gap_limit    = 0.0    <span class="cmt"># 갭 종료 비활성 (경쟁 상황)</span>
+    p.absolute_gap_limit    = 1e-4   <span class="cmt"># 정수 최적 수렴만</span>
+
+    <span class="cmt"># ── 병렬 ────────────────────────────────────────</span>
+    p.num_workers           = 4      <span class="cmt"># 평가서버 4코어</span>
+    p.interleave_search     = True   <span class="cmt"># LNS 다양성 ↑</span>
+
+    <span class="cmt"># ── 결정론 ──────────────────────────────────────</span>
+    p.random_seed           = seed
+
+    <span class="cmt"># ── 프리솔브 ─────────────────────────────────────</span>
+    p.cp_model_presolve     = True
+    p.max_presolve_iterations = 3
+
+    <span class="cmt"># ── LP ──────────────────────────────────────────</span>
+    p.linearization_level   = 1      <span class="cmt"># default (max_lp는 포트폴리오에서 자동)</span>
+    p.symmetry_level        = 1      <span class="cmt"># 기본 대칭 탐지</span>
+
+    <span class="cmt"># ── 로그 ─────────────────────────────────────────</span>
+    p.log_search_progress   = True
+
+    <span class="cmt"># ── 메모리 ──────────────────────────────────────</span>
+    p.max_memory_in_mb      = 12000
+
+    return solver
+
+
+<span class="cmt"># best-of-2 앙상블 (결정론적 시드 로테이션)</span>
+def solve_best_of(model, timelimit):
+    results = []
+    for seed in [1, 42]:
+        s = build_solver(timelimit / 2, seed=seed)
+        cb = cp_model.ObjectiveSolutionPrinter()
+        status = s.Solve(model, cb)
+        if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            results.append((s.ObjectiveValue(), s))
+    if not results:
+        return None
+    return min(results, key=lambda x: x[0])[1]</code></pre>
+
+<!-- ────────────── 11. 파라미터 빠른 참조표 ────────────── -->
+<h2 id="quick-ref">11. 파라미터 빠른 참조표</h2>
+<table>
+  <tr><th>파라미터</th><th>기본값</th><th>권장 설정</th><th>주의</th></tr>
+  <tr><td><code>max_time_in_seconds</code></td><td>inf</td><td>TL - reserve</td><td>필수 설정</td></tr>
+  <tr><td><code>num_workers</code></td><td>0 (모든 코어)</td><td>4 (OGC 서버)</td><td>메모리 × workers</td></tr>
+  <tr><td><code>interleave_search</code></td><td>False</td><td>True (4코어+8workers)</td><td>적은 코어 다양성 ↑</td></tr>
+  <tr><td><code>random_seed</code></td><td>1</td><td>1 or 앙상블</td><td>단일 워커만 완전 결정론</td></tr>
+  <tr><td><code>search_branching</code></td><td>AUTOMATIC</td><td>AUTOMATIC 유지</td><td>FIXED는 완전 전략 필요</td></tr>
+  <tr><td><code>linearization_level</code></td><td>1</td><td>1 유지</td><td>2는 포트폴리오가 커버</td></tr>
+  <tr><td><code>cp_model_presolve</code></td><td>True</td><td>True 유지</td><td>비활성화 = 성능 역전</td></tr>
+  <tr><td><code>log_search_progress</code></td><td>False</td><td>True (개발·모니터)</td><td>콜백 성능 주의</td></tr>
+  <tr><td><code>relative_gap_limit</code></td><td>0.0</td><td>0.0 (경쟁 상황)</td><td>크게 잡으면 조기종료</td></tr>
+  <tr><td><code>max_memory_in_mb</code></td><td>10000</td><td>12000 (OGC)</td><td>초과 시 graceful 종료</td></tr>
+  <tr><td><code>stop_after_first_solution</code></td><td>False</td><td>False</td><td>feasibility check 전용</td></tr>
+  <tr><td><code>use_lns_only</code></td><td>False</td><td>False (최적성 필요 시)</td><td>최적 보장 없음</td></tr>
+  <tr><td><code>symmetry_level</code></td><td>1</td><td>1 유지</td><td>3은 1초 하드 타임아웃</td></tr>
+</table>
+
+<!-- ────────────── 논문/문서 ────────────── -->
+<h2 id="refs">핵심 논문 / 문서</h2>
+<ul class="refs">
+  <li>
+    <strong>The CP-SAT Primer — Parameters Chapter</strong>
+    <span class="meta">d-krupke.github.io/cpsat-primer/parameters.html</span>
+    <span class="desc">실무자를 위한 가장 완성된 CP-SAT 파라미터 가이드. 모든 주요 파라미터에 Python 예제, Best Practice, Pitfall 포함.</span>
+  </li>
+  <li>
+    <strong>CP-SAT Log Understanding Chapter</strong>
+    <span class="meta">d-krupke.github.io/cpsat-primer/understanding_the_log.html</span>
+    <span class="desc">log_search_progress 출력 형식 완전 해설. #N/#Bound/#Model 이벤트, 갭 계산, 고원 감지, Log Analyzer 도구.</span>
+  </li>
+  <li>
+    <strong>OR-Tools sat_parameters.proto (stable branch)</strong>
+    <span class="meta">github.com/google/or-tools/blob/stable/ortools/sat/sat_parameters.proto</span>
+    <span class="desc">300개+ 파라미터의 원천 프로토버프 정의. 기본값·타입·주석이 모두 포함된 단일 진실 소스.</span>
+  </li>
+  <li>
+    <strong>Laurent Perron — CP-SAT and OR-Tools (EWO Seminar)</strong>
+    <span class="meta">egon.cheme.cmu.edu/ewo/docs/CP-SAT%20and%20OR-Tools.pdf</span>
+    <span class="desc">CP-SAT 수석 개발자의 아키텍처·포트폴리오 설계 강연. 서브솔버 이름, workers 설정 근거 포함.</span>
+  </li>
+  <li>
+    <strong>CP-SAT for Scheduling (Laurent Perron, Scheduling Seminar)</strong>
+    <span class="meta">schedulingseminar.com/presentations/SchedulingSeminar_LaurentPerron.pdf</span>
+    <span class="desc">스케줄링 문제에서의 CP-SAT 적용 전략. 파라미터 선택 근거 및 실무 권고.</span>
+  </li>
+</ul>
+
+<h2 id="github">GitHub · 자료</h2>
+<ul class="refs">
+  <li class="repo">
+    <strong>google/or-tools (stable)</strong>
+    <span class="meta">github.com/google/or-tools</span>
+    <span class="desc">OR-Tools 공식 저장소. sat_parameters.proto, cp_model.py, 예제 파일 모두 포함.</span>
+  </li>
+  <li class="repo">
+    <strong>d-krupke/cpsat-primer</strong>
+    <span class="meta">github.com/d-krupke/cpsat-primer</span>
+    <span class="desc">오픈소스 CP-SAT 입문서. 파라미터 챕터 외에도 모델링, LNS, LBBD 챕터까지 포함. 지속 업데이트 중.</span>
+  </li>
+  <li class="repo">
+    <strong>GitHub Issue #4419 — symmetry_level hard-coded timeout</strong>
+    <span class="meta">github.com/google/or-tools/issues/4419</span>
+    <span class="desc">symmetry_level=3의 1초 제한 버그 리포트. 대형 문제에서 대칭 탐지 완료 불가 확인.</span>
+  </li>
+  <li class="repo">
+    <strong>or-tools-discuss — Custom subsolver combination</strong>
+    <span class="meta">groups.google.com/g/or-tools-discuss/c/pQ4B7QD6ebw</span>
+    <span class="desc">Laurent Perron의 서브솔버 포트폴리오 구성 상세 설명. 서브솔버 이름 목록, workers 임계값 공식 확인 출처.</span>
+  </li>
+</ul>
+
+<!-- ────────────── 흔한 함정 ────────────── -->
+<h2 id="pitfalls">흔한 함정 요약</h2>
+
+<div class="pitfall">
+  <div class="ttl">함정 1: num_workers를 무작정 크게</div>
+  workers 수를 32로 올리면 각 워커가 독립 LP relaxation + 모델 복사본을 유지.
+  대형 모델에서 RAM이 폭발한다. <strong>실제 코어 수 이하로 설정</strong>하고 max_memory_in_mb를 안전망으로 두어라.
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 2: FIXED_SEARCH에서 전략 미완비</div>
+  <code>AddDecisionStrategy</code>에 일부 변수만 포함하고 <code>FIXED_SEARCH</code>를 설정하면
+  나머지 변수가 처리 안 돼 탐색이 막힌다.
+  전략에 없는 변수는 <code>AUTOMATIC</code>으로 보완하거나, 보조 변수 전용 추가 전략을 선언하라.
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 3: relative_gap_limit 조기종료</div>
+  <code>relative_gap_limit = 0.05</code>는 5% 이내면 종료하므로, 큰 인스턴스에서
+  수십만 단위 개선 여지를 남기고 종료될 수 있다.
+  경쟁 상황에서는 <code>0.0</code>(비활성)으로 두고 시간 제한으로만 종료하라.
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 4: 콜백이 병목이 되는 경우</div>
+  <code>log_search_progress</code> 콜백이나 <code>CpSolverSolutionCallback</code>에서
+  무거운 연산을 하면 솔버 전체가 그 시간만큼 블록된다.
+  Laurent Perron: "학생들이 느린 솔버 성능에 좌절했다가 콜백이 시간을 다 먹고 있었음을 발견하는 일이 흔하다."
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 5: conda run 크래시 (OGC 전용)</div>
+  4-worker CP-SAT를 <code>conda run -n ogc2025 python ...</code>으로 실행하면 크래시 발생.
+  <strong>반드시 env python을 직접 호출</strong>:
+  <code>C:/Users/peter/anaconda3/envs/ogc2025/python.exe src/myalgorithm.py</code>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 6: 멀티 워커 = 비결정론</div>
+  <code>num_workers &gt; 1</code>이면 스레드 스케줄링 때문에 같은 시드로도 결과가 달라진다.
+  완전 재현이 필요하면 <code>num_workers=1</code>로 단독 실행하거나,
+  결과를 "최선 솔루션" 기준으로 평가하고 재현성에 집착하지 마라.
+</div>
+
+<div class="footer" style="margin-top:56px;padding-top:20px;border-top:1px solid var(--border);text-align:center;color:var(--dim)">
+  <a href="index.html">← 개요로</a> &nbsp;·&nbsp;
+  <a href="07-incremental.html">07 힌트·증분 →</a>
+  <p style="font-size:.82rem;margin-top:12px">
+    OR-Tools CP-SAT Methodology Research · OGC 2026 워크스페이스<br>
+    출처: CP-SAT Primer (d-krupke), sat_parameters.proto (google/or-tools), Laurent Perron 강연, or-tools-discuss
+  </p>
+</div>
+
+</div>
+</body>
+</html>

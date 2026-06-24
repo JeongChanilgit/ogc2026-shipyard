@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rebuild 진행 결과 — z3-aware LBBD · 2026-06-14</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #1f2937;
+    --border:   #30363d;
+    --accent:   #58a6ff;
+    --accent2:  #3fb950;
+    --warn:     #f0883e;
+    --danger:   #f85149;
+    --muted:    #8b949e;
+    --text:     #e6edf3;
+    --text2:    #b1bac4;
+    --purple:   #a371f7;
+    --yellow:   #d29922;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 28px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin: 32px 0 14px;
+    letter-spacing: -0.2px;
+  }
+  h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent2);
+    margin: 16px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  p { color: var(--text2); margin-bottom: 10px; }
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--text);
+    overflow-x: auto;
+    margin-bottom: 12px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .card-row { display: flex; gap: 14px; margin-bottom: 14px; }
+  .card-row .card { flex: 1; margin-bottom: 0; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 6px;
+    letter-spacing: 0.3px;
+  }
+  .tag-ok    { background: rgba(63,185,80,.18); color: var(--accent2); border: 1px solid rgba(63,185,80,.35); }
+  .tag-warn  { background: rgba(240,136,62,.18); color: var(--warn);   border: 1px solid rgba(240,136,62,.35); }
+  .tag-bad   { background: rgba(248,81,73,.18);  color: var(--danger); border: 1px solid rgba(248,81,73,.35); }
+  .tag-info  { background: rgba(88,166,255,.18); color: var(--accent); border: 1px solid rgba(88,166,255,.35); }
+  .tag-purple{ background: rgba(163,113,247,.18);color: var(--purple); border: 1px solid rgba(163,113,247,.35); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+  .mono { font-family: 'Cascadia Code','Fira Code','Consolas',monospace; font-size: 12px; color: var(--accent); }
+  .text-ok   { color: var(--accent2); font-weight: 600; }
+  .text-warn { color: var(--warn); font-weight: 600; }
+  .text-bad  { color: var(--danger); font-weight: 600; }
+  .text-muted{ color: var(--muted); }
+  ul { color: var(--text2); padding-left: 20px; margin-bottom: 10px; }
+  ul li { margin-bottom: 4px; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .kv-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: baseline; }
+  .kv-key { color: var(--muted); font-size: 12px; min-width: 180px; }
+  .kv-val { color: var(--text); font-size: 13px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .section-number {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .win-cell  { color: var(--accent2); font-weight: 700; }
+  .loss-cell { color: var(--danger); }
+  .highlight-row td { background: rgba(88,166,255,.06) !important; }
+  .w1 { background: rgba(63,185,80,.14); border-color: rgba(63,185,80,.4); }
+  .w2 { background: rgba(88,166,255,.12); border-color: rgba(88,166,255,.4); }
+  .w3 { background: rgba(163,113,247,.12); border-color: rgba(163,113,247,.4); }
+  .w4 { background: rgba(240,136,62,.12); border-color: rgba(240,136,62,.4); }
+  .finding-box {
+    background: rgba(248,81,73,.07);
+    border: 1px solid rgba(248,81,73,.3);
+    border-left: 4px solid var(--danger);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .finding-box p { color: var(--text); }
+  .pivot-box {
+    background: rgba(240,136,62,.07);
+    border: 1px solid rgba(240,136,62,.3);
+    border-left: 4px solid var(--warn);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .pivot-box p { color: var(--text); }
+  .next-box {
+    background: rgba(63,185,80,.07);
+    border: 1px solid rgba(63,185,80,.3);
+    border-left: 4px solid var(--accent2);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .next-box p { color: var(--text); }
+  /* ── 브리핑 박스 (신규) ── */
+  .briefing-box {
+    background: rgba(88,166,255,.07);
+    border: 2px solid rgba(88,166,255,.4);
+    border-left: 5px solid var(--accent);
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-bottom: 24px;
+  }
+  .briefing-box h2 {
+    border-left: none;
+    padding-left: 0;
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--accent);
+    font-size: 16px;
+  }
+  .briefing-box p { color: var(--text); }
+  .briefing-conclusion {
+    background: rgba(163,113,247,.09);
+    border: 1px solid rgba(163,113,247,.35);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .fork-box {
+    background: rgba(210,153,34,.07);
+    border: 1px solid rgba(210,153,34,.35);
+    border-left: 4px solid var(--yellow);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+  }
+  .fork-box p { color: var(--text); }
+  .fork-box ul { color: var(--text); }
+  .closed-tag { background: rgba(248,81,73,.18); color: var(--danger); border: 1px solid rgba(248,81,73,.35); display:inline-block; font-size:11px; font-weight:600; padding:1px 7px; border-radius:10px; }
+  .safe-tag  { background: rgba(63,185,80,.18); color: var(--accent2); border: 1px solid rgba(63,185,80,.35); display:inline-block; font-size:11px; font-weight:600; padding:1px 7px; border-radius:10px; }
+</style>
+</head>
+<body>
+
+<h1>Rebuild 진행 결과 — z3-aware LBBD</h1>
+<div class="subtitle">OGC 2026 Shipyard-Packing Solver &nbsp;·&nbsp; Progress Briefing &amp; Findings &nbsp;·&nbsp; 2026-06-14</div>
+
+<!-- ═══════════════════════ 현황 브리핑 (신규) ═══════════════════════ -->
+<div class="briefing-box">
+  <h2>현황 브리핑 — 2026-06-14</h2>
+
+  <div class="briefing-conclusion">
+    <strong>★ 돌파 성공 — 채택: augment(legacy+unified) = 10/20 (legacy 9/20 격파).</strong> Waves 1–4 (z3-aware LBBD) 구현·측정·기록 완료. 아키텍처 진단(realize barrier, z3 지배)은 데이터로 검증됨. PCAP(packer-calibrated capacity) 포함 모든 점진 레버 소진 후 사용자 지시로 <strong>구조적 대변경</strong>: <code>src/uconstruct.py</code> — CP-SAT 유도 crane-aware greedy constructive(bay·position·time을 블록당 동시 결정, 건설 시 crane-safe 보장 → realize barrier 소멸). Unified standalone 5/20·total obj 1.96M(z1=0 19/20, prob_15 신규 승) → additive min(unified, legacy) <strong>10/20·total 1.38M</strong>. <code>OGC_REBUILD_AUGMENT=1</code>(default ON으로 승격), 가역, 회귀 0(gate best-of).
+  </div>
+
+  <h3 style="margin-top:16px;">스탠딩 요약</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>구성</th>
+        <th>승/20</th>
+        <th>total obj (우리)</th>
+        <th>total obj (경쟁자)</th>
+        <th>비고</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="highlight-row">
+        <td><strong>augment (legacy+unified, paired×2)</strong></td>
+        <td class="text-ok">10 / 20</td>
+        <td class="mono">1,420,000</td>
+        <td class="mono" rowspan="7" style="vertical-align:middle; color:var(--accent2); font-weight:700;">1,139,442</td>
+        <td class="text-ok"><strong>OGC_REBUILD_AUGMENT=1 (default ON 승격)</strong> · 회귀 0 · 신규 승 prob_15</td>
+      </tr>
+      <tr>
+        <td><strong>Legacy baseline</strong> (gate200_v2 @200s paired)</td>
+        <td class="text-warn">9 / 20</td>
+        <td class="mono">1,515,043</td>
+        <td class="text-muted">이전 제출 default; augment에 의해 격파</td>
+      </tr>
+      <tr>
+        <td>Unified standalone</td>
+        <td class="text-warn">5 / 20</td>
+        <td class="mono">1,960,000</td>
+        <td class="text-muted">z1=0 19/20 (best rebuild) · prob_15 신규 WIN · prob_11/3 고착</td>
+      </tr>
+      <tr>
+        <td>W1 standalone @100s</td>
+        <td class="text-bad">1 / 20</td>
+        <td class="mono">12,380,961</td>
+        <td class="text-muted">z1 미보장 치명</td>
+      </tr>
+      <tr>
+        <td>W4 standalone @100s</td>
+        <td class="text-bad">4 / 20</td>
+        <td class="mono">5,159,707</td>
+        <td class="text-muted">z3 과-스필</td>
+      </tr>
+      <tr>
+        <td>W4b (보정) @100s</td>
+        <td class="text-warn">6 / 20</td>
+        <td class="mono">4,159,557</td>
+        <td class="text-muted">timing-in-loop + prob_17 fix</td>
+      </tr>
+      <tr>
+        <td><strong>Additive portfolio</strong> min(rebuild@100, legacy@200)</td>
+        <td class="text-warn">9 / 20</td>
+        <td class="mono">1,512,690</td>
+        <td class="text-muted"><strong>신규 승 0</strong> — legacy와 동일</td>
+      </tr>
+      <tr>
+        <td><strong>W4b + Packer (pkfull200)</strong> @200s</td>
+        <td class="text-warn">6 / 20</td>
+        <td class="mono">3,230,000</td>
+        <td class="text-muted">−22% vs w4b 4.16M; 개선은 already-lost 인스턴스에만 집중</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="badge-row" style="margin-top:4px;">
+    <span class="safe-tag">제출 안전 — OGC_REBUILD default OFF</span>
+    <span class="tag tag-ok">회귀 0</span>
+    <span class="tag tag-info">src/rebuild.py + OGC_W1..W4 env 격리</span>
+  </div>
+  <p style="margin-top:8px; font-size:12px; color:var(--muted);">모든 신규 코드는 <code>src/rebuild.py</code>에 격리. <code>OGC_REBUILD=1</code> 미설정 시 기존 myalgorithm.py 파이프라인이 그대로 동작 — 제출 경로 byte-identical.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §1 요약 -->
+<h2><span class="section-number">1</span>요약 (Executive Summary)</h2>
+
+<div class="badge-row">
+  <span class="tag tag-info">OGC_REBUILD (default OFF)</span>
+  <span class="tag tag-info">OGC_W1 / W2 / W3 / W4</span>
+  <span class="tag tag-ok">제출 리스크 0 — legacy 기본 유지</span>
+  <span class="tag tag-warn">standalone 6/20 @100s (w4b)</span>
+  <span class="tag tag-bad">legacy baseline 9/20</span>
+</div>
+
+<div class="card-row">
+  <div class="card">
+    <h3>무엇을 만들었나</h3>
+    <p><code>src/rebuild.py</code> — Wave 1~4를 구현한 z3-aware LBBD 재설계 모듈. 모든 Wave는 환경변수 <code>OGC_REBUILD=1</code> + <code>OGC_W{1..4}=1</code>로 개별 게이트된다. 플래그 미설정 시 기존 <code>myalgorithm.py</code> 파이프라인이 그대로 동작 — 제출 경로 변경 없음.</p>
+    <ul>
+      <li><strong>W1</strong> ATC 시드 + z3-aware 스필 + SA</li>
+      <li><strong>W2</strong> 패킹 순서 포트폴리오</li>
+      <li><strong>W3</strong> LBBD 베이별 용량 캡-컷 (CP-SAT)</li>
+      <li><strong>W4</strong> 조합 ban-컷 + timing-in-loop</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>핵심 발견</h3>
+    <p>Rebuild는 <strong>realize barrier를 충실히 돌파</strong>한다 — CP-SAT 전역 z3 최소화로 20인스턴스 중 16개에서 z1=0 도달. 그러나 <strong>천장은 크레인-안전 패킹 밀도</strong>다. z1 소거를 위한 블록 퇴거가 z3를 선형적으로 올리고, 경쟁자 수준의 z3는 경쟁자 수준의 패킹 밀도 없이 도달 불가능.</p>
+    <div class="badge-row" style="margin-top:10px;">
+      <span class="tag tag-ok">realize barrier: 돌파</span>
+      <span class="tag tag-bad">패킹 밀도: 천장</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ §2 측정 인프라 -->
+<h2><span class="section-number">2</span>측정 인프라 — Devlog Learning Substrate</h2>
+
+<div class="card">
+  <p>모든 실험 결과와 솔버 내부 시퀀스가 두 개의 전용 스크립트로 기록된다. 단순 벤치마크가 아닌 <strong>학습 기반</strong>으로 설계 — 회고 분석과 가설 검증이 실시간으로 가능하다.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>도구</th>
+        <th>파일</th>
+        <th>기록 단위</th>
+        <th>출력</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>score.py</code></td>
+        <td><code>notes/devlog/score.py</code></td>
+        <td>인스턴스 1개 × 실행 1회</td>
+        <td><code>experiments.jsonl</code> + <code>DEVLOG.md</code> 테이블 행 — 경쟁자 obj와 즉시 비교, 승/패 태그</td>
+      </tr>
+      <tr>
+        <td><code>seqlog.py</code></td>
+        <td><code>notes/devlog/seqlog.py</code></td>
+        <td>LBBD 반복 1라운드</td>
+        <td>stderr의 <code>[REBUILD_SEQ]</code> 트레이스 파싱 → 라운드별 z1/z3/컷 수 추적</td>
+      </tr>
+      <tr>
+        <td><code>REFLECTIONS.md</code></td>
+        <td><code>notes/devlog/REFLECTIONS.md</code></td>
+        <td>세션 1회 (수동)</td>
+        <td>데이터가 가르친 것 — 구조적 진단·재설계 결정·다음 가설 기록</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>강조: 모든 인스턴스 실행 <em>및</em> 모든 솔버 시퀀스가 기록된다. 수치 없이 "됐다/안 됐다" 판정 없음.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §3 기준선 -->
+<h2><span class="section-number">3</span>기준선 (Baseline) — 9/20 현황과 패배 구조</h2>
+
+<div class="card">
+  <div class="kv-row"><span class="kv-key">파이프라인</span><span class="kv-val">gate200_v2 (OGC_SUBMIT_V2=1, default ON) @200s paired-min</span></div>
+  <div class="kv-row"><span class="kv-key">결과</span><span class="kv-val"><strong class="text-ok">9/20 승</strong> · 11패 · 0 infeasible</span></div>
+  <div class="kv-row"><span class="kv-key">총 obj (ours)</span><span class="kv-val">1,515,043</span></div>
+  <div class="kv-row"><span class="kv-key">총 obj (경쟁자)</span><span class="kv-val">1,139,442</span></div>
+  <div class="kv-row"><span class="kv-key">갭</span><span class="kv-val">+375,601 (+33%)</span></div>
+  <div class="kv-row"><span class="kv-key">패배 원인</span><span class="kv-val"><span class="tag tag-bad">z3 지배</span> — 11패 전체가 z3 2~4× 초과 (z1=0이지만 z3가 경쟁자의 수배)</span></div>
+</div>
+
+<h3>baseline_gate200v2_paired 전 인스턴스 결과</h3>
+<table>
+  <thead>
+    <tr>
+      <th>inst</th>
+      <th>ours obj</th>
+      <th>comp obj</th>
+      <th>gap</th>
+      <th>z1</th>
+      <th>z3</th>
+      <th>wall(s)</th>
+      <th>결과</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="mono">prob_1</td><td>1,499</td><td>9,785</td><td class="text-ok">−8,286</td><td>0</td><td>2</td><td>126</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_2</td><td>3,690</td><td>6,624</td><td class="text-ok">−2,934</td><td>0</td><td>15</td><td>129</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_3</td><td>76,630</td><td>50,642</td><td class="text-bad">+25,988</td><td>0</td><td>407</td><td>128</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_4</td><td>46,011</td><td>16,917</td><td class="text-bad">+29,094</td><td>0</td><td>154</td><td>129</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_5</td><td>64,402</td><td>70,580</td><td class="text-ok">−6,178</td><td>0</td><td>360</td><td>120</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_6</td><td>79,517</td><td>72,400</td><td class="text-bad">+7,117</td><td>0</td><td>461</td><td>120</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_7</td><td>74,997</td><td>86,021</td><td class="text-ok">−11,024</td><td>0</td><td>394</td><td>125</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_8</td><td>11,252</td><td>12,908</td><td class="text-ok">−1,656</td><td>0</td><td>8</td><td>112</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_9</td><td>64,675</td><td>80,034</td><td class="text-ok">−15,359</td><td>0</td><td>382</td><td>164</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_10</td><td>85,162</td><td>98,957</td><td class="text-ok">−13,795</td><td>0</td><td>578</td><td>168</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_11</td><td>45,703</td><td>31,899</td><td class="text-bad">+13,804</td><td>0</td><td>338</td><td>171</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_12</td><td>104,440</td><td>94,110</td><td class="text-bad">+10,330</td><td>0</td><td>702</td><td>170</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_13</td><td>104,837</td><td>76,685</td><td class="text-bad">+28,152</td><td>0</td><td>689</td><td>170</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_14</td><td>104,881</td><td>67,302</td><td class="text-bad">+37,579</td><td>0</td><td>777</td><td>190</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_15</td><td>50,783</td><td>48,206</td><td class="text-warn">+2,577</td><td>0</td><td>226</td><td>172</td><td class="loss-cell">loss <span class="text-muted">(closest)</span></td></tr>
+    <tr><td class="mono">prob_16</td><td>42,900</td><td>50,047</td><td class="text-ok">−7,147</td><td>0</td><td>205</td><td>131</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_17</td><td>78,233</td><td>62,070</td><td class="text-bad">+16,163</td><td>0</td><td>405</td><td>170</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_18</td><td>103,314</td><td>40,206</td><td class="text-bad">+63,108</td><td>0</td><td>726</td><td>174</td><td class="loss-cell">loss <span class="text-muted">(z3 4×)</span></td></tr>
+    <tr><td class="mono">prob_19</td><td>62,980</td><td>72,951</td><td class="text-ok">−9,971</td><td>0</td><td>368</td><td>166</td><td class="win-cell">WIN</td></tr>
+    <tr class="highlight-row"><td class="mono">prob_20</td><td>309,137</td><td>91,096</td><td class="text-bad">+218,041</td><td class="text-bad">7</td><td>898</td><td>189</td><td class="loss-cell">loss <span class="text-muted">(z1 구조)</span></td></tr>
+  </tbody>
+</table>
+
+<div class="finding-box">
+  <p><strong>진단:</strong> 11패 중 전체를 z3 지배로 설명할 수 있다. z1=0은 19/20에서 달성됐으나 우리의 z3가 경쟁자의 2~4배다. 경쟁자는 5~47초 안에 z1=0 + 낮은 z3를 동시 달성 → 탐색 시간 문제가 아닌 <strong>배치 품질(construction quality)</strong> 문제. prob_20만 z1=7 구조적 고착.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §4 Wave별 결과 -->
+<h2><span class="section-number">4</span>Wave별 결과 + 학습</h2>
+
+<div class="card w1">
+  <h3>W1 — ATC 시드 + z3-aware 스필 + SA</h3>
+  <div class="badge-row">
+    <span class="tag tag-info">OGC_W1=1</span>
+    <span class="tag tag-bad">1/20 @100s</span>
+    <span class="tag tag-ok">feasible 20/20</span>
+  </div>
+  <ul>
+    <li>ATC(Apparent Tardiness Cost) 순서로 베이 시드를 만들고, 초과 용량 베이에서 z3 비용이 가장 싼 블록을 선호하지 않는 베이로 스필한 뒤 SA로 로컬 개선.</li>
+    <li><strong>데이터가 가르친 것 ①:</strong> z1=0 미보장이 치명적이다. 9개 인스턴스에서 z1&gt;0이 남았고 (prob_20은 z1=362 재앙), w1≈17~27K이므로 z1 1단위가 obj를 수만 단위 올린다 → z3 최적화 전에 z1=0 구조적 보장이 전제.</li>
+    <li><strong>데이터가 가르친 것 ②:</strong> 스필의 z3 비용이 경쟁자 대비 ~5배. 고정 시각(pessimistic) 측정 + 느슨한 패킹이 불필요한 스필을 유발.</li>
+    <li><strong>결정:</strong> 두 단계 분리 — Phase 1 = 단조 z1 하강 (EDD fast floor) → z1=0 보장 후 Phase 2 = z3 하강 (SA + W2 포트폴리오). prob_20만 z1=0 불가 시 legacy fallback.</li>
+  </ul>
+</div>
+
+<h3>w1_t100 전 인스턴스 결과</h3>
+<table>
+  <thead>
+    <tr>
+      <th>inst</th>
+      <th>ours obj</th>
+      <th>comp obj</th>
+      <th>gap</th>
+      <th>z1</th>
+      <th>z3</th>
+      <th>wall(s)</th>
+      <th>결과</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="mono">prob_1</td><td>129,259</td><td>9,785</td><td class="text-bad">+119,474</td><td class="text-bad">4</td><td>58</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_2</td><td>3,690</td><td>6,624</td><td class="text-ok">−2,934</td><td>0</td><td>15</td><td>85</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_3</td><td>111,150</td><td>50,642</td><td class="text-bad">+60,508</td><td>0</td><td>515</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_4</td><td>102,773</td><td>16,917</td><td class="text-bad">+85,856</td><td class="text-warn">2</td><td>232</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_5</td><td>129,935</td><td>70,580</td><td class="text-bad">+59,354</td><td class="text-warn">1</td><td>498</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_6</td><td>196,483</td><td>72,400</td><td class="text-bad">+124,083</td><td class="text-warn">2</td><td>815</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_7</td><td>154,866</td><td>86,021</td><td class="text-bad">+68,845</td><td>0</td><td>865</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_8</td><td>30,224</td><td>12,908</td><td class="text-bad">+17,316</td><td>0</td><td>134</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_9</td><td>117,725</td><td>80,034</td><td class="text-bad">+37,691</td><td>0</td><td>728</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_10</td><td>135,715</td><td>98,957</td><td class="text-bad">+36,758</td><td class="text-warn">1</td><td>684</td><td>86</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_11</td><td>80,458</td><td>31,899</td><td class="text-bad">+48,559</td><td>0</td><td>546</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_12</td><td>185,584</td><td>94,110</td><td class="text-bad">+91,474</td><td>0</td><td>1,136</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_13</td><td>202,849</td><td>76,685</td><td class="text-bad">+126,164</td><td class="text-warn">2</td><td>1,153</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_14</td><td>277,531</td><td>67,302</td><td class="text-bad">+210,229</td><td class="text-warn">5</td><td>1,362</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_15</td><td>88,043</td><td>48,206</td><td class="text-bad">+39,837</td><td class="text-warn">1</td><td>366</td><td>86</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_16</td><td>99,425</td><td>50,047</td><td class="text-bad">+49,378</td><td>0</td><td>605</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_17</td><td>78,233</td><td>62,070</td><td class="text-bad">+16,163</td><td>0</td><td>405</td><td>76</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_18</td><td>329,474</td><td>40,206</td><td class="text-bad">+289,268</td><td class="text-bad">14</td><td>984</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_19</td><td>107,912</td><td>72,951</td><td class="text-bad">+34,961</td><td>0</td><td>688</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr class="highlight-row"><td class="mono">prob_20</td><td>9,819,632</td><td>91,096</td><td class="text-bad">+9,728,536</td><td class="text-bad">362</td><td>1,066</td><td>86</td><td class="loss-cell">loss (catastrophic)</td></tr>
+  </tbody>
+</table>
+
+<div class="card w2">
+  <h3>W2 — 패킹 순서 포트폴리오</h3>
+  <div class="badge-row">
+    <span class="tag tag-info">OGC_W2=1</span>
+    <span class="tag tag-warn">단독 측정 없음 (W4 스택에 포함)</span>
+  </div>
+  <ul>
+    <li>여러 블록 정렬 순서(EDD, ATC, 면적, 높이)로 <code>_decode_bay</code>를 반복 호출해 베이별 최선 배치를 탐색.</li>
+    <li><strong>데이터가 가르친 것:</strong> prob_3에서 W2가 z3를 515→357로 감소시켰다 — 더 나은 패킹 = 강제 직렬화 감소 = 스필 감소. 그러나 5배의 디코드 비용이 z1 소거 단계의 예산을 잠식(prob_3 최종 z1=2). 결론: W2 포트폴리오는 z1=0 보장 후 Phase 2에만 허용.</li>
+  </ul>
+</div>
+
+<div class="card w3">
+  <h3>W3 — LBBD 베이별 용량 캡-컷 (CP-SAT)</h3>
+  <div class="badge-row">
+    <span class="tag tag-info">OGC_W3=1</span>
+    <span class="tag tag-ok">z3는 CP-SAT로 해결</span>
+    <span class="tag tag-bad">z1 barrier 확인</span>
+  </div>
+  <ul>
+    <li><code>_cpsat_assignment</code>로 전역 z3 최소 배정을 구하고 디코드 오라클을 돌린다. tardy 베이의 면적 캡을 반복적으로 축소(LBBD cap-cut).</li>
+    <li><strong>데이터가 가르친 것 ①:</strong> prob_1에서 z3=2 달성 — 경쟁자(z3=8)보다 낮다! CP-SAT는 z3를 경쟁자 수준으로 풀 수 있다. 그러나 z1=6이 남았다. 즉 <em>배정은 최적인데 디코더가 크레인 직렬화를 해소 못 하는 것</em>.</li>
+    <li><strong>데이터가 가르친 것 ②:</strong> 면적 캡 절감(area relaxation)은 필요조건이지 충분조건이 아니다 — CP-SAT가 캡을 만족하는 크레인-충돌 배정을 반복 발견. 진동(oscillation)하고 수렴하지 않음. 해법은 W4의 조합 컷.</li>
+    <li><strong>버그 발견:</strong> Phase-2 SA가 예산을 독점해 prob_3에서 LBBD가 한 번도 실행되지 않음 → 순서 재배치: LBBD 우선, SA는 마지막 polish.</li>
+  </ul>
+</div>
+
+<div class="card w4">
+  <h3>W4 — 조합 ban-컷 + timing-in-loop</h3>
+  <div class="badge-row">
+    <span class="tag tag-info">OGC_W4=1</span>
+    <span class="tag tag-warn">4/20 @100s · 6/20 @100s (w4b)</span>
+    <span class="tag tag-bad">z3 과-스필</span>
+  </div>
+  <ul>
+    <li>캡-컷이 stall하면 tardy 베이에서 z3-최저 블록을 퇴거(evict)하는 조합 컷으로 전환. timing-in-loop: 고정 시각 z1 ≤ THRESH일 때 per-bay timing oracle을 호출해 진짜 z1을 확인한 뒤 컷 생성.</li>
+    <li><strong>데이터가 가르친 것 ①:</strong> ban-컷이 캡-컷이 막힌 곳을 뚫는다 — prob_3 z1=0이 3라운드에서 달성. 하지만 6번의 ban이 필요해 z3가 105→599로 급등 (baseline 407보다 나쁨).</li>
+    <li><strong>데이터가 가르친 것 ②:</strong> timing oracle이 z1을 거의 움직이지 않는다 (prob_5: fixed_z1=26 → true=24). 지연은 타이밍 문제가 아닌 <strong>기하적 과밀(geometric over-subscription)</strong>. 스태거링으로 해소되는 z1이 거의 없어서 "필요 없는 퇴거"가 줄지 않는다.</li>
+    <li><strong>데이터가 가르친 것 ③:</strong> prob_14에서 27라운드 ban이 obj를 600,128(z1=27)로 올림 — 수렴 실패 시 legacy fallback 예산이 고갈.</li>
+  </ul>
+</div>
+
+<h3>w4_t100 전 인스턴스 결과</h3>
+<table>
+  <thead>
+    <tr>
+      <th>inst</th>
+      <th>ours obj</th>
+      <th>comp obj</th>
+      <th>gap</th>
+      <th>z1</th>
+      <th>z3</th>
+      <th>wall(s)</th>
+      <th>결과</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="mono">prob_1</td><td>30,590</td><td>9,785</td><td class="text-bad">+20,805</td><td class="text-warn">1</td><td>2</td><td>44</td><td class="loss-cell">loss <span class="text-muted">(z1 마지막 1)</span></td></tr>
+    <tr><td class="mono">prob_2</td><td>3,690</td><td>6,624</td><td class="text-ok">−2,934</td><td>0</td><td>15</td><td>49</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_3</td><td>95,010</td><td>50,642</td><td class="text-bad">+44,368</td><td>0</td><td>599</td><td>85</td><td class="loss-cell">loss <span class="text-muted">(z3 과-스필)</span></td></tr>
+    <tr><td class="mono">prob_4</td><td>102,773</td><td>16,917</td><td class="text-bad">+85,856</td><td class="text-bad">2</td><td>232</td><td>56</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_5</td><td>103,699</td><td>70,580</td><td class="text-bad">+33,118</td><td>0</td><td>656</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_6</td><td>152,976</td><td>72,400</td><td class="text-bad">+80,576</td><td>0</td><td>998</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_7</td><td>87,660</td><td>86,021</td><td class="text-warn">+1,639</td><td>0</td><td>485</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_8</td><td>11,252</td><td>12,908</td><td class="text-ok">−1,656</td><td>0</td><td>8</td><td>85</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_9</td><td>95,715</td><td>80,034</td><td class="text-bad">+15,681</td><td>0</td><td>606</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_10</td><td>96,215</td><td>98,957</td><td class="text-ok">−2,742</td><td>0</td><td>705</td><td>85</td><td class="win-cell">WIN</td></tr>
+    <tr><td class="mono">prob_11</td><td>77,896</td><td>31,899</td><td class="text-bad">+45,997</td><td>0</td><td>578</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_12</td><td>147,728</td><td>94,110</td><td class="text-bad">+53,618</td><td>0</td><td>1,101</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_13</td><td>211,228</td><td>76,685</td><td class="text-bad">+134,543</td><td class="text-warn">2</td><td>1,231</td><td>84</td><td class="loss-cell">loss</td></tr>
+    <tr class="highlight-row"><td class="mono">prob_14</td><td>600,128</td><td>67,302</td><td class="text-bad">+532,826</td><td class="text-bad">27</td><td>844</td><td>85</td><td class="loss-cell">loss <span class="text-muted">(수렴실패)</span></td></tr>
+    <tr><td class="mono">prob_15</td><td>68,204</td><td>48,206</td><td class="text-bad">+19,998</td><td>0</td><td>353</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_16</td><td>66,208</td><td>50,047</td><td class="text-bad">+16,161</td><td>0</td><td>406</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_17</td><td>78,233</td><td>62,070</td><td class="text-bad">+16,163</td><td>0</td><td>405</td><td>91</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_18</td><td>177,812</td><td>40,206</td><td class="text-bad">+137,606</td><td>0</td><td>1,288</td><td>85</td><td class="loss-cell">loss</td></tr>
+    <tr><td class="mono">prob_19</td><td>65,499</td><td>72,951</td><td class="text-ok">−7,452</td><td>0</td><td>363</td><td>85</td><td class="win-cell">WIN</td></tr>
+    <tr class="highlight-row"><td class="mono">prob_20</td><td>2,887,191</td><td>91,096</td><td class="text-bad">+2,796,095</td><td class="text-bad">104</td><td>747</td><td>86</td><td class="loss-cell">loss</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════ §5 핵심 발견 -->
+<h2><span class="section-number">5</span>핵심 발견 — 천장 = 패킹 밀도, 점진 레버 소진</h2>
+
+<div class="pivot-box">
+  <p><strong>Pivotal conclusion (2026-06-14 REFLECTIONS):</strong> Legacy와 rebuild 모두 동일한 천장에 막혀 있다 — <strong>크레인-안전 패킹 밀도(crane-safe packing density)</strong>. Rebuild는 realize barrier를 충실히 돌파(16/20에서 z1=0)하지만, 기하적 과밀을 해소하는 유일한 방법인 퇴거가 z3를 올린다. 탐색을 더 해도 이 구조를 벗어날 수 없다.</p>
+</div>
+
+<h3>EXACT decoder 실험 — 레버 종료 (closed)</h3>
+<div class="card">
+  <p>프로브에서 exact <code>_decode_bay</code>가 raster보다 z1을 25–35% 더 해소했다 (prob_3: 23→15, prob_5: 92→65, prob_12: 484→370). 기계적 원인: exact <code>_decode_bay</code>는 entry time을 순서화(sequence)하는 반면 raster의 <code>_fixed_time_decode</code>는 entry=R 고정 → 강제 시간 공존 → 크레인 충돌. 이것이 아키텍처가 명시한 "진짜 오라클"이었고 raster 대체가 z3 천장의 원인이었다.</p>
+  <p>그러나 exact@300 결과 (SA 끄고 전 예산을 LBBD에 배정):</p>
+  <table>
+    <thead><tr><th>inst</th><th>exact@300 z1</th><th>exact@300 z3</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">prob_3</td><td class="text-ok">0</td><td class="text-warn">551</td><td>raster 534와 사실상 동일</td></tr>
+      <tr><td class="mono">prob_5</td><td class="text-ok">0</td><td class="text-bad">652</td><td>raster 469보다 나쁨; tl=120의 z3=214는 미수렴 스냅샷</td></tr>
+      <tr><td class="mono">prob_12</td><td class="text-bad">27</td><td>—</td><td>미수렴 — z1=0 도달에 동일한 eviction 필요</td></tr>
+    </tbody>
+  </table>
+  <p>tl=120의 "z3=214"는 퇴거 중간 스냅샷이었고 z1=0에 도달하면 동일한 퇴거를 치러야 한다. exact decoder는 z1을 <em>더 빠르게</em> 해소하지만 최종 z3는 동일하거나 더 나쁘다. <span class="closed-tag">레버 종료</span></p>
+</div>
+
+<h3>Additive 포트폴리오 — 신규 승 0</h3>
+<div class="card">
+  <p>per-instance min(rebuild@100, legacy@200) = 9/20 = legacy와 동일, total obj 1,512,690 (legacy 1,515,043과 오차 수준). rebuild의 개선들 (e.g. prob_4: 46,011→43,658) 은 <em>전부</em> 경쟁자에 어차피 지는 인스턴스에 떨어져 승리로 전환되지 않는다. 신규 승 0.</p>
+</div>
+
+<h3>결정적 증거 — prob_3 z2·z3 트레이드오프</h3>
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>항목</th>
+        <th>경쟁자</th>
+        <th>우리 (baseline)</th>
+        <th>우리 (W4)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>z2 (imbalance)</td>
+        <td class="text-bad">3,654</td>
+        <td class="text-ok">~700</td>
+        <td class="text-ok">~700</td>
+      </tr>
+      <tr>
+        <td>z3 (preference dev)</td>
+        <td class="text-ok">94</td>
+        <td class="text-warn">407</td>
+        <td class="text-bad">599</td>
+      </tr>
+      <tr>
+        <td>obj gap vs 경쟁자</td>
+        <td>—</td>
+        <td class="text-bad">+25,988</td>
+        <td class="text-bad">+44,368</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>해석:</strong> w3≈133 ≫ w2≈5이므로 z3 갭 468×133 ≈ 62,000이 obj 갭의 전부다. 경쟁자는 z2↑(불균형 허용) 대신 z3↓(선호 베이 유지) — 더 조밀한 crane-safe 패킹으로만 가능. append-only 그리디 디코더는 배치된 블록 재배치 불가 → 더 나은 패킹은 연구급 빌드.</p>
+</div>
+
+<div class="card-row">
+  <div class="card">
+    <h3>관찰 1 — timing oracle은 z1을 거의 안 움직인다</h3>
+    <p>per-bay timing oracle을 loop에 적용해도 prob_5에서 fixed_z1=26 → true=24. 지연은 타이밍 문제가 아니라 <strong>기하적 과밀</strong> — 어떤 타이밍에도 블록들이 크레인-안전하게 공존 불가. 레버 소진.</p>
+  </div>
+  <div class="card">
+    <h3>관찰 2 — legacy가 rebuild보다 z3가 낮다</h3>
+    <p>prob_3: legacy z3=407 vs W4 z3=599. 동일한 raster 디코더를 쓰는 legacy의 Front-B relocate+swap이 ban-컷보다 z3 탐색에 효과적. 고정 시각 과다계산이 불필요한 퇴거를 유발. 레버 소진.</p>
+  </div>
+</div>
+
+<div class="finding-box">
+  <p><strong>구조적 결론:</strong> 배정 최적화(W3 CP-SAT)로 z3는 경쟁자 수준(prob_1 z3=2)에 도달 가능함이 증명됐다. 병목은 그 배정을 <em>실현</em>할 때 크레인 직렬화를 발생시키지 않는 디코더 — 즉 <strong>더 조밀한 크레인-안전 패킹</strong>이 유일한 진짜 레버다. 이 범주 내의 모든 점진적 레버(타이밍·exact decode·컷 전략·용량 보정·SA)는 전부 소진됐다.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §5b 돌파: unified constructive + additive 채택 -->
+<h2><span class="section-number">★</span>돌파: unified constructive + additive (채택)</h2>
+
+<div class="next-box">
+  <p><strong>배경:</strong> PCAP(packer-calibrated capacity) 포함 incremental 레버 전부 소진 후 사용자 지시 — "큰 변화로 타파". CP-SAT-assignment-first + cut 루프 아키텍처를 전면 교체.</p>
+</div>
+
+<div class="card">
+  <h3>src/uconstruct.py — CP-SAT 유도 crane-aware greedy constructive</h3>
+  <div class="badge-row">
+    <span class="tag tag-info">OGC_REBUILD_UNIFIED</span>
+    <span class="tag tag-ok">z1=0 by construction</span>
+    <span class="tag tag-ok">realize barrier 소멸</span>
+  </div>
+  <p><strong>구조적 변화:</strong> 블록을 criticality 순(tight-slack 우선)으로 처리하면서 <strong>(bay, position, entry-time)을 동시에 결정</strong> — marginal cost <code>w1·tardiness + w2·Δz2 + w3·pref-dev</code> 최소화, crane-safe LCA placement. 크레인-가능한 위치에만 배치되므로 realize barrier가 구조적으로 존재하지 않는다. z1/z2/z3를 블록당 균형 결정(기존 CP-SAT는 z1-blind).</p>
+  <p><strong>CP-SAT bay-target 합성:</strong> 순수 greedy는 z2+z3 조합 최적을 못 찾음(prob_1 z3=452 → 대참사). 해법: uconstruct가 먼저 CP-SAT 전역 z2+z3 최적 배정을 구하고, 블록별로 그 target bay를 우선 시도 — z1=0으로 실현되면 커밋(CP-SAT 최적 상속), 아니면 최소 스필. 결과: CP-SAT의 z2+z3 전역 최적과 greedy의 z1=0-by-construction이 처음으로 결합됨.</p>
+</div>
+
+<div class="card">
+  <h3>단독 / additive 결과</h3>
+  <table>
+    <thead>
+      <tr><th>구성</th><th>승/20</th><th>total obj</th><th>z1=0 달성</th><th>비고</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Unified standalone @200s</td>
+        <td class="text-warn">5 / 20</td>
+        <td class="mono">1,960,000</td>
+        <td class="text-ok">19 / 20</td>
+        <td><span class="tag tag-ok">신규 WIN prob_15 (46,751 vs legacy 50,783)</span> — 최고 rebuild obj</td>
+      </tr>
+      <tr class="highlight-row">
+        <td><strong>Additive min(unified, legacy)</strong></td>
+        <td class="text-ok"><strong>10 / 20</strong></td>
+        <td class="mono"><strong>1,380,000</strong></td>
+        <td class="text-ok">—</td>
+        <td>legacy 9/20·1.52M 격파; prob_15 안정 추가</td>
+      </tr>
+    </tbody>
+  </table>
+  <p><strong>Paired ×2 확인:</strong> augment(OGC_REBUILD_AUGMENT) 두 번 실행 모두 <strong>10/20</strong>, 동일 승 집합 <code>{1, 2, 5, 7, 8, 9, 10, 15, 16, 19}</code> — prob_15가 안정적 반전. default-path smoke: prob_15 WIN 46,751(신규), prob_1 보존 1,499.</p>
+  <p><strong>통합 방식 (OGC_REBUILD_AUGMENT):</strong> uconstruct를 ≤45s(또는 0.35T) 선실행 → 검증된 solution 보관 → legacy 파이프라인 진행(잔여 wall) → 최종 gate에서 unified solution을 candidate로 추가 → best-of 반환. Legacy보다 나쁠 수 없는 구조(zero regression by construction). <span class="safe-tag">default ON 승격</span> <span class="tag tag-ok">가역: OGC_REBUILD_AUGMENT=0</span></p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §5c 13/20 목표까지 잔여 -->
+<h2><span class="section-number">★+</span>13/20 목표까지 잔여 — 프론티어</h2>
+
+<div class="finding-box">
+  <p><strong>현재 패배 인스턴스 (10개) — 전부 z3 격차:</strong> prob_3 / 4 / 6 / 11 / 12 / 13 / 14 / 17 / 18 / 20. 이 인스턴스들에서 legacy도 unified도 경쟁자에 근접하지 못한다 — z3 갭 14K~29K+, obj 배율 1.4×~3×+. 구체적으로:</p>
+  <ul style="margin-top:8px;">
+    <li>Unified가 이들 인스턴스에서 내는 obj는 경쟁자 대비 <strong>40~100%+ 초과</strong> — target bay 합성이 over-subscribed preferred bay에서 스필을 충분히 줄이지 못함.</li>
+    <li>Legacy도 동일 구조로 패배 — Front-B relocate+swap이 z3를 더 이상 내릴 수 없는 local minimum에 수렴.</li>
+    <li>공통 근본 원인: preferred bay의 crane-safe 공존 블록 수가 경쟁자 대비 적음 → 불가피한 과-스필 → z3가 2~4× 높음.</li>
+  </ul>
+  <p style="margin-top:8px;"><strong>13/20 달성 프론티어:</strong> (a) 더 조밀한 crane-aware 패킹(블록 공존 수를 경쟁자 수준으로 올리는 packing/sequencing 알고리즘), 또는 (b) unified의 per-instance 버그 수정(prob_11 과-구독, prob_3 고착) + CP-SAT target 예산 증가로 가까운 flip 획득. 어느 쪽도 현재의 incremental 레버 범위를 벗어난 연구급 빌드가 필요하다.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §6 다음 방향 -->
+<h2><span class="section-number">6</span>다음 방향 — 사용자 결정 포인트</h2>
+
+<div class="fork-box">
+  <p><strong>경쟁자 13+/20 목표까지 남은 갭은 "crane-safe 패킹/시퀀싱 밀도" 한 가지다.</strong> 아래 3개 방향 중 하나를 선택해야 한다.</p>
+  <ul style="margin-top:12px;">
+    <li style="margin-bottom:14px;">
+      <strong>A. 더 나은 패킹/배치 알고리즘 연구</strong> — repositioning packer 또는 crane-anticipatory 배치 (블록 배치 시 j≥k 크레인 접근 방향을 예측해 같은 베이에 더 많은 블록이 공존 가능하도록 구성). 유일한 점수 레버. 단, append-only 그리디의 구조적 한계를 넘어야 하므로 <strong>고비용·불확실</strong> — 연구급 빌드.
+    </li>
+    <li style="margin-bottom:14px;">
+      <strong>B. Rebuild를 gated 실험으로 보존, legacy z3 미세개선으로 피벗</strong> — <code>src/rebuild.py</code>와 env 게이트는 그대로 두고, legacy Front-B relocate+swap의 z3 탐색 범위 확장이나 z3-aware 초기 배정 시드 개선 등 기존 파이프라인 위의 소폭 레버를 탐색. 안전하지만 승 추가 폭은 제한적.
+    </li>
+    <li>
+      <strong>C. 현 상태(9/20) 수용</strong> — 추가 개발 없이 gate200_v2 default 파이프라인으로 대회 임박. rebuild 실험 기록은 학습 자산으로 보존.
+    </li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════ §7 현재 상태 레버 요약 -->
+<h2><span class="section-number">7</span>레버 현황 요약</h2>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>레버</th>
+        <th>상태</th>
+        <th>결과</th>
+        <th>판정</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>W1 ATC 시드 + 스필 + SA</td>
+        <td><span class="tag tag-ok">구현 완료</span></td>
+        <td>1/20 — z1 미보장 치명</td>
+        <td><span class="closed-tag">소진</span></td>
+      </tr>
+      <tr>
+        <td>W2 순서 포트폴리오</td>
+        <td><span class="tag tag-ok">구현 완료</span></td>
+        <td>z3 부분 개선, 예산 잠식</td>
+        <td><span class="closed-tag">소진</span></td>
+      </tr>
+      <tr>
+        <td>W3 LBBD 캡-컷 (CP-SAT)</td>
+        <td><span class="tag tag-ok">구현 완료</span></td>
+        <td>z3 경쟁자 수준 달성 (prob_1=2); z1 barrier 잔존</td>
+        <td><span class="tag tag-ok">z3 solver 확인</span></td>
+      </tr>
+      <tr>
+        <td>W4 ban-컷 + timing loop</td>
+        <td><span class="tag tag-ok">구현 완료</span></td>
+        <td>6/20 (w4b) — z1 소거되나 z3 과-스필</td>
+        <td><span class="closed-tag">소진</span></td>
+      </tr>
+      <tr>
+        <td>Exact <code>_decode_bay</code> (OGC_REBUILD_EXACT)</td>
+        <td><span class="tag tag-ok">실험 완료</span></td>
+        <td>@300 prob_5 z3=652 (raster 469보다 나쁨), prob_12 미수렴</td>
+        <td><span class="closed-tag">레버 종료</span></td>
+      </tr>
+      <tr>
+        <td>Timing-in-loop</td>
+        <td><span class="tag tag-ok">실험 완료</span></td>
+        <td>prob_5 fixed_z1=26→true=24 — 기하적 과밀이 주원인, 타이밍 아님</td>
+        <td><span class="closed-tag">소진</span></td>
+      </tr>
+      <tr>
+        <td>Additive 포트폴리오</td>
+        <td><span class="tag tag-ok">측정 완료</span></td>
+        <td>9/20 = legacy, 신규 승 0, delta obj −2,353 (노이즈)</td>
+        <td><span class="closed-tag">소진</span></td>
+      </tr>
+      <tr>
+        <td>Repositioning Packer (<code>src/packer.py</code>, OGC_REBUILD_PACKER)</td>
+        <td><span class="tag tag-ok">구현 완료 (pkfull200)</span></td>
+        <td>total obj −22% (4.16M→3.23M); 승-수 6/20 불변; prob_5/6/9 경로 회귀</td>
+        <td><span class="tag tag-warn">부분 레버 — 과-구독 해소 불가</span></td>
+      </tr>
+      <tr>
+        <td>Packer-calibrated capacity (PCAP, cap_alpha 실측)</td>
+        <td><span class="tag tag-ok">실험 완료</span></td>
+        <td>mixed — prob_5 −22.8K, prob_3 회귀, prob_11 회귀</td>
+        <td><span class="closed-tag">소진</span></td>
+      </tr>
+      <tr class="highlight-row">
+        <td><strong>Unified constructive + additive (OGC_REBUILD_AUGMENT)</strong></td>
+        <td><span class="tag tag-ok">채택·default ON</span></td>
+        <td><strong>10/20 paired×2 확정; prob_15 신규 WIN; 회귀 0</strong></td>
+        <td><span class="tag tag-ok">★ 돌파 채택</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ §8 패킹 연구 → 패커 -->
+<h2><span class="section-number">8</span>패킹 연구 → 패커 (research breakthrough cycle)</h2>
+
+<div class="pivot-box">
+  <p><strong>트리거:</strong> "3번 실패 가설 → 연구" 규칙. timing-in-loop / exact decode / cut strategy / 용량 보정 / 순서 포트폴리오 5개 가설이 연속 기각된 시점에서 문헌 연구로 피벗.</p>
+</div>
+
+<div class="card">
+  <h3>OGC == 출판된 Shipyard Block Spatial Scheduling (SSP)</h3>
+  <p>이 문제는 공개 학술 도메인의 <strong>Shipyard Block Spatial Scheduling (SSP)</strong>과 동일하다. 적용 가능한 방법이 이미 존재한다.</p>
+  <table>
+    <thead>
+      <tr><th>발견</th><th>출처</th><th>적용</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>LCA (Largest-Contact-Area) 배치</strong> — 후보 위치 중 이미 배치된 블록+벽과의 접촉 면적이 최대인 위치 선택. BL "가장 낮은 y,x" 타이브레이크 대체. 간격 낭비 최소화 → 밀도 향상.</td>
+        <td>Shang &amp; Gu 2017 (BCA/LCA); Koh 2008</td>
+        <td class="text-ok">핵심 레버</td>
+      </tr>
+      <tr>
+        <td><strong>Diagonal-fill (BL+TR 앵커)</strong> — BL 앵커만이 아니라 TR·TL·BR도 고려해 후보 집합 생성 ("양방향 슬라이드"). 빈 공간의 대각선 구석 채우기.</td>
+        <td>Kwon &amp; Lee 2015 (Comp&amp;IE)</td>
+        <td class="text-ok">핵심 레버</td>
+      </tr>
+      <tr>
+        <td><strong>Extreme-Point 후보 집합</strong> — 베이 모서리 ∪ 배치된 블록의 특징점(TL,TR,BL,BR) 전체를 후보 집합으로. BL-abut 단일 후보보다 훨씬 조밀.</td>
+        <td>Gardeyn 2026 (MergeDJD/Sparrow)</td>
+        <td class="text-ok">후보 생성</td>
+      </tr>
+      <tr>
+        <td><strong>Jostle / overlap-min ILS</strong> — 교대 좌우 재삽입 패스(shaking)로 간격 재충전. 느린 개선 refiner.</td>
+        <td>Martinez-Sykora 2018; Imamichi 2009</td>
+        <td class="text-warn">보조 (느림)</td>
+      </tr>
+      <tr>
+        <td><strong>경쟁자 유력 방법</strong> — He, Hong, Kim 2024 (J. Scheduling) "Quick and situ-aware spatiotemporal scheduling": phase 1 = bay + start-date 배정, phase 2 = 정확한 (x,y) + 방향. 5–47초 근-최적 프로파일과 일치. 우리 재설계와 동일 분해 구조.</td>
+        <td>He 2024 (Hyundai 검증)</td>
+        <td class="text-warn">경쟁자 분석</td>
+      </tr>
+      <tr>
+        <td><strong>크레인 j≥k 제약은 SSP 문헌에 없다</strong> — 기존 SSP 논문 전체가 이 제약을 다루지 않는다. footprint-raster(fftconvolve) BLF는 층 인식이 없어 크레인-불안전한 배치를 생성. 레이어-인식 raster가 필수.</td>
+        <td>내부 분석 (prob_3/5/12/20)</td>
+        <td class="text-bad">주의 — naive 적용 금지</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:8px; font-size:12px; color:var(--muted);">블록은 대부분 2-LAYER (prob_3 86/100, prob_5 123/150, prob_12 171/200, prob_20 254/300) → crane j≥k 하강 규칙이 실질적으로 작동 — 기존 <code>_ft_search_pos</code> / <code>fastfloor._verify</code> 로직 보존 필수.</p>
+</div>
+
+<div class="card">
+  <h3>src/packer.py 구현 결과</h3>
+  <div class="badge-row">
+    <span class="tag tag-info">OGC_REBUILD_PACKER</span>
+    <span class="tag tag-ok">8/13 혼잡 베이 개선</span>
+    <span class="tag tag-ok">회귀 0</span>
+    <span class="tag tag-warn">pkfull200 6/20 (w4b와 동일)</span>
+  </div>
+  <p>Repositioning LNS window-rebuild + swap + nudge, crane-safe (fastfloor 래스터 프리미티브), ≤greedy 보장. 타깃 베이에서만 실행(raster-tardy 베이 한정), 베이당 소규모 예산.</p>
+  <table>
+    <thead>
+      <tr><th>베이</th><th>개선 전 (ft_tard)</th><th>개선 후</th><th>비고</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="mono">prob_1 bay1</td><td class="text-bad">2</td><td class="text-ok">0</td><td>real gain</td></tr>
+      <tr><td class="mono">prob_4 bay1</td><td class="text-bad">8</td><td class="text-warn">3</td><td>obj 43658→41780, z3 152→134</td></tr>
+      <tr><td class="mono">prob_7 bay0</td><td class="text-bad">129</td><td class="text-warn">120</td><td>소폭 개선</td></tr>
+      <tr><td class="mono">prob_3 bay2</td><td class="text-bad">19</td><td class="text-bad">19 (불변)</td><td>area 164%+ 과-구독 → 패킹으로 불가</td></tr>
+      <tr><td class="mono">prob_5 bay0</td><td class="text-bad">69</td><td class="text-bad">69 (불변)</td><td>배포 창 164% footprint util — 과-구독, 패킹 불가</td></tr>
+    </tbody>
+  </table>
+  <p>full-20 (pkfull200 @200s): <strong>total obj 4.16M → 3.23M (−22%)</strong>. 최악 인스턴스 대폭 개선(prob_12 193K→117K, prob_14 600K→159K, prob_18 229K→113K, prob_20 1.91M→1.54M). 그러나 <strong>승-수 변화 없음(6/20)</strong>. 개선은 전부 어차피 경쟁자에게 지는 인스턴스에 집중. prob_5/6/9 회귀(경로 민감도: 베이당 tardiness 감소 → 다른 LBBD cut 경로 → 더 나쁜 z3).</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ §9 근본 원인 + 다음 레버 -->
+<h2><span class="section-number">9</span>근본 원인 + 다음 레버</h2>
+
+<div class="finding-box">
+  <p><strong>근본 원인 — 퇴거-z3 오버슈트:</strong> 우리의 <code>_cpsat_assignment</code> area-time 캡은 <em>필요조건</em>이지 <em>충분조건</em>이 아니다. CP-SAT는 캡을 만족하는 크레인-충돌 배정을 반복 발견 → 디코더 z1 &gt;0 → ban-cut이 더 많은 퇴거를 추가 → z3가 최적량보다 훨씬 초과. 예: prob_5 우리 z3=602 vs 경쟁자 z3=94.</p>
+  <p>bay0 과-구독: 배포 창 기준 면적 164% — 대부분 <strong>zero-slack 블록</strong>(due = R+P, 스태거링 불가) → 패킹도 time-repositioning도 모두 해소 불가. 일부 블록은 반드시 퇴거해야(z3 비용). 경쟁자는 64% 초과분을 저렴하게(z3=94) 퇴거, 우리는 훨씬 많이(z3=602) 퇴거 — 캡의 느슨함이 ban-cut 오버슈트를 유발.</p>
+</div>
+
+<div class="next-box">
+  <p><strong>최우선 다음 레버: packer-calibrated capacity</strong></p>
+  <ul style="margin-top:8px;">
+    <li>packer를 써서 베이별 <strong>진짜 crane-safe block capacity</strong>를 실측.</li>
+    <li><code>cap_alpha[j]</code>를 그 실측값으로 설정 → CP-SAT가 진짜 용량 제약 하에서 min-z3 배정을 풀어 <strong>최소한의 z3 퇴거를 한 번에</strong> 결정(ban-cut 반복 오버슈트 없음).</li>
+    <li>packer(밀도 진실)와 assignment(z3 최적화)를 연결하는 누락된 링크.</li>
+  </ul>
+  <p style="margin-top:8px;"><strong>보조: best-of packer-on/off</strong> — pkfull200의 경로 민감도 회귀(prob_5/6/9)를 제거하기 위해 packer ON / OFF 두 경로를 각각 풀고 최종 best 선택.</p>
+  <p style="margin-top:4px; font-size:12px; color:var(--muted);">Time-repositioning(지연 허용 + crane 접근 확보)은 zero-slack 지배 구조에서 제한적. 배정 수준 해결(packer-calibrated cap)이 1순위.</p>
+</div>
+
+<hr>
+<div class="text-muted" style="font-size:11px; text-align:right;">
+  갱신: doc-writer · 2026-06-14 (돌파 추가) · 소스: notes/devlog/REFLECTIONS.md · notes/devlog/packing-research-2026-06-14.md
+</div>
+
+</body>
+</html>

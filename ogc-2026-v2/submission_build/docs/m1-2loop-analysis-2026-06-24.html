@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M1 2-LOOP vs 원래 제출본 — 수렴 분석 (2026-06-24)</title>
+<style>
+  :root{--bg:#0e1014;--panel:#171a21;--ink:#e7eaf0;--muted:#98a2b3;--line:#2a2f3a;
+        --orig:#3fb950;--m1:#f85149;--accent:#58a6ff;--cyan:#39d0d8;--neut:#d29922}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:30px 22px 90px}
+  h1{font-size:24px;margin:0 0 4px} h2{font-size:18px;margin:32px 0 8px;border-top:1px solid var(--line);padding-top:12px;color:var(--accent)}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .verdict{background:#1d130f;border:1px solid #6e2b21;border-radius:12px;padding:16px 19px;margin:14px 0}
+  .verdict b{color:var(--m1)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+  th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600;border-bottom:1px solid #3a4150}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .o{color:var(--orig);font-weight:600} .m{color:var(--m1);font-weight:600} .mut{color:var(--muted)}
+  ul,ol{margin:6px 0;padding-left:20px} li{margin:4px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  .legend{display:flex;gap:18px;margin:6px 0 2px;font-size:13px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:22px;height:3px;display:inline-block;border-radius:2px}
+  .charts{display:flex;gap:18px;flex-wrap:wrap}
+  .chart{background:#0b0d11;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .ann{font:11px ui-monospace,Consolas,monospace;fill:var(--muted)}
+</style></head><body><div class="wrap">
+
+<h1>M1 2-LOOP vs 원래 제출본 — 수렴 분석</h1>
+<p class="sub">2026-06-24 · 제출본 코드(_m1base = v-v3postproc-seq) · 같은 wall 예산(총 txyo 1200s) · 사용자 설계: [그리디→txyo]×2 + txyo 끝까지</p>
+
+<div class="verdict">
+<b>판정: 재그리디(2LOOP)가 두 인스턴스 모두 더 나쁨 — 수렴곡선이 ORIGINAL 아래로 못 내려감.</b><br>
+prob_38 <b>−2.50M</b>, prob_30 <b>−0.68M</b>. 특히 <b>prob_30은 양쪽 다 완전수렴(평탄)인데도 2LOOP가 위</b> →
+"시간 더 주면 된다"는 가설을 직접 반박. 재그리디가 더 나쁜 그리디(63.6M vs 62.2M)에서 출발해
+<b>다른(더 나쁜) basin</b>으로 수렴하고, txyo가 이를 회복하지 못함.
+</div>
+
+<h2>1. 수렴곡선 (txyo 시간 → obj)</h2>
+<div class="legend">
+  <span><i class="sw" style="background:var(--orig)"></i> ORIGINAL = 그리디→txyo</span>
+  <span><i class="sw" style="background:var(--m1)"></i> 2LOOP = 그리디→txyo→<b>재그리디</b>→txyo</span>
+  <span class="mut">↓ 아래일수록 좋음(obj↓)</span>
+</div>
+<div class="charts">
+
+<div class="chart">
+<div style="color:var(--cyan);font-size:13px;margin-bottom:4px">prob_38 (w1=13,333)</div>
+<svg width="470" height="300" viewBox="0 0 470 300">
+  <!-- y gridlines + labels (64..54M) -->
+  <g stroke="#1c2029"><line x1="70" y1="20" x2="450" y2="20"/><line x1="70" y1="69.5" x2="450" y2="69.5"/>
+  <line x1="70" y1="119" x2="450" y2="119"/><line x1="70" y1="168.6" x2="450" y2="168.6"/>
+  <line x1="70" y1="218.1" x2="450" y2="218.1"/><line x1="70" y1="267.6" x2="450" y2="267.6"/></g>
+  <g class="ann" text-anchor="end">
+  <text x="64" y="24">64M</text><text x="64" y="73">62M</text><text x="64" y="123">60M</text>
+  <text x="64" y="172">58M</text><text x="64" y="222">56M</text><text x="64" y="271">54M</text></g>
+  <!-- x labels -->
+  <g class="ann" text-anchor="middle"><text x="70" y="288">0</text><text x="190" y="288">300</text>
+  <text x="310" y="288">600</text><text x="430" y="288">900</text></g>
+  <text class="ann" x="260" y="299" text-anchor="middle">txyo seconds (x: 0..1200, scaled to 0..450)</text>
+  <!-- ORIGINAL polyline: (70,66)(190,217... rescale x to 0..1200 over 70..450 => 0.3167/s -->
+  <!-- recompute x: xf=70+t*0.3167 ; 300->165,600->260,900->355,1200->450 -->
+  <polyline fill="none" stroke="var(--orig)" stroke-width="2.5"
+    points="70,66 165,217 260,243 355,250 450,251"/>
+  <g fill="var(--orig)"><circle cx="450" cy="251" r="3.5"/></g>
+  <text class="ann" x="450" y="246" text-anchor="end" fill="var(--orig)">54.66M</text>
+  <!-- 2LOOP: measure (70,66)->(165,197) ; re-greedy jump up to (165,31) dashed ; final ->(260,141)(355,162)(450,189) -->
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2.5" points="70,66 165,197"/>
+  <line x1="165" y1="197" x2="165" y2="31" stroke="var(--m1)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2.5" points="165,31 260,141 355,162 450,189"/>
+  <g fill="var(--m1)"><circle cx="165" cy="31" r="3"/><circle cx="450" cy="189" r="3.5"/></g>
+  <text class="ann" x="172" y="28" fill="var(--m1)">재그리디 63.6M</text>
+  <text class="ann" x="450" y="184" text-anchor="end" fill="var(--m1)">57.16M</text>
+</svg>
+</div>
+
+<div class="chart">
+<div style="color:var(--cyan);font-size:13px;margin-bottom:4px">prob_30 (w1=13,333)</div>
+<svg width="470" height="300" viewBox="0 0 470 300">
+  <g stroke="#1c2029"><line x1="70" y1="20" x2="450" y2="20"/><line x1="70" y1="48.9" x2="450" y2="48.9"/>
+  <line x1="70" y1="106.6" x2="450" y2="106.6"/><line x1="70" y1="164.4" x2="450" y2="164.4"/>
+  <line x1="70" y1="222.2" x2="450" y2="222.2"/><line x1="70" y1="279.9" x2="450" y2="279.9"/></g>
+  <g class="ann" text-anchor="end">
+  <text x="64" y="24">7.0M</text><text x="64" y="53">6.8M</text><text x="64" y="110">6.4M</text>
+  <text x="64" y="168">6.0M</text><text x="64" y="226">5.6M</text><text x="64" y="284">5.2M</text></g>
+  <g class="ann" text-anchor="middle"><text x="70" y="288">0</text><text x="190" y="288">300</text>
+  <text x="310" y="288">600</text><text x="430" y="288">900</text></g>
+  <!-- ORIGINAL: (70,221)->(165,261) then flat to (450,261) -->
+  <polyline fill="none" stroke="var(--orig)" stroke-width="2.5" points="70,221 165,261 260,261 355,261 450,261"/>
+  <g fill="var(--orig)"><circle cx="450" cy="261" r="3.5"/></g>
+  <text class="ann" x="450" y="256" text-anchor="end" fill="var(--orig)">5.33M</text>
+  <!-- 2LOOP: measure (70,221)->(165,260); re-greedy jump up (165,52); final ->(260,156)(355,163)(450,163) -->
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2.5" points="70,221 165,260"/>
+  <line x1="165" y1="260" x2="165" y2="52" stroke="var(--m1)" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2.5" points="165,52 260,156 355,163 450,163"/>
+  <g fill="var(--m1)"><circle cx="165" cy="52" r="3"/><circle cx="450" cy="163" r="3.5"/></g>
+  <text class="ann" x="172" y="49" fill="var(--m1)">재그리디 6.78M</text>
+  <text class="ann" x="450" y="158" text-anchor="end" fill="var(--m1)">6.01M</text>
+</svg>
+</div>
+
+</div>
+<p class="mut" style="font-size:12.5px">★ 빨간 점선 = 재그리디가 해를 <b>위로 리셋</b>(더 나쁜 배정). 그 뒤 txyo가 다시 내려가지만 <b>초록(ORIGINAL) 바닥에 못 닿음</b>.
+prob_30은 양쪽 다 끝에서 평탄 = 완전수렴인데도 빨강이 위.</p>
+
+<h2>2. 최종값 (완전수렴)</h2>
+<table>
+<tr><th>인스턴스</th><th>ORIGINAL obj</th><th>z1</th><th>z3</th><th>2LOOP obj</th><th>z1</th><th>z3</th><th>gain</th><th>수렴?</th></tr>
+<tr><td>prob_38</td><td class="mono o">54,658,258</td><td class="mono">3,970</td><td class="mono">5,746</td>
+  <td class="mono m">57,162,888</td><td class="mono">4,124</td><td class="mono">7,234</td><td class="mono m">−2,504,630</td><td class="mut">2L 미세하강중</td></tr>
+<tr><td>prob_30</td><td class="mono o">5,330,072</td><td class="mono">360</td><td class="mono">2,564</td>
+  <td class="mono m">6,007,202</td><td class="mono">414</td><td class="mono">2,384</td><td class="mono m">−677,130</td><td class="o">양쪽 완전수렴</td></tr>
+<tr><td><b>합계</b></td><td class="mono o">59,988,330</td><td colspan="2"></td><td class="mono m">63,170,090</td><td colspan="2"></td><td class="mono m">−3,181,760</td><td></td></tr>
+</table>
+
+<h2>3. 왜 더 나쁜가 (z1·z3 둘 다 악화)</h2>
+<div class="card">
+<ul>
+<li><b>재그리디는 더 나쁜 출발점</b> — prob_38 그리디 62.16M → 재그리디 <b>63.57M</b>(더 나쁨). 시작부터 짐.</li>
+<li><b>z1·z3 동시 악화</b> — prob_38: z1 3970→4124(<span class="m">나쁨</span>), z3 5746→7234(<span class="m">나쁨</span>).
+  "z1 줄이려" 재배정했는데 z1조차 더 나쁨 + z3는 선호베이 이탈로 크게 악화. <b>트레이드오프가 아니라 그냥 더 나쁨.</b></li>
+<li><b>tardy는 잘못된 배정이 아니라 구조</b> — tardy 블록은 그 베이가 *틀려서*가 아니라 그 시간창의 <b>co-presence(크레인 직렬화)</b> 때문에 늦는다.
+  그 블록의 베이를 페널티해 쫓아내면 → 패킹이 깨지고 새 tardy가 생겨 <b>다른(더 나쁜) basin</b>으로 수렴. txyo는 위치/시간만 다듬을 뿐 이 구조적 손해를 못 되돌림.</li>
+</ul>
+</div>
+
+<h2>4. 이전 "+2.13%"는 왜 착시였나</h2>
+<div class="card">
+<table>
+<tr><th>실험</th><th>코드/설정</th><th>측정 시점</th><th>결과</th><th>문제</th></tr>
+<tr><td>set2 greedy-stage</td><td class="mut">dev 코드, 약한 config<br>(DIVERSE·FFT_MASK 누락)</td><td class="mut">greedy+timing<br>(txyo 전)</td><td class="o">+2.13%</td><td class="m">약한 그리디(66M) 기준 + 미수렴</td></tr>
+<tr><td>이번 2LOOP</td><td>제출본 코드, 정식 config</td><td>txyo 완전수렴</td><td class="m">−5.3%</td><td class="o">정본 — 착시 제거됨</td></tr>
+</table>
+<p class="mut" style="font-size:12.5px;margin:6px 0 0">M1이 "이긴" 건 <b>약한 그리디(66M)</b>의 실수를 메워줬기 때문. 제출본의 강한 그리디(60~62M)엔 손해.
+사용자의 두 지시(①제출본 코드 ②풀 파이프라인+수렴)가 정확히 이 착시를 걷어냈다.</p>
+</div>
+
+<h2>5. 진행 중 / 다음</h2>
+<div class="card">
+<ul>
+<li><b>확장 테스트 진행 중</b> — prob_38 2LOOP만 txyo <b>2700s(45분)</b>까지 끌어, 54.66M 아래로 교차하는지 최종 확인.
+  (현재 추세: 57.16M에서 ~1M/300s로 감속 하강, 2.5M 위 정체 가능성 큼. prob_30은 이미 평탄-패배.)</li>
+<li><b>만약 확장도 못 이기면</b> → M1(=tardy 블록 자체 재배정) 확정 falsified. 피벗 후보:
+  <ul>
+  <li><b>M2</b>(설계문서) — tardy의 <b>선행블록/밀도</b>를 페널티(원인을 건드림). 단 cross-bay·v4도 같은 구조벽에 막힌 이력 → 신중.</li>
+  <li><b>gentler lam</b> — 재그리디 출발점(63.6M)이 원래(62.2M)에 가깝게 약하게만 흔들면 더 나은 basin 가능성(미검증).</li>
+  <li>진짜 레버 = <b>per-bay 패킹밀도</b>(구조) 또는 <b>never−1</b>(점수게임).</li>
+  </ul></li>
+</ul>
+</div>
+
+<p class="mut" style="font-size:12px;margin-top:24px">데이터: <code>_m12loop_ledger.md</code> · 하니스 <code>_m1_2loop.py</code> · 코드 <code>_m1base/</code>(제출본+M1 패치, gated OFF) · 설계 <code>docs/z1-feedback-loop-design-2026-06-24.html</code></p>
+</div></body></html>

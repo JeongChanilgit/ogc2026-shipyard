@@ -1,0 +1,205 @@
+{
+  "timelimit": 120.0,
+  "instances": [
+    {
+      "instance": "prob_21",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 3527630.0,
+      "z1": 210.0,
+      "z2": 1355,
+      "z3": 4761.0,
+      "wall": 111.60899999999674
+    },
+    {
+      "instance": "prob_22",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 1976154.0,
+      "z1": 2.0,
+      "z2": 1296,
+      "z3": 4864.0,
+      "wall": 74.56300000002375
+    },
+    {
+      "instance": "prob_23",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 8259476.0,
+      "z1": 559.0,
+      "z2": 2685,
+      "z3": 3306.0,
+      "wall": 111.65700000000652
+    },
+    {
+      "instance": "prob_24",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 2974410.0,
+      "z1": 125.0,
+      "z2": 1277,
+      "z3": 4338.0,
+      "wall": 111.63999999995576
+    },
+    {
+      "instance": "prob_25",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 596143.0,
+      "z1": 789.0,
+      "z2": 1000,
+      "z3": 3444.0,
+      "wall": 111.625
+    },
+    {
+      "instance": "prob_26",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 27913457.0,
+      "z1": 2025.0,
+      "z2": 1976,
+      "z3": 6002.0,
+      "wall": 111.65600000001723
+    },
+    {
+      "instance": "prob_27",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 53911118.0,
+      "z1": 3858.0,
+      "z2": 1802,
+      "z3": 6172.0,
+      "wall": 111.64100000000326
+    },
+    {
+      "instance": "prob_28",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 9585765.0,
+      "z1": 597.0,
+      "z2": 788,
+      "z3": 5412.0,
+      "wall": 111.67199999996228
+    },
+    {
+      "instance": "prob_29",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 1952697.0,
+      "z1": 0.0,
+      "z2": 1699,
+      "z3": 6492.0,
+      "wall": 98.64100000000326
+    },
+    {
+      "instance": "prob_30",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 12253485.0,
+      "z1": 853.0,
+      "z2": 1109,
+      "z3": 4380.0,
+      "wall": 111.625
+    },
+    {
+      "instance": "prob_31",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 21244304.0,
+      "z1": 1331.0,
+      "z2": 2441,
+      "z3": 13074.0,
+      "wall": 106.85899999999674
+    },
+    {
+      "instance": "prob_32",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 8263202.0,
+      "z1": 2424.0,
+      "z2": 4162,
+      "z3": 272.0,
+      "wall": 111.60899999999674
+    },
+    {
+      "instance": "prob_33",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 20388791.0,
+      "z1": 2893.0,
+      "z2": 2791,
+      "z3": 7155.0,
+      "wall": 111.60899999999674
+    },
+    {
+      "instance": "prob_34",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 2640321.0,
+      "z1": 763.0,
+      "z2": 1785,
+      "z3": 159.0,
+      "wall": 111.5
+    },
+    {
+      "instance": "prob_35",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 7685410.0,
+      "z1": 505.0,
+      "z2": 219,
+      "z3": 6341.0,
+      "wall": 111.60899999999674
+    },
+    {
+      "instance": "prob_36",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 543816.0,
+      "z1": 558.0,
+      "z2": 1798,
+      "z3": 13064.0,
+      "wall": 111.60999999998603
+    },
+    {
+      "instance": "prob_37",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 11064110.0,
+      "z1": 3290.0,
+      "z2": 14585,
+      "z3": 67.0,
+      "wall": 111.60899999999674
+    },
+    {
+      "instance": "prob_38",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 84871783.0,
+      "z1": 6161.0,
+      "z2": 1735,
+      "z3": 9079.0,
+      "wall": 111.60999999998603
+    },
+    {
+      "instance": "prob_39",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 32828918.0,
+      "z1": 2354.0,
+      "z2": 384,
+      "z3": 9610.0,
+      "wall": 111.61000000004424
+    },
+    {
+      "instance": "prob_40",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 4924340.0,
+      "z1": 7151.0,
+      "z2": 1431,
+      "z3": 11784.0,
+      "wall": 111.625
+    }
+  ]
+}

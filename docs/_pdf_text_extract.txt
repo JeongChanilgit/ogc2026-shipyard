@@ -1,0 +1,703 @@
+
+========== PAGE 1 ==========
+
+OptimizationGrandChallenge2026(OGC2026)
+TheGrandShipyardPuzzle:PacktheBlock,BeattheClock
+OGC2026OrganizingCommittee
+May16,2026(DocumentVersion1.0)
+Abstract
+TheOptimizationGrandChallenge(OGC)2026addressesaspatialblockschedulingproblem
+drawnfromshipbuilding.Inashipyard,eachstructuralblockofashipisbuiltinsideaﬁxed
+workspacecalledabay.Blocksarethree-dimensionalobjectswithirregular,layeredshapes,soplac-
+ingtheminabaywithoutoverlapisitselfahardgeometricproblem.Ontopofthis,everyblock
+carriesareleasedate,aprocessingtime,andaduedate,andbayspaceisshared—soablockmay
+havetowait,orstaylongerthanneeded,becauseofotherblocksaroundit.Analgorithmmust
+thereforedecide,foreachblock,whichbayitgoesto,whereandhowitsits,andwhenitentersand
+leaves—allatonce.Thisdocumentgivesaformalproblemdeﬁnition,aparticipationguide,andthe
+evaluationcriteria.
+Documentupdates.Thisdocumentmayberevisedtocorrecterrorsorclarifyambiguities.The
+latestversionisalwaysavailableonthecompetitionwebsite,andtheversionnumberonthetitle
+pageindicateswhichrevisionyouarereading.Participantsareresponsibleforcheckingthewebsite
+forupdates;signiﬁcantchangeswillalsobeannouncedthere.
+1ProblemDescription
+1.1Terminology
+•Bay:Aphysicallypartitionedworkspaceinashipyardwhereoperationsareperformed.Each
+bayj∈MhasaﬁxedsizeWj×Hj,whereM:={1,2,...,m}isthesetofbays.
+•Block:Aproductionunitrepresentingalargestructuralcomponentofaship.Eachblock
+i∈NconsistsofKipolygonallayersforminga3Dstructure,whereN:={1,2,...,n}isthe
+setofblocks.Ablockcanberotated,andthenumberofpossibleorientationoptionsisgiven
+asOi.
+•Releasedate(Ri):Theearliesttimeatwhichblockicanstartprocessing.
+•Duedate(Di):Thedesiredcompletiontimeofblocki.
+•Processingtime(Pi):Thetimerequiredtoprocessblocki.
+•Entrytime(ENTRYi):Thetimeatwhichblockiisplacedintoabay.
+•Exittime(EXITi):Thetimeatwhichblockileavesthebay.
+•Tardiness(Ti):Thedelaybeyondtheduedate,deﬁnedas
+Ti=max(0,EXITi−Di).
+•Workload(Li):Thetotalworkloadrequiredduringtheprocessingofblocki.
+•Preference(Sij):Thepreferencescoreofblockitobeassignedtobayj.
+1.2ProblemSetting
+Inashipyard,blocksundergoseveralproductionstages,someofwhicharecarriedoutwithinbays.
+Eachbayisaﬁxedworkspacewhereresourcessuchascranes,labor,andtransportationpathsare
+shared.Blocksmustbeassignedtobaysandprocessedwhilesatisfyingbothtemporalandspa-
+tialconstraints.Eachbaycanaccommodatemultipleblockssimultaneously,providedthattheydo
+notoverlapinspace.Eachblockhasitsownreleasedate,processingtime,andduedate.There-
+fore,theassignmentandschedulingdecisionsmustconsiderbothspatialandtemporalfeasibility
+simultaneously.
+1
+
+========== PAGE 2 ==========
+
+Figure1:Realshipyardlayoutwithmultiplebaysandblockoperations
+Bay 1
+Bay 2
+Bay
+Figure2:Bays
+1.3Bays
+Eachbayisanindependentworkspace,andthereexistsphysicaloroperationalseparationbetween
+bays.AtypicalshipyardhasmultiplebaysasshowninFigure1.Weassumethattheshipyard
+consistsofmbays,eachbayjhasasizeWj×Hj.Foranygivenblock,thefollowingdecisionsmust
+bemadesimultaneously:
+1.whichbaytoassign,
+2.thepositionandorientationwithinthebay,
+3.whentoputtheblockonthebay
+4.whentopulltheblockfromthebay
+Weassumethateachbayhasanindependentcrane,soanyoperationsinthebaycanbedone
+separately.Therearetwooperationsregardingthisyear’scompetition:ENTRYandEXIT,which
+representputtingablockintothebayandremovingitfromthebay,respectively.Foragivenday,
+thecraneoperatorofeachbaywouldreceivealistofoperationstoconductonthatday.Wedonot
+limitthenumberofoperationsthatcanbeconductedonasingleday,soanynumberofoperations
+canbeperformedbeforetheday’swork.Forexample,considerablockwithaprocessingtimeof3,
+scheduledtobeplacedinabayonday5(ENTRYoperationonday5).Then,theearliestdaythe
+blockisreadyfortheEXIToperationisday8.Inotherwords,theblockcanbeprocessedfromday
+5today7.Notethat,inthiscase,theorderofoperationsisalsoimportantbecauseeachoperation
+wouldmakethebaylookdiﬀerent.Nonetheless,weassumethatallEXIToperationsmustbedone
+beforeanyENTRYoperations.Amongthesametypeofoperations,thealgorithmshoulddetermine
+theorderinwhichtoconductthem.
+2
+
+========== PAGE 3 ==========
+
+Figure3:Ablockwithtwolayers
+three-layer blocktwo-layer block
+Figure4:Twoblockswithdiﬀerentnumbersoflayers(frontview)
+1.4Blocks
+Wearegivenatotalofnblocks.Eachblockisassumedtoconsistofmultiplepolygonallayers
+formingathree-dimensionalstructure.Thepolygondeﬁningeachlayerisnotnecessarilyconvex.
+Forexample,ablockcomposedoftwolayers,whereeachlayerhasarectangularshape,isillustrated
+inFigure3.Thetopviewshowstheplanarshapeasseenfromabove,thefrontviewshowstheshape
+asseenfromthefront,andtherightviewshowstheshapeasseenfromtherightside.
+EachblockiisassumedtoconsistofKilayers,andalllayersareassumedtohavethesame
+height.Forexample,thefrontviewsofathree-layerblockandatwo-layerblockareshowninFigure
+4.Notethattherecannotbean“empty”layer.Moreover,anytwoadjacentlayersareguaranteed
+tobephysicallyattached,so“ﬂoating”layersareimpossible.
+Whenablockisplaced,theorientationoftheblockshouldalsobedetermined.Forthiscompe-
+tition,weprovideprobleminstanceswithpredeterminednumbersofpossibleorientationsforeach
+block,denotedbyOiforblocki.Forexample,Figure5showsablockwitheightpossibleorientation
+options.
+EachblockialsohasaworkloadLiandpreferencescoresforbaysSij.Theworkloadindicates
+howmuchworkshouldbedonefortheblock,andasolutionwithlessvarianceintotalworkloads
+acrossthebaysispreferred.ThepreferencescoreSijindicateshowmuchblockiispreferredfor
+assignmenttobayj.
+Orientation=0Orientation=1Orientation=2Orientation=3Orientation=4Orientation=5Orientation=6Orientation=7
+Figure5:Possibleorientationoptionsofablock
+3
+
+========== PAGE 4 ==========
+
+1.5DecisionstoMake
+Foreachblocki,thefollowingdecisionsmustbemade:
+•Assignmenttoabayj
+•Placementpositionwithinthebay
+•Orientationselection
+•EntrytimeENTRYiandexittimeEXITi
+1.6Constraints
+Therearethreemaingroupsofconstraints.Theﬁrstconstraintconcernstheassignmentofevery
+blocktoabay,withENTRY/EXIToperationsassured.Thesecondisthetemporalconstraint,which
+ensuresthatworkontheblockisperformedonlyaftertheblockhasbeenavailableforatleastthe
+requiredprocessingtime.Thethirdgroupofconstraintsconcernsthespatialfeasibilityoftheblocks
+withinthebay.Becausethecraneoperationscanbeperformedbeforetheday’sworkingtime,a
+blockiwithENTRYiandEXITioccupiestheassignedbayduring[ENTRYi,EXITi).
+1.6.1AssignmentConstraints
+AssignmentconstraintForeveryblock,itmustbeassignedtoasinglebay.Therecannotbe
+anyunassignedblocks.
+OperationconstraintForeveryblock,itmusthaveexactlyoneENTRYoperationandone
+EXIToperation.Ablockcannotbemovedorrotatedonceplacedinthebay.
+1.6.2TemporalConstraints
+ReleasedateconstraintAblockcannotstartbeforeitsreleasedate:
+ENTRYi≥Ri.
+ProcessingtimeconstraintAblock’sworkmustbecompletedbeforeexit:
+EXITi−ENTRYi≥Pi.
+Notethattheblockmay“remain”inthebayaftertherequiredprocessingtimehaselapsed.This
+canhappenifotherblockspreventitfromexiting.IftheexittimeEXITiexceedstheduedateDi,
+apositivetardinessoccurs.Typically,ablockhasDi−Ri>Pi,whichimpliesthereissome“slack”
+timetodeterminebetterENTRYandEXITtimesfortheblock,consideringtheotherblocksinthe
+bay.
+1.6.3SpatialConstraints
+LetPo,x,y
+i,l denotethepolygonoflayerlofblockipositionedatlocation(x,y)withorientation
+o.Considertwoblocksi1andi2locatedinthesamebayonthesameday.Wesaythereisa
+collisionbetweentwoblocksi1andi2ifint(Po1,x1,y1
+i1,l )∩int(Po2,x2,y2
+i2,l )∕=∅,whereint(·)represents
+thesetofinteriorpointsofthe(closed)polygon.Inotherwords,twoblocksarecollision-freeif
+int(Po1,x1,y1
+i1,l )∩int(Po2,x2,y2
+i2,l )=∅foranylayerl.Notethatweallowtwoblockstosharepolygon
+edgestobecollision-free.WedeﬁneafunctionC(i1,l1,o1,x1,y1,i2,l2,o2,x2,y2)as
+C(i1,l1,o1,x1,y1,i2,l2,o2,x2,y2):=
+󰀫
+0, ifint(Po1,x1,y1
+i1,l1 )∩int(Po2,x2,y2
+i2,l2 )=∅,
+1,otherwise.
+Foranydatetandbayj∈M,wedeﬁnetheset
+N(t,j):={i∈N:ENTRYi≤t<EXITiandiisassignedtoj}.
+Thatis,thesetN(t,j)isasubsetofblocksthatareassignedtothesamebayjandstayinthebay
+atthetimet.
+BaycontainmentconstraintEachblockmustbefullycontainedwithintheassignedbay.
+Figure7(b)showstwoblocksviolatingthisconstraint.
+4
+
+========== PAGE 5 ==========
+
+Block 2
+Top Right
+Front
+Layer 1
+Layer 0
+Layer 0
+Layer 1Front
+Block 1
+Top Right
+Layer 1
+Layer 0
+Layer 0
+Layer 1
+Figure6:Twoblockswithtwolayersorientation0
+(b) Bay containmentviolation(a) Feasible arrangement (c) Layer collison-freeviolation (d) Crane operationviolation (Block 2)
+Figure7:Examplesofspatialconstraints
+Layercollision-freeconstraintForanydatet,bayj,andanytwodistinctblocksi1,i2∈
+N(t,j),thedecisionvariables(o1,x1,y1,o2,x2,y2)mustsatisfyC(i1,l,o1,x1,y1,i2,l,o2,x2,y2)=0
+foralll=1,2,...,min{Ki1,Ki2}.Plainlyspeaking,twoblocksinthesamebayonthesamedateare
+spatiallyfeasibleiftheirlayersatthesamelevelarecollision-free.Forexample,Figure7(a)shows
+thatthetwoblocksarespatiallyfeasibleeventhoughtheyappeartooverlapfromthetopview.On
+theotherhand,Figure7(c)showsthattwoblocksarespatiallyinfeasible.
+CraneoperationconstraintToplaceorremovetheblocksinthebay,thecraneshouldbeable
+tomovetheblocksverticallywithoutanyinterference.Assumethat,foranydatetandbayj,either
+craneoperation(ENTRYorEXIT)ofblocki1isfeasibleonlyifC(i1,l1,o1,x1,y1,i2,l2,o2,x2,y2)=0
+foranyl1≤l2,wherei2∈N(t,j)\{i1},l1=1,2,...,Ki1,andl2=1,2,...,Ki2.Plainlyspeaking,
+toputorpullablock,theblock’slayermustbespatiallyfeasiblewiththelayersofotherblocksat
+thesameorhigherlevels.Forexample,Figure7(d)showsthatBlock2violatesthecraneoperation
+constraintifitisputorpulledwhenBlock1alreadyexists.Ontheotherhand,Block1canbe
+cranedevenifBlock2exists.
+1.7ObjectiveFunction
+Theobjectiveistominimizeaweightedcombinationofthreecriteria:
+TotaltardinessThesumofthetotaltardinessofblocks.
+Z1:=
+n󰁛
+i=1
+Ti,
+WorkloadimbalanceMaximumnormalizedworkloadimbalanceacrossbays.
+Z2:=
+󰀹󰀹󰀹󰀷 maxj1,j2∈M:j1∕=j2
+󰀏󰀏󰀏󰀏󰀏󰀏
+uj1
+󰁛
+i∈N(j1)
+Li−uj2
+󰁛
+i∈N(j2)
+Li
+󰀏󰀏󰀏󰀏󰀏󰀏
+󰀺󰀺󰀺󰀸,
+5
+
+========== PAGE 6 ==========
+
+whereN(j)⊆Nisthesetofblocksassignedtobayjandujistheweightassignedtothebaywhere
+eachblockisplaced.Thisvalueisdeﬁnedastheaverageareaofallbaysdividedbytheareaofthe
+speciﬁcbay;
+uj=
+󰁓
+k∈MWk×Hk
+m
+Wj×Hj
+.
+Alargerbayhasasmallerweightvalue,thisreﬂectsthatplacingblocksinalargerbayreduces
+congestion,eveniftheblockshavethesameworkload.
+TotalpreferencescoreTotalsumofpreferencescoresfortheassignedbays.
+Z3:=
+󰁛
+j∈M
+󰁛
+i∈N(j)
+(Smax
+i −Sij),
+whereSmax
+i :=maxj∈M{Sij}.NotethatZ3=0ifallblocksareassignedtothebaywiththemost
+preferredscore.
+So,wewanttominimizethefunction
+w1Z1+w2Z2+w3Z3,
+wherew1,w2,andw3arethegivennonnegativeweightparameters.
+2ProblemInstanceDeﬁnition
+Theparticipantsareprovidedwith“training”probleminstancesgeneratedbytheOGCcommittee.
+Theseinstancesaredesignedtocloselymimicreal-worldshipbuildingproblemsandincludevarious
+challengingaspects.Forexample,someinstanceshavemanyblocks,whileothersmayhavetighter
+block-release/due-dateschedules.Weexpecttheparticipantstodeveloptheiralgorithmsbyconsid-
+eringthesevariouschallengessothattheresultingalgorithmsperformwellacrossawiderangeof
+situations.
+Asingleprobleminstanceisgiveninjsonformatasfollows:
+1{
+2 "name":"training_problem_01",
+3 "bays":[
+4 {
+5 "width":125,
+6 "height":15
+7 },
+8 {
+9 "width":71,
+10 "height":18
+11 },
+12 {
+13 "width":140,
+14 "height":25
+15 }
+16 ],
+17 "blocks":[
+18 {
+19 "release_time":37,
+20 "due_date":44,
+21 "processing_time":7,
+22 "workload":20,
+23 "bay_preferences":[
+24 19,
+25 26,
+26 55
+27 ],
+28 "shape":[
+29 {
+30 "orientation":0,
+31 "layers":[
+32 [
+33 [0.0,0.0],[0.8093,5.4723],[1.2955,11.0993],...
+34 ],
+35 [
+36 [-3.0413,0.3435],[0.5671,-0.064],[4.8185,3.4301],...
+37 ]
+38 ]
+6
+
+========== PAGE 7 ==========
+
+39 },
+40 {
+41 "orientation":1,
+42 "layers":[
+43 [
+44 [0.0,0.0],[-3.2972,4.4418],[-6.9323,8.7645],...
+45 ],
+46 [
+47 [-2.3934,-1.9076],[0.4463,0.3558],[0.9818,5.8327],...
+48 ]
+49 ]
+50 },
+51 ...
+52 ]
+53 },
+54 {
+55 "release_time":42,
+56 "due_date":49,
+57 "processing_time":5,
+58 "workload":11,
+59 "bay_preferences":[
+60 0,
+61 72,
+62 28
+63 ],
+64 "shape":...
+65
+66 ...
+67 },
+68 ...
+69 ],
+70 "weights":{
+71 "w1":26667,
+72 "w2":10,
+73 "w3":300
+74 }
+Listing1:Exampleprobleminstance
+Listing1showsanexampleofaprobleminstanceinthejsonﬁle.Theprobleminstanceﬁle
+consistsoffourparts:(1)problemname("name"),(2)alistofbays("bays"),(3)alistofblocks
+("blocks"),and(4)theobjectivefunctionweights("weights").
+Weassumethatthebaysareindexedfrom0tom−1,wheremisthenumberofbays.Eachbay
+0≤j≤m−1mayhaveadiﬀerentsizeasshownintheexample.Forexample,thebay0hasthe
+sizeof125×15.
+Similarly,theblocksareindexedfrom0ton−1.Forexample,block0’sreleasedateis37,itsdue
+dateis44,anditsbaypreferencesare19,26,and55,i.e.,S00=19,S01=26,andS02=55.Note
+thatthepreferencescoresforasingleblockalwayssumto100acrossallbays.Wealsonotethat
+alltime-relatedvaluesandpreferencescoresarealwaysintegers.The"shape"ofablockdescribes
+thelayerpolygonsforeachorientation.EachorientationisadictionarywithanorientationID
+("orientation")andalistoflayerpolygons("layers").TheorientationIDisalwaysaninteger.
+Thelistoflayerpolygonscontainsthevertexpairsforeachlayer,orderedfromthelowesttothe
+highest.Forexample,block0’sorientationID0consistsoftwolayers:layer0isdeﬁnedas[[0.0,
+0.0],[0.8093,5.4723],[1.2955,11.0993],...]andlayer1isdeﬁnedas[[-3.0413,
+0.3435],[0.5671,-0.064],[4.8185,3.4301],...].Notethattheﬁrstvertexofthe
+ﬁrstlayer(layer0)isalways[0.0,0.0].Wecallthisvertexareferencepoint.Allotherverticesof
+thesameorientationshapearerelativetothereferencepoint.Whenthealgorithmdeterminesthe
+locationofablockas(x,y),thelocationsoftheverticesoftheblockshapeinsidetheassignedbay
+aretranslatedfromthebay’soriginby(x,y).Figure8illustratesthegeometryofthebayandblocks.
+Theblock’slocationisspeciﬁedbytranslatingthereferencepointto(x,y)whilekeepingallother
+relativepositionsofthelayer’sverticestothereferencepointunchanged.Therefore,therelative
+locationofablock’sreferencepointisnotalwaysatthebottomleftwhentheblock’sorientationis
+diﬀerent,asshowninFigure8.
+Wenotethatalayer’svertex,otherthanthereferencepoint,canhaveafractionallocation,with
+uptofoursigniﬁcantdigits.Becauselayershapescanbequiteirregular,numericalinstabilitymay
+arisewhencheckingforspatialcollisionsbetweenblocks.Westronglyrecommendusingthefunctions
+intheprovidedutils.pyatleastattheﬁnalstageofyouralgorithm,astheevaluationserverwill
+alsousethemtocheckthefeasibilityoftheresultingsolutions.
+Allindices,includingbaysandblocks,are0-basedintheprobleminstanceandthealgorithm
+7
+
+========== PAGE 8 ==========
+
+orientation=0
+orientation=1
+orientation=2
+Figure8:Geometryofbayandblocks
+solution.Pleasenotethat,incontrast,theformalproblemdeﬁnitioninSection1uses1-based
+indices.WemadethisdistinctiontokeepthealgorithmcodeandutilityfunctionsmorePythonic.
+3AlgorithmSubmissionandEvaluation
+Theteamsshouldsubmittheiralgorithmcodetotheevaluationserverbyemailingittosubmis-
+sion@optichallenge.com.Algorithmsareevaluatedonthe“hidden”probleminstancesontheded-
+icatedserver,andtheresultsarerankedagainstotherteams’resultstobuildleaderboards,which
+willbeavailableonthecompetitionwebpage.
+3.1AlgorithmSubmission
+Tosubmitalgorithmcodetotheevaluationserver,thefollowingrequirementsmustbemet:
+•Theemailshouldbesenttosubmission@optichallenge.com.
+•Theemailshouldbesentfromtheemailaddressusedforregistration.
+•Theemailshouldincludeasinglezipﬁleasanattachment.
+•Thezipﬁleshouldincludemyalgorithm.py.
+•Ifutils.pyﬁleisincludedinthezipﬁle,itcannotbemodiﬁed.(Itwillbeoverwrittenbefore
+runningthealgorithm.)
+•Theﬁlemyalgorithm.pyshouldbeattherootofthedecompressedﬁles(notinsideasubfolder).
+•Thezipﬁlesizecannotexceed15MB.
+•Anewsubmissioncannotbeacceptedifthepreviousacceptedsubmissiontimeisnotbefore
+thepredeﬁnedcooldownperiod(12hours).
+Anysubmissionthatdoesnotsatisfyanyoftheaboveruleswillberejected.Theserverwillperform
+additionalsanitychecks(e.g.,checkingforabrokenzipﬁle)beforeacceptingthesubmissionto
+ensurethesubmittedalgorithmcodeisvalid.Onceasubmissionisaccepted,thealgorithmcode
+willbeexecutedtosolvethehiddeninstances.Allevaluationofresultsisbasedonthelatest
+acceptedsubmission.However,wenotethatacceptanceofthesubmissiondoesnotguaranteethat
+thealgorithmwillproducecorrectresults.Itmaystillcrashorevenfailtoexecuteduetoamissing
+dependency.Regardlessoftheirsuccessorfailure,thelatestacceptedsubmissionwillbeusedforthe
+leaderboard,soteamsshouldensureallsubmissionrequirementsaremet.Thecompetitionsystem
+willreplytosubmissionemailswiththeacceptance/rejectionstatus,withabriefdescriptionofthe
+reasonforrejectionifrejected.Notethattheteamscanresubmitimmediatelyaftercorrectingthe
+causeoftherejection.Thecooldowntimerstartsonlyafterthesubmissionisaccepted.
+Wenotethatsomeemailserviceprovidersblockcertainpotentiallymaliciousﬁleextensions
+inattachments,suchas*.dll,*.vb,and*.exe1.Itistheteam’sresponsibilitytoensurethe
+attachmentﬁlescanbesafelyaccessedfromtheevaluationsystem.
+Theexactstartandendofthesubmissionperiodwillbeannouncedonthecompetitionwebpage.
+Thereisnolimitonthenumberofsubmissionsallowedduringthecompetition.Nonetheless,the
+competitioncommitteereservestherighttosuspendorevenbanteamsfromsubmissionsifitis
+determinedthatthesubmissionsystemisabusedbythoseteams.Weexpecttheteamstobehave
+fairlyandrespectfullyinusingthesubmissionsystem.
+1Forexample,refertothisforGmail.
+8
+
+========== PAGE 9 ==========
+
+3.2AlgorithmEvaluationServer
+Teamsareexpectedtodeveloptheiralgorithmsusingtrainingproblems.Thesubmittedalgorithm
+codeisexecutedonhiddenproblemsforevaluation.Theevaluationserverspeciﬁcationis:
+•AMDRyzenThreadripperPRO9955WX
+•Ubuntu24.04LTS
+Algorithmsaresubjecttoatimelimit,whichcanvaryacrossproblems.Thetimelimitsforhidden
+evaluationproblemsaredisclosedonlyafterthecompetitionends.Weexpectthetypicaltime
+limitstorangefromafewminutestohalfanhour,measuredinwall-clocktime.Becausethe
+participatingteams’developmentenvironmentspecsdiﬀerfromtheserverspecs,algorithmsshould
+carefullymonitortheirinternalelapsedtimeandavoidexceedinglimits.Anyexecutionfailingto
+producethesolutionwithinthetimelimitistreatedthesameasanalgorithmcrashormalfunction.
+Forthesakeoffaircompetition,submittedalgorithmsarealsosubjecttothefollowingconstraints:
+•Noexternalinternetaccessduringexecution
+•Noaccesstoparentdirectoriesabovetheexecutionfolder
+•Atmost4CPUcores(400%CPUusage)
+•Atmost16GBofmemory
+Violatingtheseconstraintsmayleadtodisqualiﬁcation.InternetblockingandCPUcorelimitsare
+enforcedusingfirejailandcpulimitatevaluationtime.Youralgorithmmustnotconﬂictwith
+thesetools.
+Submittedalgorithmsarerunonhiddenproblems,andresultsareaggregatedhourly.Ateach
+aggregationpoint,aleaderboardisgeneratedfromalgorithmsthatproducedresultsonallproblems
+andisthenpublishedonthewebsite.Wenotethatthe“submissiontime”maydiﬀerfromthe
+“algorithmexecutioncompletetime”becausetheevaluationservermaintainsaqueueofsubmissions,
+whichareprocessedonaﬁrst-come,ﬁrst-servedbasis.Theteamswillreceivereplyemailsfromthe
+submissionsystemoncethealgorithmhasﬁnishedexecuting.
+3.3Leaderboard
+Theleaderboardrankingisscore-based.Foreachhiddentestinstance,thefollowingscoreisassigned
+basedonthealgorithm’sproducedsolution.
+•−1,ifthesolutionisinfeasible,thealgorithmistime-limited,orcrashes
+•R−nb,ifthesolutionisfeasible,whereRisthenumberofevaluatedteamsandnbisthe
+numberofteamsthatfoundastrictlybetterobjectiveforthisproblem.
+Leaderboardrankingsaredeterminedbytotalpointsacrossallproblemsatthetimetheleaderboard
+isbuilt.Thefeasibilityofsolutionswillbecheckedusingthecheckfeasibility()functioninthe
+providedutils.pymodule.Onceasolutionisprovenfeasible,thesystemwillalsocalculateits
+objectivevalue.
+Pleasebeawarethattheﬁnalwinnersaredeterminedbyconsideringwrittenreportsandpre-
+sentationsinadditiontotheleaderboardranking.Therefore,theﬁnaljudgmentisbasedonthree
+maincriteria:leaderboardranking,technicalreport,andpresentation.Theorganizingcommittee
+reservestherighttoadjusttheweightsfortheﬁnalcriteria.Nonetheless,westrivetobalanceraw
+algorithmicperformancewithnovelscientiﬁccontributions.Accordingly,novelideasortheoretical
+innovationswouldbeappreciated,eveniftheydonotfullytranslateintoalgorithmicperformance.
+4AlgorithmDevelopmentandBaseline
+Thissectionexplainshowtowritealgorithmcodeforthecompetitionusingtheprovidedbaseline
+algorithmasanexample.
+4.1DevelopmentEnvironment
+Beforesubmission,eachteamshouldimplementandtestthealgorithmontheirownmachines.This
+sectionexplainshowtobuildaPythonenvironmentsimilartotheevaluationserver.
+Thesubmittedalgorithmwillberuninacondaenvironmentcreatedwithminiforge.Theenvi-
+ronmentﬁleusedtocreatetheservercondaenvironmentcanbedownloadedfromthecompetition
+webpage.
+SomenotablePythonpackagesandtheirversionsavailableinthecondaenvironmentare:
+9
+
+========== PAGE 10 ==========
+
+1 -python3.12
+2 -jupyterlab4.4.1
+3 -notebook7.4.1
+4 -ipympl0.9.7
+5 -pandas2.2.3
+6 -networkx3.4.2
+7 -scipy1.15.2
+8 -scikit-learn1.6.1
+9 -numba0.61.0
+10 -cython3.0.10
+11 -openjdk17
+12 -dotnet-runtime8
+13 -pyqt66.11.0
+14 -ortools9.15.6755
+15 -gurobipy13.0.2
+16 -xpress9.8.1
+17 -gymnasium1.2.3
+18 -torch2.11.0
+19 -torchvision0.26.0
+20 -tensorflow2.21.0
+21 -keras3.14.0
+22 -shapely2.1.2
+Listing2:OGC2026condaenvironmentﬁle
+TeamscanuseotherPythonpackagesorlibrariesbyzippingallrequiredﬁlesintoasingle
+submissionarchive.Dependingonthehardware/OS,environmentcreationmayfail(especiallywith
+pytorch,tensorflow,etc.).Ifyoudonotusethoseproblematicpackages,removethemfromthe
+providedymlﬁleandretry.Thiscondaenvironmentisprovidedtoincreasecompatibilitywith
+theevaluationserver.Itisnotmandatory,andexactbehaviormaystilldiﬀerbyOS.General
+conda/Pythonissuesshouldbehandledbyteams.
+Youcanrequesttheinstallationofadditionalpackagesrequiredforyouralgorithm.Theorganiz-
+ingcommitteewilldecidewhethertoinstalltherequestedpackages.Thecompetitionwillestablish
+aDiscordserverforparticipantquestionsandrequests.Pleaserefertothecompetitionwebpagefor
+instructionsonjoiningtheDiscordserver.
+Notethatalthoughmachine-learning-relatedpackagesarereadilyavailable,thereisnodedicated
+GPUontheevaluationserver.WeexpectML-relatedalgorithmstobepermittedaslongasthey
+runonaCPU.
+WithgeneroussupportfromGurobiandFICO,submissionscanusethefollowingcommercial
+MIPsolvers:
+•Gurobi13.0.2
+•Xpress9.8.1
+4.2BaselineAlgorithm
+Weprovideasimplegreedyalgorithm,availableonthecompetitionwebpage,tohelpteamsin
+developingtheirownalgorithms.Themyalgorithm.pyistheentrypointofyouralgorithm.The
+evaluationserverwillseekthisﬁleandfunctionalgorithm(probinfo,timelimit=60)asshownin
+Listing3.
+1defalgorithm(prob_info,timelimit=60):
+2 """
+3 Thisisatemplateforthecustomalgorithm.
+4 Thefunctionsignaturemustnotbechangedorremoved,butyoucandefine
+extrafunctionsormodulesthatareusedinthisfunction.
+5 The‘prob_info‘isadictionarycontainingtheprobleminformation,and‘
+timelimit‘isthealgorithm’stimelimitinseconds.
+6 Thefunctionshouldreturnasolutionintheformatspecifiedinthe
+problemstatement.
+7 Pleaserefertobaseline_greedy.pyforanexampleimplementationofa
+simplegreedyalgorithm.Youcanuseitasastartingpointorreference
+foryourownalgorithm.
+8 """
+9 #Youcanimportothermodulesordefineextrafunctionshere.
+10 importbaseline_greedy
+11
+12 returnbaseline_greedy.greedyalgorithm(prob_info,timelimit)
+Listing3:Examplemyalgorithm.py
+10
+
+========== PAGE 11 ==========
+
+Thefunctionalgorithm(probinfo,timelimit=60)shouldreturnaPythondictionarycontain-
+ingsolutioninformationforthegivenproblemprobinfo.
+Thesolutiondictionaryshouldlooklike:
+1{
+2 "operations":{
+3 "0":[
+4 {
+5 "type":"ENTRY",
+6 "block_id":48,
+7 "bay_id":1,
+8 "x":0,
+9 "y":0,
+10 "orient_idx":0
+11 },
+12 {
+13 "type":"ENTRY",
+14 "block_id":53,
+15 "bay_id":0,
+16 "x":0,
+17 "y":0,
+18 "orient_idx":0
+19 }
+20 ],
+21 "1":[
+22 {
+23 "type":"ENTRY",
+24 "block_id":19,
+25 "bay_id":2,
+26 "x":37,
+27 "y":0,
+28 "orient_idx":2
+29 },
+30 {
+31 "type":"ENTRY",
+32 "block_id":66,
+33 "bay_id":2,
+34 "x":22,
+35 "y":0,
+36 "orient_idx":0
+37 },
+38 ...
+39 ],
+40 ...
+41 "28":[
+42 {
+43 "type":"EXIT",
+44 "block_id":25,
+45 "bay_id":2
+46 },
+47 {
+48 "type":"EXIT",
+49 "block_id":31,
+50 "bay_id":1
+51 },
+52 {
+53 "type":"ENTRY",
+54 "block_id":15,
+55 "bay_id":0,
+56 "x":106,
+57 "y":0,
+58 "orient_idx":0
+59 },
+60 {
+61 "type":"ENTRY",
+62 "block_id":35,
+63 "bay_id":2,
+64 "x":13,
+65 "y":0,
+66 "orient_idx":0
+67 },
+68 {
+69 "type":"ENTRY",
+11
+
+========== PAGE 12 ==========
+
+70 "block_id":44,
+71 "bay_id":0,
+72 "x":19,
+73 "y":0,
+74 "orient_idx":0
+75 }
+76 ],
+77 ...
+78 }
+79}
+Listing4:Examplesolutiondictionary
+Thesolutiondictionaryshouldhaveasinglekey"operations",whosevalueisanotherdictionary
+fordailyoperations.Thedailyoperationsdictionaryhaskeysfordates(ortimeperiods).For
+example,"0","1",and"28"aredateindices.Itisnotnecessarytoincludealldateindices;only
+dateswithoperationsshouldbespeciﬁed.Foreachdateindex,alistofoperationsisspeciﬁed.
+Therearetwotypesofoperations:"EXIT"and"ENTRY".Thereisnolimitonthenumberofdaily
+operations.However,any"EXIT"operationsshouldbeperformedbeforethe"ENTRY"operations,as
+shownintheexamplefor"28"’soperations.
+Asshownintheexample,allnumbersshouldbeintegers.Inparticular,theblock’slocation("x"
+and"y")cannotbefractional.Theevaluationsystemwillalwaysroundthelocationvaluesbefore
+conductingafeasibilitycheck,whichcanbedonebycallingutils.checkfeasibility(probinfo,
+solution).
+ThebaselineimplementsagreedyalgorithmbasedontheEDD(earliestduedate)rule.Thenext
+blocktobeassigned,withtheearliestduedate,isplacedatoneofthe“candidatepoints”,which
+arethebottom-rightverticesoftheAABB(axis-alignedboundingbox).Theresultingsolutionmay
+beinfeasiblebecausethecraneconstraintisignoredduringtheﬁrstphase.Thebaselinealgorithm
+simplymovestheinfeasibleblockstoalaterdate,whenthebaysarecleared.Teamscanreadthe
+baselinecodeanduseitasastartingpoint.
+4.3AlgorithmTesterandSolutionVisualization
+Thissectionintroducesasimplewaytotestyouralgorithmandvisualizethesolutions.First,
+downloadandunzipalgtester.zipfromthecompetitionwebsitetoanappropriatefolder.Then,
+activatetheogc2026condaenvironmentandrunpythonalgtesterapp.py.Youwillseeawindow
+similartoFigure9.Selecttheprobleminstancetosolve,thenspecifythedirectorythatcontains
+youralgorithmﬁles,includingmyalgorithm.py.Youcanseetheproblem,bay,andblockdetailsin
+the“Problem”tab.The“Solution”tabwillshowyourselectedalgorithm’ssolutiontotheproblem.
+Inparticular,thearrangementofblocksinthebaysisvisualizedwithcross-sectionalviews.Note
+thatthisapplicationisprovidedasareferencethatmaybehelpful.Itwouldbeappreciatedifthe
+teamscouldreportanybugsencounteredwhenusingthisapplicationandthebaselinealgorithm.
+5CompetitionFormatandPolicy
+TheOptimizationGrandChallenge2026isconductedintwostages:apreliminarystageanda
+ﬁnalstage.Participantsarefreetoemployanymethodology—includingmathematicaloptimization,
+machinelearning,heuristics,orhybridapproaches—tosolvetheproblem.
+Leaderboardpolicy.Throughouteachstage,theleaderboarddisplaysstandingsbytier(e.g.,
+top10,top20,top30)ratherthanbyexactrank.Preciseﬁnalrankingsforeachstagearerevealed
+onlyafterallevaluationsforthatstagehavebeencompleted.
+5.1PreliminaryStage
+1.Automatedevaluation.Participantssubmittheiralgorithmcodetothecompetitionserver,
+whichautomaticallyexecutesthecodeandevaluatesperformance.Theleaderboardisupdated
+toreﬂectthelatesttierstandings.
+2.Advancementtotheﬁnalstage.Basedontheautomatedevaluationresultsandcode
+veriﬁcationconductedbytheorganizingcommittee,thetop30to40teams(subjecttochange)
+areselectedtoadvancetotheﬁnalstage.Finalpreliminaryrankingsareannounceduponthe
+conclusionofthisstage.
+12
+
+========== PAGE 13 ==========
+
+Figure9:AlgorithmTester
+13
+
+========== PAGE 14 ==========
+
+5.2FinalStage
+1.Automatedevaluation.Asinthepreliminarystage,participantssubmittheiralgorithm
+codetothecompetitionserverforautomatedexecutionandtier-basedscoring.
+2.Technicalreportsubmission.Allﬁnalistteamsarerequiredtosubmitatechnicalreport
+describingtheiralgorithminadesignatedformat.Theintegrityandqualityofthesubmitted
+code,togetherwiththetechnicalreport,arereviewedseparatelybytheorganizingcommittee.
+3.Presentation.Finalistteamsarerequiredtopresenttheirapproachandresultsbeforethe
+organizingcommittee,whichisalsotakenintoaccountintheﬁnalevaluation.
+4.Finalselection.Onceallevaluationsarecomplete,theorganizingcommitteeconductsa
+comprehensivereviewoftheautomatedscores,technicalreports,codeevaluations,andpresen-
+tationstodeterminetheﬁnalprize-winningteams.Thecompleteﬁnalrankingsareannounced
+atthispoint.
+5.3Evaluation,Disclosure,andIntegrity
+Thespeciﬁcevaluationcriteriaandproceduresaredeterminedandadministeredatthediscretionof
+theorganizingcommittee.Apartfromtheﬁnalrankingsofprize-winningteams,individualevalua-
+tionresultswillnotbedisclosed.
+Allalgorithmcodeandtechnicalreportssubmittedbyﬁnalistteamswillbepubliclydisclosed;
+accordingly,allsubmittedcodemustbeeligibleforreleaseasopensource.Byparticipating,teams
+consenttosuchdisclosure.
+Evenaftertheﬁnalresultsareannounced,awardsmayberevokedifanymisconduct—including
+butnotlimitedtoplagiarism,undiscloseduseofrestrictedresources,orotherviolationsofcompeti-
+tionrules—isdiscoveredorreportedandsubstantiatedthroughreviewbytheorganizingcommittee.
+6OrganizingCommittee
+TheOptimizationGrandChallenge2026isorganizedandoperatedby
+•KyungsikLee(SeoulNationalUniversity,Chair)
+•ChungmokLee(HankukUniversityofForeignStudies)
+•JonghoonWoo(SeoulNationalUniversity)
+•ChankmugKang(SoongsilUniversity)
+•SeulgiJoung(AjouUniversity)
+•YunwooJung(LGCNS)
+•GibeakAhn(LGCNS)
+•JerimiLee(LGCNS)
+14

@@ -1,0 +1,4 @@
+[STAGE_TIMING]{"instance": "prob_30", "n_blocks": 150, "n_bays": 2, "total_s": 130.64, "stages": {"baseline": 66.843, "search": 0.0, "cpsat_seed": 0.0, "seeds_decode": 0.0}, "search_baseline_other_s": 63.797}
+[STAGE_OBJ]{"instance": "prob_30", "final_obj": 255400407.58, "stages": {}}
+[HYBRID_TIMING]{"total_s": 292.172, "stages": {"baseline": 66.843, "search": 0.0, "cpsat_seed": 0.0, "seeds_decode": 0.0, "legacy_candidate": 130.64, "box_candidate": 74.437, "gassign_candidate": 69.313, "perbay_candidate": 17.516}, "unattributed_s": 0.0}
+[HYBRID_OBJ]{"stages": {"box_candidate": {"before": 255400405.0, "after": 13213461.0, "n_adopt": 1, "delta": 242186944.0}, "gassign_candidate": {"before": 13213461.0, "after": 9632285.0, "n_adopt": 1, "delta": 3581176.0}}}

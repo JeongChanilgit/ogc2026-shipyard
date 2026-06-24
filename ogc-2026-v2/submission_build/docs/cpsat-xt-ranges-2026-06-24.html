@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>x+t CP-SAT — x 범위 vs t 범위 (모바일)</title>
+<style>
+  html{-webkit-text-size-adjust:100%}
+  :root{--bg:#0e1014;--panel:#181b22;--ink:#e9ecf2;--mut:#9aa3b2;--line:#2a2f3a;
+        --t:#3fd0d8;--x:#c79cff;--acc:#6cb0ff;--warn:#e3b341}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:18px 15px 70px;max-width:680px;margin:0 auto}
+  h1{font-size:22px;line-height:1.3;margin:4px 0 2px}
+  h2{font-size:19px;margin:28px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+  h2.t{color:var(--t)} h2.x{color:var(--x)}
+  .sub{color:var(--mut);font-size:14px;margin:0 0 14px}
+  p{margin:9px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;
+       font:13.5px ui-monospace,Consolas,monospace;color:#dbe3ef;word-break:break-word}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+  .key{background:#0f1722;border:1px solid #23414e;border-left:4px solid var(--acc);border-radius:10px;padding:13px 15px;margin:13px 0}
+  .tbox{background:#0c1717;border-left:4px solid var(--t)}
+  .xbox{background:#150f1d;border-left:4px solid var(--x)}
+  .wbox{background:#1c1708;border-left:4px solid var(--warn)}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      font:13px/1.6 ui-monospace,Consolas,monospace;color:#cfd8e6;margin:9px 0}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:6px 0}
+  .mut{color:var(--mut)} b.t{color:var(--t)} b.x{color:var(--x)}
+  .viz{font:13px ui-monospace,monospace;color:#cfd8e6;background:#0b0d11;border:1px solid var(--line);
+       border-radius:10px;padding:13px 12px;margin:9px 0;line-height:2}
+  .viz .lab{color:var(--mut);font-size:12px}
+  .dotx{color:var(--x);font-weight:700} .bart{color:var(--t)}
+</style></head><body>
+
+<h1>x+t CP-SAT<br>x 범위는? t 범위는?</h1>
+<p class="sub">crane_repack_bay 의 변수 경계 · 2026-06-24</p>
+
+<div class="key">
+<b>한 줄 답</b><br>
+· <b class="t">t(시각)</b> = <b>전 범위, 모든 정수</b>를 다 본다 (timing과 똑같이 촘촘).<br>
+· <b class="x">x(위치)</b> = <b>전 범위지만 몇 개만 샘플</b>한다 (듬성듬성, n_xcand개 후보).<br><br>
+즉 <b>t는 연속처럼 촘촘, x는 듬성한 이산 후보</b> — 이 비대칭이 핵심.
+</div>
+
+<h2 class="t">t (entry 시각) 범위</h2>
+<div class="card tbox">
+<pre>entry[b] = IntVar( R[b] , H )</pre>
+<ul>
+<li><b>하한 R[b]</b> = 그 블록의 <b>release_time</b>(출시 시각). 그 전엔 못 넣음.</li>
+<li><b>상한 H</b> = <code>현재 makespan + maxP</code><br>
+= (현 해에서 가장 늦은 exit) + (최대 처리시간).</li>
+</ul>
+<b>→ release 부터 H 까지 <span class="t">모든 정수 시각</span>을 CP-SAT가 자유롭게 고름.</b> 빠진 시각 없음(풀 IntVar).
+</div>
+
+<h2 class="x">x (위치) 범위</h2>
+<div class="card xbox">
+<pre>후보 = _x_anchors(범위 [x_lb, x_ub] 를 n_xcand개 균등 샘플)
+x_lb = 좌벽 한계 (world x ≥ 0)
+x_ub = 우벽 한계 (x + 블록폭 ≤ 바이폭 W)</pre>
+<ul>
+<li><b>범위 자체는 전체</b> — 블록이 바이 안에서 <b>좌벽~우벽</b> 어디든 갈 수 있는 전 구간 <code>[x_lb, x_ub]</code>.</li>
+<li><b>그러나 다 보지 않음</b> — 그 구간을 <b>n_xcand개(예: 5개)로 균등 분할한 점</b>만 후보로 줌. <b>현재 위치는 항상 포함.</b></li>
+</ul>
+<b>→ <span class="x">전 범위에서 몇 개만 골라본다</span> (이산 샘플, 사이 위치는 안 봄).</b>
+</div>
+
+<h2>그림으로</h2>
+<div class="viz">
+<span class="lab">t (시각): 전부 다 봄 — 촘촘</span><br>
+R <span class="bart">┝━━━━━━━━━━━━━━━━━━┥</span> H<br>
+&nbsp;&nbsp;&nbsp;<span class="bart">↑ 모든 정수 시각 후보</span><br><br>
+<span class="lab">x (위치): 전 범위지만 5개만 — 듬성</span><br>
+x_lb <span class="dotx">●</span>──<span class="dotx">●</span>──<span class="dotx">●</span>──<span class="dotx">●</span>──<span class="dotx">●</span> x_ub<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dotx">↑ n_xcand개 후보(사이는 건너뜀)</span>
+</div>
+
+<h2>왜 이렇게 비대칭?</h2>
+<div class="card">
+<ul>
+<li><b>t 는 싸다</b> — 1-D 시각이라 풀 IntVar로 둬도 CP-SAT가 잘 푼다. 그래서 전 범위 다 봄.</li>
+<li><b>x 는 비싸다</b> — x를 풀 범위로 두면, 두 블록의 <b>크레인 막힘 관계가 정확한 x마다 달라져</b> 미리 계산해 둘 수가 없다(조합 폭발).<br>
+그래서 <b>x를 소수 후보로 고정</b>해야 각 (쌍, 후보)별 크레인 불리언을 <b>미리 계산</b>할 수 있다 → 모델이 작아짐.</li>
+</ul>
+</div>
+
+<div class="key wbox">
+<b>실무적 함의</b><br>
+· x 후보가 <b>적으면(예: 5)</b> 빠르지만, 진짜 좋은 x가 후보 사이에 있으면 <b>놓칠 수 있다</b>.<br>
+· 늘리면(예: 9) 더 촘촘하나 사전계산·모델이 커져 느려짐.<br>
+· 그래서 <b>좌표하강(x→y→o 따로)</b> + <b>합집합 후보(곱셈 아님)</b>로 후보 수를 덧셈으로 억제.<br>
+· 또 <b>tardy 근처 블록만</b>(window) 후보를 받고, 나머지는 현재 위치 고정 → 모델 더 작게.
+</div>
+
+<div class="card">
+<b>정리</b><br>
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+<tr><td style="padding:6px 4px;color:var(--mut)"></td><td style="padding:6px 4px;color:var(--t)">t (시각)</td><td style="padding:6px 4px;color:var(--x)">x (위치)</td></tr>
+<tr><td style="padding:6px 4px;color:var(--mut)">범위</td><td style="padding:6px 4px">release ~ makespan+maxP</td><td style="padding:6px 4px">좌벽 ~ 우벽 (W 안)</td></tr>
+<tr><td style="padding:6px 4px;color:var(--mut)">해상도</td><td style="padding:6px 4px"><b class="t">모든 정수</b></td><td style="padding:6px 4px"><b class="x">n_xcand개 샘플</b></td></tr>
+<tr><td style="padding:6px 4px;color:var(--mut)">변수형</td><td style="padding:6px 4px">IntVar</td><td style="padding:6px 4px">후보 선택(Bool)</td></tr>
+</table>
+</div>
+
+<p class="mut" style="font-size:12px;margin-top:22px">근거: crane_cpsat.py:498 (entry IntVar R..H), :464-466 (H=makespan+maxP), :83-101 (_x_anchors) · xreopt_ref.py:60-68 (_x_lb/_x_ub)</p>
+
+</body></html>

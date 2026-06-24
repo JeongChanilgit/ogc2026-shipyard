@@ -1,0 +1,34 @@
+{
+  "tag": "v08-adaptive-raster",
+  "timestamp_kst": "20260610-034634",
+  "zip_filename": "v08-adaptive-raster-20260610-034634.zip",
+  "zip_size_bytes": 123651,
+  "zip_sha256": "cd93cc23e7481774f22a7cb1fc823fbbfbdc8523081d30a0a326f4b9a4d19634",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 85480
+    },
+    {
+      "path": "geom_kernel.py",
+      "bytes": 4367
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 10447
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 299328
+    },
+    {
+      "path": "parallel_decode.py",
+      "bytes": 26216
+    },
+    {
+      "path": "regime.py",
+      "bytes": 18316
+    }
+  ],
+  "note": "Task A: adaptive raster floor gate (fast-floor branch only, kill-switches intact). tl=100 all 20 feasible max z1=7, tl=300 inert vs prior. best-of-N (OGC_PP_MULTISTART) gated OFF=inert. Robustness certified 2026-06-10."
+}

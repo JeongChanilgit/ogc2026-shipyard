@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 솔버 — 살아 돌아가는 알고리즘 컴포넌트 (2026-06-16)</title>
+<style>
+  :root{
+    --bg:#0c1018; --bg2:#121826; --panel:#161e2e; --panel2:#1b2438;
+    --ink:#e8edf6; --muted:#9aa7bd; --line:#26324a;
+    --legacy:#38bdf8; --legacy-d:#0e7490;
+    --box:#fbbf24; --box-d:#92400e;
+    --crane:#fb7185; --good:#34d399; --bad:#f87171; --warn:#fbbf24;
+    --dormant:#5b6680; --accent:#a78bfa;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:linear-gradient(180deg,#0a0d14,#0c1018 240px);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Malgun Gothic",sans-serif;
+    line-height:1.6;font-size:15.5px}
+  a{color:var(--legacy);text-decoration:none}
+  code,.mono{font-family:var(--mono);font-size:.9em}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px 100px}
+
+  /* header */
+  header{padding:54px 22px 30px;max-width:1180px;margin:0 auto}
+  .kick{color:var(--accent);font-weight:700;letter-spacing:.14em;font-size:12.5px;text-transform:uppercase}
+  h1{font-size:38px;line-height:1.12;margin:10px 0 12px;font-weight:800}
+  h1 .grad{background:linear-gradient(90deg,var(--legacy),var(--box));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);font-size:17px;max-width:860px}
+  .meta{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-size:12.5px;color:var(--muted)}
+  .pill b{color:var(--ink)}
+
+  /* nav */
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(10,13,20,.86);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);padding:11px 0;margin-bottom:8px}
+  nav.toc .wrap{padding:0 22px;display:flex;gap:7px;flex-wrap:wrap}
+  nav.toc a{color:var(--muted);font-size:12.5px;padding:5px 10px;border-radius:8px;border:1px solid transparent}
+  nav.toc a:hover{color:var(--ink);background:var(--panel);border-color:var(--line)}
+
+  section{margin:40px 0;scroll-margin-top:64px}
+  h2{font-size:25px;margin:0 0 6px;font-weight:800;display:flex;align-items:center;gap:11px}
+  h2 .n{font-family:var(--mono);font-size:15px;color:var(--accent);background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:3px 9px}
+  .lead{color:var(--muted);margin:0 0 22px;max-width:880px}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media(max-width:880px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+
+  /* stat cards */
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px 17px}
+  .stat .big{font-size:27px;font-weight:800;letter-spacing:-.02em}
+  .stat .lab{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .stat .note{color:var(--muted);font-size:11.5px;margin-top:7px;border-top:1px dashed var(--line);padding-top:7px}
+
+  /* flow boxes */
+  .flow{display:flex;flex-direction:column;gap:0}
+  .node{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 16px;position:relative}
+  .node .t{font-weight:700;font-size:15px}
+  .node .d{color:var(--muted);font-size:13px;margin-top:3px}
+  .node .src{font-family:var(--mono);font-size:11px;color:var(--legacy);margin-top:6px;opacity:.85}
+  .arrow{height:24px;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .arrow:before{content:"▼";font-size:11px}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;vertical-align:middle;margin-left:7px}
+  .tag.legacy{background:rgba(56,189,248,.14);color:var(--legacy);border:1px solid var(--legacy-d)}
+  .tag.box{background:rgba(251,191,36,.14);color:var(--box);border:1px solid var(--box-d)}
+  .tag.gate{background:rgba(167,139,250,.14);color:var(--accent);border:1px solid #5b4a9e}
+  .tag.good{background:rgba(52,211,153,.14);color:var(--good);border:1px solid #15803d}
+
+  /* two-engine comparison */
+  .eng{border-radius:16px;padding:20px;border:1px solid var(--line)}
+  .eng.le{background:linear-gradient(180deg,rgba(56,189,248,.07),transparent);border-color:var(--legacy-d)}
+  .eng.bx{background:linear-gradient(180deg,rgba(251,191,36,.07),transparent);border-color:var(--box-d)}
+  .eng h3{margin:0 0 4px;font-size:19px}
+  .eng .who{font-size:12.5px;color:var(--muted)}
+  .eng ul{margin:14px 0 0;padding-left:18px}
+  .eng li{margin:7px 0;font-size:13.5px}
+  .vs{font-weight:800;color:var(--muted);text-align:center;font-size:13px;letter-spacing:.1em}
+
+  /* crane visual */
+  .cranewrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center}
+  @media(max-width:880px){.cranewrap{grid-template-columns:1fr}}
+  .bayviz{background:#0a0e16;border:1px solid var(--line);border-radius:12px;padding:18px;position:relative}
+  .cell{position:absolute;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0a0e16}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:12px}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:5px}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em}
+  td .mono{color:var(--legacy)}
+  tr:hover td{background:rgba(255,255,255,.015)}
+  .on{color:var(--good);font-weight:700}
+  .off{color:var(--dormant);font-weight:700}
+
+  /* module grid */
+  .mod{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;border-left:3px solid var(--dormant)}
+  .mod.active{border-left-color:var(--good)}
+  .mod .nm{font-family:var(--mono);font-size:13.5px;font-weight:700}
+  .mod .ro{color:var(--muted);font-size:12.5px;margin-top:5px}
+  .mod .st{font-size:10.5px;font-weight:700;margin-top:9px;display:inline-block;padding:2px 8px;border-radius:999px}
+  .mod .st.a{background:rgba(52,211,153,.13);color:var(--good)}
+  .mod .st.d{background:rgba(91,102,128,.18);color:var(--dormant)}
+
+  /* bars */
+  .bar{height:30px;border-radius:7px;background:var(--panel2);overflow:hidden;position:relative;border:1px solid var(--line)}
+  .bar .fill{height:100%;display:flex;align-items:center;padding-left:11px;font-size:12px;font-weight:700;color:#0a0e16;white-space:nowrap}
+  .barrow{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center;margin:9px 0}
+  .barrow .lb{font-size:12.5px;color:var(--muted);text-align:right}
+
+  .callout{border-left:3px solid var(--accent);background:rgba(167,139,250,.06);padding:13px 16px;border-radius:0 10px 10px 0;margin:16px 0;font-size:13.5px;color:var(--ink)}
+  .callout.warn{border-color:var(--warn);background:rgba(251,191,36,.06)}
+  .callout.good{border-color:var(--good);background:rgba(52,211,153,.06)}
+  .small{font-size:12px;color:var(--muted)}
+  hr.sp{border:0;border-top:1px solid var(--line);margin:26px 0}
+  .footer{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:18px;margin-top:50px}
+  .eq{font-family:var(--mono);background:#0a0e16;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;overflow-x:auto}
+  .kbd{font-family:var(--mono);background:#0a0e16;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11.5px;color:var(--box)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="kick">OGC 2026 · The Grand Shipyard Puzzle · 솔버 내부 구조</div>
+  <h1>지금 <span class="grad">살아 돌아가는</span> 알고리즘 컴포넌트</h1>
+  <p class="sub">평가서버가 호출하는 <code>algorithm()</code> 한 함수 뒤에서 무슨 일이 벌어지는가 —
+  <b>best-of(legacy, box-decomp) HYBRID</b> 오케스트레이션과 그 두 엔진의 상반된 철학(DECOUPLE vs JOINT),
+  크레인 j≥k 제약, CP-SAT 타이밍 오라클, 그리고 현재 성적표까지 file:line 근거로 시각화.</p>
+  <div class="meta">
+    <span class="pill">엔트리 <b>src/myalgorithm.py:7491</b></span>
+    <span class="pill">운영 TL <b>120s</b> · 4코어 · 16GB · 인터넷·GPU 없음</span>
+    <span class="pill">ALL40 <b>328.7M</b> · feasible <b>40/40</b> · never −1</span>
+    <span class="pill">기준일 <b>2026-06-16</b></span>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#overview">한눈에</a>
+  <a href="#orch">① 오케스트레이션</a>
+  <a href="#philo">② 두 엔진의 철학</a>
+  <a href="#legacy">③ legacy 파이프라인</a>
+  <a href="#crane">④ 크레인 j≥k</a>
+  <a href="#oracle">⑤ 타이밍 오라클</a>
+  <a href="#box">⑥ box-decomp</a>
+  <a href="#modules">⑦ 모듈 지도</a>
+  <a href="#gates">⑧ 게이트</a>
+  <a href="#score">⑨ 성적표</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ============ OVERVIEW ============ -->
+<section id="overview">
+  <h2><span class="n">한눈에</span> 문제와 해법</h2>
+  <p class="lead">조선소 블록마다 <b>베이 j · 위치(x,y) · 방향 o · 진입(ENTRY)·퇴출(EXIT) 시각</b>을 동시에 정해
+  목적함수를 최소화한다. 세 개의 NP-hard 문제(이형 폴리곤 패킹 · tardiness 스케줄링 · 베이배정+선호)가 한 번에 결합돼 있다.</p>
+
+  <div class="panel" style="margin-bottom:18px">
+    <div class="eq">min&nbsp;&nbsp;obj = w<sub>1</sub>·Z1 + w<sub>2</sub>·Z2 + w<sub>3</sub>·Z3
+&nbsp;&nbsp;&nbsp;&nbsp;Z1 = Σ tardiness (지연)
+&nbsp;&nbsp;&nbsp;&nbsp;Z2 = max workload imbalance (베이가중 작업부하 불균형)
+&nbsp;&nbsp;&nbsp;&nbsp;Z3 = Σ (S_max − S_chosen) preference deviation (선호 이탈)</div>
+    <p class="small" style="margin:12px 0 0">
+    핵심: <b>Z2·Z3는 블록→베이 매핑만으로 closed-form</b> 으로 정해지지만, <b>Z1(지연)은 실제로 배치·시각을 decode 해야</b> 나온다.
+    그래서 "낮은 z3 배정"을 골라도 그것이 <b>z1=0으로 realize 되느냐</b>가 진짜 싸움이다. ·
+    <span class="mono">notes/devlog/integration-map.md:19-24</span></p>
+  </div>
+
+  <div class="callout warn">
+    <b>점수 공식이 모든 결정을 지배한다.</b> &nbsp;<code>score = R − nb</code> (R=팀수, nb=엄밀히 더 나은 팀수),
+    단 <b>infeasible / timeout / crash = −1</b>. 한 인스턴스 −1은 평균 R/2 손실 →
+    <b>−1 회피가 1순위</b>, "한 문제 압도"보다 "모든 문제 안정적 feasible"이 유리하다.
+    HYBRID 전체가 <code>try/except</code> + 공식체커 게이트로 감싸진 이유. · <span class="mono">INSIGHTS.md:11,59</span>
+  </div>
+
+  <div class="grid4" style="margin-top:18px">
+    <div class="stat"><div class="big" style="color:var(--legacy)">2 엔진</div><div class="lab">legacy + box-decomp, best-of로 채택</div></div>
+    <div class="stat"><div class="big" style="color:var(--good)">19/20</div><div class="lab">set1 z1=0 달성 (legacy)</div></div>
+    <div class="stat"><div class="big" style="color:var(--box)">40/40</div><div class="lab">feasible, never −1 (ALL40)</div></div>
+    <div class="stat"><div class="big" style="color:var(--accent)">1.17×</div><div class="lab">경쟁자 대비 (추월 R&D 중)</div></div>
+  </div>
+</section>
+
+<!-- ============ ORCHESTRATION ============ -->
+<section id="orch">
+  <h2><span class="n">①</span> 최상위 오케스트레이션 — <code>algorithm()</code></h2>
+  <p class="lead">평가서버가 호출하는 단 하나의 함수. 두 엔진을 각각 돌려 <b>공식 체커(check_feasibility)로 채점하고 총 obj가 더 낮은 쪽</b>을 채택한다.
+  모든 후보 단계는 try/except + strict-improvement 게이트라, 어떤 후보가 죽거나 나빠져도 <b>legacy 밑으로 회귀하거나 −1을 추가할 수 없다.</b></p>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="flow">
+        <div class="node"><span class="t">진입 <code>algorithm(prob_info, T)</code></span>
+          <div class="d">게이트 읽기: <span class="kbd">OGC_HYBRID</span>=ON, <span class="kbd">OGC_HYBRID_MIN_T</span>=100</div>
+          <div class="src">myalgorithm.py:7491–7529</div></div>
+        <div class="arrow"></div>
+        <div class="node"><span class="t">예산 분배</span>
+          <div class="d">box몫 reserve = min(80, 0.3T) (T≥100일 때) · perbay몫 = min(15, 0.12T)<br>legacy몫 = max(T−reserve−perbay, <b>0.5T</b>) ← set2 타임아웃 방지 하한</div>
+          <div class="src">myalgorithm.py:7530–7553</div></div>
+        <div class="arrow"></div>
+        <div class="node"><span class="t">LEGACY 후보 생성 <span class="tag legacy">엔진 ①</span></span>
+          <div class="d"><code>_legacy_algorithm(prob_info, _leg)</code> → 항상 feasible 한 해</div>
+          <div class="src">myalgorithm.py:7556 · 본체 :5408</div></div>
+        <div class="arrow"></div>
+        <div class="node"><span class="t">BOX 후보 best-of <span class="tag box">엔진 ②</span> <span class="tag gate">reserve≥20일 때만</span></span>
+          <div class="d"><code>sol_b = boxsolver.algorithm(prob_info, reserve)</code><br>feasible <b>그리고</b> obj_b &lt; obj_legacy − ε 이면 채택</div>
+          <div class="src">myalgorithm.py:7561–7574</div></div>
+        <div class="arrow"></div>
+        <div class="node"><span class="t">PERBAY 폴리시 <span class="tag good">추가형</span></span>
+          <div class="d">남는 wall로 per-bay JOINT 재최적화 시도 (개선될 때만 채택)</div>
+          <div class="src">myalgorithm.py:7579–7595</div></div>
+        <div class="arrow"></div>
+        <div class="node" style="border-color:var(--good)"><span class="t">return <code>{"operations": {str_time:[op,…]}}</code></span>
+          <div class="d">EXIT-before-ENTRY 정렬로 시각별 버킷 조립</div>
+          <div class="src">baseline_greedy.py:_build_operations:1786</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:16px">
+        <h3 style="margin:0 0 10px;font-size:16px">왜 best-of 인가?</h3>
+        <p style="font-size:13.5px;margin:0 0 12px">두 엔진은 <b>서로 다른 인스턴스에서 이긴다.</b> 한쪽이 모두를 지배하지 못하므로,
+        둘 다 돌리고 공식 체커로 더 나은 쪽을 고르는 것이 단일 엔진보다 항상 ≥ 좋다.</p>
+        <table>
+          <tr><th>인스턴스 유형</th><th>승자</th><th>이유</th></tr>
+          <tr><td>congested (대부분)</td><td><span style="color:var(--legacy)">legacy</span></td><td>그리디 BL이 빠르게 z1=0 realize</td></tr>
+          <tr><td>prob_3 / 4 / 18</td><td><span style="color:var(--box)">box-decomp</span></td><td>dense co-presence를 JOINT로 realize</td></tr>
+        </table>
+        <p class="small" style="margin:11px 0 0">set1 1.39M(legacy 단독) → <b>1.31M</b>(best-of, −73K). · CLAUDE.md 활성 솔버 항</p>
+      </div>
+      <div class="callout good" style="margin-top:0">
+        <b>2026-06-16 단일 1줄 변경이 set2를 살렸다.</b><br>
+        <code>OGC_HYBRID_MIN_T</code> 를 150 → <b>100</b> 으로 낮춰, 운영 TL=120 에서도 box 엔진이 켜지게 했다.
+        그 전엔 T=120 &lt; 150 이라 box가 게이트 OFF → 순수 legacy만 돌아 set2 z1 폭발.
+        <b>ALL40 4.24B → 328.7M (약 12.9배 개선)</b>, set1 무회귀, feasible 40/40.
+        · <span class="mono">myalgorithm.py:7528</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PHILOSOPHY ============ -->
+<section id="philo">
+  <h2><span class="n">②</span> 두 엔진의 상반된 철학 — DECOUPLE vs JOINT</h2>
+  <p class="lead">이 솔버의 핵심 통찰. 위치·시각을 <b>JOINT로 한 모델에서 풀면 탐색공간이 폭발</b>한다(원점 재시작이 이걸로 망함).
+  legacy는 둘을 <b>분리(DECOUPLE)</b>해서 — 위치를 그리디로 먼저 고정한 뒤, 그 위에서 시각만 깨끗한 1-D 문제로 푼다.
+  box-decomp는 일부 dense 인스턴스에 한해 의도적으로 JOINT를 감수한다.</p>
+
+  <div class="grid2">
+    <div class="eng le">
+      <h3>엔진 ① <span style="color:var(--legacy)">legacy</span> — DECOUPLE</h3>
+      <div class="who">복원된 옛 솔버 · 대부분의 인스턴스 승 · set1 z1=0 19/20</div>
+      <ul>
+        <li><b>1단계 — 위치 FIX:</b> crane-aware Bottom-Left 그리디(<code>fastfloor</code>)로 모든 블록의 (x, y, 방향)을 확정. 시각은 "가능한 한 빨리(entry=R)" 목표.</li>
+        <li><b>2단계 — 시각만 최적화:</b> 레이아웃이 고정됐으므로, 베이별로 <b>1-D disjunctive tardiness</b> 문제만 남는다 → per-bay CP-SAT 타이밍 오라클이 <b>최적</b>으로 푼다.</li>
+        <li><b>이득:</b> 위치 탐색과 시각 탐색이 결합하지 않아 공간이 작다. 깨끗하게 z1=0 도달.</li>
+      </ul>
+    </div>
+    <div class="eng bx">
+      <h3>엔진 ② <span style="color:var(--box)">box-decomp</span> — JOINT</h3>
+      <div class="who">prob_3/4/18 등 dense 인스턴스에서 승 · best-of 후보</div>
+      <ul>
+        <li><b>분해 대상:</b> 공간이 아니라 <b>각 블록의 불규칙 footprint를 ≤K개(기본 2) 직사각형 cover</b>로 근사.</li>
+        <li><b>JOINT 풀이:</b> per-bay CP-SAT 한 모델에 위치변수 <code>tx,ty</code> + 시각변수 <code>ev</code>를 동시에 두고 tardiness 최소화.</li>
+        <li><b>이득:</b> 그리디 BL이 놓치는 <b>조밀한 동시존재(dense co-presence)</b>를 CP-SAT가 realize → 그 인스턴스에서 더 낮은 z1.</li>
+        <li><b>비용:</b> JOINT라 모델이 커져 멤버수(70)·pair곱(90000)·K=2 제한 필수.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="vs" style="margin-top:14px">legacy: "위치 먼저 고정 → 시각만 별도 최적" &nbsp;&nbsp;⟷&nbsp;&nbsp; box: "footprint 직사각 분해 → 위치+시각 동시 최적"</p>
+</section>
+
+<!-- ============ LEGACY PIPELINE ============ -->
+<section id="legacy">
+  <h2><span class="n">③</span> legacy 파이프라인 상세 <span class="tag legacy">엔진 ①</span></h2>
+  <p class="lead"><code>_legacy_algorithm()</code> 내부. 모든 후보 채택은 <code>consider()</code> = 공식 check_feasibility + <b>총 obj 게이트</b>를 통과해야 하므로,
+  어느 단계도 직전 해보다 나쁘게 만들 수 없다(monotone improvement).</p>
+
+  <div class="panel">
+    <div class="flow">
+      <div class="node"><span class="t">[1] SUBMIT_V2 — 16노브 적응 주입</span> <span class="tag gate">T≥60</span>
+        <div class="d"><code>os.environ.setdefault</code>로 16개 게이트 주입: fastfloor 활성·우선화, assign cap 0.85,
+        cum_level 예산 30%, ban-race(90s·2라운드), rebuild-augment 등. setdefault라 명시 env가 항상 이김.</div>
+        <div class="src">myalgorithm.py:5439–5454 (_SUBMIT_V2 default ON :630)</div></div>
+      <div class="arrow"></div>
+      <div class="node"><span class="t">[2] regime — 가중치 적응 라우팅</span>
+        <div class="d">w1:w2:w3 비율·패킹밀도·크기로 시드 우선순위와 예산배분을 산출. 가중치가 자릿수 단위로 다르므로(w1 667~29.6K) 필수.
+        순수 stdlib라 절대 크래시 안 함.</div>
+        <div class="src">regime.py:config_from_prob:420 · myalgorithm.py:138</div></div>
+      <div class="arrow"></div>
+      <div class="node" style="border-color:var(--legacy-d)"><span class="t">[3] LAYOUT FIX — fastfloor (DECOUPLE 1단계)</span>
+        <div class="d"><code>build_fast_floor → _fixed_time_decode</code>: 블록을 배치순서대로 돌며
+        ① entry=R 무지연 목표로 위치 탐색 → ② 실패 시 기존 exit 시각으로 entry 미룸(delayed) → ③ 그래도 안 되면 빈 창에 강제(forced).
+        결과 = 모든 블록의 (bay, x, y, orient) <b>FIXED</b>.</div>
+        <div class="src">fastfloor.py:_fixed_time_decode:556–643 · 호출 myalgorithm.py:5882</div></div>
+      <div class="arrow"></div>
+      <div class="node"><span class="t">[3b] ban-race — z1 재구축</span> <span class="tag gate">T≥150</span>
+        <div class="d">plain·ban 두 경로를 각각 풀로 돌린 뒤 최종-대-최종 best-of. 운영 TL=120에선 자동 skip.</div>
+        <div class="src">myalgorithm.py:6287–6745</div></div>
+      <div class="arrow"></div>
+      <div class="node" style="border-color:var(--good)"><span class="t">[4] PER-BAY CP-SAT 타이밍 오라클 (DECOUPLE 2단계)</span>
+        <div class="d"><code>_cpsat_bay_timing_verified</code>: 고정 레이아웃 위에서 블록별 ENTRY 정수변수만 두고 Σtardiness 최소화 → <b>아래 ⑤에서 상세</b>. 4-worker CP-SAT.</div>
+        <div class="src">myalgorithm.py:2617–2903</div></div>
+      <div class="arrow"></div>
+      <div class="node"><span class="t">[5] z1 repair loop</span> <span class="tag gate">z1&gt;0 베이만</span>
+        <div class="d">지연이 남은 베이를 worst-first로: (a) 단일-베이 CP-SAT 재타이밍 (b) 단일-베이 2D 재패킹 (c) reloc/swap/xbay. best-of-N 시드로 재시드.</div>
+        <div class="src">myalgorithm.py:4835–5145</div></div>
+      <div class="arrow"></div>
+      <div class="node"><span class="t">[6] Front B — 블록→베이 재배정 (z2/z3 ↓)</span>
+        <div class="d">z1=0 상태에서 남는 예산으로 배정 재최적화. O(n) proxy로 후보 랭크 → Phase1 단일 relocate → Phase2 선호편차 top-40 swap.
+        모든 move는 crane-safe insert로 실현 후 총 obj 게이트로만 채택.</div>
+        <div class="src">myalgorithm.py:5210–5397 · proxy _assignment_proxy:4295</div></div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px">※ ban-race(T≥150) 등 일부 단계는 운영 TL=120에서 자동 비활성. legacy는 ~140–300s에 plateau라 서버 TL에서 회귀 0. · INSIGHTS.md</p>
+</section>
+
+<!-- ============ CRANE ============ -->
+<section id="crane">
+  <h2><span class="n">④</span> 진짜 어려움 — 크레인 수직접근 제약 (j ≥ k) <span class="tag" style="background:rgba(251,113,133,.14);color:var(--crane);border:1px solid #9f1239">난점</span></h2>
+  <p class="lead">단순 2D 겹침 금지가 아니다. 블록은 한 자리에 <b>여러 층(layer)</b>으로 쌓이고, 빼내려면 크레인이 그 블록 <b>바로 위 수직 공간</b>으로 내려와야 한다.
+  그래서 배치 가능성은 <b>평면 + 층 + 시간</b>이 결합된 3D 문제가 된다.</p>
+
+  <div class="cranewrap">
+    <div>
+      <div class="bayviz" style="height:230px">
+        <!-- crane arrow -->
+        <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);color:var(--crane);font-size:11px;font-weight:700">↓ 크레인 수직 접근</div>
+        <!-- block S (blocker) on top -->
+        <div class="cell" style="left:120px;top:46px;width:120px;height:40px;background:var(--crane)">S (층 j)</div>
+        <!-- block M below -->
+        <div class="cell" style="left:120px;top:150px;width:120px;height:40px;background:var(--legacy)">M (층 k)</div>
+        <!-- floor line -->
+        <div style="position:absolute;left:18px;right:18px;bottom:18px;border-top:2px dashed var(--line)"></div>
+        <div style="position:absolute;left:24px;bottom:2px;font-size:10px;color:var(--muted)">베이 바닥</div>
+        <!-- blocked path -->
+        <div style="position:absolute;left:166px;top:30px;bottom:40px;width:2px;background:repeating-linear-gradient(var(--crane) 0 4px,transparent 4px 8px)"></div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--legacy)"></span>M = 꺼내려는 블록 (층 k)</span>
+        <span><span class="sw" style="background:var(--crane)"></span>S = 위를 막는 블록 (층 j ≥ k)</span>
+      </div>
+    </div>
+    <div>
+      <p style="margin:0 0 12px"><b>규칙:</b> M을 진입/퇴출시키려는 순간, M의 층 k <b>그리고 그 위(j ≥ k)</b> 어느 셀이라도 다른 블록 S가
+      차지하면 크레인 경로가 막혀 작업 불가.</p>
+      <div class="eq">obstruct(M, S) = ∃ k &lt; layers(M),
+&nbsp;&nbsp;&nbsp;&nbsp;∃ j ∈ [k, layers(S)) :
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cells_M[k] ∩ cells_S[j] ≠ ∅</div>
+      <p style="font-size:13.5px;margin:14px 0 0">코드에는 "crane"/"j≥k"라는 변수가 따로 없다 — <b><code>range(k, n)</code> 루프 자체가 곧 j≥k</b>다.
+      두 블록의 시간 구간이 어떻게 겹치는지(누가 먼저 들어와 있나 / 동시 퇴출인가)에 따라
+      obstruct(B,A)·obstruct(A,B)·동일층 collide의 <b>5가지 금지조건</b>으로 나눠 검사한다.</p>
+      <p class="small" style="margin:12px 0 0"><code>_ft_pair_ok</code> · fastfloor.py:157–200. 후보는 보수적 로컬셀로 1차 스크린 →
+      채택 직전 부동소수 정점을 직접 래스터화한 월드셀로 재검증(<code>_verify</code>:246).</p>
+    </div>
+  </div>
+  <div class="callout">
+    이 보수적 검사를 통과한 위치만 채택하므로, fastfloor가 만든 floor는 <b>정의상 crane-safe</b>다.
+    이것이 "위치를 먼저 고정한다"가 안전한 이유 — 이후 타이밍 오라클은 crane 기하를 다시 풀 필요 없이 페어 disjunction으로만 인코딩하면 된다.
+  </div>
+</section>
+
+<!-- ============ ORACLE ============ -->
+<section id="oracle">
+  <h2><span class="n">⑤</span> per-bay CP-SAT 타이밍 오라클 <span class="tag legacy">DECOUPLE 2단계</span></h2>
+  <p class="lead">레이아웃이 고정됐으니 위치·방향·충돌기하는 전부 상수. 남은 자유도는 <b>각 블록의 ENTRY 시각 하나</b>뿐.
+  이것이 깨끗한 <b>1-D disjunctive tardiness</b> 문제 — OR-Tools CP-SAT가 베이별로 <b>최적</b>으로 푼다.</p>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="margin:0 0 12px;font-size:16px">CP-SAT 모델 구조</h3>
+      <div class="eq">m = cp_model.CpModel()
+
+# 결정변수: 블록별 ENTRY 정수 1개
+e[b] = NewIntVar(R[b], H)        # EXIT = e[b] + P[b] (고정)
+
+# 페어 분리(고정 기하 5-bool → ENTRY 구간 disjunction)
+#   coll : Add(ax ≤ be)·OnlyEnforceIf(l1)
+#          Add(bx ≤ ae)·OnlyEnforceIf(l2)
+#          AddBoolOr([l1, l2])
+
+# tardiness
+t[b] = NewIntVar(0, H)
+Add(t[b] ≥ e[b] + P[b] − D[b])
+Minimize( Σ t[b] )
+
+solver.num_search_workers = 4    # 평가서버 4코어 포화</div>
+      <div class="src" style="font-family:var(--mono);font-size:11px;color:var(--legacy);margin-top:10px">myalgorithm.py:2830–2898</div>
+    </div>
+    <div>
+      <div class="panel" style="margin-bottom:14px">
+        <h3 style="margin:0 0 8px;font-size:16px">왜 AddNoOverlap이 아니라 페어 BoolOr인가</h3>
+        <p style="font-size:13.5px;margin:0">크레인 j≥k 제약은 <b>비대칭</b>이다(A가 B를 막는 것과 B가 A를 막는 것이 다름).
+        그래서 표준 <code>AddNoOverlap</code> 대신, 페어마다 entry≤·exit≥ 방향별 5종 bool을 미리 계산해
+        <b>half-reified BoolOr</b>로 인코딩한다. 위치가 고정이라 이 5-bool은 페어당 1회만 선계산된다.</p>
+      </div>
+      <div class="panel" style="margin-bottom:14px">
+        <h3 style="margin:0 0 8px;font-size:16px">최적성 & 안전장치</h3>
+        <p style="font-size:13.5px;margin:0">tardy LB(하한)에 이미 도달한 베이는 skip(<code>lb_skip</code>). warm-start hint로 기존 해 주입.
+        Gurobi 포팅판(<code>_gurobi_bay_timing_verified</code>:2920)도 있으나 disjunctive는 CP-SAT가 우세라 default OFF.</p>
+      </div>
+      <div class="callout warn" style="margin:0">
+        <b>비결정성 주의.</b> num_search_workers&gt;1 + wall-clock 조합은 결정적이지 않다 → 캡처 측정 노이즈 ±130K.
+        <code>_dev_det</code>(:199)로 옵트인 결정화 가능. conda run이 4-worker에서 크래시하므로 env python 직접 실행.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BOX ============ -->
+<section id="box">
+  <h2><span class="n">⑥</span> box-decomp 엔진 상세 <span class="tag box">엔진 ②</span></h2>
+  <p class="lead">블록의 불규칙 footprint를 ≤K개 직사각형으로 분해(tight cover)한 뒤, per-bay CP-SAT가 위치와 시각을 JOINT로 푼다.
+  legacy의 단일 loose bbox보다 훨씬 타이트해서, 같은 crane-safe 보장을 유지하면서 dense co-presence를 realize 한다.</p>
+
+  <div class="grid2">
+    <div>
+      <div class="bayviz" style="height:175px;margin-bottom:14px">
+        <div style="position:absolute;left:16px;top:10px;font-size:11px;color:var(--muted)">불규칙 footprint cell들 → ≤K=2 직사각형 cover</div>
+        <!-- L-shape cells approximated by 2 rects -->
+        <div class="cell" style="left:60px;top:48px;width:90px;height:42px;background:var(--box);opacity:.9">rect 1</div>
+        <div class="cell" style="left:60px;top:96px;width:44px;height:42px;background:var(--box);opacity:.65;color:#0a0e16">rect 2</div>
+        <div style="position:absolute;left:200px;top:60px;font-size:12px;color:var(--muted)">L자 블록 = 직사각 2개로<br>tight하게 덮음</div>
+      </div>
+      <table>
+        <tr><th>비교</th><th style="color:var(--legacy)">legacy 패커</th><th style="color:var(--box)">box-decomp</th></tr>
+        <tr><td>블록 근사</td><td>단일 loose bbox</td><td>≤K rect tight cover</td></tr>
+        <tr><td>위치·시각</td><td>DECOUPLE (분리)</td><td>JOINT (동시)</td></tr>
+        <tr><td>밀도</td><td>보수적</td><td>조밀</td></tr>
+        <tr><td>비용</td><td>빠름</td><td>모델 큼 (제한 필요)</td></tr>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="flow">
+        <div class="node"><span class="t">직렬 fallback 먼저 확보</span>
+          <div class="d">preferred 배정 + EDD 직렬화 → 항상 feasible (never −1 보장)</div>
+          <div class="src">boxsolver.py:1620–1624</div></div>
+        <div class="arrow"></div>
+        <div class="node"><span class="t">spec 스펙트럼 4코어 병렬</span>
+          <div class="d">{preferred·capped·balanced}×{bbox·cells} 후보를 spawn pool로 동시 풀솔브</div>
+          <div class="src">boxsolver.py:1634–1657</div></div>
+        <div class="arrow"></div>
+        <div class="node" style="border-color:var(--box-d)"><span class="t">_pack_bay_boxdecomp (베이별)</span>
+          <div class="d">① footprint cells → <code>_cell_rects</code> ≤K rect &nbsp; ② JOINT CP-SAT: vars tx,ty + ev<br>
+          ③ rect-pair disjoint <b>OR</b> 시간분리 BoolOr &nbsp; ④ + area-cumulative(energetic) &nbsp; ⑤ min Σtardiness</div>
+          <div class="src">boxsolver.py:454–585 · _cell_rects:412</div></div>
+        <div class="arrow"></div>
+        <div class="node"><span class="t">obj-gate best-of + PHASE2 reassign</span>
+          <div class="d">모든 spec + fallback 중 최선 → z3-aware 재배정(default ON). PHASE3 feasspill은 default OFF.</div>
+          <div class="src">boxsolver.py:1666–1696</div></div>
+      </div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px">redundant area-cumulative(Σfootprint ≤ bay area, energetic propagator)가 z1 floor까지 압박. K=3은 9× 모델로 역효과 → K=2 고정.
+  · box는 시간이 필요해 TL=120에선 승폭 축소(prob_3 52→77K 등).</p>
+</section>
+
+<!-- ============ MODULES ============ -->
+<section id="modules">
+  <h2><span class="n">⑦</span> 보조 모듈 지도 — 무엇이 살아있고 무엇이 잠자나</h2>
+  <p class="lead">src/의 16개 모듈 중 실제 점수를 만드는 <b>활성 경로</b>는 소수다. 나머지는 게이트 뒤에 잠든(dormant) 대안·실험 레버 —
+  솔버 무손상으로 보존되어 있다(default OFF).</p>
+
+  <h3 style="font-size:15px;color:var(--good);margin:18px 0 10px">● 활성 (운영 경로)</h3>
+  <div class="grid3">
+    <div class="mod active"><div class="nm">myalgorithm.py</div><div class="ro">엔트리 + legacy 본체 + CP-SAT 타이밍 오라클 + Front B. 7,596줄.</div><span class="st a">ACTIVE</span></div>
+    <div class="mod active"><div class="nm">fastfloor.py</div><div class="ro">crane-aware BL 고정시각 디코더 = legacy 초기해 엔진(위치 FIX).</div><span class="st a">ACTIVE</span></div>
+    <div class="mod active"><div class="nm">boxsolver.py</div><div class="ro">box-decomp JOINT 엔진 = HYBRID 두 번째 후보.</div><span class="st a">ACTIVE</span></div>
+    <div class="mod active"><div class="nm">baseline_greedy.py</div><div class="ro">EDD+Best-Fit 그리디 플로어 + repair + 적응형 강제배치(force). 반환 조립기.</div><span class="st a">ACTIVE</span></div>
+    <div class="mod active"><div class="nm">regime.py</div><div class="ro">가중치 적응 라우터(stdlib only). 시드·예산 배분.</div><span class="st a">ACTIVE</span></div>
+    <div class="mod active"><div class="nm">parallel_decode.py</div><div class="ro">4코어 독립시드 멀티스타트. 실패 시 인프로세스 폴백(never raise).</div><span class="st a">ACTIVE</span></div>
+    <div class="mod active"><div class="nm">perbay.py</div><div class="ro">per-bay JOINT 배치+타이밍. 남는 wall에 LAST 추가형 폴리시(OGC_PERBAY ON).</div><span class="st a">ACTIVE(보조)</span></div>
+    <div class="mod active"><div class="nm">geom_kernel.py</div><div class="ro">crane-path 보수적 raster 프리필터. infeasible 절대 단정 안 함.</div><span class="st a">ACTIVE(유틸)</span></div>
+  </div>
+
+  <h3 style="font-size:15px;color:var(--dormant);margin:22px 0 10px">○ 잠재 (게이트 OFF · 대안/실험 레버)</h3>
+  <div class="grid3">
+    <div class="mod"><div class="nm">uconstruct.py</div><div class="ro">CP-SAT-guided crane-feasible constructive. <code>OGC_REBUILD_AUGMENT</code> 뒤.</div><span class="st d">DORMANT</span></div>
+    <div class="mod"><div class="nm">baypack_cp.py</div><div class="ro">베이 exact CP-SAT 패커. uconstruct에서만 호출 → 현재 미사용.</div><span class="st d">DORMANT</span></div>
+    <div class="mod"><div class="nm">packer.py</div><div class="ro">evict→re-anchor→re-insert 리포지셔닝 로컬서치. rebuild/uconstruct 뒤.</div><span class="st d">DORMANT</span></div>
+    <div class="mod"><div class="nm">z3race.py</div><div class="ro">z1=0 해에서 z3 깎는 race. <code>OGC_Z3_RACE</code> + T≥300 뒤.</div><span class="st d">DORMANT</span></div>
+    <div class="mod"><div class="nm">rebuild.py</div><div class="ro">z3-aware LBBD/branch-and-check (Wave W1~W4). <code>OGC_REBUILD</code> 뒤.</div><span class="st d">DORMANT</span></div>
+    <div class="mod"><div class="nm">t5_candidates.py</div><div class="ro">raster column-drop 패킹 후보 생성. <code>OGC_T5_CANDS</code> 뒤.</div><span class="st d">DORMANT</span></div>
+    <div class="mod"><div class="nm">instrument.py</div><div class="ro">제로오버헤드 트레이서. OGC_TRACE 없으면 no-op.</div><span class="st d">NO-OP</span></div>
+  </div>
+</section>
+
+<!-- ============ GATES ============ -->
+<section id="gates">
+  <h2><span class="n">⑧</span> 핵심 환경변수 게이트 — default = 제출 동작</h2>
+  <p class="lead">평가서버는 OGC_* 를 설정하지 않으므로 <b>코드의 default가 곧 제출 시 동작</b>이다. 모든 게이트는 unset→default·never-raise로 설계됐다(가역).</p>
+  <div class="panel" style="padding:8px 22px">
+    <table>
+      <tr><th>게이트</th><th>의미</th><th>기본값</th><th>근거</th></tr>
+      <tr><td class="mono">OGC_HYBRID</td><td>HYBRID best-of on/off (=0 → 순수 legacy)</td><td><span class="on">ON</span></td><td class="mono">myalgorithm:7521</td></tr>
+      <tr><td class="mono">OGC_HYBRID_MIN_T</td><td>box 엔진 활성 최소 T</td><td><span class="on">100</span> <span class="small">(150→100, 06-16)</span></td><td class="mono">myalgorithm:7528</td></tr>
+      <tr><td class="mono">OGC_SUBMIT_V2</td><td>gate200_v2 16노브 적응 주입(T≥60)</td><td><span class="on">ON</span></td><td class="mono">myalgorithm:630,5439</td></tr>
+      <tr><td class="mono">OGC_ADAPTIVE_FORCE</td><td>floor 적응형 강제배치(타임아웃 예측 시 즉시 force)</td><td><span class="on">ON</span></td><td class="mono">baseline_greedy:1285</td></tr>
+      <tr><td class="mono">OGC_FLOOR_BUDGET_PCT</td><td>greedy floor 예산 상한 (%T)</td><td><span class="on">50</span> <span class="small">(T≤150)</span></td><td class="mono">myalgorithm:5991</td></tr>
+      <tr><td class="mono">OGC_PERBAY</td><td>per-bay 추가형 폴리시</td><td><span class="on">ON</span></td><td class="mono">myalgorithm:7536,7580</td></tr>
+      <tr><td class="mono">OGC_FRONTB</td><td>Front B 블록→베이 재배정 (z2/z3)</td><td><span class="on">ON</span></td><td class="mono">myalgorithm:4759</td></tr>
+      <tr><td class="mono">OGC_BOXDECOMP_K</td><td>box rect cover 개수</td><td><span class="on">2</span></td><td class="mono">boxsolver:472</td></tr>
+      <tr><td class="mono">OGC_REBUILD / _AUGMENT</td><td>LBBD 재구성 / 통합 constructive</td><td><span class="off">OFF</span></td><td class="mono">myalgorithm:5571,5592</td></tr>
+      <tr><td class="mono">OGC_Z3_RACE</td><td>z3 race 후보 (T≥300)</td><td><span class="off">OFF</span></td><td class="mono">myalgorithm:6767</td></tr>
+      <tr><td class="mono">OGC_FF_LCA_RACE</td><td>congested 베이 dense LCA 패커 1회 시도</td><td><span class="off">OFF</span> <span class="small">(banked 보존)</span></td><td class="mono">fastfloor</td></tr>
+    </table>
+  </div>
+  <p class="small" style="margin-top:10px">※ <code>OGC_FORCE_AFTER</code> 라는 env는 없다 — force_after는 함수 인자(soft_stop_abs)로 전달된다.</p>
+</section>
+
+<!-- ============ SCORE ============ -->
+<section id="score">
+  <h2><span class="n">⑨</span> 현재 성적표 & 추월 레버</h2>
+  <p class="lead">2026-06-16 banked 상태(클린 default, env 없이 검증). 운영 TL=120s 기준.</p>
+
+  <div class="grid4" style="margin-bottom:22px">
+    <div class="stat"><div class="big">328.7M</div><div class="lab">ALL40 총 obj</div><div class="note">set1 1.41M + set2 327.3M</div></div>
+    <div class="stat"><div class="big" style="color:var(--good)">40/40</div><div class="lab">feasible · never −1</div><div class="note">max wall 113.1s (TL 120 이내)</div></div>
+    <div class="stat"><div class="big" style="color:var(--box)">11/40</div><div class="lab">경쟁자 대비 승 (wins)</div><div class="note">set1 10/20 · set2 일부</div></div>
+    <div class="stat"><div class="big" style="color:var(--accent)">1.17×</div><div class="lab">경쟁자 대비 (못 이김)</div><div class="note">경쟁자 280.8M · 갭 ~48M</div></div>
+  </div>
+
+  <div class="panel" style="margin-bottom:18px">
+    <h3 style="margin:0 0 14px;font-size:16px">set2 픽스의 효과 — 단일 1줄 변경</h3>
+    <div class="barrow"><div class="lb">픽스 전 (legacy only)</div>
+      <div class="bar"><div class="fill" style="width:100%;background:var(--bad)">ALL40 4.24B &nbsp;— set2 z1 폭발</div></div></div>
+    <div class="barrow"><div class="lb">픽스 후 (T=120 box ON)</div>
+      <div class="bar"><div class="fill" style="width:7.7%;background:var(--good);color:#0a0e16;padding-left:6px">328.7M</div></div></div>
+    <div class="barrow"><div class="lb">경쟁자 (목표)</div>
+      <div class="bar"><div class="fill" style="width:6.6%;background:var(--accent);color:#0a0e16;padding-left:6px">280.8M</div></div></div>
+    <p class="small" style="margin:8px 0 0"><code>OGC_HYBRID_MIN_T</code> 150→100 한 줄로 <b>12.9배 개선</b>. best-of는 공식체커 게이트라 legacy 밑 회귀 불가.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="margin:0 0 10px;font-size:16px">set1 (경쟁자 테이블 있음)</h3>
+      <div class="barrow"><div class="lb">우리 (TL=120)</div><div class="bar"><div class="fill" style="width:100%;background:var(--legacy)">1,412,821 · z1=0 19/20</div></div></div>
+      <div class="barrow"><div class="lb">우리 (TL≈200)</div><div class="bar"><div class="fill" style="width:93%;background:var(--legacy-d)">1,312,961 (낙관)</div></div></div>
+      <div class="barrow"><div class="lb">경쟁자 official</div><div class="bar"><div class="fill" style="width:66%;background:var(--accent);color:#0a0e16">931,465</div></div></div>
+      <p class="small" style="margin:6px 0 0">우리 z1=0인데도 갭이 남는 건 <b>realize 벽</b>: prob_13에서 z1=0 하려면 z3≈747 필요(경쟁자는 z3=432에 z1=0).</p>
+    </div>
+    <div class="callout warn" style="margin:0;align-self:start">
+      <b>추월의 유일한 레버 = per-bay 패킹 밀도 (80% → 95%)</b><br>
+      대규모 학술 리서치로 확정: spill·timing·부하균형이 아니라 <b>패킹 효율</b>이 근본. 우리 두 패커(BL-greedy, box-CP-SAT)는
+      ~80%에서 막히고 경쟁자는 ~95%. prob_29 선호베이 116블록 중 <b>89개가 공간 부족으로 delayed</b>→z1=1149 (경쟁자 z1=64).<br><br>
+      <b>방법(연구 backed, 미구현):</b> NFP(No-Fit-Polygon) 정확접촉 배치 · semi-discrete BLF(래스터) · compaction(gap 제거).
+      단 이형 폴리곤 NFP는 구현 난도 높음(별 세션 권장). · <span class="mono">notes/research/z1z3-lowering-2026-06-16.md</span>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <b>OGC2026 솔버 컴포넌트 시각 가이드</b> · 생성 2026-06-16 · 단일 자기완결 HTML<br>
+  근거: <span class="mono">src/myalgorithm.py · fastfloor.py · boxsolver.py · baseline_greedy.py · regime.py</span> (file:line 인용은 본문 각 노드 참조) ·
+  서사·수치: <span class="mono">notes/research/INSIGHTS.md · notes/devlog/integration-map.md · MEMORY.md(2026-06-16)</span><br>
+  <span style="color:var(--dormant)">※ 코드 미수정 · 읽기 전용 분석으로 합성. CP-SAT 비결정성으로 캡처 수치는 ±130K 노이즈 가능.</span>
+</div>
+
+</div>
+</body>
+</html>

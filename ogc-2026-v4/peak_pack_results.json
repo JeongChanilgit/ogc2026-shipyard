@@ -1,0 +1,47 @@
+[
+  {
+    "prob": 38,
+    "full_z1": 4526.0,
+    "worst_bay": 2,
+    "bay_z1": 2033.0,
+    "t_star": 40,
+    "S_size": 57,
+    "area_pct": 36.94469424753653,
+    "M_actual": 27,
+    "N_space": 33,
+    "status_space": "FEASIBLE",
+    "gap_space": 6,
+    "feasibility_ratio": 0.5789473684210527,
+    "wall_s": 142.5
+  },
+  {
+    "prob": 40,
+    "full_z1": 4082.0,
+    "worst_bay": 2,
+    "bay_z1": 1450.0,
+    "t_star": 44,
+    "S_size": 39,
+    "area_pct": 28.34018875459381,
+    "M_actual": 23,
+    "N_space": 24,
+    "status_space": "FEASIBLE",
+    "gap_space": 1,
+    "feasibility_ratio": 0.6153846153846154,
+    "wall_s": 125.3
+  },
+  {
+    "prob": 27,
+    "full_z1": 2695.0,
+    "worst_bay": 1,
+    "bay_z1": 1659.0,
+    "t_star": 29,
+    "S_size": 62,
+    "area_pct": 35.98564449618676,
+    "M_actual": 29,
+    "N_space": 30,
+    "status_space": "FEASIBLE",
+    "gap_space": 1,
+    "feasibility_ratio": 0.4838709677419355,
+    "wall_s": 148.1
+  }
+]

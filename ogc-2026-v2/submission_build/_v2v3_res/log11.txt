@@ -1,0 +1,698 @@
+[DBG] USE_GUIDE=1 guide dist=[41, 52, 49, 58]
+[DBG] after placement state dist=[44, 52, 49, 55] ovf=26
+[DBG] timing per_bay_s=24 (elapsed=41)
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=48 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=47 poses=48 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=47 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.00s
+  [precompute] blocks=45 active=1 frozen=44 tardy=0 cands_total=49 (x+4 y+0 o+0) combos=220 stored=61 poses=49 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=27 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.02s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=60 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=38 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=44 poses=56 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.01s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=46 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=45 active=1 frozen=44 tardy=0 cands_total=49 (x+4 y+0 o+0) combos=220 stored=39 poses=49 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=32 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.03s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=37 poses=48 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.02s
+  [precompute] blocks=51 active=1 frozen=50 tardy=0 cands_total=55 (x+4 y+0 o+0) combos=250 stored=57 poses=55 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=38 poses=56 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.01s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=55 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.00s
+  [precompute] blocks=45 active=1 frozen=44 tardy=0 cands_total=49 (x+4 y+0 o+0) combos=220 stored=65 poses=49 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=14.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=28 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=64 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=14.0 wall=0.02s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=54 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=54 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=46 poses=48 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=45 active=1 frozen=44 tardy=0 cands_total=49 (x+4 y+0 o+0) combos=220 stored=220 poses=49 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=33 poses=56 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=215 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=38 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=46 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=36 poses=59 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=43 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=42 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=45 poses=57 wall=0.05s
+  [CP-SAT] status=OPTIMAL obj=39.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=46 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=44 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=5.0 wall=0.02s
+  [precompute] blocks=45 active=1 frozen=44 tardy=0 cands_total=49 (x+4 y+0 o+0) combos=220 stored=45 poses=49 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=33 poses=56 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=45 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=45 active=1 frozen=44 tardy=0 cands_total=49 (x+4 y+0 o+0) combos=220 stored=82 poses=49 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=32 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=81 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=39 poses=57 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=43 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=38 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=44 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=38 poses=56 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=43 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=48 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=36 poses=59 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=46 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=54 poses=54 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=46 poses=48 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=37 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=5.0 wall=0.02s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=36 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=5.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=45 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=34 poses=58 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=46 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=44 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=28 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=51 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=15.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=46 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=49 poses=59 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=48 poses=54 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=44 poses=46 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=47 poses=53 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=58 poses=47 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=54 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=56 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=48 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=44 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=36 poses=47 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=51 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=35 poses=46 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=55 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=40 poses=58 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=62 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=14.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=48 poses=59 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=59 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=14.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=54 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=43 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=210 poses=47 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=50 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=205 poses=46 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=38 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=46 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=36 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.02s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=45 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=44 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=39.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=46 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=46 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=39.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=44 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=52 poses=58 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=42 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=80 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=48 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=77 poses=46 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=41 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=43 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=40 poses=58 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=44 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=40 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=43 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=48 poses=54 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=36 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=46 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=54 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=43 poses=46 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=2.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=39 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=5.0 wall=0.02s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=47 poses=59 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=19.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=38 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=5.0 wall=0.01s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=45 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=43 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=51 poses=60 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=15.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=46 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=49 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+[DBG] USE_GUIDE=1 guide dist=[41, 52, 49, 58]
+[DBG] after placement state dist=[43, 52, 48, 57] ovf=25
+[DBG] timing per_bay_s=25 (elapsed=40)
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=61 poses=48 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=52 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=68 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=33 poses=56 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=66 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=37 poses=53 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.03s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=46 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=40 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=45 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.02s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=54 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=39 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=52 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.02s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=58 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=29 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=57 poses=47 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=55 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=29 poses=60 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=54 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=58 poses=61 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=54 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=52 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=215 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=33 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=210 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.02s
+  [precompute] blocks=58 active=1 frozen=57 tardy=0 cands_total=62 (x+4 y+0 o+0) combos=285 stored=39 poses=62 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.01s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=48 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=38 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=40 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=46 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.01s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=39 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=61 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.02s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=31 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=60 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=46 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=35.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=45 poses=61 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=45 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=5.0 wall=0.01s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=43 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=32 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=42 poses=47 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=45 poses=53 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=49 poses=56 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=44 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=50 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=38 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=48 poses=52 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=51 poses=52 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=37 poses=57 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=6.0 wall=0.02s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=46 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=36 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=6.0 wall=0.01s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=41 poses=57 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=34 poses=58 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=30 poses=61 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=58 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=51 poses=52 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=56 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=65 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=52 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=61 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=58 active=1 frozen=57 tardy=0 cands_total=62 (x+4 y+0 o+0) combos=285 stored=47 poses=62 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=41 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=46 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.01s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=52 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=41 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=33.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=50 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=55 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=57 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=32.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=53 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=52 poses=46 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.02s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=56 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=31.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=49 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=54 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=56 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=52 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=205 poses=46 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=50 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=200 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=58 active=1 frozen=57 tardy=0 cands_total=62 (x+4 y+0 o+0) combos=285 stored=39 poses=62 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=48 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=38 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.02s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=42 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=46 poses=61 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=26.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=41 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=58 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=58 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=32.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=55 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=48 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=35.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=45 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=47 poses=58 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=35.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=41 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=51 poses=58 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=27.0 wall=0.00s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=39 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=45 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=51 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=44 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=50 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.01s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=38 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=48 poses=52 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=41 active=1 frozen=40 tardy=0 cands_total=45 (x+4 y+0 o+0) combos=200 stored=56 poses=45 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=48 active=1 frozen=47 tardy=0 cands_total=52 (x+4 y+0 o+0) combos=235 stored=51 poses=52 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=55 active=1 frozen=54 tardy=0 cands_total=59 (x+4 y+0 o+0) combos=270 stored=39 poses=59 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=6.0 wall=0.02s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=46 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=42.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=38 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=6.0 wall=0.02s
+[DBG] USE_GUIDE=1 guide dist=[41, 52, 49, 58]
+[DBG] after placement state dist=[43, 51, 49, 57] ovf=18
+[DBG] timing per_bay_s=24 (elapsed=41)
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=66 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=36.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=49 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=32.0 wall=0.00s
+  [precompute] blocks=58 active=1 frozen=57 tardy=0 cands_total=62 (x+4 y+0 o+0) combos=285 stored=56 poses=62 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 15
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 14
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 13
+  [guard] combo count exceeded cap 200000; shrunk n_xcand -> 12
+  [precompute] blocks=49 active=49 tardy=1 cands_total=619 (x+570 y+0 o+0) combos=187665 stored=32042 poses=619 wall=8.52s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=2.70s
+  [precompute] blocks=49 active=49 tardy=0 cands_total=223 (x+0 y+174 o+0) combos=24318 stored=3951 poses=223 wall=1.11s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.30s
+  [precompute] blocks=49 active=49 tardy=0 cands_total=292 (x+0 y+0 o+243) combos=41760 stored=23238 poses=292 wall=2.34s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=1.83s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=61 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=68 poses=48 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=51 active=1 frozen=50 tardy=0 cands_total=55 (x+4 y+0 o+0) combos=250 stored=35 poses=55 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=66 poses=47 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=58 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=24 poses=61 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=57 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=58 poses=54 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=215 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.02s
+  [precompute] blocks=51 active=1 frozen=50 tardy=0 cands_total=55 (x+4 y+0 o+0) combos=250 stored=35 poses=55 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=210 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.01s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=61 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=51 active=1 frozen=50 tardy=0 cands_total=55 (x+4 y+0 o+0) combos=250 stored=35 poses=55 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=58 active=1 frozen=57 tardy=0 cands_total=62 (x+4 y+0 o+0) combos=285 stored=44 poses=62 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=43 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=44 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=66 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.02s
+  [precompute] blocks=51 active=1 frozen=50 tardy=0 cands_total=55 (x+4 y+0 o+0) combos=250 stored=44 poses=55 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.01s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=61 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=47 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.01s
+  [precompute] blocks=44 active=1 frozen=43 tardy=0 cands_total=48 (x+4 y+0 o+0) combos=215 stored=43 poses=48 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=35 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=42 poses=47 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.02s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=50 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=45 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=9.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=48 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=55 poses=54 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=42 poses=60 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.05s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=245 poses=54 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=42 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=240 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=58 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=41 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=64 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=41 poses=56 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=49 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=29.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=66 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=52 active=1 frozen=51 tardy=0 cands_total=56 (x+4 y+0 o+0) combos=255 stored=49 poses=56 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=29.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=36 poses=57 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=24 poses=61 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=55 poses=46 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.02s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=24 poses=60 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=57 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=66 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=53 poses=57 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=28.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=62 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=8.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=56 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=24 poses=60 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.03s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=55 poses=46 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=58 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=57 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=210 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=51 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=28.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=205 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=53.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=53 poses=57 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=28.0 wall=0.02s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=56 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=16.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=43 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.02s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=42 poses=60 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=46 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.02s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=64 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=46 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=59 poses=47 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=30.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=57 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=13.0 wall=0.00s
+  [precompute] blocks=43 active=1 frozen=42 tardy=0 cands_total=47 (x+4 y+0 o+0) combos=210 stored=42 poses=47 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=29 poses=57 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=3.0 wall=0.01s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=41 poses=46 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=1.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=50 poses=54 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=46 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=9.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=48 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=4.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=55 poses=54 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=42 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=53 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=11.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=245 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.02s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=42 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=12.0 wall=0.02s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=240 poses=53 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=17.0 wall=0.00s
+  [precompute] blocks=50 active=1 frozen=49 tardy=0 cands_total=54 (x+4 y+0 o+0) combos=245 stored=58 poses=54 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=57 poses=46 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=18.0 wall=0.00s
+  [precompute] blocks=49 active=1 frozen=48 tardy=0 cands_total=53 (x+4 y+0 o+0) combos=240 stored=56 poses=53 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=42 poses=58 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=64 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.02s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=42 poses=57 wall=0.00s
+  [CP-SAT] status=OPTIMAL obj=20.0 wall=0.00s
+  [precompute] blocks=54 active=1 frozen=53 tardy=0 cands_total=58 (x+4 y+0 o+0) combos=265 stored=50 poses=58 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=29.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=66 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=7.0 wall=0.00s
+  [precompute] blocks=53 active=1 frozen=52 tardy=0 cands_total=57 (x+4 y+0 o+0) combos=260 stored=50 poses=57 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=29.0 wall=0.00s
+  [precompute] blocks=57 active=1 frozen=56 tardy=0 cands_total=61 (x+4 y+0 o+0) combos=280 stored=24 poses=61 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=42 active=1 frozen=41 tardy=0 cands_total=46 (x+4 y+0 o+0) combos=205 stored=55 poses=46 wall=0.01s
+  [CP-SAT] status=OPTIMAL obj=10.0 wall=0.00s
+  [precompute] blocks=56 active=1 frozen=55 tardy=0 cands_total=60 (x+4 y+0 o+0) combos=275 stored=24 poses=60 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+RESULT prob_11: obj=72793.0 base=v2@0.3 pp_improved=False wall=172.0s

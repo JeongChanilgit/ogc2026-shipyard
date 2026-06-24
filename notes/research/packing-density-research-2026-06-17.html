@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>패킹 밀도 대규모 리서치 — OGC 2026 (2026-06-17)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --ink:#e6edf3; --muted:#9aa7b4;
+    --line:#2d3744; --accent:#58a6ff; --good:#3fb950; --warn:#d29922; --bad:#f85149;
+    --chip:#21314a; --chipink:#9ecbff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
+       line-height:1.6;font-size:15px}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 28px 80px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.5px}
+  h2{font-size:22px;margin:42px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h3{font-size:17px;margin:26px 0 8px;color:var(--accent)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 24px}
+  p{margin:10px 0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:#0b1220;padding:1px 6px;border-radius:5px;font-size:13px;color:#ffd9a0;
+       font-family:'Cascadia Code',Consolas,monospace}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:16px 0}
+  .tldr{background:linear-gradient(135deg,#16213a,#161b22);border:1px solid #2b4a78}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#cfe0f0;font-weight:600}
+  tr:nth-child(even) td{background:#11161f}
+  .chip{display:inline-block;background:var(--chip);color:var(--chipink);border-radius:20px;
+        padding:1px 10px;font-size:12px;margin:2px 4px 2px 0;white-space:nowrap}
+  .tag-good{color:var(--good);font-weight:600}
+  .tag-warn{color:var(--warn);font-weight:600}
+  .tag-bad{color:var(--bad);font-weight:600}
+  .rank{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+        border-radius:50%;background:var(--accent);color:#07101f;font-weight:700;margin-right:8px;font-size:14px}
+  .lead{font-size:16px}
+  ul{margin:8px 0;padding-left:22px}
+  li{margin:5px 0}
+  .kbd{font-family:Consolas,monospace;background:#0b1220;border:1px solid #30445f;border-radius:5px;padding:0 5px}
+  .star{color:var(--warn)}
+  .small{font-size:13px;color:var(--muted)}
+  .pill{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin:12px 0}
+  .pill.good{border-color:var(--good)}
+  .pill.warn{border-color:var(--warn)}
+  .pill.bad{border-color:var(--bad)}
+  .src{font-size:12.5px;color:var(--muted);word-break:break-all}
+  .src li{margin:3px 0}
+  hr{border:0;border-top:1px solid var(--line);margin:30px 0}
+  .toc{columns:2;font-size:14px}
+  @media(max-width:820px){.toc{columns:1}}
+  .toc a{display:block;padding:2px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>패킹 밀도를 높이는 방법 — 대규모 리서치</h1>
+<p class="sub">OGC 2026 · 조선소 블록 패킹 · 2026-06-17 · web-researcher 7개 병렬(논문·깃허브·SOTA) → 우리 솔버의 "속도-제약 밀도 벽"에 연결한 종합</p>
+
+<div class="panel tldr">
+  <h3 style="margin-top:0">한 화면 결론 (TL;DR)</h3>
+  <p class="lead">우리의 추월 레버는 이미 확정돼 있다 — <b>per-bay 패킹 효율 ~80%→~95%</b>. 진짜 벽은 밀도 자체가 아니라 <b>속도</b>: 우리의 dense packer(LCA)는 ~2배 느려 T120/4-core에서 밀도 이득 &lt; 연산비용이라 net-negative였다. 이번 리서치는 그 벽을 정면으로 겨냥한 두 갈래 + 한 우회로를 찾았다.</p>
+  <ul>
+    <li><b class="tag-good">갈래 1 — 더 빠른 dense packer 기법</b>: <b>Semi-discrete BLF</b>(Chehrazad 2021, NFP 없이 선분-스윕, 기존 대비 ~100배↓ ms 단위) + <b>ROMA raster penetration map</b>(Sato 2019, 정수격자 네이티브, O(1) 오버랩 조회). 둘 다 우리 래스터를 대체/가속해 "dense를 BL 속도로" 만드는 직접 후보. <span class="small">(우리가 찾던 net-positive 조건)</span></li>
+    <li><b class="tag-good">갈래 2 — 밀도 벽을 우회</b>: 문제의 진짜 클래스는 <b>Block Relocation + Temporal Bin Packing</b>. 밀도를 더 짜내지 말고 <b>필요한 밀도 자체를 줄인다</b> — departure-time 그룹 배정 + 클리크-면적 사전필터 + blocking-pair 페널티. O(n) 싸고, crane-feasibility를 밀도 희생 없이 높임.</li>
+    <li><b class="tag-warn">SOTA 도구</b>: <b>sparrow + jagua-rs</b>(2025 오픈소스 SOTA, "충돌 허용→GLS로 반복 해소" 패턴)가 진짜 알고리즘 레버. Python wheel <code>spyrrow</code> 존재(MIT, 오프라인 벤더 가능)지만 strip-packing·Rust·20분 기준·crane 미지원 → <b>바이너리보다 GLS 패턴 차용</b>이 현실적.</li>
+    <li><b class="tag-bad">막다른 길(확정)</b>: 학습 기반(RL/Transformer/diffusion) 패킹은 전부 GPU 종속 또는 ~37s+ CPU 추론 → CPU-only/오프라인/120s에 <b>전원 부적합</b>. "학습된 순서를 단순 규칙으로 증류" 도 논문들이 직접 불가라고 결론. 고전 휴리스틱이 이 제약에서 지배.</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <b>목차</b>
+  <div class="toc">
+    <a href="#wall">§0 우리의 벽 (왜 이 리서치인가)</a>
+    <a href="#map">§1 방법 지형도 (한 표)</a>
+    <a href="#A">§2 갈래 1 — 빠른 후보생성·충돌검출</a>
+    <a href="#B">§3 컴팩션·오버랩 최소화 (개선 패스)</a>
+    <a href="#C">§4 구성적 배치·스코어링</a>
+    <a href="#D">§5 갈래 2 — crane·시간축 우회로 ★</a>
+    <a href="#E">§6 SOTA 프론티어·벤치마크 수치</a>
+    <a href="#F">§7 오픈소스 깃허브 평가표</a>
+    <a href="#G">§8 학습 기반 = 부적합 (negative)</a>
+    <a href="#rec">§9 우리 솔버를 위한 우선순위 권고 ★</a>
+    <a href="#caveat">§10 주의·미해결</a>
+    <a href="#src">§11 전체 출처</a>
+  </div>
+</div>
+
+<!-- ============ 0 ============ -->
+<h2 id="wall">§0 우리의 벽 — 왜 "밀도"가 아니라 "속도"인가</h2>
+<p>2026-06-16 캠페인(약 17 가설 검증)에서 엄밀하게 확인된 것:</p>
+<ul>
+  <li><b>밀도 레버는 PROVEN</b>: fastfloor의 <code>_ft_search_pos_lca</code>(Largest-Contact-Area dense placer)를 배선하니 prob_22가 comp를 이기고, prob_29는 z1·z3 둘 다 comp 추월. 즉 더 조밀하게 깔면 손실→승리로 뒤집힌다.</li>
+  <li><b>그런데 T120/4-core에서 net-negative</b>: LCA는 ~2배 느려 floor race에서 예산을 먹고 postprocess를 굶긴다. best-of(banked, LCA)=328.4M은 2회 full-run이 필요해 120초에 불가. <span class="small">(근거: <code>notes/research/z1z3-lowering-2026-06-16.md</code> "BUDGET WALL")</span></li>
+  <li><b>줄일 수 없는 비용 = crane-feasibility 래스터 체크</b>: 다층 블록 + j≥k 수직접근 규칙 때문에 표준 nesting 도구의 "footprint 비충돌=feasible" 가정이 틀린다. per-bay 충돌 체크가 irreducible.</li>
+</ul>
+<div class="pill"><b>그래서 이번 리서치의 질문은 둘이다:</b> ① dense packing을 <b>BL 속도로</b> 할 수 있는 기법이 있는가? ② 애초에 <b>필요한 밀도를 줄이는</b> 직교 레버가 있는가? — 둘 다 "예"로 답이 나왔다.</div>
+
+<!-- ============ 1 ============ -->
+<h2 id="map">§1 방법 지형도 — 한 표로</h2>
+<table>
+<tr><th>패밀리</th><th>대표 방법</th><th>밀도/속도</th><th>정수·CPU·Python</th><th>crane(j≥k) 호환</th><th>우리 적합도</th></tr>
+<tr><td>빠른 충돌·후보</td><td>Semi-discrete BLF (Chehrazad 21)</td><td>NFP 대비 ~100배↓, ms</td><td class="tag-good">재구현 쉬움</td><td>z축 선분 마스크로 확장 가능</td><td class="tag-good">최우선</td></tr>
+<tr><td>빠른 충돌·후보</td><td>ROMA raster penetration (Sato 19)</td><td>O(1) 오버랩 조회, 정수격자</td><td class="tag-good">numpy 네이티브</td><td>금지열 마스크 추가</td><td class="tag-good">최우선</td></tr>
+<tr><td>빠른 충돌·후보</td><td>jagua-rs CDE (2025)</td><td>"수백만 쿼리/s"</td><td class="tag-warn">Rust, Py 바인딩 없음</td><td>hazard 레이어 추가 가능</td><td class="tag-warn">패턴 차용</td></tr>
+<tr><td>개선 패스</td><td>Jostle/shaking (Dowsland; Abeysooriya 18)</td><td>반복당 ms~수십ms</td><td class="tag-good">15~30줄</td><td class="tag-good">재삽입에 crane체크</td><td class="tag-good">즉시 시도</td></tr>
+<tr><td>개선 패스</td><td>Imamichi ILS+NLP (2009)</td><td>강력, 분 단위</td><td class="tag-warn">NLP 오버헤드</td><td>이동 후보 필터</td><td class="tag-warn">무거움</td></tr>
+<tr><td>개선 패스</td><td>Gomes&amp;Oliveira SA+LP (2006)</td><td>LP 컴팩션</td><td class="tag-warn">LP/NFP</td><td>선형제약 추가 가능</td><td class="tag-warn">무거움</td></tr>
+<tr><td>구성적 배치</td><td>Extreme-Point + LCA/BCA 스코어</td><td>조밀, 후보 적음</td><td class="tag-good">가능</td><td class="tag-good">우리 raster 위</td><td class="tag-good">이미 부분구현</td></tr>
+<tr><td>crane·시간축 ★</td><td>Block Relocation LB + departure 그룹</td><td>O(n), 밀도 희생 0</td><td class="tag-good">정렬/버킷</td><td class="tag-good">정확히 일치</td><td class="tag-good">우회로 ★</td></tr>
+<tr><td>crane·시간축 ★</td><td>Temporal BP 클리크 면적 하한</td><td>O(n) 사전필터</td><td class="tag-good">sweep</td><td class="tag-good">시간슬라이스</td><td class="tag-good">싸고 안전</td></tr>
+<tr><td>SOTA 도구</td><td>sparrow/spyrrow (GLS)</td><td>SWIM 79.8% (20분)</td><td class="tag-warn">Rust+wheel</td><td class="tag-bad">미지원</td><td class="tag-warn">패턴 차용</td></tr>
+<tr><td>학습 기반</td><td>GFPack++, PCT, DRL-2D</td><td>벤치 높음</td><td class="tag-bad">GPU/37s+</td><td class="tag-bad">없음</td><td class="tag-bad">부적합</td></tr>
+</table>
+
+<!-- ============ 2 ============ -->
+<h2 id="A">§2 갈래 1 — "dense를 BL 속도로": 빠른 후보생성·충돌검출</h2>
+<p>우리 벽의 직접 해답. 핵심은 <b>per-candidate 충돌 비용을 ms 이하로</b> 떨궈 dense packer를 net-positive로 만드는 것.</p>
+
+<h3>★ Semi-discrete BLF — Chehrazad, Roose, Wauters 2021 (EJOR / arXiv:2103.08739)</h3>
+<p>폴리곤과 베이를 모두 <b>등간격 수직 선분 집합</b>으로 반이산화하고, 충돌=선분 오버랩 테스트로 환원. NFP를 명시적으로 계산하지 않고 BL 정착점을 스윕라인으로 찾는다. 저자 주장: <b>기하 기반 NFP-BLF 대비 ~2 order of magnitude(≈100배) 빠름</b>, 회전 포함 ms 단위. 2025년 같은 그룹이 <b>3D deepest-LBF</b>로 확장(z방향 선분) — <b>이 z축 마스킹이 우리 crane "접근 가능한 열" 검사와 구조적으로 동형</b>이라 가장 자연스러운 통합 후보.</p>
+<div class="pill good">우리 적용: <code>fastfloor</code>의 래스터 충돌을 선분-표현으로 교체하면 해상도 독립 + 정확 + 빠름. crane 규칙은 "내 위층 블록 선분이 내 하강열에 있으면 금지"로 z선분 오버랩에 직접 인코딩. <span class="small">공개 Python 구현은 없음 → 재구현(알고리즘 단순). 단독 밀도 수치는 논문 미공개(메타휴리스틱 빌딩블록으로 위치).</span></div>
+
+<h3>★ ROMA — Raster Penetration Map (Sato et al. 2019/2020, EJOR)</h3>
+<p>각 폴리곤에 <b>사전계산된 래스터 침투맵</b>을 두면 임의 위치의 오버랩 값을 <b>O(1) 조회</b>. 정수격자 네이티브라 우리 환경에 직결. 15개 벤치 중 9개에서 기존 최선 동등·개선. crane 금지열을 맵 마스크로 더하면 됨.</p>
+<div class="pill good">우리 적용: 우리는 이미 래스터를 쓴다 → 침투맵 사전계산으로 "후보 위치마다 풀스캔" 비용을 O(1)로. ±r 정수 이동 후보를 O(1)로 평가해 dense 배치/컴팩션의 핫루프를 직접 가속. <b>속도 벽을 정조준</b>.</div>
+
+<h3>NFP 전처리 캐시 + 레퍼런스 점 쿼리</h3>
+<p>회전이 0/90/180/270 4가지뿐이고 유니크 형상 수가 제한적이면, <b>형상 쌍별 NFP를 1회 전처리 캐시</b> → 이후 배치 쿼리 = O(n) 점-폴리곤 내부판정. 래스터 풀스캔 대비 수십~수백배. Python에선 <code>pyclipr</code>(ClipperLib2)/<code>pyclipper</code> Minkowski가 가장 빠름. <span class="small">주의: 비볼록 NFP 생성 robustness 이슈(libnfporb는 2023 아카이브, CGAL reduced-convolution이 실측 빠름).</span></p>
+
+<h3>jagua-rs CDE — Gardeyn 2025 (INFORMS JoC / arXiv:2508.08341)</h3>
+<p>기하 계산을 최적화에서 분리한 오픈소스 충돌 엔진(Rust). 삼각법 + <b>poles-of-inaccessibility</b>(내접원 중심) + piers + quadtree로 대부분 충돌을 싼 폴-검사로 조기기각, "수백만 쿼리/s". <b>Python 바인딩 없음</b> → subprocess/FFI 필요 + 오프라인 빌드 부담. <span class="small">→ 바이너리 통합보다 "fail-fast surrogate(pole) 먼저, 정밀검사 나중" <b>설계 패턴</b>을 우리 체커에 차용하는 게 실용적.</span></p>
+
+<!-- ============ 3 ============ -->
+<h2 id="B">§3 컴팩션·오버랩 최소화 — 기존 배치를 짜내는 개선 패스</h2>
+<p>이미 feasible한 ~80% 배치 위에서 갭을 제거해 95%로. 우리 파이프라인에 <b>추가형(additive)</b>으로 붙이기 좋음(never-−1 유지에 유리).</p>
+
+<table>
+<tr><th>방법</th><th>핵심</th><th>비용</th><th>crane 추가법</th><th>구현 난이도</th></tr>
+<tr><td><b>Jostle/shaking</b><br><span class="small">Dowsland 98; Abeysooriya 18</span></td><td>블록 제거→BLF 재삽입 반복으로 "흔들어" 갭 채움</td><td>반복당 O(n·배치비용)</td><td class="tag-good">재삽입 조건에 crane체크(이미 <code>_fixed_time_decode</code>가 처리)</td><td class="tag-good">가장 쉬움(1~2일)</td></tr>
+<tr><td><b>ROMA 오버랩 최소화</b><br><span class="small">Sato 19</span></td><td>침투맵으로 각 블록을 최소-오버랩+crane만족 위치로 탐욕 이동</td><td>O(1)/후보</td><td class="tag-good">맵 마스크</td><td class="tag-warn">중(3~5일)</td></tr>
+<tr><td><b>Imamichi ILS+NLP</b><br><span class="small">2009 Discrete Opt</span></td><td>오버랩 소프트화→준뉴턴 분리+ILS, 0-오버랩 수렴 후 스트립 축소</td><td>분 단위</td><td class="tag-warn">이동 후 crane 재검사(국소해 탈출불가 위험)</td><td class="tag-bad">높음(1~2주)</td></tr>
+<tr><td><b>Gomes&amp;Oliveira SA+LP</b><br><span class="small">2006 EJOR</span></td><td>SA 시퀀스탐색 + 컴팩션/세퍼레이션 LP(Li&amp;Milenkovic NFP 선형분리)</td><td>LP/이웃</td><td class="tag-good">"하강열≠상위레이어 x범위" 선형제약</td><td class="tag-bad">높음(NFP+LP)</td></tr>
+<tr><td><b>Egeblad 2DNEST GLS</b><br><span class="small">2007 EJOR</span></td><td>최소오버랩 이동을 O(mn·log) 빠른 이웃탐색 + GLS</td><td>이동=ms</td><td class="tag-warn">이동방향 후보 필터</td><td class="tag-warn">중~높음</td></tr>
+</table>
+<div class="pill good">우리 1순위: <b>crane-aware 반복 jostle</b> — 기존 배치함수 위 15~30줄, 120s 내 수백 반복, obj-gate로 채택 시 never-infeasible. 가장 빠른 near-term 이득.</div>
+
+<!-- ============ 4 ============ -->
+<h2 id="C">§4 구성적 배치·스코어링 — BL을 넘는 후보 생성</h2>
+<p>per-candidate 비용이 비싸니 "적지만 좋은 후보"가 핵심.</p>
+<ul>
+  <li><b>BLF (Burke 2006)</b> — NFP+IFP orbital slide, 후보=NFP 정점. 정확하지만 비볼록 NFP 비쌈/robustness 이슈.</li>
+  <li><b>Extreme-Point (Crainic 2008)</b> — 배치 후 코너 투영으로 소수의 의미있는 극점만 후보화 → <b>비싼 crane체크를 적은 후보에만</b> 돌릴 수 있어 우리에 유리.</li>
+  <li><b>LCA / BCA 접촉면적 스코어 (Shang&amp;Gu 2017; Koh 08; Zheng 11)</b> — 후보 중 기존블록·벽과 접촉길이 최대 선택. 조선소 맥락서 BLF 대비 ~30% makespan↓. <b>우리는 이미 <code>_ft_search_pos_lca</code>로 부분 구현(밀도 PROVEN)</b>.</li>
+  <li><b>Diagonal-fill / 다중앵커 BLF (Kwon&amp;Lee 2015, 조선소)</b> — BL앵커 + TR앵커 동시평가로 대각 충진. 후보 2배지만 밀도↑.</li>
+  <li><b>MergeDJD (2026)</b> — 기하 보완적 블록쌍을 사전 병합해 더 규칙적 형상으로 → 빈패킹 평균 &lt;2s. 아이디어 차용 가능.</li>
+</ul>
+<div class="pill">권고 조합: <b>Semi-discrete 후보생성 + 접촉길이(BCA) 스코어</b> = NFP 없이 "slide-to-contact" 후보를 자동 생성하고, crane체크를 최소 후보에만. 우리가 이미 가진 LCA의 밀도 이득을 <b>빠른 표현 위에서</b> 재현하는 길.</div>
+
+<!-- ============ 5 ============ -->
+<h2 id="D">§5 갈래 2 — crane·시간축 우회로: 필요한 밀도 자체를 줄인다 ★</h2>
+<p>가장 새롭고 실행적인 발견. 우리 문제의 진짜 클래스는 순수 nesting이 아니라 <b>Block Relocation Problem(BRP) + Temporal Bin Packing</b>. 모든 분석이 한 통찰로 수렴: <b>blocking은 시간 현상</b> — 시간창이 겹치지 않는 두 블록은 서로 어떻게 쌓아도 무방하고, <b>동시 공존하면서 레이어 순서가 틀린 쌍만</b> 진짜 제약이다. 이걸 쓰면 밀도를 더 안 짜내고도 z1을 줄인다.</p>
+
+<div class="grid">
+  <div class="panel">
+    <h3 style="margin-top:0">① Departure-time 그룹 배정</h3>
+    <p class="small">Borgman 2010 (OR Spectrum); Kim&amp;Hong 2006 BRP</p>
+    <p>새 블록을 베이에 넣을 때, 그 베이 기존 블록들의 <b>EXIT 시각이 새 블록 EXIT에 가까운</b> 베이를 선호. "같이 나가는 블록끼리" 모으면 j≥k 위반 확률이 구조적으로 낮아짐. 실험상 reshuffle 30~50%↓. <b>O(1)</b> 정렬/버킷.</p>
+    <p class="small tag-warn">⚠ 우리 H18(temporal pre-staggering)은 low-slack서 falsified였음 — 단 그건 <i>진입시각 분산</i>이고, 이건 <i>같은 베이를 공유할 블록 선택(배정)</i>이라 다른 레버. 재시도 가치 있음.</p>
+  </div>
+  <div class="panel">
+    <h3 style="margin-top:0">② 클리크-면적 사전필터</h3>
+    <p class="small">Temporal Bin Packing 클리크 하한 (Dell'Amico 19; Martinovic 23)</p>
+    <p>인터벌 그래프의 최대 클리크(동시 공존 집합)를 sweep으로 구해, 그 시간슬라이스 합산 footprint가 베이 면적을 넘으면 <b>어떤 패커도 실현 불가</b> → 배정 단계서 O(n)으로 조기 차단. 탐색공간 축소 + 무의미한 dense-pack 시도 방지.</p>
+  </div>
+  <div class="panel">
+    <h3 style="margin-top:0">③ Blocking-pair 페널티 스코어</h3>
+    <p class="small">LIFO 컨테이너 적재 + 항공기 hangar MILP (arXiv:2508.02640)</p>
+    <p>블록 A를 (x,y)에 놓을 때, "A와 동시 존재 + A보다 높은 레이어 + A의 하강열 위" 기존블록 수를 세어 페널티(ENAR식). =0 위치 우선 → dense BL 유지하면서 j≥k 위반 최소화. hangar의 <code>blocks_AB → 시간 분리</code> Big-M 패턴의 soft 버전.</p>
+  </div>
+  <div class="panel">
+    <h3 style="margin-top:0">④ well-placed 불변식</h3>
+    <p class="small">BRP 하한 (Tanaka 16; Azab&amp;Morita 22 BRPAS)</p>
+    <p>위에 더 늦게 나가는 블록이 없으면 "well-placed". badly-placed 블록 수 = 재배치 하한. <b>배치 우선순위</b>로: 더 늦게-나가는 블록을 더 일찍-나가는 블록 위/하강열에 두지 않기. BRPAS는 시간창 조정으로 blocking 관계 자체를 줄임 = 우리 ENTRY/EXIT 결정과 동형.</p>
+  </div>
+</div>
+<div class="pill good"><b>왜 매력적인가:</b> 이 4개는 전부 O(n) 안팎으로 <b>싸다</b> — §0의 속도 벽을 안 건드린다. 그리고 우리 진단(prob_29: 116블록 중 89개 delayed=공간부족)을 "동시 공존 수를 배정·시간으로 줄여 공간부족 자체를 완화"로 직접 공격. 밀도 벽을 우회하는 유일한 길.</div>
+
+<!-- ============ 6 ============ -->
+<h2 id="E">§6 SOTA 프론티어 — "좋다"는 게 어느 수준인가</h2>
+<p>현 공개 SOTA = <b>sparrow</b>(Gardeyn 2025). "충돌 허용→GLS 반복 해소" + 동적 페어 페널티. 표준 ESICUP 기대밀도:</p>
+<table>
+<tr><th>인스턴스</th><th>sparrow 기대</th><th>이전 SOTA(ROMA/FLD)</th><th>sparrow 베스트</th></tr>
+<tr><td>SWIM</td><td>78.26%</td><td>74.66%</td><td>79.83%</td></tr>
+<tr><td>TROUSERS</td><td>91.73%</td><td>90.48%</td><td>92.62%</td></tr>
+<tr><td>SHIRTS</td><td>89.66%</td><td>88.21%</td><td>~90.9%</td></tr>
+<tr><td>ALBANO</td><td>89.47%</td><td>87.55%</td><td>~90%</td></tr>
+<tr><td>MARQUES</td><td>90.93%</td><td>89.97%</td><td>92.02%</td></tr>
+</table>
+<div class="pill warn"><b>현실 보정 2가지(필수):</b><br>
+① 이 89~92%는 <b>단층·무제약</b> strip 기준. 우리 <b>다층+crane j≥k</b>는 배치자유도가 훨씬 낮아 동일 밀도 달성 불가 — "경쟁자 ~95%"는 우리 추정이며 crane 하에선 천장이 더 낮다.<br>
+② sparrow 기준 런타임 = <b>20분/3스레드</b>. 우리 120s/4-core에서 실용 도달 밀도는 추정 ~85~88%(직접 측정 필요). 저자들 스스로 "지난 10년 진전 ~2~5%p"라고 명시 = 밀도는 짜기 어렵다.</div>
+
+<!-- ============ 7 ============ -->
+<h2 id="F">§7 오픈소스 깃허브 — 통합 가능성 평가표</h2>
+<table>
+<tr><th>레포</th><th>언어/라이선스</th><th>★</th><th>이형</th><th>알고리즘</th><th>Python</th><th>오프라인 벤더</th><th>판정</th></tr>
+<tr><td><b>sparrow/spyrrow</b></td><td>Rust/Py · MIT</td><td>277/33</td><td>O</td><td>GLS+CDE</td><td class="tag-good">wheel(win x64)</td><td class="tag-good">★★★ .whl 선반입</td><td class="tag-warn">strip모드·crane미지원 → 패턴/어댑터</td></tr>
+<tr><td><b>jagua-rs</b></td><td>Rust · MPL-2.0</td><td>162</td><td>O</td><td>CDE만</td><td class="tag-bad">없음</td><td class="tag-bad">빌드필요</td><td class="tag-warn">subprocess/FFI, 설계패턴 차용</td></tr>
+<tr><td><b>seanys/2D-Irregular</b></td><td>Python · MIT</td><td>158</td><td>O</td><td>BLF/NFP/SA</td><td class="tag-good">순수 py</td><td class="tag-good">★★★ 즉시</td><td class="tag-good">crane 주입 가장 쉬움(품질 ~70%)</td></tr>
+<tr><td>packingsolver</td><td>C++/Py · MIT</td><td>227</td><td>O</td><td>Tabu+greedy</td><td class="tag-warn">비공식</td><td class="tag-warn">빌드</td><td class="tag-warn">irregular 지원, Py 인터페이스 미검</td></tr>
+<tr><td>libnest2d/pynest2d</td><td>C++/Py · LGPL</td><td>428/41</td><td>O</td><td>NFP+BnB</td><td class="tag-warn">pynest2d</td><td class="tag-bad">CGAL빌드</td><td class="tag-warn">bin지원, 빌드 복잡</td></tr>
+<tr><td>liangxuCHEN/no_fit_polygon</td><td>Python · MIT</td><td>64</td><td>O</td><td>NFP(SVGnest포팅)</td><td class="tag-good">순수 py</td><td class="tag-good">★★★</td><td class="tag-warn">NFP 계산부 발췌용</td></tr>
+<tr><td>libnfporb</td><td>C++ · GPL</td><td>130</td><td>O</td><td>NFP orbiting</td><td class="tag-bad">없음</td><td class="tag-bad">-</td><td class="tag-bad">2023 ARCHIVED, 사용금지</td></tr>
+<tr><td>SVGnest/Deepnest</td><td>JS</td><td>2600/1100</td><td>O</td><td>NFP+GA</td><td class="tag-bad">없음</td><td class="tag-bad">-</td><td class="tag-bad">브라우저/Electron, 서버불가</td></tr>
+<tr><td>rectpack</td><td>Python · MIT</td><td>558</td><td class="tag-bad">직사각형만</td><td>MaxRects</td><td class="tag-good">O</td><td class="tag-good">★★★</td><td class="tag-bad">이형 불가</td></tr>
+</table>
+<div class="pill"><b>현실적 통합 Top-3</b> ①<b>spyrrow</b>(wheel 오프라인 설치 한 줄, 4코어, 위치반환 후 외부 crane체크 — 단 strip→bin 어댑터·20분→120s early-exit 필요) ②<b>seanys</b>(순수 py, crane 주입 즉시, 품질 낮음=프로토타입용) ③<b>jagua-rs</b>(SOTA 엔진, 단 Rust 빌드·15MB·평가서버 OS cross-compile 리스크).</div>
+
+<!-- ============ 8 ============ -->
+<h2 id="G">§8 학습 기반 = 부적합 (확정된 negative result)</h2>
+<p>대규모 조사했지만 우리 제약(GPU 없음·인터넷 차단·120s·이형 다층)에서 <b>전부 탈락</b>. 시간 절약을 위해 명시 기록:</p>
+<ul>
+  <li><b>GFPack++ (ICCV 2025)</b> — diffusion gradient field, Puzzle 95.1%. 학습 4×RTX4090·50h, 추론 GPU 필수. <span class="tag-bad">부적합</span></li>
+  <li><b>PCT (ICLR 2022)</b> — Transformer+DRL, 3D 직육면체 전용. 이형 없음, GPU. <span class="tag-bad">부적합</span></li>
+  <li><b>Learning-based 2D Irregular (arXiv:2309.10329)</b> — CPU 실행되나 추론 <b>37.76s/인스턴스</b>(예산 31%), UV 패치 전용. <span class="tag-bad">부적합</span></li>
+  <li><b>증류(학습된 순서→단순 규칙)?</b> — 저자들이 직접 "<b>area-descending 같은 근시안 규칙으로 줄일 수 없다</b>(정책이 H스텝 미래를 본다)"고 명시. 신경 NFP(NFP-UNet)도 후보마다 CNN forward라 수천 후보에 불가.</li>
+</ul>
+<div class="pill bad">결론: 이 환경에서는 <b>고전 휴리스틱(BLF+NFP/래스터+국소탐색)이 지배</b>. 학습 기반은 막다른 길이며 재시도 가치 없음. <span class="small">(단 이미 우리가 쓰는 "Z3-aware 배정=선호 높은 블록 먼저"는 문헌이 지지하는 경험칙과 일치.)</span></div>
+
+<!-- ============ 9 ============ -->
+<h2 id="rec">§9 우리 솔버를 위한 우선순위 권고 ★</h2>
+<p>§0의 벽(속도-제약 밀도, never-−1, 120s/4-core, 가역 게이트)에 맞춰 ROI·리스크 순.</p>
+
+<div class="panel">
+  <p><span class="rank">1</span><b>crane·시간축 우회로 먼저 (§5) — 가장 싸고 벽을 안 건드림</b></p>
+  <p>departure-time 그룹 배정(①) + 클리크-면적 사전필터(②) + blocking-pair 페널티(③)를 배정/디코드에 추가형으로. 전부 O(n)이라 속도 벽 무관, obj-gated + best-of로 never-−1. <b>우리 진단(공간부족으로 89개 delayed)을 "동시 공존 수 감소"로 직접 공격</b>. ⚠ H18 falsification과의 차이(진입분산 vs 배정선택)를 per-bay A/B로 먼저 확인.</p>
+</div>
+<div class="panel">
+  <p><span class="rank">2</span><b>crane-aware 반복 jostle 개선 패스 (§3) — 가장 쉬운 밀도 이득</b></p>
+  <p>기존 <code>_fixed_time_decode</code>(crane 이미 처리) 위에 "제거→BLF 재삽입→obj개선시 채택" 루프 15~30줄. additive·anytime·never-infeasible. 120s 내 수백 반복. banked 보존하며 게이트 ON.</p>
+</div>
+<div class="panel">
+  <p><span class="rank">3</span><b>표현 교체로 속도 벽 돌파 (§2) — 중기, 진짜 unlock</b></p>
+  <p>per-bay 충돌을 <b>ROMA 침투맵(O(1) 조회)</b> 또는 <b>semi-discrete 선분표현</b>으로 교체 → 우리가 PROVEN한 LCA 밀도를 <b>BL 속도로</b> 재현(net-positive 조건 달성). crane은 z선분/맵 마스크로 인코딩. 이게 되면 LCA_RACE가 default ON 가능.</p>
+</div>
+<div class="panel">
+  <p><span class="rank">4</span><b>spyrrow 어댑터 PoC (§7) — 탐색적, 리스크 큼</b></p>
+  <p>오프라인 wheel로 strip-pack 호출 → 위치 받아 외부 crane체크. 단 strip→bin 어댑터 품질 미검·20분→120s early-exit·평가서버 설치 불확실. <b>먼저 GLS "충돌 허용→반복 해소" 패턴을 우리 코드로 포팅</b>하는 게 안전.</p>
+</div>
+<div class="pill bad">하지 말 것: 학습 기반(§8) 전부 · libnfporb(아카이브) · SVGnest/Deepnest(서버불가) · Imamichi/Gomes 풀 NLP/LP(120s 예산 초과 위험, 무거움).</div>
+
+<!-- ============ 10 ============ -->
+<h2 id="caveat">§10 주의·미해결</h2>
+<ul>
+  <li><b>벤치 밀도 ≠ 우리 밀도</b>: 89~92%는 단층·무제약. crane j≥k 하에선 천장이 더 낮음. "95% 경쟁자"는 추정. 우리 인스턴스(정수좌표·육중한 근사직사각형)에서 실측 필요.</li>
+  <li><b>semi-discrete 단독 밀도 수치 미공개</b>(논문이 빌딩블록으로만 제시). 속도 주장(~100배)은 명확, 밀도는 메타휴리스틱과 결합 전제.</li>
+  <li><b>departure-grouping vs H18 falsification</b>: 반드시 per-bay로 "배정선택 레버"가 "진입분산 레버"와 다르게 효과 있는지 먼저 검증 후 채택.</li>
+  <li><b>spyrrow/jagua-rs 오프라인·OS</b>: 평가서버(Linux 추정) wheel/바이너리 가용성, 15MB zip, 20분→120s 수렴곡선 모두 미측정.</li>
+  <li><b>NFP robustness</b>: 비볼록 NFP 생성은 Python서 불안정 빈번. 블록이 단순 형상이면 pyclipr Minkowski로 대체.</li>
+  <li><b>측정/채택 규칙(불변)</b>: 검증은 full set(set1 또는 ALL40), 판정은 개별 z 아닌 <b>총 obj</b>, never-−1, 게이트 default-OFF로 banked(328.7M) 보존.</li>
+</ul>
+
+<!-- ============ 11 ============ -->
+<h2 id="src">§11 전체 출처</h2>
+<div class="src">
+<b>빠른 충돌·후보 (§2)</b>
+<ul>
+<li>Chehrazad, Roose, Wauters 2021/22 — Semi-discrete BLF: <a href="https://arxiv.org/abs/2103.08739">arXiv:2103.08739</a> · <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221721008936">EJOR</a> · 3D DLBF: <a href="https://www.tandfonline.com/doi/full/10.1080/00207543.2025.2478434">IJPR 2025</a></li>
+<li>Sato et al. — ROMA raster penetration map: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221719304837">EJOR 2020</a> · <a href="https://www.researchgate.net/publication/345447151_Raster_penetration_map_applied_to_the_irregular_packing_problem">ResearchGate</a></li>
+<li>jagua-rs CDE — Gardeyn 2025: <a href="https://arxiv.org/abs/2508.08341">arXiv:2508.08341</a> · <a href="https://pubsonline.informs.org/doi/10.1287/ijoc.2024.1025">INFORMS JoC</a> · <a href="https://github.com/JeroenGar/jagua-rs">GitHub</a></li>
+<li>Bennell &amp; Song 2008 NFP orbiting: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221706001639">EJOR</a> · Improved sliding NFP: <a href="https://www.mdpi.com/2227-7390/10/16/2941">MDPI 2022</a> · Vector-superposition NFP+MIP: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417423010503">ESWA 2023</a></li>
+<li>pyclipr: <a href="https://lukeparry.uk/pyclipr-python-polygon-clipping-and-offsetting-library/">docs</a> · fftconvolve: <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.fftconvolve.html">scipy</a></li>
+</ul>
+<b>컴팩션·개선 (§3)</b>
+<ul>
+<li>Imamichi, Yagiura, Nagamochi 2009 ILS+NLP: <a href="https://www.sciencedirect.com/science/article/pii/S1572528609000218">Discrete Optimization</a></li>
+<li>Gomes &amp; Oliveira 2006 SA+LP: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221704005879">EJOR</a> · Li &amp; Milenkovic 1995 LP compaction: <a href="https://www.sciencedirect.com/science/article/abs/pii/037722179500021H">EJOR</a></li>
+<li>Egeblad, Nielsen, Odgaard 2007 2DNEST: <a href="https://www.sciencedirect.com/science/article/abs/pii/S037722170600302X">EJOR</a> · Leung 2012 ELS: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054811001596">C&amp;OR</a></li>
+<li>Abeysooriya, Bennell, Martinez-Sykora 2018 Jostle: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0925527317302980">IJPE</a> · Sep+compaction obstruction map: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0957417423002178">ESWA 2023</a></li>
+</ul>
+<b>구성적 배치 (§4)</b>
+<ul>
+<li>Burke et al. 2006 BLF: <a href="https://dl.acm.org/doi/abs/10.1287/opre.1060.0293">Operations Research</a> · Crainic 2008 Extreme-Point: <a href="https://pubsonline.informs.org/doi/10.1287/ijoc.1070.0250">INFORMS JoC</a></li>
+<li>Shang &amp; Gu 2017 BCA(조선소): <a href="https://www.hindawi.com/journals/mpe/2017/1923646/">MPE</a> · Kwon &amp; Lee 2015 diagonal-fill: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835215002296">C&amp;IE</a></li>
+<li>MergeDJD 2026: <a href="https://arxiv.org/html/2603.00484">arXiv:2603.00484</a></li>
+</ul>
+<b>crane·시간축 우회로 (§5)</b>
+<ul>
+<li>BRP 하한·강한정식화: <a href="https://arxiv.org/abs/1904.03347">arXiv:1904.03347</a> · Kim &amp; Hong 2006: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0305054804001959">C&amp;OR</a> · BRPAS Azab&amp;Morita 2022: <a href="https://ideas.repec.org/a/eee/ejors/v297y2022i2p680-694.html">EJOR</a></li>
+<li>Borgman et al. 2010 stacking rules: <a href="https://link.springer.com/article/10.1007/s00291-010-0205-4">OR Spectrum</a></li>
+<li>Aircraft hangar MILP(j≥k 동형): <a href="https://arxiv.org/abs/2508.02640">arXiv:2508.02640</a></li>
+<li>Temporal Bin Packing 클리크: <a href="https://arxiv.org/abs/1902.04925">arXiv:1902.04925</a> · flow formulation: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221722007810">EJOR 2023</a></li>
+<li>조선소 spatial scheduling: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835220306550">C&amp;IE 2020</a> · DRL 재배치최소화: <a href="https://www.tandfonline.com/doi/full/10.1080/00207543.2020.1748247">IJPR 2020</a> · 통합동적 2025: <a href="https://www.tandfonline.com/doi/full/10.1080/0305215X.2025.2466829">Eng.Opt</a></li>
+</ul>
+<b>SOTA·도구·학습 (§6~8)</b>
+<ul>
+<li>sparrow 2025: <a href="https://arxiv.org/abs/2509.13329">arXiv:2509.13329</a> · <a href="https://github.com/JeroenGar/sparrow">GitHub</a> · spyrrow: <a href="https://github.com/PaulDL-RS/spyrrow">GitHub</a> / <a href="https://pypi.org/project/spyrrow/">PyPI</a></li>
+<li>Umetani 2022 좌표하강: <a href="https://arxiv.org/abs/2104.04525">arXiv:2104.04525</a> · Lastra-Díaz 2024 MIP: <a href="https://ideas.repec.org/a/eee/ejores/v313y2024i1p69-91.html">EJOR</a></li>
+<li>Leao et al. 2020 서베이: <a href="https://www.researchgate.net/publication/332957557_Irregular_packing_problems_A_review_of_mathematical_models">EJOR</a> · Frontiers 2022 리뷰: <a href="https://www.frontiersin.org/journals/mechanical-engineering/articles/10.3389/fmech.2022.966691/full">link</a></li>
+<li>GFPack++ (GPU): <a href="https://arxiv.org/abs/2406.07579">arXiv:2406.07579</a> · PCT: <a href="https://github.com/alexfrom0815/Online-3D-BPP-PCT">GitHub</a> · Learning 2D irregular: <a href="https://arxiv.org/html/2309.10329">arXiv:2309.10329</a> · NFP-UNet: <a href="https://link.springer.com/chapter/10.1007/978-981-97-8505-6_23">Springer</a></li>
+<li>seanys 순수py: <a href="https://github.com/seanys/2D-Irregular-Packing-Algorithm">GitHub</a> · packingsolver: <a href="https://github.com/fontanf/packingsolver">GitHub</a> · pynest2d: <a href="https://github.com/Ultimaker/pynest2d">GitHub</a></li>
+</ul>
+</div>
+
+<hr>
+<p class="small">생성: 2026-06-17 · web-researcher 7 병렬(sonnet) → 메인 종합 · 단일 진실 소스 연계: <code>notes/research/z1z3-lowering-2026-06-16.md</code> · <code>notes/devlog/packing-research-2026-06-14.md</code> · 원장: <code>notes/research/perbay-loop-ledger.md</code></p>
+
+</div>
+</body>
+</html>

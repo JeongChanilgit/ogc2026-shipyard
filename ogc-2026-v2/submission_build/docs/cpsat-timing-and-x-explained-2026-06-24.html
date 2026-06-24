@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CP-SAT timing & x축 — 모바일</title>
+<style>
+  html{-webkit-text-size-adjust:100%}
+  :root{--bg:#0e1014;--panel:#181b22;--ink:#e9ecf2;--mut:#9aa3b2;--line:#2a2f3a;
+        --t:#3fd0d8;--x:#c79cff;--acc:#6cb0ff;--win:#3fb950;--warn:#e3b341}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:18px 15px 70px;max-width:680px;margin:0 auto}
+  h1{font-size:22px;line-height:1.3;margin:4px 0 2px}
+  h2{font-size:19px;margin:30px 0 8px;padding-top:14px;border-top:1px solid var(--line);color:var(--acc)}
+  h3{font-size:16.5px;margin:18px 0 4px;color:var(--t)} h3.x{color:var(--x)}
+  .sub{color:var(--mut);font-size:14px;margin:0 0 14px}
+  p{margin:9px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;
+       font:13.5px ui-monospace,Consolas,monospace;color:#dbe3ef;word-break:break-word}
+  .fl{color:var(--x);font:12px ui-monospace,monospace}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+  .key{background:#0f1722;border:1px solid #23414e;border-left:4px solid var(--acc);border-radius:10px;padding:13px 15px;margin:13px 0}
+  .tbox{background:#0c1717;border-left:4px solid var(--t)}
+  .xbox{background:#150f1d;border-left:4px solid var(--x)}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      font:13px/1.6 ui-monospace,Consolas,monospace;color:#cfd8e6;margin:9px 0}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:6px 0}
+  .mut{color:var(--mut)} b.t{color:var(--t)} b.x{color:var(--x)}
+  .cmp{margin:10px 0}
+  .cmp .row{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;background:var(--panel)}
+  .cmp .lab{font-size:13px;color:var(--mut);margin-bottom:5px}
+  .cmp .tt{color:var(--t)} .cmp .xx{color:var(--x)}
+  .cmp .tt b,.cmp .xx b{font-weight:600}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin:9px 0}
+  .step .n{display:inline-block;background:var(--acc);color:#06121f;font-weight:700;font-size:12px;
+           border-radius:6px;padding:1px 7px;margin-right:6px}
+</style></head><body>
+
+<h1>CP-SAT timing & x축 repack<br>정확히 무엇을 하나</h1>
+<p class="sub">엔진 <code>crane_repack_bay()</code> · 제출본 코드 · 2026-06-24</p>
+
+<div class="key">
+<b>한 줄 요약</b><br>
+둘 다 <b>한 베이</b>에서 <b>"블록을 언제(entry) — x축이면 어디(x)까지 — 두면 크레인 규칙을 지키며 지각(z1)이 최소가 되나"</b>를
+CP-SAT로 푼다.<br><br>
+· <b class="t">timing</b> = 위치 고정, <b>시각만</b> 결정<br>
+· <b class="x">x축</b> = 거기에 <b>x 위치 후보 몇 개</b>를 더해 위치+시각 동시 결정<br><br>
+핵심 트릭: <b>기하(누가 누구를 막나)는 미리 계산</b>, CP-SAT는 <b>시간 순서만</b> 푼다 → 작고 빠름(~1초 OPTIMAL).
+</div>
+
+<h2>0. 어디서 도나 — txyo 루프</h2>
+<p>postproc는 z1&gt;0인 베이마다 축을 하나씩 돌린다:</p>
+<pre>매 라운드 (시간 끝까지):
+  z1 큰 tardy 베이부터:
+    for 축 in x, y, o:
+      crane_repack_bay(베이, 축후보)  ← 여기
+      개선&feasible 이면 채택 (never-worse)
+    cross-bay move/swap
+  개선 0 → 수렴 종료</pre>
+<p><code>x→(K,0,0)</code>, <code>y→(0,K,0)</code>, <code>o→(0,0,K)</code>. <b>한 패스 = 한 축</b>.
+단 <b>entry(시각)는 어느 패스든 항상 자유</b> → 모든 패스가 timing도 같이 함. "순수 timing"은 <code>(0,0,0)</code>.</p>
+
+<h2><b class="t">1. CP-SAT timing</b></h2>
+<div class="card tbox">
+<b>무엇</b> — 모든 블록의 <b>위치·방향을 그대로</b> 두고, 각 블록 <b>entry 시각만</b> 정해 지각 합 최소화.
+exit = entry + P(고정)라 사실상 <b>"각 블록 언제 넣을까"</b>만 푼다.
+</div>
+
+<h3>모델</h3>
+<pre>변수:  entry[b] ∈ [release, H]
+유도:  exit[b]  = entry[b] + P[b]
+      tardy[b] = max(0, exit[b] − due[b])
+목적:  최소화  Σ tardy[b]   (= z1)</pre>
+
+<h3>크레인 j≥k 제약 (핵심)</h3>
+<p>크레인은 <b>위에서 수직으로</b> 넣고 뺀다 → 넣/뺄 때 그 위쪽 경로가 비어야 함. 2단계로:</p>
+
+<div class="step"><span class="n">1</span><b>오프라인 사전계산</b><br>
+모든 블록 <b>쌍</b>에 대해 공식 체커로 시간-무관 불리언:
+<pre>coll : 같은 층 겹침 (시간 겹치면 안 됨)
+b막a_진입 / a막b_진입
+b막a_퇴출 / a막b_퇴출</pre>
+<b>"누가 누구를 막나"는 기하 문제 → 여기서 다 풀어둠.</b>
+</div>
+
+<div class="step"><span class="n">2</span><b>CP-SAT 시간 분리</b><br>
+위 불리언을 entry 시각의 OR 제약으로:
+<pre>겹침금지 : a가 b 전에 끝 ∨ b가 a 전에 끝
+b막a진입: a가 b보다 먼저 들어가 ∨ b 나간 뒤 들어가</pre>
+<b>막는 쌍은 시간상 안 겹치게</b> 강제. CP-SAT가 이걸 지키는 시각 중 지각 최소를 찾음.
+</div>
+
+<div class="key tbox">
+<b>왜 강력한가</b><br>
+어려운 부분(폴리곤 기하·크레인 접근)은 <b>사전계산 = 비용 0 불리언</b>이 되고,
+CP-SAT는 깔끔한 <b>1-D tardiness 스케줄링</b>만 푼다 → 베이당 수십 블록도 <b>~1초 최적</b>.
+채택된 시각은 공식 기준 <b>크레인 가능 보장</b>.
+</div>
+
+<h3>파이프라인의 timing — 두 구현</h3>
+<div class="card">
+<b>① parallel_timing</b> <span class="mut">(그리디 직후, txyo의 첫 t)</span><br>
+타이밍은 베이 독립 → 베이별 CP-SAT를 <b>4코어 병렬</b> 후 공식 검증.
+<br><br>
+<b>② crane_repack_bay(0,0,0)</b> <span class="mut">(루프 안 순수 t)</span><br>
+후보=현재 위치 1개뿐 → <b>entry 시각만</b> 자유. 위 모델의 특수경우.
+</div>
+
+<h2><b class="x">2. x축 CP-SAT</b></h2>
+<div class="card xbox">
+<b>무엇</b> — timing에 <b>x 위치 자유도</b>를 더함. 각 블록에 <b>x를 좌우로 옮긴 후보 몇 개</b>(y·방향 고정)를 주고,
+CP-SAT가 블록마다 <b>(어느 x, 언제 entry)</b>를 <b>동시</b>에 골라 지각 최소화.<br><br>
+<b>왜 x를 움직이나?</b> 블록을 좌우로 밀면 <b>누가 누구를 크레인으로 막는지가 바뀐다</b> →
+막던 블록을 비켜 tardy 블록이 빈 크레인창으로 <b>일찍 진입</b>. timing만으론(위치 고정) 못 하는 일.
+</div>
+
+<h3 class="x">x 후보</h3>
+<pre>유효범위 [x_lb, x_ub] 에 정수 x 를 n개 균등 배치
+후보[b] = {현재} ∪ {x-이동들}   (합집합, 격자 아님)
+        = 1 + (n_xcand − 1) 개</pre>
+<p class="mut" style="font-size:14px">★ 합집합이라 후보 수가 <b>덧셈</b>으로 작게 유지(격자면 곱셈→폭발). 그래서 <b>축을 따로</b> 돈다.</p>
+
+<h3 class="x">모델 (timing에 추가되는 것)</h3>
+<pre>변수:  sel[b] = 후보 중 하나 선택 (정확히 1개)
+      entry[b] ∈ [release, H]
+크레인: 사전계산을 (쌍, 후보조합)별로 →
+       제약에 sel 변수를 gate 로 붙임
+       = 두 블록이 그 후보를 골랐을 때만 제약 작동
+목적:  최소화 Σ tardy[b]</pre>
+<p>timing은 막는 쌍이 고정이지만 x축은 <b>고른 x에 따라 막는 관계가 달라짐</b>. 그래서 사전계산을
+<b>후보조합마다</b> 해두고 CP-SAT가 <b>위치 선택과 시각을 함께</b> 푼다.</p>
+
+<h3 class="x">y · o 패스</h3>
+<p>같은 엔진. <code>(0,K,0)</code>=y 이동 후보, <code>(0,0,K)</code>=방향(회전) 변형. 좌표하강이라 x→y→o 따로, 각각 작은 1-축 CP-SAT.</p>
+
+<h2>3. never-worse 보장</h2>
+<div class="card">
+<ul>
+<li><b>후보 0 = 현재 위치 + 현재 시각 hint</b> → 현재 해가 모델 안에 표현 가능 → CP-SAT 최적 ≤ 현재. 베이 단위로 절대 안 나빠짐.</li>
+<li>루프의 <b>global_eval 게이트</b>: 전체 obj(z1+z2+z3)가 개선 & feasible일 때만 채택.</li>
+<li>비용 가드: 후보조합이 너무 많으면 o→y→x 순으로 줄여 폭발 방지.</li>
+</ul>
+</div>
+
+<h2>4. timing vs x축 — 비교</h2>
+<div class="cmp">
+<div class="row"><div class="lab">결정</div>
+<div class="tt"><b>t:</b> entry 시각만</div><div class="xx"><b>x:</b> x 후보 + entry 시각</div></div>
+<div class="row"><div class="lab">바꾸는 것</div>
+<div class="tt"><b>t:</b> 언제 넣나</div><div class="xx"><b>x:</b> 어디(x)+언제 넣나</div></div>
+<div class="row"><div class="lab">못 하는 것</div>
+<div class="tt"><b>t:</b> 위치 못 바꿈 → co-presence 고정</div><div class="xx"><b>x:</b> y·방향·베이는 못 바꿈</div></div>
+<div class="row"><div class="lab">여는 레버</div>
+<div class="tt"><b>t:</b> 크레인 줄을 시간으로 정렬</div><div class="xx"><b>x:</b> 옆으로 비켜 막힘 자체 해소</div></div>
+<div class="row"><div class="lab">크기/속도</div>
+<div class="tt"><b>t:</b> 가장 작음, ~1초</div><div class="xx"><b>x:</b> 후보배수만큼 크나 여전히 빠름</div></div>
+<div class="row"><div class="lab">호출</div>
+<div class="tt"><b>t:</b> (0,0,0) 또는 parallel_timing</div><div class="xx"><b>x:</b> (K,0,0)</div></div>
+</div>
+
+<div class="key">
+<b>핵심 직관</b><br>
+한 베이의 지각은 <b>좁은 시간창에 블록이 몰려 크레인이 한 줄로 서야 해서</b> 생긴다.<br><br>
+· <b class="t">timing</b> = 그 줄을 <b>가장 효율적 순서</b>로(언제)<br>
+· <b class="x">x축</b> = 블록을 <b>옆으로 비켜</b> 줄 자체를 짧게(어디)<br><br>
+둘 다 못 푸는 잔여 = <b>베이가 진짜 꽉 참(밀도 한계)</b> — 우리가 부딪힌 구조벽이고, 배정 재조정(M1·M2)으로도 못 푼 그 z1 floor.
+</div>
+
+<p class="mut" style="font-size:12px;margin-top:22px">근거: crane_cpsat.py(crane_repack_bay·_precompute_combos·_x_anchors) · postproc.py(_run_loop) · ptiming.py(parallel_timing)</p>
+
+</body></html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — 다음 탐구 핸드오프: 경쟁자를 이긴다 (set1)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--p2:#1c2330;--line:#30363d;--ink:#e6edf3;
+    --dim:#8b949e;--acc:#58a6ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--pur:#bc8cff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,Segoe UI,Roboto,"Malgun Gothic",sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 24px 100px}
+  h1{font-size:28px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:21px;margin:42px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+  h3{font-size:16px;margin:18px 0 6px}
+  .sub{color:var(--dim);font-size:14px;margin:0 0 8px}
+  p{margin:9px 0} code{background:#21262d;padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--pur)}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .grid{display:grid;gap:14px} .c4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:16px}
+  .card .k{color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px}
+  .card .v{font-size:24px;font-weight:700;margin-top:5px} .card .n{color:var(--dim);font-size:12px;margin-top:5px}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
+  tr:hover td{background:#1b2129}
+  .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .acc{color:var(--acc)} .pur{color:var(--pur)} .dim{color:var(--dim)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px 20px;margin:14px 0}
+  .lead{background:linear-gradient(135deg,#161b22,#1a2030);border-left:3px solid var(--good)}
+  .crit{background:linear-gradient(135deg,#1d1416,#241016);border-left:3px solid var(--bad)}
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700}
+  .tA{background:rgba(63,185,80,.15);color:var(--good);border:1px solid rgba(63,185,80,.4)}
+  .tB{background:rgba(88,166,255,.15);color:var(--acc);border:1px solid rgba(88,166,255,.4)}
+  .tC{background:rgba(188,140,255,.15);color:var(--pur);border:1px solid rgba(188,140,255,.4)}
+  ul{margin:6px 0;padding-left:20px} li{margin:5px 0}
+  .mono{font-family:ui-monospace,Menlo,monospace} .small{font-size:12px}
+  .num{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:7px;background:var(--p2);border:1px solid var(--line);font-weight:700;font-size:13px;margin-right:6px}
+  .foot{color:var(--dim);font-size:12px;margin-top:46px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>다음 탐구 핸드오프 — set1에서 경쟁자를 이긴다</h1>
+<p class="sub">2026-06-15 · 지시: "무슨일이있어도 경쟁자는 이긴다(set1). 새 방법론 충분히 리서치 → 돌파구 10+ 확보 → 순차 검증·적용." · 단일 진실 <code>notes/research/INSIGHTS.md §0</code></p>
+
+<div class="panel lead">
+<b>목표.</b> set1 총 obj &lt; 경쟁자 1,139,442 (이상적으로 &lt;1,000,000). 현재 하이브리드 = <b>1,312,961</b>.
+<b>병목(확정).</b> 모든 패배는 z1=0이고 <b>z3 지배</b> — 경쟁자는 같은 블록을 <b>2~4× 더 조밀하게 크레인-안전 패킹</b>해 spill(선호이탈)이 적다. 우리 패커(그리디 BL + bbox/unit-raster)가 밀도에서 진다.
+<b>돌파구.</b> 아래 13개 신규 방법론(웹 리서치 3축) — 전부 <b>밀도↑ → spill↓ → z3↓ → 경쟁자 추월</b>을 노린다. <b class="acc">크레인 j≥k 제약은 문헌 공백</b>(Caprace 크레인-후크-높이만 근접) = 우리 차별점.
+</div>
+
+<div class="grid c4">
+  <div class="card"><div class="k">현재 set1</div><div class="v warn">1,312,961</div><div class="n">하이브리드 (활성)</div></div>
+  <div class="card"><div class="k">경쟁자</div><div class="v">1,139,442</div><div class="n">추월 목표 −173,519</div></div>
+  <div class="card"><div class="k">확보 돌파구</div><div class="v good">13</div><div class="n">3축 웹 리서치</div></div>
+  <div class="card"><div class="k">최대 타깃</div><div class="v">prob_20/14/13/18</div><div class="n">z3 격차 합 ~209K</div></div>
+</div>
+
+<h2>1. 검증 우선순위 (순차 백로그) — EV = 밀도효과 × 구현용이 × eval적합</h2>
+<p class="sub">게이트(모든 후보 공통): set1 총 obj↓ · feasible 유지 · <b>never −1</b>(시간규율) · best-of 무회귀 · <code>OGC_*</code> 플래그 gated. 측정: <code>notes/research/_fstest.py</code> + full set1 gate vs <code>baselines/hybrid_set1.json</code>. env python 직접(<code>C:/Users/peter/anaconda3/envs/ogc2025/python.exe</code>; conda run은 4워커 CP-SAT 크래시).</p>
+
+<table>
+<thead><tr><th>#</th><th>방법</th><th>티어</th><th>핵심 / 왜 밀도↑</th><th>구현 경로 (eval 적합성)</th><th>리스크</th></tr></thead>
+<tbody>
+<tr><td><span class="num">1</span></td><td><b>spyrrow / sparrow</b><br>(GLS + jagua-rs CDE)</td><td><span class="tag tB">B</span></td><td>현 <b>SOTA 불규칙 네스팅</b>. 전체 배치를 일시 겹침 허용 후 Guided Local Search로 압착. 그리디 대비 2~4× 밀도. <b>최대 레버.</b></td><td><code>pip install spyrrow</code> (Rust 바이너리). 베이별 정적 패킹 호출 → 가장 붐비는 시간슬롯 기준 배치. <b class="warn">먼저 eval env(Linux x86_64, py3.12) wheel 설치 검증 필수</b>; 안되면 wheel을 zip에 bundle.</td><td>wheel 플랫폼 / 시간슬롯 분리</td></tr>
+<tr><td><span class="num">2</span></td><td><b>Diagonal-Fill 배치</b><br>(Kwon&Lee 2015)</td><td><span class="tag tA">A</span></td><td>그리디 BL에 <b>TR-slide(우상단)</b> 후보 추가 → 양방향 채움. 조선 표준, 작은 변경으로 갭 감소.</td><td><code>fastfloor._ft_search_pos</code>(현 BL)에 TR 후보 + diagonal 슬라이드 추가. 순수 Python, 즉시.</td><td>낮음 (작은 변경)</td></tr>
+<tr><td><span class="num">3</span></td><td><b>NFP-BLF</b><br>(No-Fit-Polygon)</td><td><span class="tag tA">A</span></td><td>bbox/셀 충돌 대신 <b>실제 폴리곤 NFP 경계 후보</b> → 오목부 인터로킹. bbox는 폴리곤보다 큰 영역을 금지해 틈 낭비.</td><td><code>pyclipper.MinkowskiSum</code>(NFP) + <code>shapely.intersects</code>. 순수 Python(pyclipper+shapely wheel). 오목 폴리곤은 볼록분해 후 NFP 합집합.</td><td>중간 (오목 분해)</td></tr>
+<tr><td><span class="num">4</span></td><td><b>CP-SAT no_overlap_2d<br>+ energetic 파라미터</b></td><td><span class="tag tA">A</span></td><td>box-decomp의 수동 BoolOr 대신 <code>add_no_overlap_2d</code> + <code>use_energetic_reasoning_in_no_overlap_2d</code>·<code>use_area_energetic_reasoning</code>·<code>use_timetabling</code>. 강한 전파로 z1 천장(100~190) 돌파 시도.</td><td>box-decomp 재배선(rect-decomp을 interval로). OR-Tools ≥9.4 (eval 보유). 시간겹침 쌍에만 조건부.</td><td>중간 (재formulation)</td></tr>
+<tr><td><span class="num">5</span></td><td><b>Raster Penetration Map</b><br>(IFR/NFR + FFT)</td><td><span class="tag tB">B</span></td><td>고해상도 래스터 IFR∧¬NFR 비트마스크 충돌 O(1). 현 "unit-raster"(굵음)와 달리 5~10px/단위로 촘촘 → 실밀도↑. (옛 finer-raster 반증은 굵은 격자+나쁜 후보탓; 이건 다름.)</td><td>shapely→numpy 비트맵, NFR FFT cross-correlation O(N log N). 순수 Python(numpy).</td><td>중간 (해상도 튜닝)</td></tr>
+<tr><td><span class="num">6</span></td><td><b>Jostle / Ejection-Chain</b><br>로컬서치</td><td><span class="tag tB">B</span></td><td>배치된 블록 하나 빼고 더 큰 블록 삽입 → 쫓겨난 것 재삽입 연쇄. 그리디 순서 고착 탈출.</td><td>직접 Python (pyclipper NFP + shapely). SA/TS 외부 루프.</td><td>중간</td></tr>
+<tr><td><span class="num">7</span></td><td><b>GRASP / Beam<br>시퀀스 최적화</b></td><td><span class="tag tB">B</span></td><td>배치 <b>순서</b>가 BL 밀도를 30~50% 좌우. GRASP(랜덤 그리디+LS) 또는 beam으로 순서 탐색.</td><td>현 best-of-orders를 GRASP/beam으로 확장. 순수 Python, 즉시.</td><td>낮음</td></tr>
+<tr><td><span class="num">8</span></td><td><b>LBBD</b><br>(branch-and-check)</td><td><span class="tag tC">C</span></td><td>마스터(CP-SAT: 배정+시간) ↔ 서브(폴리곤 비겹침 검사) <b>no-good cut</b> 피드백. 타이밍 결정 시 배치가능성 인식 → 경쟁자의 핵심 피드백 루프. <b>EJOR 2024 = 구조 동일(AM 네스팅+스케줄)</b>.</td><td>CP-SAT 마스터 + shapely/raster 서브 + lazy cut. eval 보유.</td><td>높음 (수렴)</td></tr>
+<tr><td><span class="num">9</span></td><td><b>GLS-STA 4D 공간-시간</b><br>(Caprace 2013)</td><td><span class="tag tC">C</span></td><td>조선 실증 <b>+12.7% 공간활용</b>. Fast Local Search를 블록 경계점(Critical Coordinate)만 탐색. <b>크레인-후크-높이 제약 포함</b> = OGC 크레인과 직접 대응(문헌 유일).</td><td>scipy/numpy GLS, f(X)=Σoverlap 최소화. Gurobi/OR-Tools 불필요.</td><td>높음 (구현량)</td></tr>
+<tr><td><span class="num">10</span></td><td><b>Gurobi separation-line<br>/ NFP-CM-VS MIP</b></td><td><span class="tag tC">C</span></td><td>쌍별 분리직선 big-M / 수직슬라이스 볼록분해 = 현 SOTA 불규칙 패킹 MIP. <b>소형 베이 정확해</b>(서버 풀-Gurobi).</td><td>서버 Gurobi 13.0.2(보유). 베이별 10~30블록 분해. 로컬은 2000변수 제한(구조만 검증).</td><td>높음 (스케일·로컬검증불가)</td></tr>
+<tr><td><span class="num">11</span></td><td><b>ALNS 밀도</b><br>(PSLAP destroy/repair)</td><td><span class="tag tC">C</span></td><td>창 내 k블록 위치+ENTRY 동시 파괴-수리 → 전역 밀도. 조선 야적장(Park&Seo) 구조 동일. 현 reassign의 공간-인식판.</td><td>현 <code>_solve_reassign</code> 아키텍처 호환. 순수 Python.</td><td>중간</td></tr>
+<tr><td><span class="num">12</span></td><td><b>표준각(15°) 근사 + GA</b></td><td><span class="tag tC">C</span></td><td>폴리곤을 15° 배수 내각으로 단순화 → 준직사각형, 내부낭비↓. NFP 불필요. 블록우선 GA.</td><td>15° 이산화 + DEAP/직접 GA. 정수격자 정합 검증 필요.</td><td>중간</td></tr>
+<tr><td><span class="num">13</span></td><td><b>3D-sRCPSP /<br>scheduling-inspired cumulative</b></td><td><span class="tag tC">C</span></td><td>면적-시간 energetic reasoning을 제약으로(co-present Σarea ≤ bay area). 이미 box-decomp에 cumulative 추가됨 → 확장.</td><td>OR-Tools <code>add_cumulative</code>. 즉시(부분).</td><td>낮음(근사 하한)</td></tr>
+</tbody>
+</table>
+
+<h2>2. 권장 실행 순서</h2>
+<div class="panel">
+<b>Phase 1 (빠른 검증, A티어 + spyrrow 설치):</b>
+<ul>
+<li><b>#1 spyrrow 설치 검증</b> — eval env에서 <code>pip install spyrrow</code> 작동? 샘플 베이 패킹 테스트. 작동하면 <b>최우선 통합</b>(최대 밀도 레버).</li>
+<li><b>#2 Diagonal-Fill</b> + <b>#7 GRASP 순서</b> — 그리디에 작은 변경, 즉시 측정.</li>
+<li><b>#3 NFP-BLF</b> — pyclipper로 폴리곤 정확 후보, bbox 대체.</li>
+<li><b>#4 CP-SAT energetic 파라미터</b> — box-decomp 재배선으로 z1 천장 재시도.</li>
+</ul>
+<b>Phase 2 (밀도 강화, B티어):</b> #5 Raster-FFT · #6 Jostle.<br>
+<b>Phase 3 (구조적, C티어):</b> #8 LBBD · #9 GLS-STA · #11 ALNS-밀도 · #10 Gurobi(서버).<br>
+<b>각 단계:</b> 단일-베이 self-test(밀도/z3) → mini-gate(prob_13/14/20) → full set1 gate. 통과분만 gated 채택, INSIGHTS에 결과 기록(반증도 보존).
+</div>
+
+<div class="panel crit">
+<b>⚠ 동시 처리 필수 — set2 −1 위험 (실측 확인됨).</b> 복원된 옛 솔버(legacy)가 <b>set2에서 시간초과</b>:
+prob_25 wall <b>183.7s @ TL=120</b>, prob_26 <b>161.6s @ TL=120</b> → 평가서버면 <b>−1</b>(점수 파국). 밀도 작업과 별개로,
+legacy의 TL-discipline(하드 데드라인·빠른 fallback) 보강이 ALL40 실제 점수엔 set1 0.3M보다 더 중요. 새 패커도 set2에서 never −1 보장해야 함.
+</div>
+
+<h2>3. 핵심 출처 (선별)</h2>
+<table>
+<thead><tr><th>방법</th><th>출처</th></tr></thead>
+<tbody>
+<tr><td>spyrrow/sparrow (SOTA)</td><td><a href="https://github.com/JeroenGar/sparrow">JeroenGar/sparrow</a> · <a href="https://pypi.org/project/spyrrow/">spyrrow PyPI</a> · <a href="https://arxiv.org/html/2509.13329v1">arXiv 2509.13329</a> · <a href="https://github.com/JeroenGar/jagua-rs">jagua-rs</a></td></tr>
+<tr><td>NFP-BLF + SA</td><td><a href="https://www.graham-kendall.com/papers/bk1999c.pdf">Burke 1999</a> · <a href="https://github.com/seanys/2D-Irregular-Packing-Algorithm">seanys (Python)</a> · <a href="https://github.com/Ultimaker/pynest2d">pynest2d</a></td></tr>
+<tr><td>Raster Penetration Map</td><td><a href="https://www.researchgate.net/publication/345447151">Sato 2019 EJOR</a> · dotted-board (CIE 2025)</td></tr>
+<tr><td>CP-SAT no_overlap_2d 파라미터</td><td><a href="https://github.com/google/or-tools/discussions/3107">OR-Tools #3107</a> · <a href="https://developers.google.com/optimization/support/release_notes">Release notes v9.4+</a></td></tr>
+<tr><td>LBBD (구조 동일 AM)</td><td><a href="https://ideas.repec.org/a/eee/ejores/v317y2024i1p92-110.html">Ozcan 2024 EJOR</a> · <a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221724003394">Mao 2024 EJOR</a></td></tr>
+<tr><td>GLS-STA 조선 (크레인)</td><td><a href="https://link.springer.com/article/10.1007/s00773-013-0217-2">Caprace 2013 JMST</a> · <a href="https://www.vliz.be/imisdocs/publications/ocrd/279248.pdf">PDF</a></td></tr>
+<tr><td>2-stage MIP + Diagonal-Fill</td><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835215002296">Kwon&Lee 2015 CIE</a></td></tr>
+<tr><td>NFP-CM-VS MIP</td><td><a href="https://www.sciencedirect.com/science/article/pii/S0377221723006148">Cherri 2023 EJOR</a> · <a href="https://arxiv.org/pdf/2206.00032">arXiv 2206.00032</a></td></tr>
+<tr><td>ALNS / PSLAP</td><td><a href="https://link.springer.com/article/10.1007/s10732-020-09451-z">J.Heuristics 2020</a> · Park&Seo 2009</td></tr>
+<tr><td>표준각 근사 + GA</td><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0360835220306550">CIE 2020</a></td></tr>
+<tr><td>3D-sRCPSP</td><td><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221724005575">Huang 2024 EJOR</a></td></tr>
+</tbody>
+</table>
+
+<div class="foot">
+생성: <span class="mono">notes/NEXT-EXPLORATION-HANDOFF-2026-06-15.html</span> · 리서치: web-researcher ×3 (nesting · packing+scheduling · shipyard-literature) · 활성 솔버: <span class="mono">src/myalgorithm.py (hybrid) = 1,312,961</span> · 다음: Phase-1 #1 spyrrow 설치 검증부터 순차 적용
+</div>
+
+</div>
+</body>
+</html>

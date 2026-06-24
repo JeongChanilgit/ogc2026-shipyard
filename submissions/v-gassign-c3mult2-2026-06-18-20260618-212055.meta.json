@@ -1,0 +1,94 @@
+{
+  "tag": "v-gassign-c3mult2-2026-06-18",
+  "timestamp_kst": "20260618-212055",
+  "zip_filename": "v-gassign-c3mult2-2026-06-18-20260618-212055.zip",
+  "zip_size_bytes": 315625,
+  "zip_sha256": "6d96e1d596fb5384e887d868421f7eb0a24b7acfae3c2142980dfab4013cfcaa",
+  "files": [
+    {
+      "path": "baseline_greedy.py",
+      "bytes": 87955
+    },
+    {
+      "path": "baypack_cp.py",
+      "bytes": 21259
+    },
+    {
+      "path": "boxsolver.py",
+      "bytes": 82129
+    },
+    {
+      "path": "fastfloor.py",
+      "bytes": 63033
+    },
+    {
+      "path": "gassign.py",
+      "bytes": 36174
+    },
+    {
+      "path": "geom_kernel.py",
+      "bytes": 4367
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 10447
+    },
+    {
+      "path": "lns.py",
+      "bytes": 46642
+    },
+    {
+      "path": "myalgorithm.py",
+      "bytes": 447562
+    },
+    {
+      "path": "packer.py",
+      "bytes": 28694
+    },
+    {
+      "path": "parallel_decode.py",
+      "bytes": 26540
+    },
+    {
+      "path": "parcand.py",
+      "bytes": 5649
+    },
+    {
+      "path": "perbay.py",
+      "bytes": 28115
+    },
+    {
+      "path": "perbay_t3.py",
+      "bytes": 29268
+    },
+    {
+      "path": "rasterpack.py",
+      "bytes": 47392
+    },
+    {
+      "path": "rebuild.py",
+      "bytes": 33642
+    },
+    {
+      "path": "refiner.py",
+      "bytes": 8739
+    },
+    {
+      "path": "regime.py",
+      "bytes": 18316
+    },
+    {
+      "path": "t5_candidates.py",
+      "bytes": 14565
+    },
+    {
+      "path": "uconstruct.py",
+      "bytes": 52225
+    },
+    {
+      "path": "z3race.py",
+      "bytes": 25155
+    }
+  ],
+  "note": "gassign-first PURE + C3_MULT=2.0 (master z3-bias). set2 271.93M, beats competitor (279.82M) by 7.89M. feasible 40/40 never-1."
+}

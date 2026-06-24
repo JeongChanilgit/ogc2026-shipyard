@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 v4 — 솔버 + 후처리 파이프라인 코드 구조</title>
+<style>
+  /* ── Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 0 0 80px;
+  }
+  a { color: #58a6ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ── */
+  .page-wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  h1 { font-size: 2rem; font-weight: 700; padding: 40px 0 8px; color: #e6edf3; }
+  h2 { font-size: 1.4rem; font-weight: 600; color: #58a6ff; border-bottom: 1px solid #21262d; padding-bottom: 6px; margin: 48px 0 20px; }
+  h3 { font-size: 1.05rem; font-weight: 600; color: #79c0ff; margin: 28px 0 10px; }
+  p  { margin-bottom: 12px; }
+  ul { padding-left: 20px; margin-bottom: 12px; }
+  li { margin-bottom: 5px; }
+
+  /* ── Subtitle / meta ── */
+  .subtitle { color: #8b949e; font-size: 0.9rem; margin-bottom: 32px; }
+
+  /* ── Table of Contents ── */
+  .toc {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px 28px;
+    margin-bottom: 48px;
+  }
+  .toc-title { font-weight: 700; color: #e6edf3; margin-bottom: 10px; font-size: 1rem; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 4px; font-size: 0.92rem; }
+
+  /* ── Code blocks ── */
+  pre, code {
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    font-size: 0.86rem;
+  }
+  pre {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 14px 0;
+    line-height: 1.55;
+  }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; color: #e6edf3; }
+  /* token colours — approximate */
+  .kw  { color: #ff7b72; }   /* keywords: def, return, import, if, for, while */
+  .fn  { color: #d2a8ff; }   /* function names */
+  .st  { color: #a5d6ff; }   /* strings */
+  .cm  { color: #6e7681; font-style: italic; }   /* comments */
+  .nb  { color: #ffa657; }   /* built-ins / numbers */
+  .op  { color: #c9d1d9; }   /* operators */
+  .id  { color: #79c0ff; }   /* identifiers / variables */
+  .tp  { color: #7ee787; }   /* types / constants */
+
+  /* ── Diagram / flow boxes ── */
+  .diagram {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .diagram pre {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #c9d1d9;
+    font-size: 0.84rem;
+  }
+
+  /* ── Tables ── */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.88rem;
+  }
+  th {
+    background: #161b22;
+    border: 1px solid #30363d;
+    padding: 8px 12px;
+    text-align: left;
+    color: #e6edf3;
+    font-weight: 600;
+  }
+  td {
+    border: 1px solid #30363d;
+    padding: 8px 12px;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #161b22; }
+  .badge-ok   { color: #7ee787; font-weight: 700; }
+  .badge-no   { color: #ff7b72; font-weight: 700; }
+  .badge-warn { color: #ffa657; font-weight: 700; }
+  .badge-info { color: #79c0ff; }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-left: 4px solid;
+    border-radius: 0 6px 6px 0;
+    padding: 12px 18px;
+    margin: 16px 0;
+    font-size: 0.92rem;
+  }
+  .callout-blue  { border-color: #388bfd; background: #0c2547; }
+  .callout-green { border-color: #3fb950; background: #0f2e15; }
+  .callout-amber { border-color: #d29922; background: #2e1f00; }
+  .callout-red   { border-color: #f85149; background: #2d0f0f; }
+  .callout-title { font-weight: 700; margin-bottom: 4px; }
+
+  /* ── Step pipeline ── */
+  .step-list { list-style: none; padding: 0; }
+  .step-list li {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #1f6feb;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-body { flex: 1; }
+  .step-label { font-weight: 600; color: #e6edf3; margin-bottom: 4px; }
+
+  /* ── Horizontal rule ── */
+  hr { border: none; border-top: 1px solid #21262d; margin: 40px 0; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<h1>OGC 2026 v4 — 솔버 + 후처리 파이프라인 코드 구조</h1>
+<p class="subtitle">작성 기준: <strong>ogc-2026-v2/submission_build/</strong> (myalgorithm.py, postproc.py) + <strong>ogc-2026-v3/</strong> (crane_cpsat.py, bpass.py, adapter.py, seed.py, run_full.py) | 2026-06-21</p>
+
+<!-- ═══════════════════════════ TOC ═══════════════════════════ -->
+<div class="toc">
+  <div class="toc-title">목차</div>
+  <ol>
+    <li><a href="#s1">개요 / 목표</a></li>
+    <li><a href="#s2">전체 아키텍처 다이어그램</a></li>
+    <li><a href="#s3">postprocess 시퀀스</a></li>
+    <li><a href="#s4">crane_repack_bay 4단계 — 핵심 엔진</a></li>
+    <li><a href="#s5">모듈 맵</a></li>
+    <li><a href="#s6">v4 실험 결과 — 배정 레버 (전부 falsified)</a></li>
+    <li><a href="#s7">검증된 성능 / 천장</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════ §1 ═══════════════════════════ -->
+<h2 id="s1">1. 개요 / 목표</h2>
+
+<p>
+  <strong>OGC 2026 (Optimization Grand Challenge 2026)</strong>은 LG CNS × 대한산업공학회 주최 최적화 경진대회다.
+  문제 본질: 조선소 블록들을 여러 베이(bay)에 배정하고, 각 블록의 위치(x, y), 방향(orient), 진입·퇴출 시각(entry/exit)을 동시에 결정해 아래 3-항 목적함수를 최소화한다.
+</p>
+
+<div class="diagram"><pre>
+  목적함수:  min  w1·Z1  +  w2·Z2  +  w3·Z3
+
+    Z1 = Σ max(0, exit_i − due_i)          ← tardiness (지각)
+    Z2 = max_{j} workload_j − min_{j} workload_j   ← 베이 간 작업부하 불균형
+    Z3 = Σ (S_max_i − S_chosen_i)          ← 선호도 페널티
+
+  제약: 모든 블록 정확히 1개 베이 배정, 공간 충돌 없음,
+        크레인 수직접근(j ≥ k 규칙), release/processing time 준수
+</pre></div>
+
+<ul>
+  <li><strong>set1</strong> (prob_1..20): 경쟁자 점수 테이블 존재. 목표 = 경쟁자 total obj 이하.</li>
+  <li><strong>set2</strong> (prob_21..40): 경쟁자 데이터 없음. 크고 레이어 수 많음. −1 회피가 최우선.</li>
+  <li><strong>채점</strong>: infeasible/timeout → −1. feasible → R − nb (R=팀수, nb=더 좋은 팀 수). 동점 OK.</li>
+  <li><strong>v3/v4 목표</strong>: best-of 솔버 출력에 <em>additive never-worse</em> 후처리(crane-repack)를 얹어 obj를 추가로 낮춘다. set1(z1=0)은 후처리 skip → 회귀 0 보장.</li>
+</ul>
+
+<!-- ═══════════════════════════ §2 ═══════════════════════════ -->
+<h2 id="s2">2. 전체 아키텍처 다이어그램</h2>
+
+<p>
+  평가 서버는 <code>algorithm(prob_info, timelimit)</code> 한 함수만 호출한다.
+  이 함수는 크게 <strong>best-of 솔버</strong>(FULL 예산 사용)와 <strong>v3 후처리</strong>(남은 시간, 선택적)로 구성된다.
+</p>
+
+<div class="diagram"><pre>
+┌─────────────────────────────────────────────────────────────────────┐
+│  algorithm(prob_info, timelimit)  — myalgorithm.py                  │
+│  SAFETY = max(8s, TL × 0.08)                                        │
+│                                                                      │
+│  ① v2 GLOBAL (unified_greedy)                                        │
+│     └─ 예산: min(TL × 0.5, TL − SAFETY)                             │
+│     └─ Linux: fork + SIGKILL 하드-킬 / Windows: in-process 폴백      │
+│     └─ OGC_GLOBAL=1, OGC_ORDER=blend(R+0.5P), OGC_FFT_MASK=1       │
+│                         │                                            │
+│                         ▼  (v2 끝나면 남은 시간이 자연히 ②로 흘러감)   │
+│  ② 원래 솔버 (solver_orig)  ← set1 강·self-limit·항상 feasible        │
+│     └─ 예산: TL − SAFETY − elapsed   (FULL 예산 !)                   │
+│     └─ best-of: v2 obj vs orig obj → 더 낮은 쪽 채택                  │
+│                         │                                            │
+│                         ▼  (둘 다 실패 시)                            │
+│  ③ baseline_greedy 폴백  ← 절대 infeasible 없음                       │
+│                         │                                            │
+│  ─────────────────── best ──────────────────                         │
+│                         │                                            │
+│  ④ v3 POST-PROCESS  (조건부, additive, never-worse)                   │
+│     ┌── 조건: best ≠ None                                            │
+│     │         AND pp_remaining > 20s                                 │
+│     │         AND OGC_NO_PP ≠ "1"                                    │
+│     │         AND z1(best) > 0   ← 핵심 gate                         │
+│     │                                                                │
+│     │   z1 = 0 이면 → SKIP (set1 ~19/20, byte-identical 반환)        │
+│     │   z1 > 0 이면 → postprocess(prob_info, best, deadline)         │
+│     │                                                                │
+│     └── 실패 시 → 직전 best 유지 (never-worse 보장)                   │
+│                         │                                            │
+│                         ▼                                            │
+│  return best (solution dict)                                         │
+└─────────────────────────────────────────────────────────────────────┘
+</pre></div>
+
+<div class="callout callout-green">
+  <div class="callout-title">set1 bypass 설계 원칙</div>
+  set1의 prob_1..19 대부분은 z1=0 (tardiness 없음). 이 경우 후처리는 tardiness만 깎으므로 논리적 no-op → 완전히 건너뜀. best-of 결과가 바이트 단위로 동일하게 반환된다. 회귀 위험 = 0.
+</div>
+
+<div class="callout callout-amber">
+  <div class="callout-title">예산 설계: "best-of는 FULL 예산을 빼앗기지 않는다"</div>
+  v3 후처리는 best-of가 <em>일찍 끝나서 자연히 남는</em> 시간에서만 동작한다.
+  PP_RESERVE 같은 별도 예산 차감 없음. 원래 솔버가 TL 가득 쓰면 후처리는 pp_remaining &lt; 20s → 자동 skip.
+</div>
+
+<h3>best-of 3종 솔버 비교</h3>
+<table>
+  <tr>
+    <th>솔버</th>
+    <th>엔진</th>
+    <th>강점</th>
+    <th>예산 배분</th>
+  </tr>
+  <tr>
+    <td><code>unified_greedy</code> (v2 GLOBAL)</td>
+    <td>전역 Pass B — 배정 emergent, cpsat_guideline + marginal 스코어링, FFT 마스크</td>
+    <td>set2 (+19.5% vs g0), 빠른 종료로 후처리 여지 확보</td>
+    <td>TL × 0.5 (상한)</td>
+  </tr>
+  <tr>
+    <td><code>solver_orig</code></td>
+    <td>gassign-first PURE (C3_MULT=2.0), CP-SAT timing oracle, fastfloor</td>
+    <td>set1 강 (set1 271.93M, 경쟁자 279.82M 격파), z1=0 19/20</td>
+    <td>TL − SAFETY − elapsed (잔여 전부)</td>
+  </tr>
+  <tr>
+    <td><code>baseline_greedy</code></td>
+    <td>공식 EDD + Best-Fit + Phase 2 repair</td>
+    <td>항상 feasible, 절대 −1 없음</td>
+    <td>폴백 전용</td>
+  </tr>
+</table>
+
+<!-- ═══════════════════════════ §3 ═══════════════════════════ -->
+<h2 id="s3">3. postprocess 시퀀스</h2>
+
+<p>
+  <code>postprocess(prob_info, solution, deadline_monotonic)</code> — <em>postproc.py</em>
+</p>
+<p>
+  진입 시 try/except로 전체를 감싸므로 어떤 예외가 발생해도 원본 solution을 그대로 반환한다 (never-worse).
+</p>
+
+<div class="diagram"><pre>
+postprocess(prob_info, solution, deadline_monotonic)
+│
+├─ [try/except 전체 — 예외 시 return solution 원본]
+│
+├─ adapter.deserialize(prob_info, solution)
+│   └─ solution["operations"] 파싱 → bays_placed = {bay_id → [placed, ...]}
+│   └─ 각 placed = {id, sh, x, y, orient, entry, exit, world}
+│   └─ sh = gridmap.build_shape(bid, ..., orient_idx, scale=2)
+│   └─ world = {layer → shapely translate(sh.layers[l].poly, x, y)}
+│
+├─ global_eval(prob_info, bays_placed)    ← OFFICIAL checker 호출
+│   └─ 실패 / infeasible → return solution 원본
+│
+├─ _run_loop(data, bays_placed, base_obj, deadline, K=5)
+│   │
+│   └─ [ROUND LOOP — 전체 round가 accept 0이면 수렴, 또는 deadline]
+│       │
+│       ├─ SPATIAL 단계 (tardy 베이 우선순위 정렬, z1 내림차순)
+│       │   for each tardy bay j:
+│       │     for axis in "x", "y", "o":
+│       │       ts = _pass_cap(len(placed_j), remaining, n_active_bays)
+│       │       new_pl = crane_repack_bay(data, j, placed_j, ts,
+│       │                   n_xcand/n_ycand/n_ocand by axis, K=5)
+│       │       trial = {**cur, j: new_pl}
+│       │       ev = global_eval(data, trial)
+│       │       if ev.feasible AND ev.obj < cur_obj − 1e-6:
+│       │           cur = trial; cur_obj = ev.obj; round_accepts += 1
+│       │
+│       └─ CROSS-BAY 단계 (tardy + 선호 베이 불일치 블록)
+│           targets = 정렬(z3 기여 내림차순, lateness 내림차순)
+│           for each (bid, z3c, lateness) in targets:
+│             ts = _pass_cap(...)
+│             trial, _ = try_move(data, cur, bid, ts, K)
+│             if trial → global_eval → strictly better → 채택 continue
+│             trial, _ = try_swap(data, cur, bid, ts, K)
+│             if trial → global_eval → strictly better → 채택
+│
+│       round_accepts == 0 → break (수렴)
+│
+└─ if best_obj < base_obj − 1e-6:
+│   final = global_eval(best_bays)
+│   if feasible → return serialize(best_bays)   ← 개선된 솔루션
+│
+└─ else → return solution (원본)   ← 개선 없음 또는 실패
+</pre></div>
+
+<h3>_pass_cap — 적응형 CP-SAT 시간 할당</h3>
+<pre><span class="kw">def</span> <span class="fn">_pass_cap</span>(n_bay_blocks, remaining, n_active_bays):
+    <span class="cm"># size_cap: 블록 수에 비례 (12s~40s). 큰 베이는 precompute 세금(~8-9s)이 크므로 상한 필요</span>
+    size_cap = <span class="fn">min</span>(<span class="nb">40.0</span>, <span class="fn">max</span>(<span class="nb">12.0</span>, <span class="nb">0.30</span> * n_bay_blocks))
+    <span class="cm"># budget_cap: 남은 시간을 활성 베이 수로 나눠 한 패스가 예산 독식 금지</span>
+    budget_cap = remaining / <span class="fn">max</span>(<span class="nb">1.0</span>, <span class="nb">2.0</span> * n_active_bays)
+    <span class="kw">return</span> <span class="fn">float</span>(<span class="fn">max</span>(<span class="nb">8.0</span>, <span class="fn">min</span>(size_cap, <span class="fn">max</span>(budget_cap, <span class="nb">10.0</span>), remaining)))</pre>
+
+<h3>4가지 spatial axis 모드</h3>
+<table>
+  <tr><th>axis</th><th>(n_xcand, n_ycand, n_ocand)</th><th>의미</th></tr>
+  <tr><td><code>"x"</code></td><td>(K, 0, 0)</td><td>x 후보 K개, y/orient 고정 → x축만 이동 + 타이밍 재최적화</td></tr>
+  <tr><td><code>"y"</code></td><td>(0, K, 0)</td><td>y 후보 K개, x/orient 고정 → y축만 이동 + 타이밍 재최적화</td></tr>
+  <tr><td><code>"o"</code></td><td>(0, 0, K)</td><td>orient 변형 K개 → 회전 + 타이밍 재최적화</td></tr>
+  <tr><td><em>t (timing-only)</em></td><td>(0, 0, 0)</td><td>위치 고정, 타이밍만 재최적화 (원래 timing oracle)</td></tr>
+</table>
+<p>참고: (0,0,0) 모드는 현재 라운드 루프에서 x/y/o 세 축이 모두 타이밍을 joint하게 다루기 때문에 별도 "t" 패스는 삭제됨. 위치 자체를 건드리지 않으려면 (0,0,0)으로 호출하면 된다.</p>
+
+<!-- ═══════════════════════════ §4 ═══════════════════════════ -->
+<h2 id="s4">4. crane_repack_bay 4단계 — 핵심 엔진</h2>
+
+<p>
+  <code>crane_repack_bay(data, bay_id, placed, time_s, n_xcand, n_ycand, n_ocand, free_ids=None)</code>
+  — <em>crane_cpsat.py</em>
+</p>
+<p>
+  한 베이를 단위로 위치 후보(공간) + entry 시각(시간)을 CP-SAT로 동시에 재최적화한다.
+  크레인 충돌 boolean을 <em>위치 이산화 덕분에 사전계산</em>할 수 있다는 게 핵심 아이디어다.
+</p>
+
+<div class="callout callout-blue">
+  <div class="callout-title">Never-worse 보장의 수학적 근거</div>
+  모든 블록의 후보 0번 = 현재 pose (current x, y, orient). CP-SAT 초기 힌트도 후보 0 + 현재 entry.
+  따라서 현재 솔루션이 모델 내에서 항상 표현가능 → CP-SAT 최적값 ≤ 현재 tardiness.
+</div>
+
+<ul class="step-list">
+  <li>
+    <div class="step-num">A</div>
+    <div class="step-body">
+      <div class="step-label">위치 후보(candidates) 생성</div>
+      <p>각 블록에 대해 <strong>선형 합집합(Linear Union)</strong> 후보 세트를 만든다 — 그리드 곱(K×K)이 아니라 합집합(K+K).</p>
+      <pre><span class="cm"># 후보 세트 (de-dup 포함, per block)</span>
+candidates(b) = {current_pose}             <span class="cm"># 후보 0 — 항상 포함 (never-worse)</span>
+             ∪ {x-shifted, K개}           <span class="cm"># x 축 후보 (current y, current orient 고정)</span>
+             ∪ {y-shifted, n_ycand개}      <span class="cm"># y 축 후보 (current x, current orient 고정)</span>
+             ∪ {orient-variants, n_ocand개} <span class="cm"># 다른 orient (x,y는 새 orient bbox로 clamp)</span>
+
+<span class="cm"># 총 후보 수 per block = 1 + (n_xcand-1) + n_ycand + n_ocand  (중복 제거 후)</span>
+<span class="cm"># K_x × K_y 그리드가 아니므로 combo 수 폭발 억제</span></pre>
+      <p>
+        <strong>windowing (window_tardy_only=True)</strong>: active 블록 = tardy 블록 + 그 주변(near_margin=8.0 이내) 블록만.
+        나머지는 frozen (후보 0만, 위치/시간 상수).
+      </p>
+      <p>
+        <strong>LNS 모드 (free_ids ≠ None)</strong>: active = free_ids ∩ 이 베이 블록들.
+        bpass의 try_move/try_swap이 이 모드를 사용해 단일 블록만 자유롭게 움직이고 나머지를 동결.
+      </p>
+      <p>
+        <strong>combo cap (_COMBO_CAP = 200,000)</strong>: 후보-쌍 총 수가 초과 시 o → y → x 순서로 후보 수를 축소.
+      </p>
+    </div>
+  </li>
+
+  <li>
+    <div class="step-num">B</div>
+    <div class="step-body">
+      <div class="step-label">크레인 boolean 사전계산</div>
+      <p>
+        모든 <code>(블록 쌍 a,b) × (후보 조합 ci_a, ci_b)</code>에 대해
+        <strong>시간과 무관한</strong> 5개 boolean을 <em>공식 checker 함수</em>로 계산한다.
+      </p>
+<pre><span class="cm"># 5개 boolean per (a, b, ci_a, ci_b)</span>
+coll  = check_collisions(bay, [blk_a, blk_b])   <span class="cm"># 공간 충돌 여부</span>
+ba_e  = check_entry(bay, [blk_b], blk_a)        <span class="cm"># b가 존재할 때 a 진입 불가?</span>
+ab_e  = check_entry(bay, [blk_a], blk_b)        <span class="cm"># a가 존재할 때 b 진입 불가?</span>
+ba_x  = check_exit(bay, [blk_b], blk_a)         <span class="cm"># b가 존재할 때 a 퇴출 불가?</span>
+ab_x  = check_exit(bay, [blk_a], blk_b)         <span class="cm"># a가 존재할 때 b 퇴출 불가?</span>
+
+<span class="cm"># 공간 위치가 이산화돼 있으므로 "크레인 접근 가능 여부"를 시간 변수 없이 판정 가능</span>
+<span class="cm"># all-False 조합은 저장 생략 → 성긴 dict</span></pre>
+      <p>
+        <strong>핵심 인사이트</strong>: 위치를 이산 후보로 고정하면 크레인 boolean이 시간과 독립적으로 결정된다.
+        그래야 "위치 선택 → 해당 위치의 크레인 제약 → 시간 disjunction"을 CP-SAT 단일 모델로 표현할 수 있다.
+      </p>
+      <p>LNS 모드에서는 frozen-frozen 쌍은 현재 솔루션이 이미 feasible이므로 계산 생략.</p>
+    </div>
+  </li>
+
+  <li>
+    <div class="step-num">C</div>
+    <div class="step-body">
+      <div class="step-label">CP-SAT 모델 구축 + 풀기</div>
+      <p>CP-SAT 변수:</p>
+      <ul>
+        <li><code>sel[b][ci]</code> BoolVar — 블록 b가 후보 ci를 선택 (ExactlyOne)</li>
+        <li><code>e[b]</code> IntVar — 블록 b의 entry 시각 ([R_b, H])</li>
+        <li>frozen 블록: sel/e 변수 없음 — 현재 값이 정수 상수</li>
+      </ul>
+      <p>각 boolean이 True인 (a, b, ci_a, ci_b) 조합에 대해 <strong>gated disjunction</strong>을 추가:</p>
+<pre><span class="cm"># 예: coll=True → 두 블록의 시간이 겹치지 않아야 함 (어느 쪽이 먼저든 OK)</span>
+<span class="kw">if</span> coll:
+    l1, l2 = BoolVar, BoolVar
+    m.Add(exit_a &lt;= entry_b).OnlyEnforceIf([l1] + gate)   <span class="cm"># a 먼저</span>
+    m.Add(exit_b &lt;= entry_a).OnlyEnforceIf([l2] + gate)   <span class="cm"># b 먼저</span>
+    m.AddBoolOr([l1, l2]).OnlyEnforceIf(gate)               <span class="cm"># 둘 중 하나는 true</span>
+
+<span class="cm"># gate = [sel[a][ci_a], sel[b][ci_b]]  (둘 다 free인 경우)</span>
+<span class="cm"># frozen 블록은 sel var가 없으므로 gate에 포함되지 않음</span>
+
+<span class="cm"># ba_e, ab_e, ba_x, ab_x 도 유사한 2-리터럴 disjunction으로 모델링</span>
+
+<span class="cm"># 목적함수: Σ max(0, e[b] + P[b] - D[b])  — free 블록만</span>
+m.Minimize(sum(tard_vars))</pre>
+      <p>warm start: <code>AddHint(sel[b][0]=1, e[b]=cur_entry[b])</code> → 현재 해가 힌트로 주어져 CP-SAT 시작점 = 현재 tardiness.</p>
+      <p>4-worker 병렬, max_time_in_seconds = ts, log_search_progress = False.</p>
+    </div>
+  </li>
+
+  <li>
+    <div class="step-num">D</div>
+    <div class="step-body">
+      <div class="step-label">결과 추출 + 새 placed 재구성</div>
+<pre><span class="kw">for</span> p <span class="kw">in</span> placed:
+    b = p[<span class="st">"id"</span>]
+    <span class="kw">if not</span> is_free[b]:
+        new_placed.append(<span class="fn">dict</span>(p))   <span class="cm"># frozen: 그대로 복사</span>
+        <span class="kw">continue</span>
+    ci = solver.Value(sel[b])에서 선택된 후보 인덱스
+    new_x, new_y, new_o = cands[b][ci]
+    sh = cand_shapes[b][ci]           <span class="cm"># orient-variant면 해당 shape, 아니면 p["sh"]</span>
+    new_entry = solver.Value(e[b])
+    new_exit  = new_entry + P[b]
+    new_world = {l: translate(sh.layers[l].poly, new_x, new_y) ...}
+    new_placed.append({...p, sh, x, y, orient, entry, exit, world 갱신})</pre>
+      <p>반환값: <code>(new_placed_or_None, status_str, wall_s, info_dict)</code></p>
+      <p>INFEASIBLE/UNKNOWN → None 반환. 호출자(postproc._run_loop)가 None이면 현재 layout 유지.</p>
+    </div>
+  </li>
+</ul>
+
+<div class="diagram"><pre>
+crane_repack_bay 흐름 요약:
+
+  placed (current)
+       │
+  Step A: _build_candidates()
+       │  ├─ active/frozen 분류 (windowing or LNS free_ids)
+       │  └─ 후보 세트: {cur} ∪ x-shifts ∪ y-shifts ∪ orient-variants
+       │       (combo count > 200k → shrink o→y→x 순)
+       │
+  Step B: _precompute_combos()
+       │  └─ (a,b,ci_a,ci_b) → (coll, ba_e, ab_e, ba_x, ab_x)
+       │       공식 check_collisions / check_entry / check_exit 사용
+       │       frozen-frozen 쌍 skip (LNS 모드)
+       │
+  Step C: CP-SAT
+       │  ├─ sel[b][ci] BoolVar + ExactlyOne
+       │  ├─ e[b] IntVar [R_b, H]
+       │  ├─ boolean → gated time-disjunction
+       │  ├─ Minimize(Σ tardy, free blocks only)
+       │  └─ AddHint(sel[b][0]=1, e[b]=cur_entry)  ← warm start
+       │
+  Step D: extract
+       └─ free: solver.Value(sel/e) → 새 (x, y, orient, entry, exit, world)
+          frozen: dict(p) 그대로
+       → new_placed or None
+</pre></div>
+
+<!-- ═══════════════════════════ §5 ═══════════════════════════ -->
+<h2 id="s5">5. 모듈 맵</h2>
+
+<table>
+  <tr>
+    <th>모듈</th>
+    <th>위치</th>
+    <th>역할</th>
+    <th>비고</th>
+  </tr>
+  <tr>
+    <td><code>myalgorithm.py</code></td>
+    <td>submission_build/</td>
+    <td>평가 서버 진입점 <code>algorithm(prob_info, timelimit)</code>. best-of(v2+orig+fallback) + z1-guard + postprocess 연결.</td>
+    <td>서명 변경 금지</td>
+  </tr>
+  <tr>
+    <td><code>unified_greedy.py</code></td>
+    <td>submission_build/</td>
+    <td>v2 GLOBAL 솔버: OGC_GLOBAL=1(전역 Pass B), 배정 emergent, FFT 마스크, blend 순서. <code>unified(prob_info, budget, tmp)</code></td>
+    <td>set2 주력</td>
+  </tr>
+  <tr>
+    <td><code>solver_orig.py</code></td>
+    <td>submission_build/</td>
+    <td>원래 multi-module 솔버(gassign-first PURE, C3_MULT=2.0, CP-SAT timing, fastfloor). set1 주력.</td>
+    <td>gassign.py 등 다수 모듈 포함</td>
+  </tr>
+  <tr>
+    <td><code>baseline_greedy.py</code></td>
+    <td>submission_build/</td>
+    <td>공식 EDD+BestFit 그리디. 절대 infeasible 없음. 폴백 전용.</td>
+    <td>수정 금지</td>
+  </tr>
+  <tr>
+    <td><code>postproc.py</code></td>
+    <td>submission_build/</td>
+    <td>후처리 진입점 <code>postprocess(prob_info, solution, deadline)</code>. deserialize → round loop → serialize. 전체 try/except never-worse.</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><strong>v3pp/</strong> 패키지</td>
+    <td>submission_build/v3pp/</td>
+    <td>후처리 전용 격리 패키지. v2 솔버의 동명 모듈(temporal_pack, gridmap 등)과 충돌 방지.</td>
+    <td>isolated namespace</td>
+  </tr>
+  <tr>
+    <td><code>v3pp/crane_cpsat.py</code></td>
+    <td>v3pp/</td>
+    <td>핵심 엔진. 4단계(A 후보→B precompute→C CP-SAT→D extract). <code>crane_repack_bay(...)</code></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>v3pp/bpass.py</code></td>
+    <td>v3pp/</td>
+    <td>Cross-bay pass. <code>try_move</code>(블록을 선호 베이로 이동) + <code>try_swap</code>(상대 블록과 교환). free_ids={b} LNS 트릭 사용.</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>v3pp/adapter.py</code></td>
+    <td>v3pp/</td>
+    <td>solution dict → bays_placed 역직렬화. operations 파싱 → placed 재구성. <code>deserialize(data, solution)</code></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>v3pp/seed.py</code></td>
+    <td>v3pp/</td>
+    <td><code>global_eval(data, bays_placed)</code> = serialize + 공식 checker 호출. <code>serialize(bays_placed)</code> = operations dict 생성.</td>
+    <td>공식 checker wrapper</td>
+  </tr>
+  <tr>
+    <td><code>v3pp/temporal_pack.py</code></td>
+    <td>v3pp/</td>
+    <td>per-bay greedy layout (EDD 시뮬레이션). <code>build_subset / seed_order / simulate</code></td>
+    <td>v3pp 전용 사본</td>
+  </tr>
+  <tr>
+    <td><code>v3pp/gridmap.py</code></td>
+    <td>v3pp/</td>
+    <td>BlockShape 추상화 (폴리곤, 레이어, AABB). <code>build_shape(bid, block_data, orient_idx, scale)</code></td>
+    <td>v3pp 전용 사본</td>
+  </tr>
+  <tr>
+    <td><code>v3pp/density_pack.py</code></td>
+    <td>v3pp/</td>
+    <td>밀도 기반 패킹 유틸 (보조)</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>v3pp/xreopt_ref.py</code></td>
+    <td>v3pp/</td>
+    <td>x 재최적화 참조 구현, _x_lb/_x_ub 헬퍼 (crane_cpsat에서 import)</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td><code>utils.py</code></td>
+    <td>submission_build/ (공유)</td>
+    <td>공식 5단계 검사기 <code>check_feasibility</code>, Bay/Block 클래스, check_collisions/entry/exit. 평가 서버가 덮어씀.</td>
+    <td class="badge-no">절대 수정 금지</td>
+  </tr>
+</table>
+
+<h3>모듈 의존 그래프 (간략)</h3>
+<div class="diagram"><pre>
+myalgorithm.py
+  ├─ unified_greedy.py   (v2 GLOBAL, 다수 모듈)
+  ├─ solver_orig.py      (gassign, fastfloor, baypack_cp, ...)
+  ├─ baseline_greedy.py
+  └─ postproc.py
+       └─ v3pp/
+            ├─ adapter.py   (→ v3pp/gridmap)
+            ├─ seed.py      (→ v3pp/temporal_pack, utils)
+            ├─ crane_cpsat.py  (→ v3pp/gridmap, utils, xreopt_ref)
+            └─ bpass.py     (→ crane_cpsat, seed, gridmap)
+
+utils.py  ◄── 모든 모듈이 공유 (read-only, 서버가 덮어씀)
+</pre></div>
+
+<!-- ═══════════════════════════ §6 ═══════════════════════════ -->
+<h2 id="s6">6. v4 실험 결과 — 배정 레버 (전부 falsified)</h2>
+
+<p>
+  v4 세션에서는 z1 근본 원인을 배정 레벨에서 제거하려는 시도를 다수 수행했다.
+  아래는 검증된 결론이다.
+</p>
+
+<table>
+  <tr>
+    <th>레버</th>
+    <th>설명</th>
+    <th>결과</th>
+    <th>판정</th>
+  </tr>
+  <tr>
+    <td><code>assign_floor</code></td>
+    <td>z3-최적 배정 바닥(선호 베이 우선 배정): 낙관적 시나리오 18/20 z3=0 달성 가능성 있음</td>
+    <td>현실 적용 시 ~10.3M 총 obj 회복 가능 → 그러나 z1 폭발 (배정 바꾸면 크레인 직렬화 악화)</td>
+    <td class="badge-no">FALSIFIED</td>
+  </tr>
+  <tr>
+    <td><code>reassign</code></td>
+    <td>z3 집중화: 블록을 선호 베이로 몰아 z3를 낮추려 함</td>
+    <td>z1 2~16배 폭발. 5개 인스턴스 전부 obj 악화. 0/5 채택.</td>
+    <td class="badge-no">FALSIFIED</td>
+  </tr>
+  <tr>
+    <td><code>reassign_balance</code></td>
+    <td>z2(workload 불균형) 낮추려 부하 재분산 배정</td>
+    <td>z1 3~11배 폭발. 배정 변경이 크레인 직렬화를 악화시킴.</td>
+    <td class="badge-no">FALSIFIED</td>
+  </tr>
+  <tr>
+    <td>peak co-presence 진단</td>
+    <td>z1 피크 시각에 베이 점유율이 실제로 얼마나 되는지 측정</td>
+    <td>피크 시각 베이 공간 점유율 ~50% — 공간 부족이 아님. 크레인 j≥k 직렬화가 병목.</td>
+    <td class="badge-info">근거 확보</td>
+  </tr>
+</table>
+
+<div class="callout callout-red">
+  <div class="callout-title">핵심 결론: z1은 공간 문제가 아니다</div>
+  피크 시각에도 베이 공간은 ~50% 비어있다. 지연의 원인은 크레인 수직접근 규칙(j ≥ k: 아래 레이어 블록이 있으면 위 레이어 블록이 먼저 퇴출해야 함)이 만드는 <strong>직렬화 강제</strong>다.
+  early-release 시각에 여러 블록이 동시에 베이에 몰리면(co-presence) 크레인 순서를 맞추기 위해 일부는 대기 → tardiness 발생.
+  배정을 재구성해도 co-presence 자체를 줄이지 못하면 z1은 개선되지 않는다.
+</div>
+
+<div class="callout callout-blue">
+  <div class="callout-title">실제로 효과 있는 레버 (v3 후처리)</div>
+  crane_repack_bay는 <em>기존 배정을 유지하면서</em> 각 블록의 x/y/orient 위치와 entry 시각을
+  CP-SAT로 동시 재최적화한다. 위치를 바꿔 크레인 직렬화 순서를 유리하게 변경하는 것이 가능하므로
+  배정 변경 없이도 z1을 낮출 수 있다.
+  set2 실측: −8.71% (181.8M → 165.9M @600s), set1 prob_20 −28%.
+</div>
+
+<!-- ═══════════════════════════ §7 ═══════════════════════════ -->
+<h2 id="s7">7. 검증된 성능 / 천장</h2>
+
+<table>
+  <tr>
+    <th>구간</th>
+    <th>측정값</th>
+    <th>비고</th>
+  </tr>
+  <tr>
+    <td>set1 total obj (gassign-first PURE)</td>
+    <td class="badge-ok">271.93M</td>
+    <td>경쟁자 279.82M 격파 (+7.89M 리드)</td>
+  </tr>
+  <tr>
+    <td>set2 total obj (v2 GLOBAL)</td>
+    <td class="badge-ok">181.43M</td>
+    <td>g0 대비 +19.5%, feasible 40/40, never-−1, wall ≤95s</td>
+  </tr>
+  <tr>
+    <td>v3 post-process set2 효과 @600s</td>
+    <td class="badge-ok">−8.71%</td>
+    <td>181.8M → 165.9M (실험 조건; 실제 TL에서는 예산에 따라 다름)</td>
+  </tr>
+  <tr>
+    <td>set1 prob_20 post-process 효과</td>
+    <td class="badge-ok">−28%</td>
+    <td>set1에서 z1 &gt; 0인 유일한 인스턴스. 기타 z1=0 → 후처리 skip.</td>
+  </tr>
+  <tr>
+    <td>set1 prob_1..19 후처리</td>
+    <td class="badge-info">SKIP</td>
+    <td>z1=0 → byte-identical 반환, 회귀 0 보장</td>
+  </tr>
+  <tr>
+    <td>TL=120s에서 후처리 가동 여부</td>
+    <td class="badge-warn">제한적</td>
+    <td>best-of가 TL에 바짝 붙으면 pp_remaining &lt; 20s → 자동 skip. 후처리는 TL이 충분히 클 때 (≥200s 이상) 유효.</td>
+  </tr>
+  <tr>
+    <td>z1 구조적 하한 (ceiling)</td>
+    <td class="badge-warn">co-presence bound</td>
+    <td>피크 시각 크레인 직렬화 필수 횟수 × 처리시간이 하한. 배정/밀도 개선으로는 내릴 수 없음.</td>
+  </tr>
+  <tr>
+    <td>windowed relayout 연결 시도 (A/B/C/D)</td>
+    <td class="badge-no">전부 회귀</td>
+    <td>라이브 wall 포화(~232/240s)로 예산 없음 + 큰 set2 베이에서 CP-SAT 모델 빌드 폭발. 상세: <code>notes/research/ogc2026-relayout-wiring-falsified-2026-06-19.md</code></td>
+  </tr>
+</table>
+
+<h3>실행 환경 제약 (평가 서버)</h3>
+<ul>
+  <li>CPU 4코어 (400%), 메모리 16GB</li>
+  <li>인터넷 차단 (firejail) — 외부 API 절대 금지</li>
+  <li>GPU 없음 — ML 추론 불가</li>
+  <li>CP-SAT <code>num_search_workers=4</code></li>
+  <li>로컬 실행: <code>C:/Users/peter/anaconda3/envs/ogc2025/python.exe</code> 직접 사용 (conda run 크래시)</li>
+</ul>
+
+<h3>자주 쓰는 명령</h3>
+<pre><span class="cm"># 로컬 스모크 (TL=60s, prob_24)</span>
+python tools/run_local.py instances/train/prob_24.json --timelimit 60
+
+<span class="cm"># set1 전체 캡처 (affinity 고정, 4코어)</span>
+python notes/_capture20_aff.py --instances SET1
+
+<span class="cm"># 후처리 비활성화하고 best-of만 측정</span>
+OGC_NO_PP=1 python tools/run_local.py instances/train/prob_20.json --timelimit 300
+
+<span class="cm"># 제출 zip 빌드</span>
+python tools/build_submission.py --tag v04-test</pre>
+
+<hr>
+<p style="color:#6e7681; font-size:0.82rem; text-align:center;">
+  OGC 2026 v4 코드 참조 문서 — 생성 2026-06-21 | 소스: submission_build/myalgorithm.py, postproc.py, ogc-2026-v3/ (crane_cpsat, bpass, adapter, seed, run_full)
+</p>
+
+</div><!-- .page-wrap -->
+</body>
+</html>

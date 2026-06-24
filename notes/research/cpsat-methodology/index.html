@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CP-SAT 모델링 방법론 — 리서치 허브</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav">
+<a href="index.html" class="active">개요</a>
+<a href="improvements.html">★ 개선제안</a>
+<a href="01-fundamentals.html">01 작동원리</a>
+<a href="02-modeling-basics.html">02 모델링기본</a>
+<a href="03-scheduling.html">03 스케줄링</a>
+<a href="04-packing.html">04 패킹·배치</a>
+<a href="05-objective.html">05 목적·선형화</a>
+<a href="06-search-params.html">06 탐색·파라미터</a>
+<a href="07-incremental.html">07 힌트·증분</a>
+<a href="08-symmetry.html">08 대칭·유효부등식</a>
+<a href="09-lns.html">09 LNS·분해</a>
+<a href="10-lbbd.html">10 LBBD</a>
+<a href="11-performance.html">11 성능·스케일</a>
+<a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+  <header class="hero">
+    <div class="kicker">OR-Tools CP-SAT · 모델링 방법론 대규모 리서치</div>
+    <h1>CP-SAT를 제대로 쓰는 법</h1>
+    <p class="lead">Google OR-Tools <strong>CP-SAT</strong> 솔버의 작동원리부터 모델링 어휘, 스케줄링·패킹·목적함수 선형화, 파라미터 튜닝, LNS·분해, Logic-Based Benders Decomposition, 성능 안티패턴, 핵심 리포지토리까지 — 공식 문서·CP-SAT Primer·학술 논문·GitHub를 12개 병렬 에이전트로 동시 탐색해 정리한 실전 방법론 허브.</p>
+  </header>
+
+  <div class="callout ogc">
+    <div class="ttl">왜 이 리서치인가 · OGC2026 직결</div>
+    <p>OGC2026 조선소 블록 문제는 <strong>2D 이형 폴리곤 패킹 + 단일머신 tardiness 스케줄링 + 베이배정 + 크레인 수직접근(j≥k)</strong>이 결합한 NP-hard 문제이고, 현재 솔버의 핵심 엔진이 바로 CP-SAT다 — 고정 레이아웃 위 <strong>per-bay 타이밍 오라클</strong>(1-D disjunctive weighted tardiness)과 <strong>master 배정 ↔ bay 오라클 LBBD</strong> 구조. 이 12개 페이지는 그 엔진을 더 정확·빠르게 만들 때 바로 참조할 수 있도록, 각 주제 끝에 <span class="tag ogc">OGC2026 적용</span> 박스를 두었다.</p>
+  </div>
+
+  <a href="improvements.html" class="card" style="border-color:#5a3a8a;background:linear-gradient(180deg,#1c1530,#161b22);margin:24px 0;display:block">
+    <div class="num" style="color:var(--ogc)">★ 적용편 · CODE AUDIT × METHODOLOGY</div>
+    <h3 style="color:#fff">우리 솔버 개선 제안 보기 →</h3>
+    <p>5-에이전트 코드 감사(타이밍 오라클·box-decomp·cp-sat LBBD·병렬/never−1)를 12개 방법론과 교차 대조한 <strong>우선순위 제안</strong>. P0 제출안전(serial-floor·결정성·예산) → P1 속도회수(zero-stopper·NoOverlap) → P2 구조(NoOverlap2D·대칭·LNS배선·LBBD 컷). 정직한 판정 포함: CP-SAT 튜닝은 속도·안전을 벌 뿐, &lt;1M 밀도천장은 직교 방법론(semi-discrete BLF·ROMA).</p>
+  </a>
+
+  <h2>12개 주제</h2>
+  <p>각 카드를 눌러 상세 페이지로. 코드 관용구·베스트프랙티스·흔한 함정·핵심 논문·GitHub 링크가 페이지마다 들어있다.</p>
+
+  <div class="grid">
+    <a class="card" href="01-fundamentals.html">
+      <div class="num">01 · FUNDAMENTALS</div>
+      <h3>CP-SAT 작동원리·아키텍처</h3>
+      <p>SAT(CDCL) 백본 + CP 전파를 Lazy Clause Generation으로 연결한 하이브리드. 11종 완전탐색 + LNS 병렬 포트폴리오, LP relaxation, 정수 전용 도메인, 결정론. MiniZinc Challenge 전 부문 석권.</p>
+    </a>
+    <a class="card" href="02-modeling-basics.html">
+      <div class="num">02 · MODELING</div>
+      <h3>변수·제약·reification·channeling</h3>
+      <p>NewIntVar/BoolVar, 비연속 도메인, Bool 로직 7종, <strong>OnlyEnforceIf의 단방향성</strong>(완전 채널링은 양방향 필요), if-then·집합소속·Element·Implication 관용구.</p>
+    </a>
+    <a class="card" href="03-scheduling.html">
+      <div class="num">03 · SCHEDULING</div>
+      <h3>interval · NoOverlap · cumulative</h3>
+      <p>optional interval + presence, 단일머신 disjunctive, 2D 비겹침, cumulative, reservoir, 대체자원, 전이시간, <strong>weighted tardiness</strong> 완전 예제. 타이밍 오라클의 교과서.</p>
+    </a>
+    <a class="card" href="04-packing.html">
+      <div class="num">04 · PACKING</div>
+      <h3>bin packing · 2D 직교 패킹</h3>
+      <p>knapsack, NoOverlap2D + interval 쌍, optional placement, 0°/90° 회전, strip packing. <strong>이형 폴리곤 한계</strong>와 박스분해·격자래스터·set-packing 우회 전략.</p>
+    </a>
+    <a class="card" href="05-objective.html">
+      <div class="num">05 · OBJECTIVE</div>
+      <h3>선형화 헬퍼·다목적·스케일링</h3>
+      <p>Max/Min/Abs/Element/Multiplication/Division Equality, table 제약, 가중합 vs 사전식, <strong>부동소수→정수 스케일링</strong>과 int64 오버플로 방지. Z1·Z2(minimax)·Z3 인코딩.</p>
+    </a>
+    <a class="card" href="06-search-params.html">
+      <div class="num">06 · PARAMETERS</div>
+      <h3>탐색 전략 & 솔버 파라미터</h3>
+      <p>num_workers·interleave·subsolvers, presolve, linearization_level, search_branching, AddDecisionStrategy, random_seed 결정화, <strong>log_search_progress 읽는 법</strong>. 4코어 활용.</p>
+    </a>
+    <a class="card" href="07-incremental.html">
+      <div class="num">07 · INCREMENTAL</div>
+      <h3>힌트·가정·콜백·웜스타트</h3>
+      <p>AddHint(소프트 안내), assumption으로 UNSAT 코어 추출, SolutionCallback로 plateau 조기중단. <strong>진정한 증분 풀이 미지원</strong> → 직전 해 hint 이월이 유일한 웜스타트.</p>
+    </a>
+    <a class="card" href="08-symmetry.html">
+      <div class="num">08 · SYMMETRY</div>
+      <h3>대칭 깨기 & 유효 부등식</h3>
+      <p>symmetry_level 자동 탐지 + 수동 lex/dominance/value-precedence, 면적 집계 하한·clique valid inequality로 LP relaxation 강화. 과한 중복제약의 역효과 트레이드오프.</p>
+    </a>
+    <a class="card" href="09-lns.html">
+      <div class="num">09 · LNS</div>
+      <h3>LNS & 분해로 대규모 풀기</h3>
+      <p>CP-SAT 내장 LNS 워커(14종 generator), 직접 LNS(부분 고정+재solve), ALNS, <strong>rolling horizon</strong>, per-bay fix-and-optimize 분해. 혼잡 인스턴스 탈출.</p>
+    </a>
+    <a class="card" href="10-lbbd.html">
+      <div class="num">10 · LBBD</div>
+      <h3>Logic-Based Benders / branch-and-check</h3>
+      <p>master(배정) ↔ subproblem(스케줄/패킹) 분리, <strong>no-good·optimality cut</strong>, CP-SAT를 오라클로. Hooker 배정+스케줄링 고전. cp-sat/ 폴더 구조와 1:1 매핑.</p>
+    </a>
+    <a class="card" href="11-performance.html">
+      <div class="num">11 · PERFORMANCE</div>
+      <h3>성능 튜닝·스케일·안티패턴</h3>
+      <p>도메인 타이트닝, big-M 회피, 정수 작게, 힌트 웜스타트, 분해. <strong>CP-SAT vs MIP</strong> 언제 이기나. 부동목적·거대도메인·곱셈남용 등 8대 안티패턴.</p>
+    </a>
+    <a class="card" href="12-resources.html">
+      <div class="num">12 · RESOURCES</div>
+      <h3>리포지토리·학습자료·사례</h3>
+      <p>google/or-tools(13.6k★)·cpsat-primer 등 검증된 깃헙 7종, 5단계 학습 경로, 핵심 논문·강연, 커뮤니티, 솔버 비교 벤치마크. 모든 URL WebFetch 검증.</p>
+    </a>
+    <a class="card" href="11-performance.html" style="border-style:dashed">
+      <div class="num">⚑ START HERE</div>
+      <h3>처음이면 01 → 02 → 11</h3>
+      <p>작동원리(01)로 모델을 이해하고, 모델링 기본(02)으로 어휘를 익힌 뒤, 성능(11)으로 안티패턴을 피하라. 그다음 풀려는 문제에 맞춰 03/04/10으로.</p>
+    </a>
+  </div>
+
+  <h2>OGC2026 솔버 ↔ 페이지 매핑</h2>
+  <p>현재 솔버 컴포넌트별로 어느 페이지를 보면 되는지.</p>
+  <table>
+    <thead><tr><th>솔버 컴포넌트</th><th>핵심 기법</th><th>참조 페이지</th></tr></thead>
+    <tbody>
+      <tr><td>per-bay 타이밍 오라클 <code>_cpsat_bay_timing_verified</code></td><td>1-D disjunctive weighted tardiness (NoOverlap + precedence + max(0,·))</td><td>03 스케줄링 · 05 목적 · 07 힌트</td></tr>
+      <tr><td>배치/패킹 (fastfloor BL, boxsolver)</td><td>NoOverlap2D, 회전, 이형폴리곤 박스분해, set-packing 후보</td><td>04 패킹 · 08 대칭</td></tr>
+      <tr><td>LBBD (<code>master_cp</code> ↔ <code>bay_pack_cp</code>)</td><td>master 배정 + 오라클 no-good cut, serial_floor 안전바닥</td><td>10 LBBD · 09 LNS</td></tr>
+      <tr><td>크레인 수직접근 j≥k</td><td>Implication / precedence / z축 비겹침 동형</td><td>02 모델링 · 03 스케줄링 · 04 패킹</td></tr>
+      <tr><td>운영 (4코어/16GB/수분~30분, never −1)</td><td>num_workers·time limit·결정화, plateau 감지, 분해 스케일</td><td>06 파라미터 · 11 성능 · 01 작동원리</td></tr>
+      <tr><td>가중치 weight-adaptive (w1 667~29.6K)</td><td>정수 스케일링, minimax, 다목적 가중합</td><td>05 목적 · 11 성능</td></tr>
+    </tbody>
+  </table>
+
+  <h2>가장 권위 있는 핵심 자료</h2>
+  <p>12개 페이지 전반에서 반복 인용된, 가장 신뢰도 높은 출처. 상세 큐레이션은 <a href="12-resources.html">12 리포지토리·사례</a>.</p>
+  <ul class="refs">
+    <li class="repo"><strong>CP-SAT Primer</strong> — Dominik Krupke (TU Braunschweig)
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/</span>
+      <span class="desc">CC-BY 무료 오픈북. 모델링·파라미터·LNS·성능까지 가장 포괄적인 실전 학습서. 거의 모든 페이지가 1차 출처로 삼음.</span></li>
+    <li class="repo"><strong>google/or-tools</strong> — 공식 소스 + examples/python (jobshop·rcpsp·packing)
+      <span class="meta">https://github.com/google/or-tools</span>
+      <span class="desc">13.6k★. <code>examples/python/jobshop_ft06_sat.py</code>가 타이밍 오라클의 직접 레퍼런스. <code>sat_parameters.proto</code>는 모든 파라미터의 원천.</span></li>
+    <li><strong>The CP-SAT-LP Solver</strong> — Laurent Perron, Frédéric Didier (CP 2023 invited talk)
+      <span class="meta">https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.CP.2023.3</span>
+      <span class="desc">CP-SAT 내부 구조(LCG·LP relaxation·cut generation·포트폴리오)를 설계자가 직접 설명한 최고 권위 문헌.</span></li>
+    <li><strong>Hooker, J.N. (2007)</strong> — Planning and Scheduling by Logic-Based Benders Decomposition, <em>Operations Research</em> 55(3):588–602
+      <span class="meta">https://doi.org/10.1287/opre.1060.0371</span>
+      <span class="desc">배정+스케줄링 LBBD 고전. MIP 대비 수십~수천배 속도. cp-sat/ 폴더 LBBD 구조의 이론적 토대.</span></li>
+    <li><strong>OR-Tools Scheduling & Channeling Docs</strong> — 공식 가이드
+      <span class="meta">https://developers.google.com/optimization/scheduling</span>
+      <span class="desc">interval/NoOverlap/cumulative와 reification·channeling 관용구의 공식 레시피.</span></li>
+  </ul>
+
+  <h2>이 리서치는 어떻게 만들어졌나</h2>
+  <div class="tip">
+    <div class="ttl">방법</div>
+    <p>12개 Sonnet 에이전트를 <strong>병렬</strong>로 띄워 각자 한 주제를 WebSearch+WebFetch로 탐색(URL 실제 검증, 날조 금지)하고 자기완결 HTML 페이지를 작성하게 했다. 각 에이전트는 결론 요약만 반환(파일 덤프 금지)해 메인 컨텍스트 토큰을 보호. 공유 stylesheet(<code>style.css</code>)로 디자인 일관성을 유지하고, 이 인덱스가 결과를 종합한다.</p>
+  </div>
+
+  <div class="footer">
+    CP-SAT 모델링 방법론 리서치 · 2026-06-17 · 12개 병렬 Sonnet 에이전트 · OGC2026 workspace<br>
+    파일: <code>notes/research/cpsat-methodology/</code> (index + 01~12 + style.css)
+  </div>
+</div>
+</body>
+</html>

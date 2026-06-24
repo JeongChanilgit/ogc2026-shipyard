@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP-SAT 모델 아틀라스 — OGC2026 솔버</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232c; --ink:#e6edf3; --muted:#9aa7b4;
+    --line:#2a333d; --accent:#4ea1ff; --good:#3fb950; --warn:#d29922; --bad:#f85149;
+    --cyan:#39c5cf; --violet:#bc8cff; --pink:#ff7eb6; --code:#0a0e13;
+    --f1:#3fb950; --f2:#39c5cf; --f3:#4ea1ff; --f4:#d29922; --f5:#f85149;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",Roboto,sans-serif;
+    line-height:1.62;font-size:15.5px}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px 120px}
+  header.hero{padding:50px 24px 34px;background:linear-gradient(160deg,#101d33 0%,#0e1116 72%);
+    border-bottom:1px solid var(--line)}
+  .hero-inner{max-width:1140px;margin:0 auto}
+  .kick{color:var(--accent);font-weight:700;letter-spacing:.12em;font-size:12.5px;text-transform:uppercase}
+  h1{font-size:33px;line-height:1.18;margin:10px 0 8px}
+  .sub{color:var(--muted);font-size:16.5px;max-width:820px}
+  .meta{margin-top:16px;color:var(--muted);font-size:12.5px}
+  .meta code{background:var(--panel2);padding:2px 7px;border-radius:5px;color:var(--cyan)}
+
+  nav.toc{position:sticky;top:0;z-index:20;background:rgba(14,17,22,.93);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:11px 24px}
+  nav.toc .toc-inner{max-width:1140px;margin:0 auto;display:flex;flex-wrap:wrap;gap:7px}
+  nav.toc a{color:var(--muted);text-decoration:none;font-size:12px;padding:5px 10px;
+    border:1px solid var(--line);border-radius:18px;transition:.15s}
+  nav.toc a:hover{color:var(--ink);border-color:var(--accent);background:var(--panel2)}
+
+  section{margin-top:46px;scroll-margin-top:62px}
+  h2{font-size:24px;border-left:4px solid var(--accent);padding-left:14px;margin:0 0 6px}
+  h2 .n{color:var(--accent);font-weight:800;margin-right:8px}
+  h3{font-size:18px;margin:26px 0 6px;color:var(--cyan)}
+  p{margin:11px 0}
+  .lead{color:var(--muted);font-size:15.5px;margin-bottom:16px}
+
+  code{font-family:"SF Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
+    background:var(--panel2);color:var(--cyan);padding:1.5px 6px;border-radius:5px;font-size:13px}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:9px;
+    padding:14px 16px;overflow-x:auto;font-size:12.5px;line-height:1.5;margin:12px 0}
+  pre code{background:none;color:#c9d6e0;padding:0}
+  .cmt{color:#5b6b78}.kw{color:#ff7b72}.fn{color:#d2a8ff}.str{color:#a5d6ff}.num{color:#79c0ff}.var{color:#ffa657}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--ink);font-weight:600}
+  td.mono,th.mono{font-family:ui-monospace,monospace;font-size:12px}
+  tr:nth-child(even) td{background:rgba(255,255,255,.014)}
+
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:18px;letter-spacing:.02em}
+  .pill.on{background:rgba(63,185,80,.16);color:var(--good);border:1px solid rgba(63,185,80,.35)}
+  .pill.off{background:rgba(154,167,180,.13);color:var(--muted);border:1px solid rgba(154,167,180,.3)}
+  .pill.cap{background:rgba(210,153,34,.14);color:var(--warn);border:1px solid rgba(210,153,34,.35)}
+  .pill.dorm{background:rgba(248,81,73,.12);color:var(--bad);border:1px solid rgba(248,81,73,.32)}
+
+  .callout{border-radius:9px;padding:15px 17px;margin:16px 0;border:1px solid;font-size:14.5px}
+  .callout .h{font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .callout.key{background:rgba(78,161,255,.08);border-color:rgba(78,161,255,.4)}
+  .callout.warnbox{background:rgba(210,153,34,.07);border-color:rgba(210,153,34,.4)}
+  .callout.badbox{background:rgba(248,81,73,.07);border-color:rgba(248,81,73,.4)}
+  .callout.goodbox{background:rgba(63,185,80,.07);border-color:rgba(63,185,80,.4)}
+
+  .ref{color:var(--muted);font-size:11.5px;font-family:ui-monospace,monospace}
+
+  /* spectrum */
+  .spectrum{display:flex;gap:8px;margin:20px 0;flex-wrap:wrap}
+  .fam{flex:1;min-width:195px;border-radius:11px;padding:15px 15px 14px;border:1px solid var(--line);
+    background:var(--panel);position:relative;overflow:hidden}
+  .fam::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+  .fam.c1::before{background:var(--f1)} .fam.c2::before{background:var(--f2)}
+  .fam.c3::before{background:var(--f3)} .fam.c4::before{background:var(--f4)} .fam.c5::before{background:var(--f5)}
+  .fam .fnum{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em}
+  .fam .fti{font-weight:700;font-size:15px;margin:3px 0 6px}
+  .fam .fdesc{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .fam .ftag{margin-top:8px;font-size:11px}
+  .scale{display:flex;align-items:center;gap:10px;margin:6px 0 0;font-size:12px;color:var(--muted)}
+  .scale .bar{flex:1;height:7px;border-radius:5px;background:linear-gradient(90deg,var(--f1),var(--f2),var(--f3),var(--f4),var(--f5))}
+
+  /* model card */
+  .mcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:18px 0;overflow:hidden}
+  .mcard .top{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;
+    justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .mcard.c1 .top{background:linear-gradient(90deg,rgba(63,185,80,.1),transparent)}
+  .mcard.c2 .top{background:linear-gradient(90deg,rgba(57,197,207,.1),transparent)}
+  .mcard.c3 .top{background:linear-gradient(90deg,rgba(78,161,255,.1),transparent)}
+  .mcard.c4 .top{background:linear-gradient(90deg,rgba(210,153,34,.1),transparent)}
+  .mcard.c5 .top{background:linear-gradient(90deg,rgba(248,81,73,.1),transparent)}
+  .mcard .top .name{font-size:16.5px;font-weight:700}
+  .mcard .top .loc{font-size:11.5px;color:var(--muted);font-family:ui-monospace,monospace;margin-top:2px}
+  .mcard .body{padding:6px 18px 16px}
+  .row{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .lab{font-weight:700;color:var(--violet);font-size:13px;padding-top:2px}
+  .row .val{font-size:13.5px}
+  .row .val ul{margin:3px 0;padding-left:18px}
+  .row .val li{margin:3px 0}
+
+  ul.tight{margin:7px 0;padding-left:20px}
+  ul.tight li{margin:4px 0}
+  hr{border:none;border-top:1px solid var(--line);margin:28px 0}
+  .foot{margin-top:54px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  .tag{font-size:10.5px;color:var(--muted);font-family:ui-monospace,monospace;background:var(--panel2);
+    padding:1px 6px;border-radius:4px;border:1px solid var(--line)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:10px 0}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="kick">OGC2026 · 솔버 내부 · CP-SAT 전수 도해</div>
+    <h1>CP-SAT 모델 아틀라스</h1>
+    <p class="sub">이 솔버가 쓰는 <b>모든 CP-SAT 모델</b>(9개 모듈, ~14개 정의)을 역할별 5계열로 묶어, 각 모델의 결정 변수·제약식·목적함수·게이트·운영 활성 여부를 제약 조건 레벨까지 시각화한다.</p>
+    <div class="meta">작성 2026-06-16 · 근거 = 읽기전용 코드분석 3건(file:line) · 대상 <code>myalgorithm.py</code> · <code>boxsolver.py</code> · <code>baypack_cp.py</code> · <code>z3race.py</code> · <code>fastfloor.py</code> · <code>parallel_decode.py</code> · <code>packer.py</code> · <code>uconstruct.py</code> · <code>rebuild.py</code></div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#spectrum">스펙트럼</a>
+    <a href="#idioms">제약 idiom 5종</a>
+    <a href="#f1">① 배정</a>
+    <a href="#f2">② 타이밍 오라클</a>
+    <a href="#f3">③ Cumulative 완화</a>
+    <a href="#f4">④ 2D 패킹</a>
+    <a href="#f5">⑤ Joint</a>
+    <a href="#inventory">전체 인벤토리</a>
+    <a href="#caveats">활성/주의</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ===== SPECTRUM ===== -->
+<section id="spectrum">
+  <h2><span class="n">▸</span>한눈에 — CP-SAT 5계열 스펙트럼</h2>
+  <p class="lead">이 솔버의 CP-SAT는 "CP-SAT가 사랑하는 형태"에서 "폭발하는 형태"로 이어지는 <b>하나의 스펙트럼</b>이다. 왼쪽일수록 기하를 변수에서 빼냈고(tractable), 오른쪽일수록 <b>위치를 변수로</b> 넣어 정확한 2D non-overlap을 풀려 한다(폭발).</p>
+
+  <div class="scale"><span>tractable · 잘 풀림</span><div class="bar"></div><span>폭발 · 캡/게이트로 묶임</span></div>
+
+  <div class="spectrum">
+    <div class="fam c1">
+      <div class="fnum">계열 ①</div>
+      <div class="fti">배정 (Assignment)</div>
+      <div class="fdesc">블록→베이 0-1 변수. <b>기하 전혀 없음.</b> z2(부하)·z3(선호)만.</div>
+      <div class="ftag"><span class="pill on">운영 활성</span></div>
+    </div>
+    <div class="fam c2">
+      <div class="fnum">계열 ②</div>
+      <div class="fti">타이밍 오라클</div>
+      <div class="fdesc">고정 layout → entry 시각만. 충돌을 <b>상수로 precompute</b> → 1D disjunctive.</div>
+      <div class="ftag"><span class="pill on">기본 ON · 주력</span></div>
+    </div>
+    <div class="fam c3">
+      <div class="fnum">계열 ③</div>
+      <div class="fti">Cumulative 완화</div>
+      <div class="fdesc">면적=demand, 베이면적=capacity. <b>정확 non-overlap 대신 완화</b> → entry 타깃만 산출.</div>
+      <div class="ftag"><span class="pill on">기본 ON (cumlevel/bbox)</span></div>
+    </div>
+    <div class="fam c4">
+      <div class="fnum">계열 ④</div>
+      <div class="fti">2D 패킹-스케줄링</div>
+      <div class="fdesc">위치 tx,ty + entry <b>joint</b>. pairwise no-overlap BoolOr. 작은 베이만.</div>
+      <div class="ftag"><span class="pill cap">멤버 캡 60~70</span></div>
+    </div>
+    <div class="fam c5">
+      <div class="fnum">계열 ⑤</div>
+      <div class="fti">Joint 배정+스케줄</div>
+      <div class="fdesc">배정+위치+방향+시간을 <b>한 모델에</b>. 가장 무거움.</div>
+      <div class="ftag"><span class="pill dorm">일부 dormant/우회로</span></div>
+    </div>
+  </div>
+
+  <div class="callout key">
+    <div class="h">🔑 관통하는 원리</div>
+    CP-SAT가 tractable한 이유는 단 하나 — <b>정확한 2D 기하 non-overlap을 결정 변수로 두지 않을 때</b>다.
+    ①은 기하가 아예 없고, ②는 기하를 <b>상수</b>로 빼냈고, ③은 기하를 <b>면적으로 완화</b>했다. ④·⑤는 위치를 변수로 넣어 정확 non-overlap을 강제하는 순간 — 그래서 멤버 캡·npairs 캡·게이트로 묶여 있고, 작은 베이에서만 켜진다.
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--good)"></span> 운영 경로에서 실제로 돈다</span>
+    <span><span class="dot" style="background:var(--warn)"></span> 옵션/캡으로 작은 케이스만</span>
+    <span><span class="dot" style="background:var(--bad)"></span> dormant 또는 우회로(미연결 가능)</span>
+  </div>
+</section>
+
+<!-- ===== IDIOMS ===== -->
+<section id="idioms">
+  <h2><span class="n">▸</span>먼저 알 것 — 모든 모델이 쓰는 제약 idiom 5종</h2>
+  <p class="lead">14개 모델은 사실 아래 5개의 제약 패턴을 조합한 것이다. 이걸 알면 각 모델이 한눈에 읽힌다.</p>
+
+  <h3>idiom 1 · 배정 유일성 (Σ=1)</h3>
+  <pre><code><span class="cmt"># 블록 b는 정확히 1개 베이에</span>
+model.<span class="fn">Add</span>(<span class="fn">sum</span>(x[b, j] <span class="kw">for</span> j <span class="kw">in</span> feasible_bays[b]) == <span class="num">1</span>)</code></pre>
+
+  <h3>idiom 2 · min–max 불균형 (z2)</h3>
+  <pre><code><span class="cmt"># 베이별 가중 부하의 최대-최소 = workload imbalance</span>
+model.<span class="fn">AddMaxEquality</span>(hi, wl);  model.<span class="fn">AddMinEquality</span>(lo, wl)
+model.<span class="fn">Add</span>(z2 == hi - lo)</code></pre>
+
+  <h3>idiom 3 · half-reified disjunction (분리 OR)</h3>
+  <pre><code><span class="cmt"># "이 조건 OR 저 조건" — 충돌 회피의 핵심. 시간·공간 모두 이 형태</span>
+model.<span class="fn">Add</span>(ax &lt;= be).<span class="fn">OnlyEnforceIf</span>(l1)    <span class="cmt"># a가 b보다 먼저 끝나거나</span>
+model.<span class="fn">Add</span>(bx &lt;= ae).<span class="fn">OnlyEnforceIf</span>(l2)    <span class="cmt"># b가 a보다 먼저 끝나거나</span>
+model.<span class="fn">AddBoolOr</span>([l1, l2])                <span class="cmt"># 둘 중 하나는 참이어야</span></code></pre>
+
+  <h3>idiom 4 · cumulative (면적-용량 완화)</h3>
+  <pre><code><span class="cmt"># 같은 시각에 베이 안 블록 면적 합 ≤ 베이 면적. 정확 위치는 안 봄(완화)</span>
+model.<span class="fn">AddCumulative</span>(intervals, demands, capacity)
+<span class="cmt"># interval = [entry, entry+P], demand = bbox 면적, capacity = W·H·alpha</span></code></pre>
+
+  <h3>idiom 5 · tardiness + warm-start hint</h3>
+  <pre><code>model.<span class="fn">Add</span>(td[b] &gt;= entry[b] + P[b] - D[b])   <span class="cmt"># td≥0 도메인이라 max(0,·)</span>
+model.<span class="fn">AddHint</span>(entry[b], current_entry[b])     <span class="cmt"># 현재 해를 시드로 (feasible)</span>
+model.<span class="fn">Minimize</span>(<span class="fn">sum</span>(td))</code></pre>
+
+  <p style="font-size:13px;color:var(--muted)">공통 솔버 설정: <code>num_search_workers</code>=4(메인 모델)~1(packing), <code>max_time_in_seconds</code>=베이별 예산 분배, <code>OGC_DEV_DET</code>(기본 OFF→비결정성), 항상 공식 checker <code>consider()</code> 게이트 통과해야 채택.</p>
+</section>
+
+<!-- ===== F1 ASSIGNMENT ===== -->
+<section id="f1">
+  <h2><span class="n">①</span>배정 (Assignment) — 기하 없는 0-1, CP-SAT의 안방</h2>
+  <p class="lead">블록을 어느 베이에 넣을지만 정한다. 위치·시간·충돌을 전혀 모델링하지 않아 순수 0-1 ILP다. 가장 가볍고 항상 잘 풀린다. <b>단, z1(tardiness)을 모름 → "realize barrier"의 근원</b>: 낮은 z3 배정이 z1=0으로 실현되지 않는 이유.</p>
+
+  <div class="mcard c1">
+    <div class="top">
+      <div><div class="name">_cpsat_assignment</div><div class="loc">myalgorithm.py:1615 · 배정 seed 생성기</div></div>
+      <div><span class="pill on">운영 활성</span> <span class="pill off">area/count-cap 현재 dormant</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">변수</div><div class="val">
+        <ul><li><code>x[b,j]</code> BoolVar — 블록 b를 베이 j에 (feasible 쌍만, 개수 ≤ n·m) <span class="ref">:1643</span></li>
+        <li><code>wl[j]</code> IntVar — 베이별 가중 부하 <span class="ref">:1655</span> / <code>hi,lo,z2</code> IntVar <span class="ref">:1658-1662</span></li></ul>
+      </div></div>
+      <div class="row"><div class="lab">제약</div><div class="val">
+        <ul><li><b>idiom 1</b> 배정 유일성 <code>Σⱼ x[b,j]=1</code> <span class="ref">:1644</span></li>
+        <li>부하 정의 <code>wl[j]=Σ_b workload[b]·U[j]·x[b,j]</code> (U[j]=round(u_j·1000)) <span class="ref">:1654-1656</span></li>
+        <li><b>idiom 2</b> <code>z2 = max(wl) − min(wl)</code> <span class="ref">:1660-1663</span></li>
+        <li><span class="ref">옵션·현재 OFF</span> area-time cumulative(cap_alpha) <span class="ref">:1723</span> / count-cap(beta) <span class="ref">:1738</span> — 두 라이브 호출(5750·7088)에서 인자 None</li></ul>
+      </div></div>
+      <div class="row"><div class="lab">목적</div><div class="val">
+        <pre style="margin:2px 0"><code>Minimize( c2·z2 + c3·1000·Σ pref_terms )   <span class="cmt"># c2=round(w2), c3=round(w3)</span>
+<span class="cmt"># pref_term[b] = (s_max − bay_pref[j])·x[b,j]  = Z3 선호 편차.  Z1은 없음</span></code></pre>
+      </div></div>
+      <div class="row"><div class="lab">예산·시드</div><div class="val">workers=4, time=<code>min(10, T·0.20)</code> <span class="ref">:7084</span>. <b>hint=balanced_seed</b> 주입 <span class="ref">:1745</span>. 실패 시 count-cap→area-cap 재귀 fallback <span class="ref">:1776-1785</span>.</div></div>
+      <div class="row"><div class="lab">호출</div><div class="val">:7088 주경로(named_seeds "cpsat"), :5750 <code>OGC_CPSAT_FIRST</code>(OFF) early seed. uconstruct:796, rebuild:492, packer:581도 호출.</div></div>
+    </div>
+  </div>
+
+  <div class="mcard c1">
+    <div class="top">
+      <div><div class="name">_solve_assignment (z3race)</div><div class="loc">z3race.py:260 · z3·z2 재배정</div></div>
+      <div><span class="pill cap">z3race 진입 시</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">차이점</div><div class="val">위 배정 모델에 <b>entry IntVar(z1-hard 도메인)</b>와 <b>idiom 4 AddCumulative(alpha·area)</b>를 더해 시간 차원을 살짝 넣음. 목적 <code>w2·z2 + 1000·w3·z3</code> <span class="ref">z3race.py:280</span>. 여전히 정확 위치는 안 풂(면적 완화).</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== F2 TIMING ===== -->
+<section id="f2">
+  <h2><span class="n">②</span>타이밍 오라클 — 고정 layout 위 1D disjunctive (주력)</h2>
+  <p class="lead">obj를 가장 크게 줄이는 그 컴포넌트. layout(베이·위치·방향)을 고정하므로 z2·z3가 불변이고, <b>entry 시각만</b> 변수로 둔다. 충돌·크레인 5종 boolean을 Shapely로 미리 계산해 <b>상수</b>로 넣으므로 모델이 1D 단일머신 tardiness로 환원 → 베이별 최적까지.</p>
+
+  <div class="mcard c2">
+    <div class="top">
+      <div><div class="name">_cpsat_bay_timing_verified</div><div class="loc">myalgorithm.py:2617 · per-bay timing oracle</div></div>
+      <div><span class="pill on">OGC_CPSAT_TIMING 기본 ON</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">변수</div><div class="val">
+        <ul><li><code>e[b]</code> IntVar ∈ [release_b, H] — 블록당 entry <b>딱 1개</b> (exit=e+P는 식, 변수 아님) <span class="ref">:2831</span></li>
+        <li><code>t[b]</code> IntVar ∈ [0,H] — tardiness <span class="ref">:2878</span></li>
+        <li>활성 충돌 config마다 disjunction 리터럴 <code>l1,l2</code> BoolVar <span class="ref">:2850</span></li></ul>
+        <span class="ref">H = cur_makespan + maxP. 한 번에 한 베이만 모델링 → 변수 ≈ 2·|ids| + 활성쌍×2</span>
+      </div></div>
+      <div class="row"><div class="lab">precompute</div><div class="val">
+        쌍마다 5종 boolean을 entry와 <b>독립</b>으로 1회 계산 <span class="ref">:2838-2842</span>:
+        <code>check_collisions</code>(동일층), <code>check_entry</code>(ba_e/ab_e), <code>check_exit</code>(ba_x/ab_x). → 모델엔 정수 부등식만 남음.
+      </div></div>
+      <div class="row"><div class="lab">제약</div><div class="val">
+        활성인 config만 <b>idiom 3</b> half-reified disjunction:
+        <pre style="margin:4px 0"><code><span class="kw">if</span> coll:   Add(ax&lt;=be)/Add(bx&lt;=ae); AddBoolOr([l1,l2])   <span class="cmt"># 시간 겹침 금지</span>
+<span class="kw">if</span> ba_e:   Add(ae&lt;=be-1)/Add(ae&gt;=bx); AddBoolOr([l1,l2])   <span class="cmt"># a 진입 시 b 부재</span>
+<span class="kw">if</span> ba_x:   Add(ax&lt;=be)/Add(ax&gt;=bx+1 if co else bx)        <span class="cmt"># a 퇴출 시 b 부재</span>
+Add(t[b] &gt;= e[b]+P[b]-D[b])                              <span class="cmt"># idiom 5 tardiness</span></code></pre>
+        <code>co=OGC_CRANE_COEXIT</code>(기본 True)가 퇴출 시 동시각 허용/금지 분기.
+      </div></div>
+      <div class="row"><div class="lab">목적</div><div class="val"><code>Minimize( Σ t[b] )</code> — 이 베이 raw tardiness 합 <span class="ref">:2881</span>. (z2·z3는 layout 고정이라 불변)</div></div>
+      <div class="row"><div class="lab">decomp</div><div class="val"><code>OGC_TIMING_DECOMP</code>(기본 OFF) ON 시 활성쌍 그래프를 connected component로 분할 → 컴포넌트별 풀이, singleton tardy는 CP-SAT 없이 entry=release 직결 <span class="ref">:2785-2828</span>.</div></div>
+      <div class="row"><div class="lab">예산·게이트</div><div class="val">LB(<code>Σmax(0,r+p-due)</code>) 도달 베이·이미 z1=0 베이는 skip <span class="ref">:2653-2655</span>. 베이별 예산 분배, workers=4, <b>hint=현재 entry</b> <span class="ref">:2883</span>. <code>new_tard&lt;cur_tard</code>일 때만 채택. Gurobi twin(<code>OGC_GUROBI_TIMING</code> OFF)은 동일 모델·결정성만 다름.</div></div>
+      <div class="row"><div class="lab">호출</div><div class="val"><b>전부 fixed-layout 재타이밍</b>: 주 타이밍 패스 :4529/4535, z1_repair 단일베이 집중 :4886, cum_level 출력 :4651. uconstruct·rebuild·z3race도 재타이밍으로만 호출.</div></div>
+    </div>
+  </div>
+
+  <div class="callout goodbox">
+    <div class="h">✅ 왜 이게 잘 푸나</div>
+    ① 모든 기하 boolean이 entry와 무관 → <b>상수</b>로 precompute. ② exit=entry+P가 WLOG 최적 → 블록당 변수 1개. ③ 남는 건 정수 entry에 대한 interval disjunction = 단일머신 tardiness. <b>공간을 안 풀어서</b> 빛난다.
+  </div>
+</section>
+
+<!-- ===== F3 CUMULATIVE ===== -->
+<section id="f3">
+  <h2><span class="n">③</span>Cumulative 완화 — 면적을 용량으로, 정확 위치는 포기</h2>
+  <p class="lead">정확한 2D non-overlap을 풀면 폭발하므로, "같은 시각 블록 면적 합 ≤ 베이 면적"이라는 <b>완화(relaxation)</b>로 바꾼다. <code>AddCumulative</code>는 CP-SAT가 강하게 전파하는 전역 제약이라 tractable. 출력은 위치가 아니라 <b>entry 시각 타깃</b>이며, 이후 그리디가 그 타깃에 맞춰 재디코드한다. 이 계열이 가장 많다(6개).</p>
+
+  <table>
+    <tr><th>모델</th><th class="mono">위치</th><th>역할</th><th>게이트(기본)</th></tr>
+    <tr><td><b>_cumulative_leveled_redecode_verified</b></td><td class="mono">myalgorithm.py:3051</td><td>per-bay cumulative(demand=bbox area, cap=alpha·floor) → entry-target → flatten 재디코드</td><td><span class="pill on">OGC_CUMLEVEL ON</span></td></tr>
+    <tr><td><b>_flatten_decode_one_bay</b></td><td class="mono">myalgorithm.py:3263</td><td>위와 동일 구조의 1-베이판(4s 하드캡, 2-worker). cross-bay relocate가 사용</td><td><span class="pill cap">relocate 경로(간접)</span></td></tr>
+    <tr><td><b>_bay_targets</b></td><td class="mono">fastfloor.py:65</td><td>per-bay cumulative entry-target(layout 불요, demand=min-orient bbox area)</td><td><span class="pill cap">fastfloor floor 경로</span></td></tr>
+    <tr><td><b>_cumlevel_bay_worker</b></td><td class="mono">parallel_decode.py:459</td><td>cum_level per-bay 로직을 자식 프로세스에서(1-worker)</td><td><span class="pill off">OGC_CUMLEVEL_PARALLEL OFF</span></td></tr>
+    <tr><td><b>_flatten_decode_one_bay (z3race)</b></td><td class="mono">z3race.py:480</td><td>위 myalgorithm 판의 budget-scaled 복제</td><td><span class="pill cap">z3race 내부</span></td></tr>
+    <tr><td><b>인라인 cumulative</b></td><td class="mono">packer.py:479</td><td>packer 경로 내 인라인 cumulative 모델(+:581 배정 호출)</td><td><span class="pill cap">packer 경로</span></td></tr>
+  </table>
+
+  <div class="mcard c3">
+    <div class="top">
+      <div><div class="name">대표형 — _cumulative_leveled_redecode_verified</div><div class="loc">myalgorithm.py:3051 · entry-target 산출</div></div>
+      <div><span class="pill on">기본 ON</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">변수</div><div class="val">블록당 <code>entry</code> IntVar + interval var <code>[entry, entry+P]</code>. 위치 변수 <b>없음</b>(완화의 핵심).</div></div>
+      <div class="row"><div class="lab">제약</div><div class="val"><b>idiom 4</b> <code>AddCumulative(intervals, demands=bbox_area, capacity=alpha·W·H)</code> + <b>idiom 5</b> tardiness. 정확 충돌·크레인은 모델 밖 → 산출 entry로 그리디 재디코드가 실제 배치·검증.</div></div>
+      <div class="row"><div class="lab">목적</div><div class="val"><code>Minimize( Σ tardiness )</code> (entry 타깃을 빠르게 당기는 방향).</div></div>
+      <div class="row"><div class="lab">왜 tractable</div><div class="val">위치를 변수로 두지 않고 <b>면적 capacity로 완화</b> → cumulative 전파가 강력. 단 완화라 "면적은 맞지만 실제로 안 들어가는" 타깃이 나올 수 있어 <b>재디코드 검증</b>이 필수.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== F4 PACKING ===== -->
+<section id="f4">
+  <h2><span class="n">④</span>2D 패킹-스케줄링 — 위치를 변수로 (폭발 계열, 캡으로 묶임)</h2>
+  <p class="lead">여기서부터 <b>위치 tx,ty가 결정 변수</b>가 되고 정확 non-overlap을 강제한다. "co-present(시간 겹침) ⇒ 공간 분리"라는 불변식으로 크레인까지 우회한다. 강력하지만 쌍당 disjunction이 위치 자유도와 곱해져 폭발 → 멤버 캡(60~70)·npairs 캡(90000)으로 작은 베이에만 켠다.</p>
+
+  <div class="mcard c4">
+    <div class="top">
+      <div><div class="name">_pack_bay_cpsat (단일 bbox)</div><div class="loc">boxsolver.py:301</div></div>
+      <div><span class="pill cap">OGC_CPSAT_MAX=60</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">변수</div><div class="val"><code>tx[b],ty[b]</code> 정수 translation + <code>ev[b]</code> entry + <code>td[b]</code> tardiness (각 m개). <b>회전은 변수 아님</b> — greedy가 고른 것 고정.</div></div>
+      <div class="row"><div class="lab">제약</div><div class="val">모든 쌍 (a,c)에 6-way no-overlap (idiom 3 확장):
+        <pre style="margin:4px 0"><code>Add(tx[a]-tx[c] &lt;= floor(minx_c-maxx_a)).OnlyEnforceIf(aL)   <span class="cmt"># 왼쪽</span>
+Add(tx[c]-tx[a] &lt;= floor(minx_a-maxx_c)).OnlyEnforceIf(cL)
+Add(ty[a]-ty[c] &lt;= floor(miny_c-maxy_a)).OnlyEnforceIf(aD)   <span class="cmt"># 아래</span>
+Add(ty[c]-ty[a] &lt;= floor(miny_a-maxy_c)).OnlyEnforceIf(cD)
+Add(ev[a]-ev[c] &lt;= -P_a).OnlyEnforceIf(aT)                  <span class="cmt"># 시간 분리</span>
+Add(ev[c]-ev[a] &lt;= -P_c).OnlyEnforceIf(cT)
+AddBoolOr([aL,cL,aD,cD,aT,cT])   <span class="cmt"># x 분리 OR y 분리 OR 시간 분리</span></code></pre>
+      </div></div>
+      <div class="row"><div class="lab">크레인</div><div class="val"><b>직접 모델링 없음.</b> bbox-disjoint ⇒ 크레인 강하 컬럼 공유 없음 ⇒ crane-safe by construction <span class="ref">:304-308</span>.</div></div>
+      <div class="row"><div class="lab">목적·가드</div><div class="val"><code>Minimize(Σtard)</code>. m&lt;2 or m&gt;60이면 greedy L0 반환. hint=bbox copresent L0, 최종 <code>tard(out)≤tard(L0)</code>일 때만 채택(퇴행 0).</div></div>
+    </div>
+  </div>
+
+  <div class="mcard c4">
+    <div class="top">
+      <div><div class="name">_pack_bay_boxdecomp (K-rect 분해) — 사용자가 아는 box-decomp</div><div class="loc">boxsolver.py:454</div></div>
+      <div><span class="pill cap">OGC_BOXDECOMP_MAX=70 · K=2</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">차이</div><div class="val">footprint를 ≤K-rectangle COVER로 분해(<code>_cell_rects</code>, K 기본 2) → <b>rect-쌍마다</b> no-overlap BoolOr. 단일 bbox보다 tight(밀도↑)하지만 제약이 곱으로 늘어남.</div></div>
+      <div class="row"><div class="lab">제약(핵심 차이)</div><div class="val">
+        <pre style="margin:4px 0"><code><span class="kw">for</span> ra <span class="kw">in</span> rects[a]:                 <span class="cmt"># a의 모든 rect ×</span>
+  <span class="kw">for</span> rc <span class="kw">in</span> rects[c]:               <span class="cmt"># c의 모든 rect</span>
+    Add(tx[a]-tx[c] &lt;= rcx0-rax1-1).OnlyEnforceIf(aL)   <span class="cmt"># 셀 인접</span>
+    ... (cL,aD,cD)
+    AddBoolOr([aL,cL,aD,cD, aT,cT])   <span class="cmt"># rect-쌍마다 BoolOr 하나</span></code></pre>
+        공간 불리언/쌍 = <code>4·|rects[a]|·|rects[c]|</code> → cpsat의 4와 대비.
+      </div></div>
+      <div class="row"><div class="lab">보강</div><div class="val">
+        <ul><li><b>OGC_BD_CUMUL</b>(기본 ON): redundant energetic <code>AddCumulative</code>(demand=실제 footprint area, cap=W·H) — propagation 강화 <span class="ref">:533-540</span></li>
+        <li><b>OGC_BD_Z1ZERO</b>(기본 OFF): 모델 proto clone → 모든 블록 <code>ev+P≤D</code>(z1=0) 강제 → feasibility 탐색. SAT면 즉시 반환 <span class="ref">:562-584</span></li></ul>
+      </div></div>
+      <div class="row"><div class="lab">폭발 가드</div><div class="val"><code>npairs = Σ |rects[a]|·|rects[c]|</code>, <code>npairs &gt; OGC_BOXDECOMP_CAP(90000)</code>이면 <b>모델 빌드 전 거절</b>→L0 <span class="ref">:507-512</span>. 주석: <b>K=2는 single-bbox를 이기나 K=3은 9× 모델, 예산 내 못 풂</b> <span class="ref">:472</span>.</div></div>
+      <div class="row"><div class="lab">활성</div><div class="val">게이트 <code>OGC_CPSAT</code> ON & <code>OGC_BOXDECOMP=1</code>(이때 cpsat를 REPLACE). 운영에선 <b>OGC_HYBRID로 box-decomp 엔진이 best-of에 합류</b>(set2 픽스로 TL≥100에서 ON). feasspill 단계는 <code>OGC_BD_WORKERS=4</code> 강제(<code>conda run</code> 크래시 원인).</div></div>
+    </div>
+  </div>
+
+  <div class="mcard c4">
+    <div class="top">
+      <div><div class="name">_bbox_pack_bay</div><div class="loc">myalgorithm.py:3592</div></div>
+      <div><span class="pill on">OGC_BBOX_PACK 기본 ON</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">요약</div><div class="val">myalgorithm 내부의 또 다른 2D bbox-packing-over-time: <code>rx/ry/entry</code> + pairwise no-overlap(la/ra/bel/abv/tb/bt BoolOr) + <b>slab(cover-rect) 변형</b>. min-tardiness. boxsolver의 cpsat와 사실상 형제이나 myalgorithm 파이프라인 내장이고 <b>기본 ON</b>이라 운영에서 돈다.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== F5 JOINT ===== -->
+<section id="f5">
+  <h2><span class="n">⑤</span>Joint 배정+스케줄링 — 가장 무거운 모델 (일부 dormant/우회로)</h2>
+  <p class="lead">배정·위치·방향·시간을 한 모델에 합친다. 표현력은 최고지만 변수·제약이 모두 곱해져 가장 무겁다. 그래서 dormant이거나(미호출) 특정 우회 모드에서만 쓰인다.</p>
+
+  <div class="mcard c5">
+    <div class="top">
+      <div><div class="name">_temporal_reassign_redecode_verified</div><div class="loc">myalgorithm.py:3896</div></div>
+      <div><span class="pill dorm">호출처 미확인 (dormant 가능)</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">변수·제약</div><div class="val"><code>x[b,j]</code> 배정 + <code>entry</code> + area-cumulative + tardiness + z2(min-max). 배정과 스케줄을 결합.</div></div>
+      <div class="row"><div class="lab">목적</div><div class="val"><b>유일하게 3목적 전체</b>: <code>Minimize( w1·z1 + w2·z2 + w3·z3 )</code> → 2D 재디코드.</div></div>
+      <div class="row"><div class="lab">주의</div><div class="val">grep에서 호출처·전용 게이트(OGC_TEMPORAL 류)가 안 잡힘 → <b>현재 dormant일 가능성</b>. 확정하려면 caller grep 필요.</div></div>
+    </div>
+  </div>
+
+  <div class="mcard c5">
+    <div class="top">
+      <div><div class="name">pack_bay_cp — "exact box packer"</div><div class="loc">baypack_cp.py:91 · uconstruct cppack 모드 경유</div></div>
+      <div><span class="pill dorm">반증 레버 · 라이브 여부 미확인</span></div>
+    </div>
+    <div class="body">
+      <div class="row"><div class="lab">변수</div><div class="val"><b>방향까지 변수</b>: orientation BoolVar <code>o_lit[b,oi]</code>(택1) + 채널된 geometry <code>wv/hv/offx/offy</code> + 위치 <code>px/py</code>(벽 제약 <code>px+wv≤W</code>) + <code>entry</code> + tardiness.</div></div>
+      <div class="row"><div class="lab">제약</div><div class="val">pairwise 6-disjunction <code>AddBoolOr([left,right,below,above,before,after])</code> — 공간 4 + 시간 2. horizon=max_due+ΣP+1.</div></div>
+      <div class="row"><div class="lab">목적·특성</div><div class="val"><code>Minimize(Σtd)</code>. orientation 리터럴 + per-pair 6 BoolVar로 <b>가장 무거운 모델</b>. CLAUDE.md의 <b>반증된 레버 "exact box packer"가 이것</b>. uconstruct <code>_construct_cppack</code>(cppack 모드)에서만 호출 — HYBRID default 경로에서 실제 활성인지 미확인.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== INVENTORY ===== -->
+<section id="inventory">
+  <h2><span class="n">▸</span>전체 인벤토리 — CP-SAT 사용처 빠짐없이</h2>
+  <h3>A. 모델을 정의(define)하는 곳</h3>
+  <table>
+    <tr><th>계열</th><th class="mono">위치</th><th>심볼</th><th>한 줄</th><th>게이트(기본)</th></tr>
+    <tr><td>①</td><td class="mono">myalgorithm.py:1615</td><td>_cpsat_assignment</td><td>블록→베이, z2+z3</td><td><span class="pill on">활성</span></td></tr>
+    <tr><td>①</td><td class="mono">z3race.py:260</td><td>_solve_assignment</td><td>z3·z2 재배정 + area-cumul</td><td><span class="pill cap">z3race</span></td></tr>
+    <tr><td>②</td><td class="mono">myalgorithm.py:2617</td><td>_cpsat_bay_timing_verified</td><td>고정 layout 1D 타이밍</td><td><span class="pill on">ON</span></td></tr>
+    <tr><td>③</td><td class="mono">myalgorithm.py:3051</td><td>_cumulative_leveled_redecode_verified</td><td>cumulative entry-target</td><td><span class="pill on">CUMLEVEL ON</span></td></tr>
+    <tr><td>③</td><td class="mono">myalgorithm.py:3263</td><td>_flatten_decode_one_bay</td><td>1-베이 cumulative(4s)</td><td><span class="pill cap">relocate</span></td></tr>
+    <tr><td>③</td><td class="mono">fastfloor.py:65</td><td>_bay_targets</td><td>floor entry-target</td><td><span class="pill cap">floor 경로</span></td></tr>
+    <tr><td>③</td><td class="mono">parallel_decode.py:459</td><td>_cumlevel_bay_worker</td><td>cumlevel 자식 프로세스판</td><td><span class="pill off">PARALLEL OFF</span></td></tr>
+    <tr><td>③</td><td class="mono">z3race.py:480</td><td>_flatten_decode_one_bay</td><td>cumulative 복제판</td><td><span class="pill cap">z3race</span></td></tr>
+    <tr><td>③</td><td class="mono">packer.py:479</td><td>(인라인)</td><td>packer 경로 인라인 cumulative</td><td><span class="pill cap">packer</span></td></tr>
+    <tr><td>④</td><td class="mono">boxsolver.py:301</td><td>_pack_bay_cpsat</td><td>단일 bbox 2D+시간 packing</td><td><span class="pill cap">CPSAT_MAX=60</span></td></tr>
+    <tr><td>④</td><td class="mono">boxsolver.py:454</td><td>_pack_bay_boxdecomp</td><td>K-rect 분해 packing(+z1zero)</td><td><span class="pill cap">HYBRID 경유</span></td></tr>
+    <tr><td>④</td><td class="mono">myalgorithm.py:3592</td><td>_bbox_pack_bay</td><td>bbox+slab 2D packing</td><td><span class="pill on">BBOX_PACK ON</span></td></tr>
+    <tr><td>⑤</td><td class="mono">myalgorithm.py:3896</td><td>_temporal_reassign_redecode_verified</td><td>배정+스케줄 joint (w1·z1+w2·z2+w3·z3)</td><td><span class="pill dorm">미확인</span></td></tr>
+    <tr><td>⑤</td><td class="mono">baypack_cp.py:91</td><td>pack_bay_cp</td><td>방향+위치+시간 joint(exact box)</td><td><span class="pill dorm">cppack만</span></td></tr>
+  </table>
+
+  <h3>B. 호출(call)만 하는 곳 — 위 모델을 빌려 씀</h3>
+  <table>
+    <tr><th class="mono">위치</th><th>무엇을 호출</th><th>맥락</th></tr>
+    <tr><td class="mono">uconstruct.py:570/818/867/909/992</td><td>_cpsat_bay_timing_verified</td><td>고정 layout 재타이밍</td></tr>
+    <tr><td class="mono">uconstruct.py:796</td><td>_cpsat_assignment</td><td>배정 (OGC_UC_CPSAT ON, bays≥2)</td></tr>
+    <tr><td class="mono">uconstruct.py:50/286</td><td>baypack_cp.pack_bay_cp</td><td>cppack 모드 — exact box packer 유일 호출처</td></tr>
+    <tr><td class="mono">rebuild.py:492 / 517,626</td><td>_cpsat_assignment / _cpsat_bay_timing_verified</td><td>LBBD per-round 재배정 + 재타이밍</td></tr>
+    <tr><td class="mono">packer.py:581</td><td>_cpsat_assignment</td><td>packer 경로 배정</td></tr>
+    <tr><td class="mono">z3race.py:152/201/510</td><td>자기 _solve_assignment / _cpsat_bay_timing_verified / _zero_obj_stopper</td><td>z3race race</td></tr>
+    <tr><td class="mono">regime.py</td><td>—(use_cpsat config 플래그만)</td><td>CP-SAT 직접 사용 없음</td></tr>
+  </table>
+</section>
+
+<!-- ===== CAVEATS ===== -->
+<section id="caveats">
+  <h2><span class="n">▸</span>운영 활성 정리 & 주의</h2>
+  <div class="callout goodbox">
+    <div class="h">✅ 운영 경로에서 실제로 도는 CP-SAT</div>
+    <b>① 배정</b>(_cpsat_assignment, seed) · <b>② 타이밍 오라클</b>(주력, z1을 가장 크게 깎음) · <b>③ cumulative entry-target</b>(OGC_CUMLEVEL 기본 ON) · <b>④ _bbox_pack_bay</b>(OGC_BBOX_PACK 기본 ON) · <b>④ box-decomp</b>(OGC_HYBRID로 best-of 합류, set2 픽스 후 TL≥100에서 ON).
+  </div>
+  <div class="callout warnbox">
+    <div class="h">⚠️ dormant / 옵션 / 우회로 (운영에서 안 돌거나 조건부)</div>
+    <ul class="tight">
+      <li>배정 모델의 <b>area-cap·count-cap</b>: 라이브 호출에서 인자 None → 비활성 <span class="ref">myalgorithm.py:5750,7088</span></li>
+      <li><b>_temporal_reassign_redecode_verified</b>(⑤): 호출처·게이트 미발견 → dormant 가능</li>
+      <li><b>pack_bay_cp</b>(⑤ exact box packer): CLAUDE.md 반증 레버. uconstruct cppack 모드에서만 호출, HYBRID default 경로 활성 여부 미확인</li>
+      <li><b>OGC_TIMING_DECOMP</b>·<b>OGC_BD_Z1ZERO</b>·<b>OGC_CUMLEVEL_PARALLEL</b>·<b>OGC_GUROBI_TIMING</b>·<b>OGC_CPSAT_FIRST</b>: 전부 기본 OFF</li>
+    </ul>
+  </div>
+  <div class="callout badbox">
+    <div class="h">🔥 큰 그림 (이 아틀라스의 결론)</div>
+    14개 모델이지만 정작 <b>obj를 크게 줄이는 건 ②(타이밍)와 ③(cumulative 완화)</b> — 둘 다 <b>정확한 2D 위치를 안 푼다</b>. 위치를 변수로 넣는 ④·⑤는 멤버 캡·npairs 캡·dormant로 묶여 작은 베이에서만 마진 이득(box-decomp가 prob_3/4/18). 즉 "CP-SAT가 강하다"는 인상은 정확히 <b>기하를 변수에서 빼낸 모델들</b>이 만든 것이고, 패킹 밀도 갭(80%→95%)을 메우려면 CP-SAT를 더 넣는 게 아니라 <b>전용 2D nesting</b>이 필요하다(직전 설명서 §7).
+  </div>
+</section>
+
+<div class="foot">
+  <p>OGC2026 · CP-SAT 모델 아틀라스 · 2026-06-16 · 동반 문서: <span class="tag">notes/fastfloor-cpsat-explainer-2026-06-16.html</span></p>
+  <p>근거: 읽기전용 코드분석 3건(file:line). 모든 라인 번호는 분석 시점 기준. ⚠ 미확정:
+  <code>_temporal_reassign</code> 게이트, <code>packer.py:479</code> 인라인 모델 함수 경계, <code>baypack_cp</code> 라이브 여부 — caller grep으로 확정 필요.</p>
+</div>
+
+</div>
+</body>
+</html>

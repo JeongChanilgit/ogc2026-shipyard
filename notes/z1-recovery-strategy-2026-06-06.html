@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OGC2026 Z1 Two-Digit Recovery Strategy</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --paper: #ffffff;
+      --ink: #17202a;
+      --muted: #667085;
+      --line: #d9dee7;
+      --blue: #1d4ed8;
+      --green: #047857;
+      --red: #b42318;
+      --amber: #b45309;
+      --slate: #344054;
+      --chip: #eef2ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      line-height: 1.62;
+    }
+    header {
+      background: #111827;
+      color: white;
+      padding: 34px 24px 28px;
+      border-bottom: 4px solid #2563eb;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1, h2, h3 { line-height: 1.22; margin: 0 0 12px; }
+    h1 { font-size: 30px; letter-spacing: 0; }
+    h2 { font-size: 22px; margin-top: 28px; }
+    h3 { font-size: 17px; margin-top: 18px; }
+    p { margin: 8px 0 12px; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .meta { color: #cbd5e1; margin-top: 8px; font-size: 14px; }
+    .section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      margin: 18px 0;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fcfcfd;
+    }
+    .kicker { color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    .big { font-size: 28px; font-weight: 800; margin-top: 4px; }
+    .ok { color: var(--green); font-weight: 700; }
+    .bad { color: var(--red); font-weight: 700; }
+    .warn { color: var(--amber); font-weight: 700; }
+    code {
+      background: #eef2f7;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: 0.92em;
+    }
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #f2f4f7; color: #344054; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #c7d7fe;
+      background: var(--chip);
+      color: #1e3a8a;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .decision {
+      border-left: 4px solid var(--blue);
+      background: #eff6ff;
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+    .danger {
+      border-left: 4px solid var(--red);
+      background: #fff1f3;
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+    .todo {
+      border-left: 4px solid var(--green);
+      background: #ecfdf3;
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin: 12px 0;
+    }
+    @media (max-width: 860px) {
+      .grid, .grid.two { grid-template-columns: 1fr; }
+      main { padding: 14px; }
+      header { padding: 28px 16px 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>OGC2026 Z1 두자릿수 복구 전략</h1>
+    <div class="meta">작성: 2026-06-06 KST · 범위: 전략 수립, 공식 자원 감사, 논문 인사이트, 구현 우선순위</div>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>결론 먼저</h2>
+      <div class="decision">
+        <strong>지금 문제는 assignment ALNS 부족이 아니라 bay별 clean decode를 시간 안에 생산하지 못하는 문제다.</strong>
+        저장된 <code>prob_6</code> clean decode는 공식 v1.2 checker 기준 feasible이고 <strong>Z1=21</strong>이다. 즉 두자릿수 Z1은 이미 한 사례에서 실제 달성됐다.
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="kicker">현재 대표 실패</div>
+          <div class="big bad">Z1 1000+</div>
+          <p>train 다수에서 baseline/현재 해가 685, 1028, 1693, 1804, 45005처럼 큼.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">실증된 목표</div>
+          <div class="big ok">Z1 21</div>
+          <p><code>results/clean_decode_prob6.json</code>는 공식 v1.2 checker로 feasible.</p>
+        </div>
+        <div class="card">
+          <div class="kicker">가장 큰 레버</div>
+          <div class="big">Bay 병렬 clean decode</div>
+          <p>prob_6 clean decode는 bay별 17.5s, 130.2s, 144.1s였다. 4코어에서 벽시계는 약 145s급으로 줄일 수 있다.</p>
+        </div>
+      </div>
+      <p>
+        따라서 1차 전략은 <strong>전면 솔버 교체가 아니라</strong> 검증된 incumbent 위에
+        <code>objective-safe Z1-reduction bay-parallel decode candidate</code>를 붙이는 것이다.
+        Z1은 줄이되, 최종 목적함수는 기존 verified incumbent보다 높아지면 안 된다.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>로컬 증거</h2>
+      <h3>1. train 하한은 모두 0</h3>
+      <p>
+        <code>sum max(0, release_time + processing_time - due_date)</code> 하한은 train 20개 모두 0이다.
+        즉 Z1 1000대는 due date 자체가 불가능해서가 아니라 배정, 순서, 위치, 크레인 접근 시퀀스 때문에 만들어진 지연이다.
+      </p>
+      <table>
+        <thead>
+          <tr><th>인스턴스</th><th>현재/기존 주요 Z1</th><th>관측된 최고 Z1</th><th>판단</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>prob_6</td><td>1693, adapt 실패 23952</td><td><strong>21 clean decode</strong>, 반복 run best 310</td><td>두자릿수 가능성이 이미 입증됨</td></tr>
+          <tr><td>prob_9</td><td>3620</td><td>1369</td><td>assignment/시간예산 개선으로 줄었지만 아직 큼</td></tr>
+          <tr><td>prob_12</td><td>2873</td><td>1215</td><td>같은 계열</td></tr>
+          <tr><td>prob_13</td><td>2859</td><td>1022</td><td>같은 계열</td></tr>
+          <tr><td>prob_20</td><td>45005</td><td>1784</td><td>adaptive cap으로 크게 줄었지만 두자릿수 미도달</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2. 면적포화가 원인이 아니다</h3>
+      <p>
+        <code>tools/packing_z1_analysis.py</code> 결과, tardy block의 대기구간이 면적포화였던 비중은
+        prob_6, prob_11, prob_14, prob_16, prob_20 모두 <strong>0%</strong>였다.
+        prob_20은 release 시점 평균 면적점유율이 0.06인데 Z1이 41174였다.
+      </p>
+      <div class="danger">
+        해석: 블록을 물리적으로 못 담아서 늦는 것이 아니라, 크레인 접근/동시 이벤트/디코더가 만든 시퀀스가 늦게 밀어내는 것이다.
+      </div>
+
+      <h3>3. tardy block은 대부분 더 일찍 들어갈 수 있었다</h3>
+      <p>
+        <code>tools/crane_headroom.py</code>는 base solution의 tardy block을 고정 배치 기준으로 앞당길 수 있는지 검사했다.
+        샘플 aggregate에서 <strong>Z1 reducible 99.9%</strong>가 나왔다.
+      </p>
+      <table>
+        <thead>
+          <tr><th>인스턴스</th><th>검사 tardy blocks</th><th>headroom blocks</th><th>Z1 reducible</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>prob_6</td><td>27</td><td>27</td><td>99.8%</td></tr>
+          <tr><td>prob_11</td><td>60 sampled</td><td>60</td><td>99.9%</td></tr>
+          <tr><td>prob_14</td><td>60 sampled</td><td>60</td><td>99.9%</td></tr>
+          <tr><td>prob_16</td><td>60 sampled</td><td>59</td><td>98.5%</td></tr>
+          <tr><td>prob_20</td><td>60 sampled</td><td>60</td><td>100.0%</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>공식 자원 감사</h2>
+      <div class="chips">
+        <span class="chip">4 CPU cores / 400%</span>
+        <span class="chip">16 GB RAM</span>
+        <span class="chip">Ubuntu 24.04 LTS</span>
+        <span class="chip">No internet at runtime</span>
+        <span class="chip">No GPU</span>
+        <span class="chip">Python 3.12</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>자원/정책</th><th>공식 근거</th><th>전략상 의미</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CPU 4코어, 400% 제한</td>
+            <td>문제정의서 Section 3.2</td>
+            <td>시드별 ALNS 병렬보다 bay별 clean decode 병렬에 우선 배정한다.</td>
+          </tr>
+          <tr>
+            <td>Gurobi 13.0.2, Xpress 9.8.1, OR-Tools 9.15.6755</td>
+            <td>문제정의서 Section 4.1, 공식 사이트 Solver License Information</td>
+            <td>전면 최적화가 아니라 assignment seed, local branching, small repair subproblem에 시간 제한으로 사용한다.</td>
+          </tr>
+          <tr>
+            <td>Java 17, .NET 8.0.15, C/C++ binary 허용</td>
+            <td>문제정의 v1.1 변경: Section 4.2.1</td>
+            <td>추후 C++ geometry/NFP kernel을 <code>.so</code>로 zip에 포함 가능. 서버 컴파일은 없음.</td>
+          </tr>
+          <tr>
+            <td>최신 공개물</td>
+            <td>공식 사이트 asset: problem-statement latest, baseline latest, training latest</td>
+            <td>baseline v1.2는 2026-06-03 <code>check_feasibility()</code> bug fix 포함. 로컬 checker 동기화 검증 필요.</td>
+          </tr>
+          <tr>
+            <td>등록 마감 연장</td>
+            <td>등록 페이지: 2026-06-12 13:00 KST</td>
+            <td>기존 로컬 개요의 2026-06-07 23:59는 stale 정보다.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="danger">
+        로컬 기본 Python에는 <code>gurobipy</code>, <code>xpress</code>, <code>ortools</code>가 없고,
+        <code>ogc2025</code> conda env는 Gurobi 12.0.1 / OR-Tools 9.11 / Xpress 9.5.4다.
+        서버 사양과 다르므로 solver PoC는 버전 차이를 명시하고 검증해야 한다.
+      </div>
+      <p>
+        공식 링크:
+        <a href="https://optichallenge.com/">optichallenge.com</a>,
+        <a href="https://ogc2026register.web.app/">registration</a>,
+        <a href="https://optichallenge.com/assets/problem-statement-latest-BSd0CSCk.pdf">problem statement latest</a>,
+        <a href="https://optichallenge.com/assets/baseline-latest-SHtVOcfO.zip">baseline latest</a>,
+        <a href="https://optichallenge.com/assets/training-latest-CWCx_z9X.zip">training latest</a>.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>핵심 전략</h2>
+      <h3>P0. 최신 checker 기준으로 모든 측정을 고정</h3>
+      <div class="todo">
+        <strong>즉시 해야 할 일:</strong> <code>src/utils.py</code>는 제출 서버가 덮어쓰므로 수정하지 않는다.
+        대신 공식 v1.2 <code>utils.py</code>를 검증 전용 경로로 분리해 모든 새 후보를 이 checker로 재채점한다.
+      </div>
+      <p>
+        저장 solution은 v1.2 checker로 재채점했을 때 기존 Z1과 같았다. 그러나 새 구현 후보는 동시 ENTRY/EXIT 조건에 민감하므로
+        v1.2 기준 게이트 없이는 제출 리스크가 있다.
+      </p>
+
+      <h3>P1. 최종 선택 기준은 objective-safe Z1 reduction으로 바꾼다</h3>
+      <p>
+        현재 구조의 좋은 점은 true weighted objective 기준 incumbent 보호다. 이 원칙은 유지한다.
+        바꿀 부분은 Z1 개선 후보를 만들고 평가하는 별도 ladder다. 후보가 Z1을 줄여도 weighted objective가
+        기존 verified incumbent보다 커지면 채택하지 않는다.
+      </p>
+      <pre>hard_gate(candidate):
+  candidate.feasible_by_official_checker
+  and candidate.objective <= incumbent.objective - eps_or_tie_margin
+
+z1_reduction_gate(candidate):
+  hard_gate(candidate)
+  and candidate.Z1 < incumbent.Z1
+
+selection:
+  1. never return objective worse than incumbent
+  2. among objective-improving candidates, keep the best objective
+  3. for near-ties, prefer lower Z1 and lower crane congestion
+  4. separately log the best objective-safe Z1 candidate for diagnosis</pre>
+      <p>
+        이렇게 하면 <code>-1</code> 회피와 대회 objective 최적화를 유지하면서 Z1을 직접 누를 수 있다.
+        hidden에서 Z1 두자릿수가 가능해도 Z2/Z3 비용이 과하면 반환하지 않고, 대신 다음 move의 재료로만 보관한다.
+      </p>
+
+      <h3>P2. CRANE-safe bay별 clean decode를 병렬 candidate generator로 붙인다</h3>
+      <p>
+        prob_6의 base assignment를 그대로 두고 bay별 clean decode만 했을 때 Z1=21이었다.
+        sequential wall은 약 292s였지만 bay별 시간이 17.5s, 130.2s, 144.1s라 3개 프로세스로 돌리면 약 145s급이다.
+      </p>
+      <div class="todo">
+        구현 방향: <code>parallel_decode.py</code>의 기존 시드별 multi-start와 별도로
+        <code>run_parallel_bay_decode(assign, per_bay_orders, deadline)</code>를 만든다.
+        결과는 per-bay placement dict만 부모로 돌려주고, 부모는 공식 checker로 candidate gate를 통과시킨다.
+        이때 decode는 반드시 <code>_find_slot_crane_safe</code>와 <code>OGC_CRANE_COEXIT=1</code> 기준이어야 한다.
+        CRANE을 후처리 검사로만 쓰면 낮은 Z1 후보가 checker에서 탈락하거나 force-place로 밀려 목적함수가 나빠진다.
+      </div>
+      <p>
+        4코어 배분은 아래가 합리적이다.
+      </p>
+      <table>
+        <thead>
+          <tr><th>인스턴스</th><th>코어 배분</th><th>왜</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2-4 bay</td><td>bay당 1 process</td><td>clean decode가 독립이고 가장 큰 bay 시간이 wall-clock을 결정</td></tr>
+          <tr><td>5+ bay</td><td>critical/tardy bay 상위 4개 먼저, 나머지 sequential or capped</td><td>400% CPU 제한을 넘기지 않으면서 Z1 기여 큰 bay 우선 처리</td></tr>
+          <tr><td>short timelimit</td><td>baseline floor + capped bay decode</td><td>full clean decode가 불가능하면 partial two-digit 후보보다 verified fallback 우선</td></tr>
+        </tbody>
+      </table>
+
+      <h3>P3. bay 안의 순서는 EDD 단독이 아니라 MDD/ATC/ATCSR 포트폴리오</h3>
+      <p>
+        총 tardiness 문헌은 EDD 단독보다 Modified Due Date, ATC, ATCS/ATCSR가 강하다는 쪽이다.
+        OGC에서는 release date가 있고 bay가 병렬 machine처럼 동작하므로, bay별 후보 순서는 최소한 아래 5개를 둔다.
+      </p>
+      <div class="chips">
+        <span class="chip">EDD</span>
+        <span class="chip">REL</span>
+        <span class="chip">MDD</span>
+        <span class="chip">ATC</span>
+        <span class="chip">ATCSR-like</span>
+      </div>
+      <p>
+        단, 각 순서를 full decode하면 너무 비싸다. 먼저 cheap proxy로 상위 2개만 고르고, 그 2개를 bay-parallel clean decode한다.
+      </p>
+
+      <h3>P4. Gurobi/OR-Tools는 전면 풀이가 아니라 작은 master/repair에 쓴다</h3>
+      <p>
+        전면 MIP는 불규칙 geometry와 crane sweep 때문에 위험하다. 대신 아래처럼 쓴다.
+      </p>
+      <table>
+        <thead>
+          <tr><th>도구</th><th>사용 위치</th><th>제한</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OR-Tools CP-SAT</td>
+            <td>고정 bay의 interval scheduling, small destroy-repair, optional interval/no-overlap</td>
+            <td><code>max_time_in_seconds</code> 짧게, <code>num_search_workers</code>는 전체 CPU 계획과 합산</td>
+          </tr>
+          <tr>
+            <td>Gurobi</td>
+            <td>assignment master, local branching, Hamming-radius bay reassignment</td>
+            <td><code>TimeLimit</code>, <code>Threads</code> 명시. license 실패 시 즉시 skip</td>
+          </tr>
+          <tr>
+            <td>Xpress</td>
+            <td>Gurobi fallback 또는 같은 master 모델의 대체 solver</td>
+            <td>API 차이를 감안해 wrapper 뒤에 격리</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>P5. assignment master에는 Z1 proxy를 반드시 넣는다</h3>
+      <p>
+        기존 CP-SAT seed가 Z2/Z3 중심이면 Z1을 놓친다. master는 아래 proxy를 포함해야 한다.
+      </p>
+      <pre>For each bay j:
+  temporal_load[j, bucket] = sum area_or_proc_i * x[i,j]
+  due_pressure[j] = sum max(0, R_i + P_i - D_i proxy after congestion) * x[i,j]
+  crane_pressure[j] = count of blocks sharing release/due windows and vertical access bands
+
+Minimize:
+  BIG * predicted_tardiness
+  + w2 * workload_imbalance
+  + w3 * preference_penalty</pre>
+      <p>
+        목적은 정확한 Z1 예측이 아니라, clean decode가 두자릿수를 만들 수 있는 bay split을 먼저 주는 것이다.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>논문에서 얻은 실행 인사이트</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Scheduling / tardiness</h3>
+          <ul>
+            <li>Du &amp; Leung 1990: 단일머신 total tardiness 자체도 NP-hard. 완전풀이보다 bounded heuristic이 맞다.</li>
+            <li>Baker &amp; Bertrand 1982 MDD: tight/loose due date 모두에서 견고한 due-date rule.</li>
+            <li>Vepsalainen &amp; Morton 1987 ATC: weighted tardiness priority의 고전적 강자.</li>
+            <li>Lee, Bhaskaran &amp; Pinedo 1997 ATCS: setup-like penalty를 포함한 tardiness rule. OGC에서는 orientation/placement pain을 setup으로 본다.</li>
+            <li>Pfund et al. 2008 ATCSR: release date가 있는 병렬 machine에서 ready time을 rule 안에 직접 반영.</li>
+            <li>Dynasearch/VLNS 계열: bay 내부는 single swap보다 compound non-overlapping move가 낫다.</li>
+            <li>Algorithm portfolios: 4코어는 같은 search 4개보다 서로 다른 construction/decode 후보에 쓰는 편이 낫다.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Packing / shipyard</h3>
+          <ul>
+            <li>Lee et al. 1996, Kwon &amp; Lee 2015: shipyard spatial block scheduling은 배정/순서와 공간배치를 분해해 푼다.</li>
+            <li>Spatial scheduling for irregularly shaped blocks 2021: OGC와 가장 가까운 공개 문제. 큰/tardy block을 encoding 앞쪽에서 보호.</li>
+            <li>Nesting tutorial 2008, irregular packing model review 2020: NFP/raster/phi-function은 full exact가 아니라 prefilter와 local subproblem용.</li>
+            <li>Crane scheduling 2010: crane은 마지막 checker가 아니라 time-space blocking relation으로 모델링해야 한다.</li>
+            <li>Logic-Based Benders 2007: master가 bay/order/window를 주고, placement/crane subproblem이 cut을 돌려주는 구조가 적합.</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        대표 참고 링크:
+        <a href="https://doi.org/10.1016/0272-6963(82)90020-1">MDD</a>,
+        <a href="https://doi.org/10.1287/mnsc.33.8.1035">ATC</a>,
+        <a href="https://doi.org/10.1080/07408179708966311">ATCS</a>,
+        <a href="https://doi.org/10.1016/j.cie.2007.08.011">ATCSR</a>,
+        <a href="https://doi.org/10.1016/j.ejor.2019.04.045">Irregular packing models review</a>,
+        <a href="https://doi.org/10.1016/j.ejor.2006.11.038">Nesting tutorial</a>,
+        <a href="https://doi.org/10.1287/opre.1060.0371">Logic-Based Benders</a>,
+        <a href="https://developers.google.com/optimization/scheduling">OR-Tools scheduling docs</a>,
+        <a href="https://docs.gurobi.com/projects/optimizer/en/current/reference/parameters.html">Gurobi parameters</a>.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>구현 순서</h2>
+      <table>
+        <thead>
+          <tr><th>순서</th><th>작업</th><th>성공 기준</th><th>위험</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>공식 v1.2 checker 검증 harness 고정</td>
+            <td>저장 solution 재채점 자동화, 새 후보는 v1.2 기준 gate</td>
+            <td>로컬 stale checker에 속는 것</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>objective-safe Z1-reduction ladder 추가</td>
+            <td>공식 checker 기준 objective 비악화 후보 안에서 Z1 개선을 선택/기록</td>
+            <td>Z1만 낮고 Z2/Z3가 비싼 후보를 반환하는 것</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>prob_6용 CRANE-safe bay-parallel clean decode PoC</td>
+            <td>180s 이내 공식 checker feasible, objective 비악화, Z1&lt;=99 재현</td>
+            <td>Windows spawn overhead, pickling, shared imports</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>generic bay-parallel candidate generator</td>
+            <td>prob_6/11/14/16/20에서 기존보다 Z1 개선, fail 0</td>
+            <td>큰 bay 하나가 전체 wall을 지배</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>MDD/ATC/ATCSR order portfolio</td>
+            <td>각 bay마다 proxy 상위 2개만 full decode, Z1 평균/최악 개선</td>
+            <td>순서 후보를 너무 많이 돌려 시간 초과</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Gurobi/CP-SAT assignment master with Z1 proxy</td>
+            <td>prob_20류가 1784에서 두자릿수/세자릿수로 추가 하락</td>
+            <td>solver license/import 실패, thread oversubscription</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>검증 게이트</h2>
+      <pre># focused gates
+python tools/run_solver_once.py instances/train/prob_6.json --solver our --timelimit 180
+python tools/run_solver_once.py instances/train/prob_20.json --solver our --timelimit 180
+
+# repeated risk
+prob_6, prob_11, prob_14, prob_16, prob_20 각 5회
+record: feasible, wall, Z1, objective, returned label
+
+# external sets
+instances/gen
+instances/stress
+instances/tard</pre>
+      <p>
+        판정 순서는 <strong>fail 0</strong>, wall 안전마진, <strong>공식 objective 비악화</strong>,
+        objective 개선폭, Z1 감소폭 순이다. Z1 두자릿수는 목표 지표지만, objective를 높이는 후보는 반환하지 않는다.
+        평균보다 worst-case를 먼저 본다.
+      </p>
+    </section>
+
+    <section class="section">
+      <h2>명시적 비채택</h2>
+      <ul>
+        <li><strong>전면 MIP:</strong> geometry/crane를 모두 넣으면 모델이 커져 timeout 위험이 크다. 작은 neighborhood와 master에만 쓴다.</li>
+        <li><strong>시드별 ALNS 4개 병렬:</strong> 현재 병목은 search basin이 아니라 bay decode 품질/시간이다. 4코어 우선순위가 낮다.</li>
+        <li><strong>속도만 빠른 decode:</strong> 기존 기록상 빠른 crane path가 오히려 Z1을 키운 사례가 있다. 속도보다 serial/overlap tradeoff를 제어해야 한다.</li>
+        <li><strong>checker 무시 내부 objective:</strong> clean decode 후보는 반드시 공식 v1.2 checker로 검증한다.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>작업 텔레메트리</h2>
+      <ul>
+        <li>로컬 읽기: <code>docs/problem-analysis.md</code>, <code>src/myalgorithm.py</code> focused slices, <code>src/parallel_decode.py</code>, Z1 분석 tools/results/notes.</li>
+        <li>공식 확인: optichallenge site bundle, registration page, latest asset URLs, official problem statement text.</li>
+        <li>Subagents: 2개 read-only literature worker. 하나는 tardiness/scheduling, 하나는 shipyard/packing.</li>
+        <li>도구 제한: subagent tool이 별도 model 파라미터를 제공하지 않아 사용자가 말한 <code>gpt-5.5-medium</code>을 명시 지정하지는 못했다.</li>
+        <li>로컬 환경 리스크: 공식 <code>ogc2026</code> conda env가 없고 <code>ogc2025</code>는 solver 버전이 서버보다 낮다.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

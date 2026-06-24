@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>07 힌트·증분 — CP-SAT Methodology</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html" class="active">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+  <!-- ── HERO ── -->
+  <header class="hero">
+    <div class="kicker">CP-SAT Methodology · 07</div>
+    <h1>힌트 · 웜스타트 · 가정 · 증분 풀이 · 콜백</h1>
+    <p class="lead">
+      <code>add_hint</code>로 탐색을 안내하고, <code>AddAssumption</code>으로 불가능 핵심을 추출하며,
+      <code>CpSolverSolutionCallback</code>으로 중간해를 수집하거나 조기 중단한다.
+      CP-SAT는 진정한 증분 풀이를 지원하지 않으므로, 직전 해를 hint로 이월하는 패턴이 실질적인 웜스타트다.
+    </p>
+  </header>
+
+  <!-- ── OGC CALLOUT ── -->
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 관련성</div>
+    <p>
+      베이 타이밍 oracle(<code>_cpsat_bay_timing_verified</code>)은 <strong>LNS 반복마다 직전 해를 hint로 이월</strong>해
+      수렴을 가속할 수 있다. CP-SAT best-of 후보(legacy ∥ box)를 try/except로 감싸는 구조에서
+      <code>CpSolverSolutionCallback</code>의 plateau 감지 → <code>stop_search()</code>로 예산을 아끼고,
+      <code>AddAssumption</code>으로 <code>force_after</code> 같은 시간창 what-if를 빠르게 탐색할 수 있다.
+      "hint가 LNS 반복 간 이어진다"는 것이 핵심 — 모델을 매 반복 재구축하더라도 직전 솔루션을 힌트로 주입하면
+      첫 번째 feasible 해 도달 시간이 크게 단축된다.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       1. 솔루션 힌트
+  ════════════════════════════════════════════ -->
+  <h2 id="hints">1. 솔루션 힌트 (Solution Hints)</h2>
+  <p>
+    힌트는 <strong>소프트 제안</strong>이다. CP-SAT는 힌트된 값으로 탐색을 시작하지만,
+    힌트가 충족 불가능해도 오류를 내지 않고 점진적으로 기본 탐색으로 전환한다.
+    SAT 문헌의 "phase saving"을 정수변수까지 확장한 개념이다.
+  </p>
+
+  <h3>1.1 기본 사용법</h3>
+  <pre><code>from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+x = model.new_int_var(0, 10, 'x')
+y = model.new_int_var(0, 10, 'y')
+z = model.new_int_var(0, 10, 'z')
+
+model.add(x != y)
+model.maximize(x + 2 * y + 3 * z)
+
+<span class="cmt"># 힌트 추가 (부분 힌트 OK — z는 생략해도 됨)</span>
+model.add_hint(x, 1)
+model.add_hint(y, 2)
+
+solver = cp_model.CpSolver()
+status = solver.solve(model)
+
+print(solver.value(x), solver.value(y), solver.value(z))</code></pre>
+
+  <div class="tip">
+    <div class="ttl">Tip — 부분 힌트</div>
+    <p>
+      모든 변수에 힌트를 줄 필요 없다. 결정이 어려운 핵심 변수(예: 베이 배정 변수)에만 힌트를 주면
+      나머지는 solver가 자유롭게 탐색한다. 불완전한 힌트도 "repair" 진입점으로 활용된다.
+    </p>
+  </div>
+
+  <h3>1.2 내부 동작</h3>
+  <p>
+    <code>CpModelProto</code>의 <code>solution_hint</code> 필드(<code>PartialVariableAssignment</code>)에
+    변수 인덱스와 힌트 값이 병렬 벡터로 저장된다.
+    솔버는 힌트된 변수에 대해 해당 값으로 먼저 분기(branch)를 시도하고,
+    제약 위반이 없으면 그 방향으로 탐색을 진행한다.
+  </p>
+
+  <h3>1.3 관련 파라미터</h3>
+  <table>
+    <thead>
+      <tr><th>파라미터</th><th>기본값</th><th>설명</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>use_optimization_hints</code></td>
+        <td><code>True</code></td>
+        <td>최적화 문제에서 힌트를 탐색에 활용. 기본 ON.</td>
+      </tr>
+      <tr>
+        <td><code>repair_hint</code></td>
+        <td><code>False</code></td>
+        <td>충족불가 힌트를 repair하려고 시도. 켜면 힌트 기반 수리 절차가 실행됨.</td>
+      </tr>
+      <tr>
+        <td><code>fix_variables_to_their_hinted_value</code></td>
+        <td><code>False</code></td>
+        <td>힌트된 값으로 변수를 고정(하드 제약처럼). LNS에서 일부 변수 고정 시 활용.</td>
+      </tr>
+      <tr>
+        <td><code>debug_crash_on_bad_hint</code></td>
+        <td><code>False</code></td>
+        <td>힌트를 전체 해로 완성할 수 없으면 크래시. 디버그 전용.</td>
+      </tr>
+      <tr>
+        <td><code>debug_crash_if_presolve_breaks_hint</code></td>
+        <td><code>False</code></td>
+        <td>pre-solve가 feasible 힌트를 깨뜨리면 크래시. 디버그 전용.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre><code>solver = cp_model.CpSolver()
+<span class="cmt"># repair_hint: 힌트가 현재 제약을 위반해도 repair 시도</span>
+solver.parameters.repair_hint = True
+
+<span class="cmt"># fix_variables_to_their_hinted_value: LNS에서 고정 변수 지정 시</span>
+solver.parameters.fix_variables_to_their_hinted_value = True</code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">Pitfall — add_hint는 누적된다</div>
+    <p>
+      <code>add_hint</code>는 append 방식이다. 반복 루프에서 같은 변수에 힌트를 다시 주려면
+      모델을 재구축(새 <code>CpModel()</code>)하거나, <code>model.clear_hints()</code>
+      (proto 직접 조작: <code>model.proto.solution_hint.Clear()</code>)를 호출해야 한다.
+      누적된 힌트가 서로 모순이면 solver는 그 힌트를 무시하고 진행한다.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       2. 증분/반복 풀이 (웜스타트 패턴)
+  ════════════════════════════════════════════ -->
+  <h2 id="incremental">2. 증분 풀이 · 반복 웜스타트</h2>
+  <p>
+    CP-SAT는 <strong>진정한 증분 풀이(incremental solve)를 지원하지 않는다</strong>.
+    매 <code>solver.solve()</code> 호출은 새로운 검색을 시작하며, 내부 상태(학습된 절 등)는 유지되지 않는다.
+    실질적인 웜스타트 방법은 <strong>직전 해를 hint로 이월</strong>하는 패턴이다.
+  </p>
+
+  <h3>2.1 직전 해를 hint로 이월 (기본 패턴)</h3>
+  <pre><code>from ortools.sat.python import cp_model
+
+def solve_with_warmstart(vars_list, constraints_fn, obj_fn, n_iters=5):
+    """매 반복 모델 재구축 + 직전 해를 hint로 이월."""
+    best_solution = None
+
+    for i in range(n_iters):
+        model = cp_model.CpModel()
+        vars_map = {name: model.new_int_var(lb, ub, name)
+                    for name, lb, ub in vars_list}
+
+        constraints_fn(model, vars_map)       <span class="cmt"># 제약 재등록</span>
+        model.minimize(obj_fn(vars_map))      <span class="cmt"># 목적함수</span>
+
+        <span class="cmt"># ★ 직전 해를 hint로 주입</span>
+        if best_solution is not None:
+            for name, val in best_solution.items():
+                model.add_hint(vars_map[name], val)
+
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = 30.0
+        status = solver.solve(model)
+
+        if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            best_solution = {name: solver.value(v)
+                             for name, v in vars_map.items()}
+            print(f"iter {i}: obj={solver.objective_value():.1f}")
+
+    return best_solution</code></pre>
+
+  <h3>2.2 멀티-목적 순차 최적화 (Lexicographic)</h3>
+  <pre><code><span class="cmt"># 목적 1 최적화 → 값 고정 → 목적 2 최적화</span>
+model = cp_model.CpModel()
+x = model.new_int_var(0, 10, 'x')
+y = model.new_int_var(0, 10, 'y')
+
+model.maximize(x)
+solver = cp_model.CpSolver()
+solver.solve(model)
+x_star = solver.value(x)
+
+<span class="cmt"># 직전 최적값 고정 + hint 이월</span>
+model.add(x == x_star)
+model.add_hint(x, x_star)
+
+model.maximize(y)
+solver.solve(model)
+print(f"x={x_star}, y={solver.value(y)}")</code></pre>
+
+  <h3>2.3 변수 고정으로 부분 모델 고정 (LNS 수동 구현)</h3>
+  <pre><code>import random
+
+def manual_lns(all_vars, initial_solution, model_builder,
+               destroy_frac=0.3, n_iters=20, time_per_iter=15.0):
+    """수동 LNS: 일부 변수 고정 + 나머지를 hint로 안내."""
+    current = dict(initial_solution)
+
+    for it in range(n_iters):
+        model = cp_model.CpModel()
+        vars_map = model_builder(model)
+
+        <span class="cmt"># destroy: 랜덤 변수 집합만 자유롭게 탐색</span>
+        free_vars = set(random.sample(list(all_vars),
+                                      k=max(1, int(len(all_vars) * destroy_frac))))
+
+        for name in all_vars:
+            v = vars_map[name]
+            if name not in free_vars:
+                <span class="cmt"># repair: 고정 변수는 도메인을 단일값으로 좁혀 fix</span>
+                model.add(v == current[name])
+            else:
+                <span class="cmt"># hint: 자유 변수도 직전 값으로 안내</span>
+                model.add_hint(v, current[name])
+
+        solver = cp_model.CpSolver()
+        solver.parameters.max_time_in_seconds = time_per_iter
+        status = solver.solve(model)
+
+        if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            new_obj = solver.objective_value()
+            if new_obj < compute_obj(current):   <span class="cmt"># minimize 가정</span>
+                current = {name: solver.value(v)
+                           for name, v in vars_map.items()}
+                print(f"LNS iter {it}: improved → {new_obj:.1f}")
+
+    return current</code></pre>
+
+  <div class="tip">
+    <div class="ttl">Tip — fix vs hint 선택 기준</div>
+    <p>
+      <strong>fix</strong>(도메인을 단일값으로 좁히기): 변수를 절대 바꾸지 않을 때.<br>
+      <strong>hint</strong>: 변경은 허용하지만 직전 값 근처에서 시작하게 할 때.<br>
+      LNS "repair" 단계는 fix + hint를 혼합해 "free 변수만 최적화" 하는 게 핵심이다.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       3. Assumptions (가정 기반 충족불가 핵심 추출)
+  ════════════════════════════════════════════ -->
+  <h2 id="assumptions">3. Assumptions — 불가능 핵심 추출</h2>
+  <p>
+    <code>add_assumption(lit)</code> / <code>add_assumptions(lits)</code>는 Boolean 리터럴을
+    가정으로 등록한다. 모델이 INFEASIBLE이 되면
+    <code>solver.sufficient_assumptions_for_infeasibility()</code>가
+    <strong>충돌에 기여한 최소 가정 집합(UNSAT 코어)</strong>을 반환한다.
+    각 제약에 Boolean indicator를 달아 "이 제약이 켜진 상태"를 가정으로 등록하는 패턴이 일반적이다.
+  </p>
+
+  <h3>3.1 UNSAT 코어 추출 예제</h3>
+  <pre><code>from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+x = model.new_int_var(0, 100, 'x')
+y = model.new_int_var(0, 100, 'y')
+z = model.new_int_var(0, 100, 'z')
+
+<span class="cmt"># 각 제약에 Boolean indicator 부착</span>
+ind1 = model.new_bool_var('c1: x+y<=4')
+model.add(x + y <= 4).only_enforce_if(ind1)
+
+ind2 = model.new_bool_var('c2: x+z<=2')
+model.add(x + z <= 2).only_enforce_if(ind2)
+
+ind3 = model.new_bool_var('c3: z>=4')
+model.add(z >= 4).only_enforce_if(ind3)
+
+<span class="cmt"># 세 제약을 동시에 "켜진" 상태로 가정 → 동시 만족 불가</span>
+model.add_assumptions([ind1, ind2, ind3])
+
+solver = cp_model.CpSolver()
+status = solver.solve(model)
+
+if status == cp_model.INFEASIBLE:
+    print("충돌 가정 (UNSAT 코어):")
+    for idx in solver.sufficient_assumptions_for_infeasibility():
+        print(f"  [{idx}] {model.proto.variables[idx].name}")</code></pre>
+
+  <div class="tip">
+    <div class="ttl">Tip — what-if 빠른 탐색</div>
+    <p>
+      가정은 매 풀이 전에 갱신할 수 있다. 제약 집합을 바꾸지 않고
+      <code>model.clear_assumptions()</code> 후 새 가정만 교체하면
+      모델 재구축 없이 다양한 시나리오를 빠르게 테스트할 수 있다.
+      단, CP-SAT는 매번 전체 재풀이를 한다 — "진짜" 가정 기반 증분은 없다.
+    </p>
+  </div>
+
+  <h3>3.2 OGC 타이밍 what-if 패턴</h3>
+  <pre><code><span class="cmt"># force_after 시간창 what-if: 특정 블록을 "t_min 이후만" 강제하는
+# 가정을 ON/OFF 해 빠른 시나리오 비교</span>
+model = cp_model.CpModel()
+entry = {b: model.new_int_var(0, T_MAX, f'entry_{b}') for b in blocks}
+
+force_flags = {}
+for b in late_blocks:
+    flag = model.new_bool_var(f'force_after_{b}')
+    model.add(entry[b] >= force_after[b]).only_enforce_if(flag)
+    force_flags[b] = flag
+
+<span class="cmt"># 시나리오 A: 모든 강제 ON</span>
+model.add_assumptions(list(force_flags.values()))
+solver.solve(model)
+if solver.status_name() == 'INFEASIBLE':
+    core = solver.sufficient_assumptions_for_infeasibility()
+    print("이 블록들이 충돌 원인:", core)
+
+<span class="cmt"># 시나리오 B: 일부 강제 해제 후 재탐색</span>
+model.clear_assumptions()
+model.add_assumptions([flag for b, flag in force_flags.items()
+                       if b not in conflicting_blocks])</code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">Pitfall — 가정의 한계</div>
+    <p>
+      <code>sufficient_assumptions_for_infeasibility()</code>는 <em>충분</em> 집합이지
+      <em>최소</em> UNSAT 코어를 보장하지 않는다. 실제 충돌보다 큰 집합을 반환할 수 있다.
+      또한 모델이 <code>FEASIBLE</code>로 반환된 경우에는 이 메서드를 호출해도 의미 있는 결과를 얻지 못한다.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       4. CpSolverSolutionCallback
+  ════════════════════════════════════════════ -->
+  <h2 id="callbacks">4. CpSolverSolutionCallback — 중간해 수집 · 조기 중단</h2>
+  <p>
+    <code>CpSolverSolutionCallback</code>을 상속해 <code>on_solution_callback()</code>을 구현하면
+    solver가 새 해를 찾을 때마다 호출된다. 이 안에서 변수 값 읽기, 로그 기록, 조기 중단이 가능하다.
+  </p>
+
+  <h3>4.1 핵심 API</h3>
+  <table>
+    <thead>
+      <tr><th>메서드</th><th>반환 타입</th><th>설명</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>on_solution_callback()</code></td><td>—</td><td>새 해 발견 시 호출. 반드시 override.</td></tr>
+      <tr><td><code>objective_value()</code></td><td><code>float</code></td><td>현재 최선 해의 목적함수 값.</td></tr>
+      <tr><td><code>best_objective_bound()</code></td><td><code>float</code></td><td>최적 하한(최소화) 또는 상한(최대화).</td></tr>
+      <tr><td><code>num_branches()</code></td><td><code>int</code></td><td>지금까지 탐색한 분기 수.</td></tr>
+      <tr><td><code>value(expr)</code></td><td><code>int</code></td><td>현재 해에서 정수 식의 값.</td></tr>
+      <tr><td><code>boolean_value(lit)</code></td><td><code>bool</code></td><td>현재 해에서 Boolean 리터럴의 값.</td></tr>
+      <tr><td><code>stop_search()</code></td><td>—</td><td>탐색 종료 신호. 비블로킹.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 중간해 수집 콜백</h3>
+  <pre><code>class SolutionCollector(cp_model.CpSolverSolutionCallback):
+    """발견된 모든 해를 수집하고 진행상황을 출력한다."""
+
+    def __init__(self, variables):
+        super().__init__()
+        self._vars = variables
+        self.solutions = []       <span class="cmt"># [(obj, {var: val})]</span>
+        self._best = float('inf')
+
+    def on_solution_callback(self):
+        obj = self.objective_value()
+        sol = {v.name: self.value(v) for v in self._vars}
+        self.solutions.append((obj, sol))
+        if obj < self._best:
+            self._best = obj
+            bound = self.best_objective_bound()
+            gap = abs(obj - bound) / (abs(obj) + 1e-9)
+            print(f"  ★ new best: obj={obj:.1f}  bound={bound:.1f}"
+                  f"  gap={gap:.2%}  branches={self.num_branches()}")
+
+
+model = cp_model.CpModel()
+x = model.new_int_var(0, 20, 'x')
+y = model.new_int_var(0, 20, 'y')
+model.add(x + y <= 15)
+model.minimize(x * 2 + y)
+
+solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 30.0
+cb = SolutionCollector([x, y])
+status = solver.solve(model, cb)
+
+print(f"총 {len(cb.solutions)}개 해 발견, 최선: {cb._best}")</code></pre>
+
+  <h3>4.3 개선 정체 시 조기 중단 (Timer 기반)</h3>
+  <pre><code>from threading import Timer
+
+class EarlyStopOnStagnation(cp_model.CpSolverSolutionCallback):
+    """마지막 개선 후 stagnation_sec 초 이상 정체하면 중단."""
+
+    def __init__(self, stagnation_sec: float = 10.0):
+        super().__init__()
+        self.stagnation_sec = stagnation_sec
+        self._best = float('inf')
+        self._timer = None
+        self._arm_timer()
+
+    def on_solution_callback(self):
+        obj = self.objective_value()
+        if obj < self._best - 1e-6:  <span class="cmt"># 진짜 개선이면 타이머 리셋</span>
+            self._best = obj
+            self._arm_timer()
+
+    def _arm_timer(self):
+        if self._timer:
+            self._timer.cancel()
+        self._timer = Timer(self.stagnation_sec, self._trigger_stop)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def _trigger_stop(self):
+        print(f"[조기중단] {self.stagnation_sec}s 동안 개선 없음 → stop_search()")
+        self.stop_search()
+
+    def cancel(self):
+        if self._timer:
+            self._timer.cancel()
+
+
+solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 300.0
+cb = EarlyStopOnStagnation(stagnation_sec=15.0)
+status = solver.solve(model, cb)
+cb.cancel()   <span class="cmt"># 풀이 완료 후 타이머 정리</span></code></pre>
+
+  <h3>4.4 Gap 임계값 조기 중단</h3>
+  <pre><code>class GapStopCallback(cp_model.CpSolverSolutionCallback):
+    """obj-bound 갭이 목표 이하가 되면 즉시 중단."""
+
+    def __init__(self, target_gap: float = 0.01):
+        super().__init__()
+        self.target_gap = target_gap  <span class="cmt"># 1% gap</span>
+
+    def on_solution_callback(self):
+        obj = self.objective_value()
+        bound = self.best_objective_bound()
+        if obj == 0:
+            return
+        gap = abs(obj - bound) / abs(obj)
+        if gap <= self.target_gap:
+            print(f"Gap {gap:.4%} ≤ {self.target_gap:.4%} → 조기중단")
+            self.stop_search()
+
+
+cb = GapStopCallback(target_gap=0.005)  <span class="cmt"># 0.5%</span>
+solver.solve(model, cb)</code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">Pitfall — 콜백 안에서 무거운 작업 금지</div>
+    <p>
+      <code>on_solution_callback()</code>은 solver 스레드에서 직접 호출된다.
+      I/O, 무거운 계산, Python GIL을 오래 잡는 작업을 넣으면 solver 성능이 심각하게 저하된다.
+      해야 한다면 결과를 큐에 넣고 메인 스레드에서 처리하거나, 조건 체크와 <code>stop_search()</code>만 두어야 한다.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       5. 결과 추출 (상태별 처리)
+  ════════════════════════════════════════════ -->
+  <h2 id="extract">5. 결과 추출 — 상태별 처리 패턴</h2>
+  <pre><code>solver = cp_model.CpSolver()
+status = solver.solve(model)
+
+STATUS_NAMES = {
+    cp_model.OPTIMAL:    'OPTIMAL',
+    cp_model.FEASIBLE:   'FEASIBLE',
+    cp_model.INFEASIBLE: 'INFEASIBLE',
+    cp_model.UNKNOWN:    'UNKNOWN',
+    cp_model.MODEL_INVALID: 'MODEL_INVALID',
+}
+print(STATUS_NAMES.get(status, f'UNKNOWN({status})'))
+
+if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+    <span class="cmt"># 정수 변수</span>
+    x_val = solver.value(x)
+    <span class="cmt"># Boolean 변수 (리터럴)</span>
+    b_val = solver.boolean_value(b)
+    <span class="cmt"># 통계</span>
+    print(f"obj={solver.objective_value():.2f}  "
+          f"bound={solver.best_objective_bound():.2f}  "
+          f"wall={solver.wall_time():.2f}s  "
+          f"branches={solver.num_branches()}")
+
+elif status == cp_model.INFEASIBLE:
+    <span class="cmt"># Assumption을 사용한 경우 UNSAT 코어 확인</span>
+    core = solver.sufficient_assumptions_for_infeasibility()
+    print("충돌 가정 인덱스:", core)</code></pre>
+
+  <!-- ═══════════════════════════════════════════
+       6. OGC 2026 통합 패턴
+  ════════════════════════════════════════════ -->
+  <h2 id="ogc-pattern">6. OGC 2026 통합 패턴</h2>
+  <p>
+    베이 타이밍 oracle에서 직전 해를 hint로 이월하고, 후보 병렬 실행에서 콜백으로 plateau를 감지해 조기 중단하는
+    통합 패턴이다.
+  </p>
+
+  <h3>6.1 LNS 반복 간 hint 이월 (베이 타이밍 oracle)</h3>
+  <pre><code>def cpsat_bay_timing_with_hint(bay_blocks, prev_solution=None,
+                                timelimit=30.0):
+    """
+    이전 풀이의 entry/exit 시각을 hint로 주입해 수렴을 가속.
+    prev_solution: {block_id: {'entry': int, 'exit': int}}
+    """
+    model = cp_model.CpModel()
+    entry = {b: model.new_int_var(R[b], T_MAX, f'entry_{b}')
+             for b in bay_blocks}
+    exit_ = {b: model.new_int_var(R[b] + P[b], T_MAX, f'exit_{b}')
+             for b in bay_blocks}
+
+    <span class="cmt"># 기본 제약: exit - entry >= processing time</span>
+    for b in bay_blocks:
+        model.add(exit_[b] - entry[b] >= P[b])
+        model.add(entry[b] >= R[b])
+
+    <span class="cmt"># 크레인 j>=k 제약 (NoOverlap 등)</span>
+    <span class="cmt"># ... (생략)</span>
+
+    <span class="cmt"># 목적: tardiness 최소화</span>
+    tardiness = []
+    for b in bay_blocks:
+        t = model.new_int_var(0, T_MAX, f'tard_{b}')
+        model.add_max_equality(t, [exit_[b] - D[b], 0])
+        tardiness.append(t)
+    model.minimize(sum(tardiness))
+
+    <span class="cmt"># ★ 직전 해를 hint로 이월</span>
+    if prev_solution:
+        for b in bay_blocks:
+            if b in prev_solution:
+                model.add_hint(entry[b], prev_solution[b]['entry'])
+                model.add_hint(exit_[b],  prev_solution[b]['exit'])
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = timelimit
+    solver.parameters.num_workers = 4
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return {b: {'entry': solver.value(entry[b]),
+                    'exit':  solver.value(exit_[b])}
+                for b in bay_blocks}
+    return None  <span class="cmt"># None 반환 시 best-of에서 안전하게 무시</span></code></pre>
+
+  <h3>6.2 best-of 후보 병렬 실행 + plateau 조기 중단</h3>
+  <pre><code>class BudgetAwareCallback(cp_model.CpSolverSolutionCallback):
+    """
+    best-of(legacy ∥ box) 구조에서 시간 예산 내 plateau 감지.
+    개선이 min_improvement 미만이면 stagnation_sec 후 중단.
+    """
+    def __init__(self, time_budget: float, min_improvement: float = 0.02,
+                 stagnation_sec: float = 8.0):
+        super().__init__()
+        self._budget = time_budget
+        self._min_imp = min_improvement
+        self._stagnation = stagnation_sec
+        self._best = float('inf')
+        self._timer = None
+
+    def on_solution_callback(self):
+        obj = self.objective_value()
+        rel_imp = (self._best - obj) / (abs(self._best) + 1e-9)
+        if rel_imp >= self._min_imp:
+            self._best = obj
+            self._arm_timer()   <span class="cmt"># 의미있는 개선 → 타이머 리셋</span>
+
+    def _arm_timer(self):
+        if self._timer:
+            self._timer.cancel()
+        self._timer = Timer(self._stagnation, self.stop_search)
+        self._timer.daemon = True
+        self._timer.start()
+
+    def cancel(self):
+        if self._timer:
+            self._timer.cancel()</code></pre>
+
+  <!-- ═══════════════════════════════════════════
+       7. 핵심 논문/문서
+  ════════════════════════════════════════════ -->
+  <h2 id="refs">핵심 논문 · 문서</h2>
+  <ul class="refs">
+    <li>
+      <strong>OR-Tools CP-SAT Solver Documentation — Solution Hinting</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/stable/ortools/sat/docs/model.md</span>
+      <span class="desc">공식 model.md: add_hint 기본 설명, PartialVariableAssignment proto 구조, "soft constraint" 특성.</span>
+    </li>
+    <li>
+      <strong>CP-SAT Primer (Dominik Krupke) — Parameters, Coding Patterns, LNS</strong>
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/</span>
+      <span class="desc">repair_hint·fix_variables_to_their_hinted_value·LNS destroy-repair 패턴을 실용적으로 설명. 2024년 지속 갱신 중인 최고 실용 가이드.</span>
+    </li>
+    <li>
+      <strong>ortools.sat.python.cp_model API Reference</strong>
+      <span class="meta">https://or-tools.github.io/docs/pdoc/ortools/sat/python/cp_model.html</span>
+      <span class="desc">add_hint, add_assumption, add_assumptions, sufficient_assumptions_for_infeasibility, CpSolverSolutionCallback 전 메서드 시그니처.</span>
+    </li>
+    <li>
+      <strong>CpSolverSolutionCallback Class Reference</strong>
+      <span class="meta">https://or-tools.github.io/docs/python/classortools_1_1sat_1_1python_1_1cp__model_1_1CpSolverSolutionCallback.html</span>
+      <span class="desc">on_solution_callback, objective_value, best_objective_bound, num_branches, stop_search, value, boolean_value 시그니처.</span>
+    </li>
+    <li>
+      <strong>OR-Tools: Infeasibility Explanation for Integer Programming (Zia, Medium)</strong>
+      <span class="meta">https://medium.com/@ZiaH919/optimization-with-python-infeasibility-explanation-for-integer-programming-with-or-tools-7372b64322d</span>
+      <span class="desc">indicator + OnlyEnforceIf + AddAssumptions + sufficient_assumptions_for_infeasibility 패턴 전체 예제.</span>
+    </li>
+    <li>
+      <strong>Recipes for Google OR-Tools (xiang.es)</strong>
+      <span class="meta">https://xiang.es/posts/cp-sat/</span>
+      <span class="desc">EarlyStopOnStagnation(Timer 기반) 콜백, 멀티-목적 순차 최적화 패턴 코드 포함.</span>
+    </li>
+    <li>
+      <strong>sat_parameters.proto — Google OR-Tools stable</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/stable/ortools/sat/sat_parameters.proto</span>
+      <span class="desc">use_optimization_hints·debug_crash_on_bad_hint·debug_crash_if_presolve_breaks_hint 등 hint 관련 전체 파라미터 정의.</span>
+    </li>
+    <li>
+      <strong>Issue #2014 — Incremental solving using CP-SAT solver</strong>
+      <span class="meta">https://github.com/google/or-tools/issues/2014</span>
+      <span class="desc">CP-SAT 개발팀의 공식 입장: 진정한 증분 풀이 미지원, hint 이월이 권장 대안.</span>
+    </li>
+  </ul>
+
+  <!-- ── GitHub/자료 ── -->
+  <h2 id="repos">GitHub · 자료</h2>
+  <ul class="refs">
+    <li class="repo">
+      <strong>google/or-tools — assumptions_sample_sat.py</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/stable/ortools/sat/samples/assumptions_sample_sat.py</span>
+      <span class="desc">AddAssumption + SufficientAssumptionsForInfeasibility 공식 샘플.</span>
+    </li>
+    <li class="repo">
+      <strong>google/or-tools — solution_hinting_sample_sat.py</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/stable/ortools/sat/samples/solution_hinting_sample_sat.py</span>
+      <span class="desc">add_hint 공식 샘플 코드.</span>
+    </li>
+    <li class="repo">
+      <strong>CP-SAT Issue #4693 — CPSAT presolve makes hint infeasible</strong>
+      <span class="meta">https://github.com/google/or-tools/issues/4693</span>
+      <span class="desc">presolve가 feasible hint를 깨뜨리는 엣지 케이스 분석 및 debug_crash_if_presolve_breaks_hint 사용법.</span>
+    </li>
+    <li class="repo">
+      <strong>CP-SAT Issue #3750 — UNKNOWN status with complete solution hint</strong>
+      <span class="meta">https://github.com/google/or-tools/issues/3750</span>
+      <span class="desc">완전한 hint를 줘도 UNKNOWN이 나오는 경우 분석 — hint_conflict_limit와의 관계.</span>
+    </li>
+    <li class="repo">
+      <strong>CP-SAT Issue #804 — Maximize/Minimize early stopping on good solution</strong>
+      <span class="meta">https://github.com/google/or-tools/issues/804</span>
+      <span class="desc">stop_search() 콜백 기반 조기 중단 패턴 논의 원본 이슈.</span>
+    </li>
+  </ul>
+
+  <!-- ═══════════════════════════════════════════
+       8. 흔한 함정
+  ════════════════════════════════════════════ -->
+  <h2 id="pitfalls">흔한 함정 요약</h2>
+
+  <div class="pitfall">
+    <div class="ttl">1. hint 누적 — add_hint는 append</div>
+    <p>
+      동일 변수에 여러 번 <code>add_hint</code>를 호출하면 proto에 중복 엔트리가 쌓인다.
+      반복 루프에서는 <strong>매 반복 모델을 재구축</strong>하거나
+      <code>del model.proto.solution_hint.vars[:]</code> 등으로 직접 초기화해야 한다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">2. 모순된 hint — 무시되거나 성능 저하</div>
+    <p>
+      힌트된 값이 기존 제약과 충돌하면 solver는 조용히 힌트를 버리고 진행한다.
+      <code>debug_crash_on_bad_hint = True</code>로 개발 중에만 체크하라.
+      힌트가 전혀 도움이 안 되거나 오히려 느려지는 경우가 생길 수 있다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">3. presolve가 hint를 깬다</div>
+    <p>
+      presolve 단계에서 변수 도메인이 축소되면 원래 feasible했던 hint가 INFEASIBLE이 될 수 있다.
+      <code>repair_hint = True</code>를 켜거나, <code>debug_crash_if_presolve_breaks_hint = True</code>로
+      진단하라.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">4. 증분 풀이 없음 — 매번 전체 재풀이</div>
+    <p>
+      CP-SAT는 Clause Learning을 반드시 초기화하고 새로 시작한다.
+      "이전 풀이 결과를 이어받아 계속 풀기"는 불가능하다.
+      hint 이월만이 유일한 웜스타트 수단이며, 이전 해가 새 제약을 위반하더라도
+      repair 진입점으로 활용될 수 있다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">5. 콜백 안에서 무거운 작업 — solver 성능 파괴</div>
+    <p>
+      <code>on_solution_callback</code>은 solver 내부 스레드에서 호출된다.
+      파일 I/O, 대규모 계산, 외부 API 호출을 넣으면 solver가 블로킹된다.
+      결과는 <code>queue.Queue</code>에 넣고 별도 스레드에서 처리하라.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">6. sufficient_assumptions_for_infeasibility — 최소 코어 아님</div>
+    <p>
+      반환값은 "충분한" 가정 집합이지, 이론적 최소 UNSAT 코어가 아니다.
+      실제 충돌보다 큰 집합을 반환할 수 있으며, 더 작은 코어를 원한다면
+      반환된 집합을 다시 탐색해야 한다.
+    </p>
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">7. fix_variables_to_their_hinted_value — 전역 적용</div>
+    <p>
+      이 파라미터를 켜면 <strong>힌트된 모든 변수</strong>가 고정된다.
+      LNS에서 "일부 변수만 고정"하려면 파라미터 대신
+      <code>model.add(v == hint_val)</code> 제약으로 개별 제어하라.
+    </p>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <div class="footer">
+    <p>
+      CP-SAT Methodology Research · 07 힌트·증분 ·
+      OR-Tools 9.x · 2026-06-17
+    </p>
+    <p><a href="index.html">← 개요로</a></p>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11 성능·스케일 — CP-SAT Methodology</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html" class="active">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+<!-- ── HERO ─────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="kicker">Chapter 11 · Performance &amp; Scaling</div>
+  <h1>CP-SAT 성능 튜닝·스케일링·안티패턴</h1>
+  <p class="lead">
+    도메인 타이트닝, big-M 회피, 정수 스케일링, 병렬 워커, 힌트 웜스타트, 로그 해독,
+    큰 인스턴스 분해 전략까지 — 그리고 CP-SAT가 MIP(Gurobi)를 이기는 경우와 지는 경우.
+    실측 안티패턴과 OGC2026 특화 지침 포함.
+  </p>
+</div>
+
+<!-- ── OGC CALLOUT ────────────────────────────────────────────────────── -->
+<div class="callout ogc">
+  <div class="ttl">⬡ OGC2026 관련성</div>
+  <p>
+    <strong>환경</strong>: 평가 서버 4코어·16GB·인스턴스별 수분~30분 — GPU 없음, 인터넷 차단.
+    이 챕터의 모든 기법이 직접 적용된다.
+  </p>
+  <ul>
+    <li><strong>도메인 타이트</strong>: horizon = max(EXIT) 이 아니라 블록별 R+P 기반 tight upper bound.
+      좌표 도메인은 베이 크기(정수 단위)로 정확히 — 부동소수점 없이 정수 그리드.</li>
+    <li><strong>정수 좌표</strong>: 이미 정수 격자 — float 스케일링 오버플로 위험 없음.
+      단, Z2(작업부하 불균형) 계산 시 면적 누적값 오버플로 주의 (int64 한계 ≈ 9.2×10¹⁸).</li>
+    <li><strong>힌트 이월</strong>: legacy solver의 최종 배정을 CP-SAT timing oracle에 힌트로 전달.
+      <code>fix_variables_to_their_hinted_value=True</code>로 배치 고정 후 타이밍만 최적화 = 탐색 공간 1-D 압축.</li>
+    <li><strong>per-bay 분해</strong>: 베이별 독립 CP-SAT 서브로 분해 → 각 서브에 4코어 할당 가능.
+      <code>num_workers=4</code>가 시간규율 유지의 핵심 — set2 타임아웃 → −1 회피.</li>
+    <li><strong>legacy plateau 인식</strong>: legacy 솔버는 ~140–300s에서 obj 정체.
+      CP-SAT oracle이 그 이후 유일한 개선 레버 — <code>max_time_in_seconds</code>를 남은 예산에 맞춰 동적 설정.</li>
+    <li><strong>never −1 규칙</strong>: <code>status in (OPTIMAL, FEASIBLE)</code> 확인 후 반환.
+      시간 초과 시 반드시 베이스라인 greedy 해 fallback — CP-SAT UNKNOWN 반환이면 이전 최선해 사용.</li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>1. 도메인 타이트닝 (Domain Tightening)</h2>
+
+<p>
+  CP-SAT의 propagation 엔진은 <strong>도메인 크기에 직접 비례하는 탐색 공간</strong>을 처리한다.
+  변수 하나의 도메인이 [0, 10000] 대신 [0, 200]이면 전파 효율이 수십 배 향상된다.
+  이것이 가장 저렴하고 가장 효과적인 성능 레버다.
+</p>
+
+<h3>변수 도메인 좁히기 — 전/후 비교</h3>
+<pre><code><span class="cmt"># ❌ 안티패턴: 느슨한 도메인</span>
+horizon = 10_000_000                          <span class="cmt"># 알 수 없으니 크게 잡음</span>
+entry = model.new_int_var(0, horizon, "entry_1")
+exit_ = model.new_int_var(0, horizon, "exit_1")
+
+<span class="cmt"># ✅ 베스트프랙티스: 블록별 tight bound</span>
+earliest = block["ready_time"]                <span class="cmt"># R_i</span>
+latest_entry = max_makespan - block["proc_time"]  <span class="cmt"># 수식으로 상한 증명</span>
+entry = model.new_int_var(earliest, latest_entry, f"entry_{i}")
+exit_ = model.new_int_var(earliest + block["proc_time"],
+                           max_makespan,      f"exit_{i}")
+model.add(exit_ >= entry + block["proc_time"])
+model.add(exit_ <= block["due_time"] + MAX_ALLOWED_TARDINESS)</code></pre>
+
+<h3>presolve로 자동 타이트닝 확인</h3>
+<pre><code>solver.parameters.fill_tightened_domains_in_response = True
+solver.parameters.log_search_progress = True
+
+status = solver.solve(model)
+
+<span class="cmt"># presolve가 좁힌 도메인 확인</span>
+for i, var_proto in enumerate(solver.response_proto.tightened_variables):
+    if var_proto.domain:
+        print(f"var {i}: tightened to {var_proto.domain}")</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — horizon 계산법</div>
+  <p>
+    실현가능 최대 스케줄 길이(horizon)는 모든 블록의 <code>max(ready_time) + max(proc_time)</code>으로
+    상한을 잡되, 실제 실현가능 범위(마감일 기준)로 추가 타이트닝하라.
+    OGC처럼 베이별 독립 스케줄이면 베이별 horizon을 별도 계산한다.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — "안전하게 크게"</div>
+  <p>
+    <code>new_int_var(-10**9, 10**9, "x")</code> 같은 기본값 설정은 CP-SAT에서 치명적이다.
+    <strong>도메인 크기가 클수록 presolve가 생성하는 auxiliary constraint가 지수적으로 늘어난다.</strong>
+    실제 필요 범위를 수식으로 증명하고 정확히 설정하라.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>2. big-M 회피 — OnlyEnforceIf / 반복(Reification)</h2>
+
+<p>
+  전통 MIP의 big-M 기법은 CP-SAT에서 <strong>propagation을 약화</strong>시킨다.
+  M이 크면 bound propagation이 제공하는 정보가 사실상 0이 되기 때문이다.
+  CP-SAT는 <code>only_enforce_if()</code>로 완전한 대안을 제공한다.
+</p>
+
+<h3>big-M vs. OnlyEnforceIf</h3>
+<pre><code><span class="cmt"># ❌ big-M: propagation 무력화</span>
+M = 1_000_000
+model.add(start[i] >= release[i] - M * (1 - assigned[i][j]))
+model.add(start[i] <= due[i]     + M * (1 - assigned[i][j]))
+
+<span class="cmt"># ✅ OnlyEnforceIf: 정확한 half-reification</span>
+model.add(start[i] >= release[i]).only_enforce_if(assigned[i][j])
+model.add(start[i] <= due[i]).only_enforce_if(assigned[i][j])</code></pre>
+
+<h3>조건부 누적 (Conditional Cumulative)</h3>
+<pre><code><span class="cmt"># 베이 j에 블록 i가 배정될 때만 demand 기여</span>
+demand = model.new_int_var(0, block_area[i], f"demand_{i}_{j}")
+model.add(demand == block_area[i]).only_enforce_if(assigned[i][j])
+model.add(demand == 0).only_enforce_if(assigned[i][j].negated())
+<span class="cmt"># cumulative에 전달</span>
+model.add_cumulative(intervals_j, [demand_i_j, ...], bay_capacity[j])</code></pre>
+
+<h3>Full Reification (양방향)</h3>
+<pre><code><span class="cmt"># b가 True ↔ constraint 충족 — add_bool_or/and로 구현</span>
+b = model.new_bool_var("feasible")
+model.add(x <= 100).only_enforce_if(b)          <span class="cmt"># b=True → x≤100</span>
+model.add(x >= 101).only_enforce_if(b.negated()) <span class="cmt"># b=False → x≥101</span></code></pre>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — 과도한 Reification</div>
+  <p>
+    <code>only_enforce_if</code>를 모든 제약에 과도하게 쓰면 LP 완화 품질이 떨어진다.
+    M이 작고 tight하면 big-M도 허용되지만, <strong>일반적으로 M ≥ 1000이면 OnlyEnforceIf로 전환</strong>하라.
+    feasible.club 3년 경험: "reification의 loose big-M 상수가 propagation 강도를 약화한다."
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>3. Boolean 인코딩 선호</h2>
+
+<p>
+  CP-SAT의 핵심은 <strong>CDCL(Conflict-Driven Clause Learning) SAT 솔버</strong>다.
+  Boolean 변수로 표현된 문제는 이 엔진이 가장 잘 처리한다.
+  정수 변수도 내부적으로 Boolean 리터럴로 인코딩되지만,
+  처음부터 Boolean으로 모델링하면 presolve가 더 강력하게 단순화한다.
+</p>
+
+<pre><code><span class="cmt"># ❌ 정수로 표현된 할당</span>
+bay = model.new_int_var(0, num_bays - 1, f"bay_{i}")  <span class="cmt"># 모든 베이 값 탐색</span>
+
+<span class="cmt"># ✅ Boolean 배열로 할당 (CP-SAT 강점 구간)</span>
+assigned = [model.new_bool_var(f"assign_{i}_{j}") for j in range(num_bays)]
+model.add_exactly_one(assigned)                      <span class="cmt"># 정확히 1개 베이</span>
+
+<span class="cmt"># add_exactly_one은 add_bool_xor / sum==1보다 훨씬 강력한 propagation</span>
+<span class="cmt"># add_at_most_one 도 유사하게 효율적</span></code></pre>
+
+<pre><code><span class="cmt"># Boolean 논리 직접 활용</span>
+b1 = model.new_bool_var("cond_a")
+b2 = model.new_bool_var("cond_b")
+
+model.add_implication(b1, b2)        <span class="cmt"># b1 → b2</span>
+model.add_bool_or([b1, b2])          <span class="cmt"># b1 OR b2</span>
+model.add_bool_and([b1, b2])         <span class="cmt"># b1 AND b2</span></code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — add_exactly_one vs. sum == 1</div>
+  <p>
+    <code>model.add(sum(assigned) == 1)</code> 대신 <code>model.add_exactly_one(assigned)</code>를 쓰라.
+    후자는 CP-SAT 내부에서 특수 처리되어 propagation이 훨씬 강하다.
+    마찬가지로 <code>add_at_most_one</code>도 선형 sum 제약보다 우월하다.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>4. 부동소수 → 정수 스케일링</h2>
+
+<p>
+  CP-SAT는 <strong>순수 정수 엔진</strong>이다. float 계수는 목적함수에만 제한적으로 지원되며
+  제약 내에서는 불가능하다. 스케일링 시 두 가지 위험이 있다:
+  <strong>(1) 정밀도 손실</strong>과 <strong>(2) int64 오버플로</strong>.
+</p>
+
+<h3>스케일링 헬퍼 패턴</h3>
+<pre><code>import math
+
+def scale_to_int(value: float, scale: int = 1000) -> int:
+    """float → 정수 스케일링, 오버플로 사전 체크 포함"""
+    result = round(value * scale)
+    INT64_MAX = (1 << 63) - 1
+    if abs(result) > INT64_MAX:
+        raise OverflowError(f"Scaled value {result} exceeds int64 range")
+    return result
+
+SCALE = 1000                    <span class="cmt"># 소수점 3자리 정밀도</span>
+
+<span class="cmt"># 가중치·비용을 스케일링</span>
+w1_s = scale_to_int(prob_info["w1"], SCALE)   <span class="cmt"># e.g. 667.5 → 667500</span>
+w2_s = scale_to_int(prob_info["w2"], SCALE)
+
+<span class="cmt"># 목적함수도 같은 스케일</span>
+model.minimize(w1_s * tardiness_total + w2_s * imbalance + ...)</code></pre>
+
+<h3>오버플로 위험 계산</h3>
+<pre><code><span class="cmt"># 최악 계수 추정: 스케일 × 값 범위 × 변수 수</span>
+<span class="cmt"># int64 한계 ≈ 9.2 × 10^18</span>
+max_coeff   = 1_000          <span class="cmt"># SCALE</span>
+max_value   = 10_000_000     <span class="cmt"># 예: 최대 타디니스</span>
+num_blocks  = 200
+product = max_coeff * max_value * num_blocks   <span class="cmt"># 2 × 10^12 — safe</span>
+
+<span class="cmt"># SCALE=10^6이면 10^6 × 10^7 × 200 = 2×10^15 — still safe</span>
+<span class="cmt"># SCALE=10^9이면 10^18 × 200 — OVERFLOW RISK!</span></code></pre>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — 과도한 스케일 팩터</div>
+  <p>
+    <code>SCALE = 10**9</code>처럼 정밀도를 위해 너무 큰 스케일을 쓰면
+    계수 곱이 int64(9.2×10¹⁸)를 초과할 수 있다.
+    CP-SAT는 <strong>오버플로를 조용히 wrap-around</strong>하므로 디버그가 극히 어렵다.
+    CP-SAT 계수 내부 한계는 <code>±2^63−1</code> — 스케일 × 도메인 크기 × 변수 수의 곱이 이 범위 안에 있어야 한다.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — 런타임이 스케일에 선형 비례</div>
+  <p>
+    CP-SAT Primer 실험: 어떤 문제는 resolution(스케일 팩터) 증가에 런타임이 선형 비례하고,
+    다른 문제는 로그 비례였다. <strong>스케일을 올리기 전 반드시 작은 인스턴스로 프로파일링하라.</strong>
+    필요 정밀도만큼만 스케일링한다 — "혹시 모르니 크게"는 금물.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>5. 병렬 워커 (num_workers)</h2>
+
+<p>
+  CP-SAT는 <strong>포트폴리오 솔버</strong>다 — 여러 워커가 서로 다른 전략(LP 집중, pure SAT,
+  LNS heuristic 등)으로 동시에 탐색하고, 발견된 해와 bound를 공유한다.
+  MIP처럼 탐색 공간을 분할하는 방식이 아니므로, 워커 수와 성능 관계가 비선형이다.
+</p>
+
+<h3>워커 설정 패턴</h3>
+<pre><code>import os
+
+<span class="cmt"># 방법 1: 명시적 설정</span>
+solver.parameters.num_workers = 8
+
+<span class="cmt"># 방법 2: 물리 코어 수에 맞춤 (hyperthreading 제외)</span>
+physical_cores = os.cpu_count() // 2   <span class="cmt"># HT 고려</span>
+solver.parameters.num_workers = max(1, physical_cores)
+
+<span class="cmt"># 방법 3: 평가서버 4코어 기준 OGC 설정</span>
+solver.parameters.num_workers = 4      <span class="cmt"># 4코어 = 안전한 상한</span>
+solver.parameters.max_time_in_seconds = time_budget</code></pre>
+
+<h3>실측 데이터 (GitHub Issue #1921)</h3>
+<table>
+  <thead>
+    <tr><th>num_workers</th><th>풀이 시간 (32코어 Windows)</th><th>비고</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>13.6s</td><td>최속</td></tr>
+    <tr><td>2</td><td>45.8s</td><td>3.4× 느림</td></tr>
+    <tr><td>4</td><td>53.0s</td><td>3.9× 느림</td></tr>
+    <tr><td>16</td><td>157.5s</td><td>11.6× 느림</td></tr>
+    <tr><td>32</td><td>807.8s</td><td>59× 느림</td></tr>
+  </tbody>
+</table>
+<p style="font-size:.85rem;color:var(--muted)">
+  * Boolean CSP 문제. 반드시 본인 문제에서 직접 측정할 것 — 문제에 따라 반대 패턴도 가능.
+</p>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — "코어 많을수록 빠르다"</div>
+  <p>
+    위 실측처럼 워커가 많을수록 메모리 대역폭 경합·스레드 동기화 오버헤드가 dominate할 수 있다.
+    특히 <strong>메모리 집약적 Boolean 문제</strong>에서 단일 워커가 최속인 경우가 빈번하다.
+    하이퍼스레딩 코어는 실제 물리 코어의 60~80% 성능 — num_workers를 물리 코어 수로 제한하라.
+  </p>
+</div>
+
+<div class="tip">
+  <div class="ttl">Tip — 워커 수 vs. 솔버 전략</div>
+  <p>
+    <code>num_workers = 1</code>: LP 없이 순수 SAT+propagation → 작은 이산 문제에서 빠름.<br>
+    <code>num_workers = 2~4</code>: LP 워커 + SAT 워커 조합 → 대부분 스케줄링 문제에 균형.<br>
+    <code>num_workers ≥ 8</code>: LNS heuristic 워커 추가 → 큰 문제 feasibility 탐색에 유리.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>6. 힌트 웜스타트 (Solution Hints)</h2>
+
+<p>
+  CP-SAT의 힌트는 <strong>초기 해의 시작점</strong>을 제공해 presolve 이후 탐색이
+  좋은 incumbent를 빠르게 찾게 한다. 전통 MIP warm start와 달리 CP-SAT 힌트는
+  <em>presolve 후 살아남은 변수들에 대해서만</em> 작동한다.
+</p>
+
+<pre><code><span class="cmt"># 이전 단계(legacy/greedy) 해를 힌트로 전달</span>
+for i, block in enumerate(blocks):
+    model.add_hint(assigned[i][bay_assignment[i]], 1)
+    model.add_hint(entry_time[i], entry_from_greedy[i])
+    model.add_hint(exit_time[i],  exit_from_greedy[i])
+    model.add_hint(x_pos[i],      x_from_greedy[i])
+    model.add_hint(y_pos[i],      y_from_greedy[i])
+
+<span class="cmt"># 힌트를 고정값으로 사용 (배치 고정 후 타이밍만 최적화)</span>
+solver.parameters.fix_variables_to_their_hinted_value = True
+
+<span class="cmt"># 타이밍 변수만 남기고 최적화 — 탐색 공간 1-D 압축</span>
+status = solver.solve(model)</code></pre>
+
+<pre><code><span class="cmt"># 힌트 실효성 확인 (로그에서 "HINT" 라인 찾기)</span>
+solver.parameters.log_search_progress = True
+solver.log_callback = lambda s: print(s) if "HINT" in s or "#1" in s else None</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — 부분 힌트</div>
+  <p>
+    힌트가 일부 변수만 커버하거나 presolve 이후 불가능한 값이면 <strong>조용히 무시</strong>된다.
+    디버그가 어렵다 — <code>log_search_progress=True</code>로 초기 해 시간을 확인하고
+    힌트 없는 경우와 비교하라. 힌트된 해가 feasible하지 않으면 CP-SAT는 힌트를 버리고 처음부터 탐색한다.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>7. 검색 로그 해독 (log_search_progress)</h2>
+
+<p>
+  CP-SAT 로그는 성능 병목을 진단하는 핵심 도구다.
+  <code>log_search_progress=True</code>로 활성화하면 표준 형식으로 출력된다.
+</p>
+
+<h3>로그 활성화</h3>
+<pre><code>solver.parameters.log_search_progress = True
+solver.parameters.log_to_stdout = False    <span class="cmt"># 기본값 True</span>
+solver.log_callback = lambda msg: print(msg, flush=True)</code></pre>
+
+<h3>로그 구조 해독</h3>
+<pre><code><span class="cmt"># 형식: EVENT | TIME | BEST | RANGE | COMMENT</span>
+<span class="cmt">#</span>
+<span class="cmt"># #1   0.03s  best:4200  next:[4201,8100]  (initial_solution_lp)</span>
+<span class="cmt"># #2   0.07s  best:3850  next:[3851,8100]  (default_lp)</span>
+<span class="cmt"># #Bound 0.12s  ...  next:[3700,8100]      (lp_bound)</span>
+<span class="cmt"># #3   0.31s  best:3700  next:[3700,3700]  ← OPTIMAL</span>
+<span class="cmt">#</span>
+<span class="cmt"># EVENT: #N = N번째 incumbent 발견, #Bound = 하한 개선</span>
+<span class="cmt"># BEST:  현재 최선 목적값 (상한)</span>
+<span class="cmt"># RANGE: [현재하한, 현재상한] — 범위가 좁아질수록 수렴</span></code></pre>
+
+<h3>gap_integral 읽기</h3>
+<pre><code><span class="cmt"># 해 종료 후 통계</span>
+print("WallTime:", solver.wall_time())
+print("UserTime:", solver.user_time())
+print("Branches:", solver.num_branches())
+print("Conflicts:", solver.num_conflicts())
+
+<span class="cmt"># gap_integral: gap의 시간적분 — 낮을수록 빠른 수렴</span>
+<span class="cmt"># 해석: 초반에 큰 gap이 오래 지속 → 초기해 품질 문제 → 힌트 투입</span>
+<span class="cmt"># 해석: 하한이 안 오르고 상한만 개선 → LP relaxation 약함 → 도메인 타이트닝 필요</span></code></pre>
+
+<h3>성능 병목 진단 체크리스트</h3>
+<table>
+  <thead>
+    <tr><th>로그 패턴</th><th>원인</th><th>처방</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Presolve 오래 걸림, 모델 크기 거의 안 줄어듦</td>
+      <td>불필요한 제약/변수 과다</td>
+      <td>모델 단순화, 집계 변수 제거</td>
+    </tr>
+    <tr>
+      <td>상한은 빠르게 내려오는데 하한이 안 오름</td>
+      <td>LP relaxation 매우 약함</td>
+      <td>도메인 타이트닝, 유효 부등식 추가</td>
+    </tr>
+    <tr>
+      <td>초기 incumbent 찾는 데 오래 걸림</td>
+      <td>초기 feasible 해 없음</td>
+      <td>greedy 힌트 투입, 제약 완화</td>
+    </tr>
+    <tr>
+      <td>conflict 수 매우 많음 (millions)</td>
+      <td>대칭 폭발</td>
+      <td>대칭 제거 제약, symmetry breaking</td>
+    </tr>
+    <tr>
+      <td>단일 워커보다 멀티 워커가 느림</td>
+      <td>메모리 대역폭 포화</td>
+      <td>num_workers 줄이기</td>
+    </tr>
+    <tr>
+      <td>해가 발견되다가 long plateau</td>
+      <td>local optimum 갇힘</td>
+      <td>LNS 활성화, 다른 seed 시도</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>8. 큰 인스턴스 처리 — 분해 전략</h2>
+
+<h3>8.1 시간 예산 할당</h3>
+<pre><code>def solve_with_budget(model, total_budget: float, reserve: float = 30.0):
+    """전체 예산의 일부를 CP-SAT에, 나머지를 heuristic에 배정"""
+    cp_budget = max(10.0, total_budget - reserve)
+    solver.parameters.max_time_in_seconds = cp_budget
+    status = solver.solve(model)
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return extract_solution(solver, model)
+    else:
+        <span class="cmt"># fallback: greedy/legacy solution</span>
+        return baseline_solution</code></pre>
+
+<h3>8.2 per-bay 분해 패턴 (OGC 직접 적용)</h3>
+<pre><code>def solve_all_bays(prob_info, time_limit):
+    """베이별 독립 CP-SAT 서브 → 결과 병합"""
+    results = {}
+    bay_time = time_limit / len(bays)    <span class="cmt"># 균등 분배</span>
+
+    for bay_id in bays:
+        blocks_in_bay = [b for b in blocks if assigned_to_bay(b, bay_id)]
+        if not blocks_in_bay:
+            continue
+
+        model = cp_model.CpModel()
+        <span class="cmt"># 베이 내 타이밍 최적화만 (배치 고정)</span>
+        entry, exit_ = build_timing_model(model, blocks_in_bay, bay_id)
+
+        solver = cp_model.CpSolver()
+        solver.parameters.num_workers = 4           <span class="cmt"># 서버 4코어 풀 활용</span>
+        solver.parameters.max_time_in_seconds = bay_time
+
+        status = solver.solve(model)
+        if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            results[bay_id] = extract_timing(solver, entry, exit_)
+        else:
+            results[bay_id] = greedy_timing(blocks_in_bay)  <span class="cmt"># never -1</span>
+
+    return merge_results(results)</code></pre>
+
+<h3>8.3 증분 모델 재사용 (매 반복 재구축 금지)</h3>
+<pre><code><span class="cmt"># ❌ 매 반복 모델 재구축 — 큰 오버헤드</span>
+for iteration in range(max_iter):
+    model = cp_model.CpModel()       <span class="cmt"># 매번 새로 빌드</span>
+    add_all_constraints(model)
+    solver.solve(model)
+
+<span class="cmt"># ✅ 모델 재사용 + 힌트 업데이트</span>
+model = cp_model.CpModel()
+add_all_constraints(model)           <span class="cmt"># 한 번만 빌드</span>
+
+for iteration in range(max_iter):
+    model.clear_hints()              <span class="cmt"># 힌트만 갱신</span>
+    for v, val in current_solution.items():
+        model.add_hint(v, val)
+    solver.solve(model)</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — 루프 안에서 모델 재구축</div>
+  <p>
+    매 LNS 반복마다 <code>CpModel()</code>을 새로 만들고 모든 제약을 다시 추가하면
+    <strong>모델 빌드 오버헤드가 실제 해 탐색 시간과 비슷하거나 초과</strong>할 수 있다.
+    모델 구조는 고정하고 힌트·assumption만 바꿔라. 또는 <code>assumptions</code> API를 사용하라.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>9. presolve 활용</h2>
+
+<pre><code><span class="cmt"># presolve 강도 제어</span>
+solver.parameters.cp_model_presolve = True          <span class="cmt"># 기본 ON</span>
+solver.parameters.max_presolve_iterations = 3       <span class="cmt"># 기본 무제한</span>
+solver.parameters.cp_model_probing_level = 1        <span class="cmt"># 0=없음, 1=기본, 2=공격적</span>
+
+<span class="cmt"># 짧은 time limit 실험에서 presolve가 시간을 다 쓰는 경우</span>
+solver.parameters.presolve_probing_deterministic_time_limit = 5.0
+
+<span class="cmt"># 모델 축소 확인</span>
+solver.parameters.log_search_progress = True
+<span class="cmt"># 로그의 "Model before/after presolve" 비교</span>
+<span class="cmt"># variables 수가 많이 줄었다면 presolve가 효과적 → 더 공격적으로</span>
+<span class="cmt"># 거의 안 줄었다면 모델 자체를 단순화할 여지 있음</span></code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — presolve로 도메인 검증</div>
+  <p>
+    <code>fill_tightened_domains_in_response=True</code>로 feasibility 버전 먼저 풀면
+    presolve가 실현가능 도메인을 계산해준다. 이를 optimization 버전의 초기 도메인으로 재사용하면
+    재풀이 시 즉시 타이트한 상태에서 시작할 수 있다.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>10. 메모리 관리</h2>
+
+<pre><code><span class="cmt"># 메모리 제한 (MB 단위)</span>
+solver.parameters.max_memory_in_mb = 12000   <span class="cmt"># OGC 서버 16GB 중 안전 상한</span>
+
+<span class="cmt"># 변수 수 줄이기 — 집계 변수 사용</span>
+<span class="cmt"># ❌ 블록×베이×타임슬롯 3차원 배열</span>
+x = {(i, j, t): model.new_bool_var(f"x_{i}_{j}_{t}")
+     for i in blocks for j in bays for t in time_slots}
+<span class="cmt"># 규모: 100 × 5 × 1000 = 500,000 변수 → 메모리 폭발</span>
+
+<span class="cmt"># ✅ 2차원 + interval로 시간 표현</span>
+assigned = {(i, j): model.new_bool_var(f"a_{i}_{j}")
+            for i in blocks for j in bays}
+<span class="cmt"># interval이 시간을 내부적으로 처리 → 변수 수 100 × 5 = 500</span></code></pre>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 — 불필요한 중간 변수</div>
+  <p>
+    계산 결과를 모두 변수로 저장하는 습관은 메모리를 크게 낭비한다.
+    <strong>CP-SAT에서 변수 1개는 내부 Boolean 리터럴 ≈ 수십 byte를 소비한다.</strong>
+    선형 식으로 인라인 표현 가능한 것은 별도 변수로 만들지 말라.
+    특히 집계(sum)는 변수 없이 바로 목적식에 넣을 수 있다.
+  </p>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>11. CP-SAT vs. MIP (Gurobi) — 언제 무엇을?</h2>
+
+<p>
+  OGC2026 조선소 블록 배정 문제는 <strong>CP-SAT의 강점 구간</strong>에 해당한다.
+  왜 그런지, 반대로 MIP가 우세한 경우는 어떨 때인지 정리한다.
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>특성</th>
+      <th>CP-SAT 유리</th>
+      <th>MIP/Gurobi 유리</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>변수 타입</td>
+      <td>순수 정수·Boolean 위주</td>
+      <td>연속 변수 다수 (LP 비중 높음)</td>
+    </tr>
+    <tr>
+      <td>제약 구조</td>
+      <td>Disjunctive (노겹침·순서), 이진논리</td>
+      <td>연속 LP 완화가 tight한 선형 구조</td>
+    </tr>
+    <tr>
+      <td>LP 완화 품질</td>
+      <td>약해도 propagation으로 보완</td>
+      <td>강한 LP bound → 빠른 분기한정</td>
+    </tr>
+    <tr>
+      <td>초기 feasible 해</td>
+      <td>빠름 (portfolio heuristic)</td>
+      <td>MIP 경우에 따라 느릴 수 있음</td>
+    </tr>
+    <tr>
+      <td>스케줄링 (job shop 등)</td>
+      <td>강함 — No-Overlap, Interval 네이티브</td>
+      <td>disjunctive MIP formulation 필요</td>
+    </tr>
+    <tr>
+      <td>패킹·배치</td>
+      <td>Boolean 인코딩으로 처리</td>
+      <td>연속 좌표 처리 시 유리</td>
+    </tr>
+    <tr>
+      <td>모델 안정성</td>
+      <td>작은 제약 추가 시 성능 민감</td>
+      <td>변경에 더 robust</td>
+    </tr>
+    <tr>
+      <td>대회 성적</td>
+      <td>MiniZinc 2024 전 금메달</td>
+      <td>순수 LP/MILP 벤치마크 우세</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>OGC2026 적용 판단</h3>
+<pre><code><span class="cmt"># OGC 타이밍 서브문제 = CP-SAT 명확한 강점</span>
+<span class="cmt"># - 변수: entry/exit 정수 시간 (정수 도메인)</span>
+<span class="cmt"># - 제약: NoOverlap (disjunctive), crane j≥k (Boolean 논리)</span>
+<span class="cmt"># - 목적: tardiness 합 (정수 계수 선형 조합)</span>
+<span class="cmt"># → Gurobi disjunctive 논문 대비 CP-SAT이 최적해를 더 빠르게 증명</span>
+<span class="cmt"># (참고: arxiv 2512.11864 — 병렬기계 스케줄링 비교)</span>
+
+<span class="cmt"># OGC 배치 서브문제 = CP-SAT도 MIP도 어려운 영역</span>
+<span class="cmt"># - 2D 이형 폴리곤 패킹 → NFP 없는 CP-SAT이 직접 최적화 어려움</span>
+<span class="cmt"># - 실용 전략: greedy 배치(fast) → CP-SAT 타이밍 오라클(최적화)</span>
+<span class="cmt"># = 본 프로젝트의 핵심 decoupling 기법</span></code></pre>
+
+<div class="callout ogc">
+  <div class="ttl">⬡ 결정 근거 — "왜 Gurobi 아닌 CP-SAT?"</div>
+  <p>
+    평가 서버에 Gurobi 13.0.2 풀 라이선스가 설치되어 있음에도 CP-SAT가 유효한 이유:
+  </p>
+  <ul>
+    <li>타이밍 제약(crane j≥k, NoOverlap)이 <strong>disjunctive 구조</strong> — CP-SAT의 절대 강점</li>
+    <li>Gurobi disjunctive formulation 실험 결과: <strong>prob_14에서 CP-SAT 161s vs Gurobi 267s</strong> (기각)</li>
+    <li>연속 변수 비중 낮음 — Gurobi LP bound 이점이 희석됨</li>
+    <li>CP-SAT는 OR-Tools 임포트만으로 의존성 없이 작동 — firejail 인터넷 차단 환경에서 안전</li>
+  </ul>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>12. 베스트프랙티스 체크리스트</h2>
+
+<table>
+  <thead>
+    <tr><th>범주</th><th>항목</th><th>중요도</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>도메인</td><td>모든 변수에 tight upper/lower bound 수식 증명</td><td>⭐⭐⭐ 최고</td></tr>
+    <tr><td>도메인</td><td>horizon = 실증된 최대 makespan (단순 큰 수 X)</td><td>⭐⭐⭐</td></tr>
+    <tr><td>모델링</td><td>big-M 대신 <code>only_enforce_if()</code></td><td>⭐⭐⭐</td></tr>
+    <tr><td>모델링</td><td><code>add_exactly_one</code> / <code>add_at_most_one</code> 사용</td><td>⭐⭐⭐</td></tr>
+    <tr><td>모델링</td><td>Interval 변수로 스케줄링 표현 (별도 binary 타임슬롯 X)</td><td>⭐⭐⭐</td></tr>
+    <tr><td>스케일링</td><td>정수 스케일 팩터 × 도메인 크기 × 변수 수 &lt; int64</td><td>⭐⭐⭐</td></tr>
+    <tr><td>스케일링</td><td>스케일 팩터는 필요 정밀도만큼만 (최소화)</td><td>⭐⭐</td></tr>
+    <tr><td>병렬</td><td>num_workers = 물리 코어 수 (HT 제외)</td><td>⭐⭐</td></tr>
+    <tr><td>병렬</td><td>문제별 최적 워커 수 실측 — "많을수록 빠름" 아님</td><td>⭐⭐⭐</td></tr>
+    <tr><td>힌트</td><td>greedy 해를 add_hint로 이월</td><td>⭐⭐⭐</td></tr>
+    <tr><td>힌트</td><td>힌트 완전성 확인 — 모든 의사결정 변수 커버</td><td>⭐⭐</td></tr>
+    <tr><td>로그</td><td><code>log_search_progress=True</code>로 gap 추이 확인</td><td>⭐⭐</td></tr>
+    <tr><td>분해</td><td>큰 인스턴스는 독립 서브로 분해 후 각각 CP-SAT</td><td>⭐⭐⭐</td></tr>
+    <tr><td>안정성</td><td>항상 feasible fallback 준비 (never −1)</td><td>⭐⭐⭐ 최고</td></tr>
+    <tr><td>모델링</td><td>루프 안에서 CpModel 재구축 금지</td><td>⭐⭐</td></tr>
+    <tr><td>모델링</td><td><code>add_multiplication_equality</code> 최소화</td><td>⭐⭐</td></tr>
+    <tr><td>모델링</td><td>불필요 중간 변수 제거, sum 인라인</td><td>⭐⭐</td></tr>
+    <tr><td>메모리</td><td><code>max_memory_in_mb</code>로 서버 메모리 상한 설정</td><td>⭐</td></tr>
+  </tbody>
+</table>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>핵심 논문·문서</h2>
+
+<ul class="refs">
+  <li>
+    <strong>CP-SAT Primer (d-krupke, 2024~2025)</strong>
+    <span class="desc">CP-SAT 가장 포괄적인 비공식 가이드. 파라미터·모델링·로그·내부구조 챕터 포함. 본 문서 내용의 주요 출처.</span>
+    <span class="meta">https://d-krupke.github.io/cpsat-primer/</span>
+  </li>
+  <li>
+    <strong>Laurent Perron — CP-SAT and OR-Tools (EWO presentation)</strong>
+    <span class="desc">Google CP-SAT 개발자 Laurent Perron의 아키텍처 및 실용 가이드. 포트폴리오 솔버 설계·Boolean 인코딩 근거.</span>
+    <span class="meta">https://egon.cheme.cmu.edu/ewo/docs/CP-SAT%20and%20OR-Tools.pdf</span>
+  </li>
+  <li>
+    <strong>Solving Parallel Machine Scheduling with Cumulative Resource Constraints (arXiv 2512.11864, 2024)</strong>
+    <span class="desc">CP-SAT vs Gurobi 직접 비교 — disjunctive 스케줄링에서 CP-SAT가 더 많은 인스턴스를 최적 증명. OGC 타이밍 서브 적용 근거.</span>
+    <span class="meta">https://arxiv.org/pdf/2512.11864</span>
+  </li>
+  <li>
+    <strong>What are the differences between CP and MIP? — Gurobi Help Center</strong>
+    <span class="desc">Gurobi 공식 비교: CP의 disjunctive 강점 vs MIP의 LP bound 강점. 중립적 관점.</span>
+    <span class="meta">https://support.gurobi.com/hc/en-us/articles/360048197891</span>
+  </li>
+  <li>
+    <strong>Optimizing with Google OR-Tools: 3 years of real-world experience (feasible.club #76)</strong>
+    <span class="desc">IntervalVar 활용, OnlyEnforceIf vs big-M, 힌트 오해 등 실전 안티패턴 정리.</span>
+    <span class="meta">https://www.feasible.club/p/76-optimizing-with-google-or-tools</span>
+  </li>
+  <li>
+    <strong>Logic-Based Benders Decomposition for Large-Scale Optimization — J.N. Hooker</strong>
+    <span class="desc">LBBD 이론적 근거. 마스터(MIP/CP) + 서브(CP/MIP/시뮬레이션) 분해로 대형 문제 처리. OGC 배정↔타이밍 분해의 이론 배경.</span>
+    <span class="meta">https://johnhooker.tepper.cmu.edu/LBBDbookChapter.pdf</span>
+  </li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>GitHub · 자료</h2>
+
+<ul class="refs">
+  <li class="repo">
+    <strong>d-krupke/cpsat-primer</strong>
+    <span class="desc">CP-SAT Primer 전체 소스. parameters.html / modelling.html / understanding_the_log.html 필독.</span>
+    <span class="meta">https://github.com/d-krupke/cpsat-primer</span>
+  </li>
+  <li class="repo">
+    <strong>d-krupke/cpsat-autotune</strong>
+    <span class="desc">CP-SAT 하이퍼파라미터 자동 튜닝 도구 (WIP). num_workers·presolve 파라미터 탐색.</span>
+    <span class="meta">https://github.com/d-krupke/cpsat-autotune</span>
+  </li>
+  <li class="repo">
+    <strong>google/or-tools Issue #1921 — num_workers 역효과 실측</strong>
+    <span class="desc">32코어에서 1스레드가 최속인 실측 데이터. 1→32 워커 타임 테이블 포함.</span>
+    <span class="meta">https://github.com/google/or-tools/issues/1921</span>
+  </li>
+  <li class="repo">
+    <strong>OR-Tools Python API 문서</strong>
+    <span class="desc">CpModel·CpSolver 전체 파라미터 레퍼런스. parameters proto 직접 접근 방법.</span>
+    <span class="meta">https://or-tools.github.io/docs/pdoc/ortools/sat/python/cp_model.html</span>
+  </li>
+  <li class="repo">
+    <strong>OR-Tools Discuss Group — "trying to solve huge model on CP-SAT"</strong>
+    <span class="desc">대형 모델에서의 메모리·변수 수 한계 토론. Google 엔지니어 권고 포함.</span>
+    <span class="meta">https://groups.google.com/g/or-tools-discuss/c/VjiSYjFFB_4</span>
+  </li>
+</ul>
+
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<h2>안티패턴 모음</h2>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 1 — 부동소수 목적값, 정수 스케일링 없음</div>
+  <pre><code><span class="cmt"># ❌ float 목적값 (제약 안에서 불가능, 목적만 허용되나 비권장)</span>
+w1 = 667.5
+model.minimize(w1 * tardiness)   <span class="cmt"># 정밀도 손실, 내부 스케일링 불명확</span>
+
+<span class="cmt"># ✅ 명시적 정수 스케일링</span>
+SCALE = 10
+w1_int = round(667.5 * SCALE)   <span class="cmt"># 6675</span>
+model.minimize(w1_int * tardiness)</code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 2 — 거대 도메인 정수 변수 (unbounded int)</div>
+  <pre><code><span class="cmt"># ❌ 이론상 최대값으로 크게 잡음</span>
+x = model.new_int_var(cp_model.INT_MIN, cp_model.INT_MAX, "x")
+
+<span class="cmt"># ✅ 실제 필요 범위만</span>
+x = model.new_int_var(0, bay_width - block_width, "x")</code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 3 — AddMultiplicationEquality 남용</div>
+  <pre><code><span class="cmt"># ❌ 3개 이상 곱 — CP-SAT 내부 exponential explosion 가능</span>
+abc = model.new_int_var(0, 10**9, "abc")
+model.add_multiplication_equality(abc, [a, b, c, d])  <span class="cmt"># 4-way product</span>
+
+<span class="cmt"># ✅ 2개씩 분해</span>
+ab = model.new_int_var(0, 10**6, "ab")
+model.add_multiplication_equality(ab, [a, b])
+abcd = model.new_int_var(0, 10**9, "abcd")
+model.add_multiplication_equality(abcd, [ab, c])      <span class="cmt"># 순차 2-way</span></code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 4 — 매 반복 모델 재구축</div>
+  <pre><code><span class="cmt"># ❌ LNS 루프 안에서 CpModel 재구축 — 오버헤드 누적</span>
+for it in range(100):
+    m = cp_model.CpModel()
+    add_all_constraints(m, current_fix)    <span class="cmt"># 수천 개 제약 재등록</span>
+    solver.solve(m)
+
+<span class="cmt"># ✅ 모델 재사용 + assumption/hint 업데이트</span>
+m = cp_model.CpModel()
+add_all_constraints(m)
+for it in range(100):
+    m.clear_hints()
+    for v, val in get_hints(current_solution).items():
+        m.add_hint(v, val)
+    solver.solve(m)</code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 5 — pairwise != 와 add_all_different 혼용</div>
+  <pre><code><span class="cmt"># ❌ 두 방식 섞으면 propagation이 양쪽 다 약해짐</span>
+model.add_all_different(slots)
+for i in range(len(slots)):
+    for j in range(i+1, len(slots)):
+        model.add(slots[i] != slots[j])   <span class="cmt"># 중복 — 오히려 느려짐</span>
+
+<span class="cmt"># ✅ 하나만 선택</span>
+model.add_all_different(slots)            <span class="cmt"># 이것만</span></code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 6 — 잘못된 num_workers (무조건 최대)</div>
+  <pre><code><span class="cmt"># ❌ 코어 수 = 성능이라는 오해</span>
+solver.parameters.num_workers = os.cpu_count()   <span class="cmt"># HT 포함 32 → 실제로 느려질 수 있음</span>
+
+<span class="cmt"># ✅ 물리 코어 기준 + 실측 후 결정</span>
+solver.parameters.num_workers = 4                <span class="cmt"># OGC 서버 4코어 기준 안전값</span>
+<span class="cmt"># 더 확실히: 1, 2, 4 각각 실측 후 최속 채택</span></code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 7 — 힌트 누락 변수</div>
+  <pre><code><span class="cmt"># ❌ 일부 변수만 힌트 → CP-SAT가 힌트 전체를 무시할 수 있음</span>
+model.add_hint(entry_time[0], 100)
+model.add_hint(exit_time[0], 200)
+<span class="cmt"># x_pos, y_pos, assigned 힌트 없음 → hint 효과 불확실</span>
+
+<span class="cmt"># ✅ 모든 의사결정 변수 힌트</span>
+for i in blocks:
+    model.add_hint(assigned[i][bay[i]], 1)
+    model.add_hint(entry_time[i], greedy_entry[i])
+    model.add_hint(exit_time[i],  greedy_exit[i])
+    model.add_hint(x_pos[i],      greedy_x[i])
+    model.add_hint(y_pos[i],      greedy_y[i])</code></pre>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">안티패턴 8 — CP-SAT UNKNOWN 반환 무시</div>
+  <pre><code><span class="cmt"># ❌ 상태 확인 없이 solver.value() 호출 → 예외 또는 쓰레기값</span>
+solver.solve(model)
+return {"entry": solver.value(entry), "exit": solver.value(exit_)}
+
+<span class="cmt"># ✅ 상태 확인 + fallback</span>
+status = solver.solve(model)
+if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+    return extract_from_solver(solver)
+else:
+    <span class="cmt"># never -1: 반드시 기존 greedy 해 반환</span>
+    return greedy_fallback_solution</code></pre>
+</div>
+
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+<div class="footer" style="margin-top:60px;padding-top:20px;border-top:1px solid var(--border);color:var(--dim);font-size:.85rem;text-align:center">
+  <a href="index.html" style="color:var(--accent)">← 개요로</a>
+  &nbsp;·&nbsp;
+  <a href="10-lbbd.html" style="color:var(--muted)">← 10 LBBD</a>
+  &nbsp;·&nbsp;
+  <a href="12-resources.html" style="color:var(--muted)">12 리포지토리·사례 →</a>
+  <p style="margin-top:10px">CP-SAT Methodology Research · OGC2026 · Generated 2026-06-17</p>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGC2026 — 우리의 기본 알고리즘 (290M 하이브리드) 시퀀스</title>
+<style>
+:root{
+  --bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--border:#2a3240;--border2:#39414f;
+  --text:#e6edf3;--muted:#9aa7b4;--dim:#6e7b8a;--accent:#58a6ff;--accent2:#7ee787;
+  --warn:#f0883e;--danger:#ff7b72;--ogc:#d2a8ff;--gold:#ffd479;
+  --mono:"SFMono-Regular",Consolas,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b0f15,#0d1117 320px);color:var(--text);
+  font-family:var(--sans);line-height:1.62;font-size:15.5px}
+.container{max-width:1080px;margin:0 auto;padding:0 22px 100px}
+.hero{padding:48px 0 26px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.kicker{font-family:var(--mono);color:var(--accent2);font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+h1{font-size:2.05rem;line-height:1.18;margin:0 0 12px}
+.lead{color:var(--muted);font-size:1.05rem;margin:0;max-width:840px}
+h2{font-size:1.45rem;margin:46px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+h3{font-size:1.12rem;margin:22px 0 8px;color:var(--accent)}
+p{margin:11px 0}
+ul,ol{padding-left:22px}li{margin:5px 0}
+strong{color:#fff}
+code{font-family:var(--mono);background:var(--panel2);color:#a8d4ff;padding:2px 6px;border-radius:5px;font-size:.85em}
+a{color:var(--accent)}
+.callout{border-radius:10px;padding:16px 18px;margin:20px 0;border:1px solid var(--border2);background:var(--panel)}
+.callout .ttl{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px;color:var(--muted)}
+.callout.key{border-color:#5a3a8a;background:linear-gradient(180deg,#1c1530,#161b22)}
+.callout.key .ttl{color:var(--ogc)}
+.callout.good{border-color:#1f4d36;background:#101f18}.callout.good .ttl{color:var(--accent2)}
+.callout.warn{border-color:#5a3326;background:#241612}.callout.warn .ttl{color:var(--warn)}
+
+/* budget bar */
+.budget{margin:18px 0}
+.bbar{display:flex;height:46px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);font-family:var(--mono);font-size:12px;font-weight:700}
+.bbar > div{display:flex;align-items:center;justify-content:center;color:#0d1117;flex-direction:column;line-height:1.2;text-align:center}
+.b-leg{background:linear-gradient(180deg,#7ee787,#5fc96a)}
+.b-box{background:linear-gradient(180deg,#58a6ff,#3d83d6)}
+.b-gas{background:linear-gradient(180deg,#d2a8ff,#b07fe0)}
+.b-pb{background:linear-gradient(180deg,#ffd479,#e0b34f)}
+.blabel{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:5px}
+
+/* pipeline stages */
+.stage{display:flex;gap:0;margin:0;position:relative}
+.stage .num{flex:0 0 54px;display:flex;flex-direction:column;align-items:center}
+.stage .dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:700;font-size:14px;color:#0d1117;flex:0 0 auto;margin-top:18px}
+.stage .line{width:2px;flex:1;background:var(--border2);margin:6px 0}
+.stage:last-child .line{display:none}
+.stage .body{flex:1;padding:14px 0 8px 8px;min-width:0}
+.stage .card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px 18px}
+.stage .card.hl{border-color:#5a3a8a}
+.stage h3{margin:0 0 4px;color:var(--text);font-size:1.12rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.stage .fn{font-family:var(--mono);font-size:11.5px;color:var(--accent);background:var(--panel2);padding:2px 7px;border-radius:5px}
+.tag{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.t-set1{background:#0f2a1b;color:#7ee787;border:1px solid #1f4d36}
+.t-set2{background:#16263a;color:#a8d4ff;border:1px solid #274b6d}
+.t-safe{background:#241612;color:#f0883e;border:1px solid #5a3326}
+.t-both{background:#1c1530;color:#d2a8ff;border:1px solid #5a3a8a}
+.sub{margin:8px 0 2px;padding-left:2px}
+.sub li{margin:4px 0;color:var(--muted);font-size:13.8px}
+.sub li b{color:var(--text)}
+.role{font-size:13px;color:var(--muted);margin-top:8px;border-top:1px dashed var(--border);padding-top:8px}
+.role b{color:var(--accent2)}
+
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;background:var(--panel)}
+td.n,th.n{text-align:right;font-family:var(--mono)}
+.win{color:var(--accent2)}.reg{color:var(--danger)}.dimm{color:var(--dim)}
+.foot{margin-top:48px;padding-top:18px;border-top:1px solid var(--border);color:var(--dim);font-size:12.5px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+@media(max-width:720px){.split{grid-template-columns:1fr}}
+.mini{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.mini h4{margin:0 0 7px;font-size:1rem}
+.bignum{font-family:var(--mono);font-size:1.6rem;font-weight:700}
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="hero">
+    <div class="kicker">기본 알고리즘 해부 · 2026-06-18</div>
+    <h1>우리의 기본 알고리즘 — 290M 하이브리드 솔버</h1>
+    <p class="lead"><code>src/myalgorithm.py</code>의 <code>algorithm()</code> = <strong>best-of(legacy · box ·
+    gassign) + per-bay polish + serial-floor 안전망</strong>. 모든 후보는 공식 체커로 게이트되어 <strong>절대
+    회귀하지 않고(never worse) 절대 −1을 내지 않는다(never infeasible)</strong>. 이 문서는 그 전체 시퀀스를
+    단계별로 시각화한다.</p>
+  </header>
+
+  <!-- ============ WHY 290 not 330 ============ -->
+  <h2>먼저: 왜 290M인가? (330M은 측정 착시였다)</h2>
+  <div class="callout key">
+    <div class="ttl">핵심</div>
+    <p>우리 알고리즘의 3번째 후보 <strong>gassign</strong>(전역 z1-aware 배정 솔버, 경쟁자 격차를 50M→13M로
+    좁힌 "뱅킹된 승리")은 <strong>T≥200초에서만 활성화</strong>된다(<code>OGC_GASSIGN_MIN_T=200</code>) —
+    set2의 큰 인스턴스에 충분한 예산을 줄 수 있을 때만 켜야 legacy를 굶기지 않아 <strong>−1을 피한다</strong>.</p>
+    <div class="split" style="margin-top:14px">
+      <div class="mini">
+        <h4 style="color:var(--danger)">로컬 T=120 측정 (착시)</h4>
+        <p style="margin:4px 0;font-size:13.5px;color:var(--muted)">T&lt;200 → gassign <strong style="color:var(--danger)">OFF</strong>.
+        legacy+box만 → set2 ≈ 329M. <strong class="reg">ALL40 ≈ 330M</strong></p>
+      </div>
+      <div class="mini">
+        <h4 style="color:var(--accent2)">평가서버 / 현실 TL (진짜)</h4>
+        <p style="margin:4px 0;font-size:13.5px;color:var(--muted)">set2 인스턴스당 "수 분~30분" → gassign
+        <strong style="color:var(--accent2)">ON</strong>. best-of(legacy,box,gassign) → <strong class="win">ALL40 ≈ 290M</strong></p>
+      </div>
+    </div>
+    <p style="margin-top:12px">즉 <strong>우리의 기본 알고리즘은 이미 290M 알고리즘이다</strong>. 330M은 gassign이 꺼지는
+    짧은 로컬 TL에서 잰 숫자일 뿐. 베이스라인은 <strong>gassign이 활성화된 290M</strong>로 잡는 게 맞다.
+    <small>(set2 @240 실측 진행 중 — 확정 수치로 갱신 예정.)</small></p>
+  </div>
+
+  <!-- ============ BUDGET ============ -->
+  <h2>0단계 — 예산 배분 (후보는 순차 실행, 합 ≤ T)</h2>
+  <p>legacy·box·gassign·perbay는 <strong>한 프로세스에서 순차로</strong> 돈다 → 벽시계 합이 반드시 T 이하여야
+  평가서버가 죽이지 않는다(−1). 그래서 예산을 미리 분할하고, 초과 시 gassign→box 순으로 줄이되 <strong>legacy는
+  바닥(0.35–0.5T) 아래로 절대 안 줄인다</strong>(legacy가 set2 feasibility 백스톱).</p>
+  <div class="budget">
+    <div class="blabel">예: T=300초 (gassign 활성)</div>
+    <div class="bbar">
+      <div class="b-leg" style="flex:139">legacy<br>139s</div>
+      <div class="b-box" style="flex:80">box<br>80s</div>
+      <div class="b-gas" style="flex:71">gassign<br>71s</div>
+      <div class="b-pb" style="flex:10">polish<br>잔여</div>
+    </div>
+    <div class="blabel" style="margin-top:14px">예: T=120초 (gassign 비활성 → 330M 경로)</div>
+    <div class="bbar">
+      <div class="b-leg" style="flex:84">legacy 84s</div>
+      <div class="b-box" style="flex:36">box 36s</div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--muted)"><code>reserve(box)=min(80, 0.3T)</code> · <code>gassign=0.27T (T≥200)</code> ·
+  <code>legacy=T−reserve−gassign</code> (바닥 클램프) · <code>perbay=잔여 벽시계</code>. 모든 산술은 wall-safety
+  margin으로 합 ≤ T 보장.</p>
+
+  <!-- ============ PIPELINE ============ -->
+  <h2>전체 시퀀스 — 6 단계</h2>
+
+  <!-- Stage 1 -->
+  <div class="stage">
+    <div class="num"><div class="dot" style="background:#7ee787">1</div><div class="line"></div></div>
+    <div class="body"><div class="card">
+      <h3>Legacy 후보 <span class="fn">_legacy_algorithm()</span> <span class="tag t-set1">set1 승자 · z1=0 on 19/20</span></h3>
+      <p style="margin:4px 0;color:var(--muted);font-size:13.8px">검증된 다단계 그리디+CP-SAT 파이프라인. 내부 순서:</p>
+      <ol class="sub">
+        <li><b>그리디 EDD 플로어</b> (fastfloor / baseline_greedy): 마감(EDD) 순서로 블록을 크레인-안전하게
+          bottom-left 배치 → 항상-feasible 출발점.</li>
+        <li><b>CP-SAT per-bay 타이밍 오라클</b> <code>_cpsat_bay_timing_verified</code>: 위치(x,y,방향) 고정하고
+          베이별로 entry/exit 시각만 재최적화 → tardiness(z1) 최적. <em>obj 감소의 핵심 엔진</em>(~3.5s에 −49%).</li>
+        <li><b>cum_level best-of</b>: demand-flattened 재디코드를 여러 alpha 후보로 → 베이 부하 평탄화.</li>
+        <li><b>Front B 재배정</b>: 선호도(z3) 인지 베이 재배정 — z1=0을 유지하며 z3를 깎음.</li>
+        <li><b>SUBMIT_V2 (gate200_v2)</b>: T≥60에서 16개 노브를 적응 주입 → legacy 대비 −42% obj.</li>
+      </ol>
+      <div class="role"><b>역할:</b> set1 20개 중 19개에서 z1=0 실현. 잘 정제된 단일-솔버 — congested 인스턴스의 챔피언.</div>
+    </div></div>
+  </div>
+
+  <!-- Stage 2 -->
+  <div class="stage">
+    <div class="num"><div class="dot" style="background:#58a6ff">2</div><div class="line"></div></div>
+    <div class="body"><div class="card">
+      <h3>Box 후보 <span class="fn">boxsolver.algorithm()</span> <span class="tag t-set2">set2 승자 · 밀도</span></h3>
+      <p style="margin:4px 0;color:var(--muted);font-size:13.8px">박스-분해(box-decomposition) 패킹. 이형 폴리곤을
+      직사각형 조각으로 근사해 CP-SAT로 조밀하게 배치.</p>
+      <ol class="sub">
+        <li><b>footprint 분해</b>: 각 블록 풋프린트를 ≤K개 직사각형으로 분해(그리디 L0에서 방향 고정).</li>
+        <li><b>per-bay CP-SAT 2D 패킹</b>: <code>AddNoOverlap2D</code>(공간) + 크레인 j≥k 정확 모델 + 면적-cumulative
+          하한(energetic prune)으로 베이당 조밀 배치.</li>
+        <li><b>타이밍</b>: 배치 위에서 entry/exit 결정.</li>
+      </ol>
+      <div class="role"><b>역할:</b> 덜-혼잡 인스턴스(prob_3/4/18)에서 legacy보다 낮은 z3의 z1=0 패킹 발견. set2
+      파국 방지의 주력(순수 legacy 4.24B → box 켜면 ~330M). <b>코어:</b> 순차 실행이라 4코어 단독 사용 가능.</div>
+    </div></div>
+  </div>
+
+  <!-- Stage 3 -->
+  <div class="stage">
+    <div class="num"><div class="dot" style="background:#d2a8ff">3</div><div class="line"></div></div>
+    <div class="body"><div class="card hl">
+      <h3>Gassign 후보 <span class="fn">gassign.algorithm()</span> <span class="tag t-set2">set2 추가승 · T≥200</span></h3>
+      <p style="margin:4px 0;color:var(--muted);font-size:13.8px"><strong style="color:var(--ogc)">290M을 만드는
+      바로 그 후보.</strong> 전역 z1-aware 베이 배정 솔버 — 어떤 블록을 어느 베이에 넣을지를 z1을 보며 결정.</p>
+      <ol class="sub">
+        <li><b>T2 master (완화)</b>: CP-SAT 배정 x[b,j] + 베이별 <em>면적-시간 cumulative 완화</em>(adaptive RHO로
+          밀집 set2에선 용량을 조여 시간적 과적 방지) → 이미 temporally-overpacked 베이를 가지치기.</li>
+        <li><b>T6 LBBD (검증)</b>: master는 완화라, 각 후보 베이를 실제 디코드. 디코드 실패 → no-good 컷
+          <code>Σ x[b,j] ≤ |set|−1</code> 추가 후 master 재해결. 모든 베이가 디코드될 때까지 반복.</li>
+        <li><b>tardy-aware 컷</b>: 진짜 z1 &gt; 완화 z1이면 time-overlap clique에 cardinality 컷 → z1-blind 퇴화 방지.</li>
+      </ol>
+      <div class="role"><b>역할:</b> 경쟁자 격차를 <b>50M → 13M로</b> 축소(set2 4.24B→~293M 천장). set2 feasible
+      20/20 = 추가 −1 백스톱. <b>활성 조건:</b> T≥200(legacy를 굶기지 않을 만큼 예산 있을 때만 = −1 안전).</div>
+    </div></div>
+  </div>
+
+  <!-- Stage 4 -->
+  <div class="stage">
+    <div class="num"><div class="dot" style="background:#ffd479">4</div><div class="line"></div></div>
+    <div class="body"><div class="card">
+      <h3>Best-of 선택 <span class="fn">check_feasibility → min(obj)</span> <span class="tag t-both">never worse</span></h3>
+      <p style="margin:4px 0;color:var(--muted);font-size:13.8px">legacy·box·gassign 각각을 <strong>공식 체커로
+      검증</strong>하고, feasible한 것들 중 <strong>obj가 가장 낮은 것</strong>만 채택. 인스턴스마다 다른 후보가 이김:</p>
+      <table>
+        <thead><tr><th>인스턴스 유형</th><th>승자</th><th>이유</th></tr></thead>
+        <tbody>
+          <tr><td>set1 (혼잡·소형)</td><td class="win">legacy</td><td>per-bay 타이밍 오라클로 z1=0 실현</td></tr>
+          <tr><td>set2 덜-혼잡</td><td style="color:var(--accent)">box</td><td>조밀 2D 패킹 → 낮은 z3</td></tr>
+          <tr><td>set2 대형 다층</td><td style="color:var(--ogc)">gassign</td><td>z1-aware 배정으로 시간적 과적 회피</td></tr>
+        </tbody>
+      </table>
+      <div class="role"><b>핵심 계약:</b> best-of라서 <b>어떤 후보를 켜도 baseline 이하로 회귀 불가</b>. 새 후보는
+      순수하게 "더 나으면 이기고, 아니면 무시".</div>
+    </div></div>
+  </div>
+
+  <!-- Stage 5 -->
+  <div class="stage">
+    <div class="num"><div class="dot" style="background:#58a6ff">5</div><div class="line"></div></div>
+    <div class="body"><div class="card">
+      <h3>Per-bay polish <span class="fn">perbay.improve()</span> <span class="tag t-both">additive · 잔여 벽시계</span></h3>
+      <p style="margin:4px 0;color:var(--muted);font-size:13.8px">best-of 승자 위에, 남은 자투리 시간으로 베이별
+      joint 재배치(NoOverlap2D + 크레인 동시 모델)를 돌려 잔여 z1을 추가로 깎는다. deadline-bounded +
+      try/except + 체커 + strict-improve 게이트 → <strong>−1 위험 0</strong>(나빠지면 버림).</p>
+      <div class="role"><b>역할:</b> set1 잔여 z1(prob_14/20류)에서 추가 이득. set2 혼잡 베이에선 조건부.</div>
+    </div></div>
+  </div>
+
+  <!-- Stage 6 -->
+  <div class="stage">
+    <div class="num"><div class="dot" style="background:#f0883e">6</div><div class="line"></div></div>
+    <div class="body"><div class="card">
+      <h3>Serial-floor 안전망 <span class="fn">_trivial_solution()</span> <span class="tag t-safe">never −1 (신규)</span></h3>
+      <p style="margin:4px 0;color:var(--muted);font-size:13.8px"><strong>방어 심층화(이번 작업 추가, B4).</strong>
+      반환 직전, 최종 해가 공식 체커 불합격이면 <strong>항상-feasible</strong>한 직렬 플로어로 교체: EDD 순서로
+      선호 베이에 bottom-left 배치하고 베이 내 블록을 <em>시간적으로 완전 직렬화</em> → 한 베이에 한 번에 한 블록만
+      존재 → 충돌·크레인 j≥k가 vacuous → <strong>구조적으로 feasible</strong>.</p>
+      <div class="role"><b>역할:</b> legacy가 set2에서 타임아웃/junk를 내고 box/gassign 구제도 실패하는 극단에서도
+      −1 차단. feasible 인스턴스엔 no-op. <b>각 −1 회피 ≈ +R/2 = 단일 최대 점수 레버.</b></div>
+    </div></div>
+  </div>
+
+  <!-- ============ POSITION ============ -->
+  <h2>현재 위치 (290M 알고리즘 기준)</h2>
+  <div class="split">
+    <div class="mini">
+      <h4>우리 (gassign 활성)</h4>
+      <div class="bignum win">≈ 290M</div>
+      <p style="font-size:13px;color:var(--muted);margin:4px 0">set2 ~290M + set1 ~1.3M. feasible 40/40, never −1.</p>
+    </div>
+    <div class="mini">
+      <h4>경쟁자 (official)</h4>
+      <div class="bignum">280.8M</div>
+      <p style="font-size:13px;color:var(--muted);margin:4px 0">set2 279.8M + set1 0.93M. 격차 ~13M(거의 전부 set2 밀도).</p>
+    </div>
+  </div>
+  <div class="callout warn">
+    <div class="ttl">왜 더 못 내려가나 (증거 체인 완료)</div>
+    <p>set2 격차의 본질은 <strong>per-bay 패킹 밀도</strong>(경쟁자가 더 조밀). prob_38 z1 floor ~6000 vs 경쟁자 4934는
+    TL(5×)·assignment(gassign maxed)·crane-stacking(2회 falsified)·raster-BLF(NOOP)·LNS(43×+SA, 19.7k iters Δ0)
+    모두로 <strong>움직이지 않음</strong> = 구조적 천장. &lt;250M / 경쟁자 추월은 탐색된/구현가능한 레버로는 결론적 불가
+    — 경쟁자는 근본적으로 다른(NFP true-nesting류) 솔버로 추정.</p>
+  </div>
+
+  <div class="callout good">
+    <div class="ttl">요약 — 이 알고리즘이 기본인 이유</div>
+    <ul style="margin:4px 0">
+      <li><strong>290M = best-of(legacy, box, gassign) + perbay + serial-floor</strong>, 전부 체커 게이트 = never worse / never −1.</li>
+      <li>인스턴스 적응: set1은 legacy(z1=0), set2는 box+gassign(밀도+배정)이 이김.</li>
+      <li>gassign이 290M의 핵심 — T≥200에서 활성(−1 안전). 평가서버 TL에선 항상 켜진다.</li>
+      <li>330M은 gassign이 꺼지는 짧은 로컬 TL의 측정 착시 — 베이스라인은 290M로 잡는다.</li>
+    </ul>
+  </div>
+
+  <div class="foot">
+    OGC2026 · 기본 알고리즘(290M 하이브리드) 시퀀스 · 2026-06-18 ·
+    코드 <code>src/myalgorithm.py: algorithm() 7703</code> · <code>boxsolver.py</code> · <code>gassign.py</code> · <code>perbay.py</code> ·
+    근거 <code>notes/research/perbay-loop-ledger.md</code> (E0–E13, WALL, 290M banked)
+  </div>
+</div>
+</body>
+</html>

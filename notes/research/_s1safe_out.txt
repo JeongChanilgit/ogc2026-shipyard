@@ -1,0 +1,2 @@
+prob_13: blocks=250 bays=4 | obj=113500 z1=0 feas=True | wall=189.7s TL=200 OVER=-10.3s ok
+prob_14: blocks=250 bays=4 | obj=111991 z1=2 feas=True | wall=189.9s TL=200 OVER=-10.1s ok

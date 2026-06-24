@@ -1,0 +1,8 @@
+[Greedy] Phase 1 done  |  placed=100  bay0=6064  bay1=2932  elapsed=56.71s
+[Greedy] Repair done  |  feasible  obj=7101942  elapsed=56.8s
+[Greedy] Done  |  assigned=100/100  elapsed=56.79s
+prob_25: blocks=100 bays=2 | obj=7101942 z1=10616 feas=True | wall=113.5s TL=120 OVER=-6.5s ok
+[Greedy] Phase 1 done  |  placed=150  bay0=3900  bay1=11830  bay2=2905  elapsed=56.27s
+[Greedy] Repair done  |  feasible  obj=414531204  elapsed=56.4s
+[Greedy] Done  |  assigned=150/150  elapsed=56.45s
+prob_26: blocks=150 bays=3 | obj=414531204 z1=31068 feas=True | wall=109.4s TL=120 OVER=-10.6s ok

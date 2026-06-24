@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12 리포지토리·사례 — CP-SAT Methodology</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* page-local tweaks */
+    .star-badge{display:inline-block;font-family:var(--mono);font-size:11px;
+      padding:2px 7px;border-radius:12px;background:#211c2a;border:1px solid #6a4c9c;
+      color:#d2a8ff;margin-left:6px;vertical-align:middle}
+    .level{display:inline-block;font-family:var(--mono);font-size:10.5px;
+      padding:2px 7px;border-radius:12px;border:1px solid var(--border2);
+      color:var(--muted);margin:2px 3px 2px 0}
+    .level.beginner{color:#7ee787;border-color:#1f4d36}
+    .level.intermediate{color:#f0883e;border-color:#5a3a1a}
+    .level.advanced{color:#ff7b72;border-color:#5a1f1f}
+    .step-path{display:flex;flex-wrap:wrap;gap:0;margin:16px 0}
+    .step-path .step{display:flex;align-items:center;gap:6px;font-size:.88rem;
+      background:var(--panel2);border:1px solid var(--border);padding:8px 14px;
+      border-right:none}
+    .step-path .step:first-child{border-radius:8px 0 0 8px}
+    .step-path .step:last-child{border-right:1px solid var(--border);border-radius:0 8px 8px 0}
+    .step-path .step .num{font-family:var(--mono);font-size:11px;color:var(--accent);
+      background:#0c1c32;border-radius:50%;width:20px;height:20px;display:flex;
+      align-items:center;justify-content:center;flex-shrink:0}
+    .bench-good{color:#7ee787;font-weight:600}
+    .bench-mid{color:#f0883e;font-weight:600}
+    .bench-bad{color:#ff7b72;font-weight:600}
+    .refs li.repo .tagline{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+    .gold{color:#ffd700;font-weight:700}
+    .silver{color:#c0c0c0;font-weight:700}
+    .divider{border:0;border-top:1px solid var(--border);margin:30px 0}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html" class="active">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="kicker">CP-SAT Methodology · 12</div>
+    <h1>리포지토리 · 학습자료 · 사례연구<br>
+      <span style="color:var(--muted);font-size:1.15rem;font-weight:400">자료 허브 — 검증된 링크 큐레이션</span>
+    </h1>
+    <p class="lead">
+      CP-SAT를 배우고, 예제를 참고하고, 커뮤니티에서 도움받는 데 필요한 모든 레포·문서·강연·논문을 한 곳에 모았다.
+      각 링크는 WebFetch로 존재를 직접 확인했다. 난이도 태그와 OGC2026 관련성 마킹을 통해
+      지금 당장 필요한 자료를 빠르게 찾을 수 있다.
+    </p>
+  </div>
+
+  <!-- OGC CALLOUT -->
+  <div class="callout ogc">
+    <div class="ttl">★ OGC 2026 직접 연결 — 이것부터 열어라</div>
+    <p style="margin:0 0 10px">
+      두 곳이 OGC 타이밍 오라클·패킹·LBBD에 즉시 참조 가능하다.
+    </p>
+    <ol style="margin:0;padding-left:18px">
+      <li style="margin-bottom:8px">
+        <strong>google/or-tools <code>examples/python/jobshop_ft06_sat.py</code></strong> —
+        <code>IntervalVar</code> + <code>AddNoOverlap</code>로 tardiness 최소화를 구현하는 가장 직접적인 레퍼런스.
+        현재 <code>src/_cpsat_bay_timing_verified</code>의 disjunctive 스케줄링 오라클이 이 패턴 기반.
+        <a href="https://github.com/google/or-tools/blob/stable/examples/python/jobshop_ft06_sat.py" target="_blank">→ 링크</a>
+      </li>
+      <li>
+        <strong>cpsat-primer <code>evaluations/packing/</code></strong> —
+        <code>packing_with_rotations.py</code>가 회전 포함 2D 패킹을 CP-SAT로 구현한 평가 코드.
+        per-bay 패킹 레이어에 밀도 개선 아이디어를 적용할 때 직접 참고 가능.
+        <a href="https://github.com/d-krupke/cpsat-primer/blob/main/evaluations/packing/solver/packing_with_rotations.py" target="_blank">→ 링크</a>
+      </li>
+    </ol>
+  </div>
+
+  <!-- ====== 필수 깃헙 레포 ====== -->
+  <h2 id="repos">필수 깃헙 레포</h2>
+
+  <p style="color:var(--muted)">스타수는 2026-06 기준 측정값. 모든 URL은 실존 확인 완료.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>레포</th>
+        <th>용도 / 제공 내용</th>
+        <th>난이도</th>
+        <th>OGC</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <a href="https://github.com/google/or-tools" target="_blank"><strong>google/or-tools</strong></a>
+          <span class="star-badge">★ 13.6k</span>
+        </td>
+        <td>
+          CP-SAT 공식 소스. <code>ortools/sat/python/cp_model.py</code> 전체 API,
+          <code>examples/python/</code> 30여 개 예제 (jobshop / rcpsp / knapsack_2d / shift_scheduling …),
+          <code>ortools/sat/docs/</code> 마크다운 레퍼런스. v9.15 (2026-01)
+        </td>
+        <td><span class="level beginner">입문</span><span class="level advanced">원천</span></td>
+        <td><span class="tag ogc">★ 핵심</span></td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://github.com/d-krupke/cpsat-primer" target="_blank"><strong>d-krupke/cpsat-primer</strong></a>
+          <span class="star-badge">★ 756</span>
+        </td>
+        <td>
+          Dominik Krupke (TU Braunschweig) 저, 무료 오픈북.
+          설치→모델링→파라미터→LNS→벤치마킹 전 주제를 Jupyter Notebook 기반으로 실행 가능하게 제공.
+          CC-BY-4.0. <code>evaluations/packing/</code>에 회전 패킹 코드 포함.
+        </td>
+        <td><span class="level beginner">입문</span><span class="level intermediate">중급</span></td>
+        <td><span class="tag ogc">패킹 코드</span></td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://github.com/or-tools/awesome_or-tools" target="_blank"><strong>or-tools/awesome_or-tools</strong></a>
+        </td>
+        <td>
+          OR-Tools 공식 큐레이션 리스트. 블로그·논문·영상·커뮤니티 링크를 카테고리별로 정리.
+          새 자료를 찾을 때 첫 번째로 확인할 메타-인덱스.
+        </td>
+        <td><span class="level beginner">참조</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://github.com/PyJobShop/PyJobShop" target="_blank"><strong>PyJobShop/PyJobShop</strong></a>
+          <span class="star-badge">★ 137</span>
+        </td>
+        <td>
+          CP-SAT를 백엔드로 쓰는 고수준 스케줄링 Python 라이브러리.
+          단일머신·병렬기계·플렉시블 잡샵·RCPSP를 간단한 API로 모델링.
+          예제 노트북이 풍부하며 CP Optimizer와 비교도 제공.
+        </td>
+        <td><span class="level beginner">입문</span><span class="level intermediate">중급</span></td>
+        <td><span class="tag ogc">disjunctive 참고</span></td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://github.com/hakank/hakank" target="_blank"><strong>hakank/hakank</strong></a>
+        </td>
+        <td>
+          하칸크의 방대한 콤비네이토리얼 퍼즐·최적화 모델 컬렉션.
+          <code>google_or_tools/</code> 서브디렉터리에 CP-SAT 샘플 수백 개.
+          스케줄링·패킹·퍼즐 등 다양한 패턴 탐색에 유용.
+        </td>
+        <td><span class="level intermediate">중급</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://github.com/MrBenGriffin/or-tools-fun" target="_blank"><strong>MrBenGriffin/or-tools-fun</strong></a>
+        </td>
+        <td>
+          비공식 OR-Tools 실험 모음. 비정형 레이아웃·퍼즐 등 공식 예제에 없는
+          창의적 모델링 패턴 포함. 영감 탐색용.
+        </td>
+        <td><span class="level intermediate">중급</span></td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>
+          <a href="https://github.com/google/or-tools/tree/stable/examples/python" target="_blank"><strong>or-tools examples/python/</strong></a>
+        </td>
+        <td>
+          공식 Python 예제 디렉터리. 아래 파일들이 특히 중요:<br>
+          <code>jobshop_ft06_sat.py</code> · <code>flexible_job_shop_sat.py</code> ·
+          <code>rcpsp_sat.py</code> · <code>knapsack_2d_sat.py</code> ·
+          <code>shift_scheduling_sat.py</code> · <code>gate_scheduling_sat.py</code>
+        </td>
+        <td><span class="level beginner">입문</span></td>
+        <td><span class="tag ogc">★ 핵심</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <ul class="refs" style="margin-top:24px">
+    <li class="repo">
+      <strong>or-tools/examples/notebook/</strong>
+      <span class="meta">https://github.com/google/or-tools/tree/stable/examples/notebook</span>
+      <span class="desc">Python 예제를 Jupyter Notebook으로 변환한 컬렉션. RCPSP·nurse scheduling 등 바로 실행 가능. Colab 연동.</span>
+      <div class="tagline">
+        <span class="level beginner">입문</span>
+        <span class="tag">Jupyter</span>
+      </div>
+    </li>
+    <li class="repo">
+      <strong>or-tools/examples/contrib/</strong>
+      <span class="meta">https://github.com/google/or-tools/tree/stable/examples/contrib</span>
+      <span class="desc">커뮤니티 기여 예제. 공식 디렉터리에 없는 다양한 실전 모델 포함.</span>
+      <div class="tagline">
+        <span class="level intermediate">중급</span>
+        <span class="tag">커뮤니티</span>
+      </div>
+    </li>
+    <li class="repo">
+      <strong>d-krupke/cpsat-primer evaluations/packing/</strong>
+      <span class="meta">https://github.com/d-krupke/cpsat-primer/tree/main/evaluations/packing</span>
+      <span class="desc">
+        <code>packing_wo_rotations.py</code> · <code>packing_with_rotations.py</code> · <code>knapsack_wo_rotations.py</code> — 직사각형 2D 패킹의 CP-SAT 구현과 벤치마크 코드.
+        OGC per-bay 패킹 레이어 개선에 직접 참고 가능.
+      </span>
+      <div class="tagline">
+        <span class="level intermediate">중급</span>
+        <span class="tag ogc">패킹 OGC</span>
+      </div>
+    </li>
+  </ul>
+
+  <!-- ====== 학습 경로 ====== -->
+  <h2 id="learning-path">학습 경로</h2>
+
+  <div class="tip">
+    <div class="ttl">입문 → 중급 → 고급 권장 경로</div>
+    <div class="step-path">
+      <div class="step"><div class="num">1</div><span>공식 문서 <a href="https://developers.google.com/optimization/" target="_blank">developers.google.com/optimization</a> — 설치 + 기본 예제</span></div>
+      <div class="step"><div class="num">2</div><span>cpsat-primer 온라인북 <a href="https://d-krupke.github.io/cpsat-primer/" target="_blank">d-krupke.github.io/cpsat-primer</a> — Part 1 (1~9장)</span></div>
+      <div class="step"><div class="num">3</div><span><code>examples/python/jobshop_ft06_sat.py</code> 직접 실행 · 수정</span></div>
+      <div class="step"><div class="num">4</div><span>cpsat-primer Part 2 고급편 (LNS · 테스트 · API · 벤치마킹)</span></div>
+      <div class="step"><div class="num">5</div><span>Perron 강연 슬라이드 · CP 2023 논문으로 내부 메커니즘 이해</span></div>
+    </div>
+  </div>
+
+  <h3>단계별 상세</h3>
+
+  <h4>입문 (0~2주)</h4>
+  <ul>
+    <li>
+      <strong>공식 CP-SAT 입문 페이지</strong>
+      <a href="https://developers.google.com/optimization/cp/cp_solver" target="_blank">developers.google.com/optimization/cp/cp_solver</a> —
+      기본 변수·제약·풀기 흐름. Python/C++/Java/Go 예제.
+    </li>
+    <li>
+      <strong>cpsat-primer 1~5장</strong> (설치→예제→기본 모델링→파라미터→로그 이해)
+      — Jupyter Notebook으로 각 개념을 바로 실행하며 배움.
+    </li>
+    <li>
+      <strong>official examples</strong> — <code>cp_sat_example.py</code>, <code>nurses_sat.py</code>, <code>jobshop_ft06_sat.py</code> 순서로 읽기.
+    </li>
+  </ul>
+
+  <h4>중급 (2~6주)</h4>
+  <ul>
+    <li>
+      <strong>cpsat-primer 6~9장</strong> — 코딩 패턴, TDD for 최적화, API 설계, LNS.
+    </li>
+    <li>
+      <strong>PyJobShop 튜토리얼 노트북</strong> — RCPSP, Flexible Job Shop, 방출일·납기 포함 모델.
+    </li>
+    <li>
+      <strong>or-tools/sat/docs/scheduling.md</strong>
+      <a href="https://github.com/google/or-tools/blob/stable/ortools/sat/docs/scheduling.md" target="_blank">→ 링크</a> —
+      IntervalVar / NoOverlap / Cumulative 공식 레퍼런스.
+    </li>
+  </ul>
+
+  <h4>고급</h4>
+  <ul>
+    <li>Perron의 <strong>CP 2023 초청 강연 논문</strong> (LP 통합, 포트폴리오 워커, 스케줄링 클로저) — 아래 논문 섹션 참조.</li>
+    <li>hakank의 OR-Tools 예제에서 비정형 패턴 탐색.</li>
+    <li>LBBD 논문 + cpsat-primer의 Benders 예제로 분해 기법 응용.</li>
+    <li>MiniZinc Challenge 결과 분석으로 경쟁 솔버 대비 강약점 파악.</li>
+  </ul>
+
+  <!-- ====== 논문·책·강연 ====== -->
+  <h2 id="papers">논문 · 책 · 강연</h2>
+
+  <h3>핵심 논문</h3>
+  <ul class="refs">
+    <li>
+      <strong>The CP-SAT-LP Solver (Invited Talk)</strong>
+      — Laurent Perron, Frédéric Didier, Steven Gay (Google Paris)
+      <span class="meta">https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.CP.2023.3</span>
+      <span class="desc">
+        CP 2023 초청 강연 논문. CP-SAT의 내부 구조를 가장 상세히 설명하는 공식 문헌.
+        SAT+Simplex 통합·포트폴리오 워커·스케줄링 클로저 세 가지 핵심 기여 서술.
+        JSSP·RCPSP 미해결 인스턴스 다수를 최초로 증명함. <strong>CP-SAT를 깊이 이해하려면 필독.</strong>
+      </span>
+    </li>
+    <li>
+      <strong>ViolationLS: Violation-Based Local Search for CP-SAT</strong>
+      — Davies et al. (CPAIOR 2024)
+      <span class="meta">https://github.com/or-tools/awesome_or-tools (논문 목록 수록)</span>
+      <span class="desc">
+        CP-SAT의 제약 위반 기반 로컬 서치 구성 요소 논문.
+        LNS와 함께 해집합 개선에 사용되는 메커니즘을 설명. 탐색 전략 이해에 유용.
+      </span>
+    </li>
+    <li>
+      <strong>Trail Sharing Parallelization for CP-SAT</strong>
+      — Davies et al. (CPAIOR 2025)
+      <span class="meta">https://github.com/or-tools/awesome_or-tools (논문 목록 수록)</span>
+      <span class="desc">
+        CP-SAT의 병렬화 메커니즘—트레일 공유—을 설명하는 최신 논문.
+        다중 워커 환경에서 정보 공유 방식을 이해하는 데 직결.
+      </span>
+    </li>
+    <li>
+      <strong>Solving Parallel Machine Scheduling With Precedences and Cumulative Resource Constraints With Calendars</strong>
+      <span class="meta">https://arxiv.org/pdf/2512.11864</span>
+      <span class="desc">
+        CP-SAT가 Gurobi보다 더 많은 인스턴스를 증명 최적해로 푸는 스케줄링 문제 유형을 보고.
+        선행 제약+누적 자원 모델에 CP-SAT가 특히 강하다는 경험적 증거.
+      </span>
+    </li>
+    <li>
+      <strong>Logic-based Benders decomposition for large-scale optimization</strong>
+      <span class="meta">https://arxiv.org/pdf/1910.11944</span>
+      <span class="desc">
+        LBBD 이론 정립 논문. 마스터 MIP ↔ CP 서브프로블렘 분해 구조,
+        no-good 컷 생성 패턴. OGC LBBD 설계의 이론 배경.
+      </span>
+    </li>
+    <li>
+      <strong>Resource-Constrained Project Scheduling with Time-of-Use Energy Tariffs: LBBD Approach</strong>
+      <span class="meta">https://arxiv.org/pdf/2601.06542</span>
+      <span class="desc">
+        LBBD를 RCPSP에 적용한 최신 사례. 에너지 제약 포함 RCPSP를 마스터(MIP)+CP 서브(CP-SAT)로 분해.
+        OGC 타이밍 오라클 + 전역 배정 분해와 구조적으로 유사.
+      </span>
+    </li>
+  </ul>
+
+  <h3>책 / 온라인북</h3>
+  <ul class="refs">
+    <li>
+      <strong>The CP-SAT Primer (무료 오픈북)</strong>
+      — Dominik Krupke (TU Braunschweig)
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/</span>
+      <span class="desc">
+        현재 CP-SAT 단일 학습 자료 중 가장 종합적. 설치부터 LNS·벤치마킹·API 설계까지.
+        CC-BY-4.0 무료 공개, GitHub에서 Notebook 직접 실행 가능.
+        <strong>모든 수준에서 첫 번째로 읽어야 할 자료.</strong>
+      </span>
+    </li>
+    <li>
+      <strong>Practical Python AI Projects (O'Reilly)</strong>
+      — Serge Kruk
+      <span class="meta">https://www.oreilly.com/library/view/practical-python-ai/9781484234235/</span>
+      <span class="desc">
+        OR-Tools(LP·IP·CP) 활용을 포함하는 수학 최적화 실전 서적.
+        CP-SAT 단독 심화는 아니나, 최적화 파이프라인 구축 맥락에서 유용.
+      </span>
+    </li>
+  </ul>
+
+  <h3>강연 · 슬라이드 · 영상</h3>
+  <ul class="refs">
+    <li>
+      <strong>[Scheduling Seminar] Laurent Perron — The CP-SAT Solver (2024)</strong>
+      <span class="meta">https://www.youtube.com/watch?v=vvUxusrUcpU</span>
+      <span class="desc">
+        CP-SAT 창시자 Laurent Perron의 스케줄링 세미나 강연. JSSP·RCPSP에서의 성능과
+        내부 구조를 직접 설명. <strong>영상 + 슬라이드 PDF 모두 공개.</strong>
+        슬라이드: <a href="https://schedulingseminar.com/presentations/SchedulingSeminar_LaurentPerron.pdf" target="_blank">schedulingseminar.com PDF</a>
+      </span>
+    </li>
+    <li>
+      <strong>Laurent Perron — OR-Tools and CP-SAT (CIS 1921, UPenn)</strong>
+      <span class="meta">https://www.seas.upenn.edu/~cis1921/files25s/guestlecture.pdf</span>
+      <span class="desc">
+        대학 강의용 게스트 레쳐 슬라이드. CP-SAT의 설계 철학, SAT+CP 통합, 실전 모델링 패턴.
+        강연 수준의 밀도 높은 정리. PDF 다운로드 가능.
+      </span>
+    </li>
+    <li>
+      <strong>Laurent Perron — CP-SAT and OR-Tools (CMU EWO Seminar)</strong>
+      <span class="meta">https://egon.cheme.cmu.edu/ewo/docs/CP-SAT%20and%20OR-Tools.pdf</span>
+      <span class="desc">
+        CMU 엔지니어링 세미나 발표 슬라이드. LP 통합 메커니즘과 스케줄링 예제 위주.
+        Perron 본인이 공개한 자료 중 가장 기술적으로 깊음.
+      </span>
+    </li>
+    <li>
+      <strong>Barry Stahl — Building AI Solutions with Google OR-Tools</strong>
+      <span class="meta">https://github.com/or-tools/awesome_or-tools (영상 목록 수록)</span>
+      <span class="desc">
+        영어 유튜브 튜토리얼. 실무 개발자 관점에서 OR-Tools 프로젝트 구축 과정을 순서대로 설명.
+      </span>
+    </li>
+  </ul>
+
+  <!-- ====== 커뮤니티 ====== -->
+  <h2 id="community">커뮤니티 · 도움받는 곳</h2>
+
+  <ul class="refs">
+    <li>
+      <strong>or-tools-discuss (Google Group) — 공식 포럼</strong>
+      <span class="meta">https://groups.google.com/g/or-tools-discuss</span>
+      <span class="desc">
+        모델링 질문·버그 제보·사용 팁의 1차 창구. Laurent Perron 팀이 직접 답변하는 경우 있음.
+        GitHub Issues는 버그·성능 문제 전용 — 모델링 질문은 여기로.
+      </span>
+    </li>
+    <li>
+      <strong>OR-Tools Discord 서버</strong>
+      <span class="meta">https://discord.gg/ENkQrdf</span>
+      <span class="desc">
+        실시간 채팅 커뮤니티. 빠른 피드백이 필요할 때.
+        #cp-sat 채널에서 모델링·파라미터 튜닝 질문 활발.
+      </span>
+    </li>
+    <li>
+      <strong>Stack Overflow — or-tools / cp-sat 태그</strong>
+      <span class="meta">https://stackoverflow.com/questions/tagged/or-tools+or+cp-sat</span>
+      <span class="desc">
+        검색 가능한 Q&A 아카이브. 이미 답변된 패턴 질문이 많음.
+        새 질문은 구글 그룹과 SO 양쪽에 크로스 포스팅 권장 (공식 가이드).
+      </span>
+    </li>
+    <li>
+      <strong>GitHub Discussions (google/or-tools)</strong>
+      <span class="meta">https://github.com/google/or-tools/discussions</span>
+      <span class="desc">
+        GitHub 기반 토론. 기능 요청·릴리스 논의·사용 사례 공유. 이슈 트래커와 다른 채널.
+      </span>
+    </li>
+    <li>
+      <strong>OR-Tools 공식 문서</strong>
+      <span class="meta">https://developers.google.com/optimization/</span>
+      <span class="desc">
+        설치 가이드, API 레퍼런스, 예제 링크. CP-SAT는 2013년부터 <strong>MiniZinc Challenge 금메달</strong>을
+        매년 수상했다고 명시. 릴리스 노트에서 최신 버전 변경사항 확인 가능.
+      </span>
+    </li>
+    <li>
+      <strong>OR-Tools Reference Documentation</strong>
+      <span class="meta">https://or-tools.github.io/docs/</span>
+      <span class="desc">
+        C++/Python/Java/.Net API 전체 레퍼런스. 클래스·메서드 시그니처 검색.
+      </span>
+    </li>
+  </ul>
+
+  <!-- ====== 벤치마크·비교 ====== -->
+  <h2 id="benchmarks">벤치마크 · 비교</h2>
+
+  <h3>MiniZinc Challenge — CP 경진대회 공식 결과</h3>
+
+  <p>
+    CP-SAT는 2013년 첫 출전 이후 매년 MiniZinc Challenge를 독주하고 있다.
+    2025년 결과는 Fixed·Free·Parallel·Local Search 4개 카테고리 전부 금메달로 사실상 독점.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>연도</th><th>Fixed</th><th>Free</th><th>Parallel</th><th>Local Search</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2025</td>
+        <td><span class="gold">금 OR-Tools CP-SAT</span></td>
+        <td><span class="gold">금 OR-Tools CP-SAT</span></td>
+        <td><span class="gold">금 OR-Tools CP-SAT</span></td>
+        <td><span class="gold">금 OR-Tools CP-SAT LS</span></td>
+      </tr>
+      <tr>
+        <td>2024</td>
+        <td colspan="4" style="color:var(--muted)">OR-Tools CP-SAT 참가 (결과 페이지: minizinc.org/challenge/2024/results)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:.85rem;color:var(--dim)">
+    출처: <a href="https://www.minizinc.org/challenge/2025/results/" target="_blank">minizinc.org/challenge/2025/results</a>
+  </p>
+
+  <h3>솔버 비교 벤치마크 (Hexaly 공개 자료)</h3>
+
+  <p style="color:var(--muted);font-size:.9rem">
+    아래는 Hexaly가 공개한 벤치마크. Hexaly 유리한 세팅이므로 해석 시 주의. 그러나 CP-SAT의 실제 강약점을 파악하는 데 유용.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>문제 유형</th>
+        <th>CP-SAT (OR-Tools)</th>
+        <th>Hexaly</th>
+        <th>Gurobi</th>
+        <th>출처</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>JSSP 대형 (1000×1000)</td>
+        <td><span class="bench-bad">해 없음 (6시간)</span></td>
+        <td><span class="bench-good">8.6% 개선</span></td>
+        <td><span class="bench-bad">해 없음</span></td>
+        <td><a href="https://www.hexaly.com/benchmarks/hexaly-vs-cp-optimizer-vs-or-tools-on-the-job-shop-scheduling-problem-jssp" target="_blank">hexaly.com</a></td>
+      </tr>
+      <tr>
+        <td>RCPSP 300태스크×480인스턴스</td>
+        <td><span class="bench-mid">평균 갭 3.0% (1분)</span></td>
+        <td><span class="bench-good">평균 갭 2.0% (1분)</span></td>
+        <td><span class="bench-bad">해 없음</span></td>
+        <td><a href="https://www.hexaly.com/benchmarks/hexaly-vs-or-tools-on-the-resource-constrained-project-scheduling-problem-rcpsp" target="_blank">hexaly.com</a></td>
+      </tr>
+      <tr>
+        <td>Vector Bin Packing (소형)</td>
+        <td><span class="bench-good">최적해 달성</span></td>
+        <td><span class="bench-good">최적해 달성</span></td>
+        <td><span class="bench-good">최적해 달성</span></td>
+        <td><a href="https://www.hexaly.com/benchmarks/hexaly-gurobi-or-tools-on-the-vector-bin-packing-problem-vbp" target="_blank">hexaly.com</a></td>
+      </tr>
+      <tr>
+        <td>병렬 기계 스케줄링 (선행 제약)</td>
+        <td><span class="bench-good">Gurobi보다 더 많은 인스턴스 증명 최적</span></td>
+        <td>—</td>
+        <td><span class="bench-mid">비교 대상</span></td>
+        <td><a href="https://arxiv.org/pdf/2512.11864" target="_blank">arxiv 2512.11864</a></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="ttl">해석 요약</div>
+    <p style="margin:0">
+      CP-SAT는 <strong>중소형 조합 최적화·스케줄링·증명 최적</strong>에 강하고,
+      초대형 단일 문제(1000×1000 JSSP 등)에서는 Hexaly 같은 특수 메타휴리스틱에 뒤진다.
+      OGC 인스턴스 규모(20~40개 블록/베이)에서는 CP-SAT의 정확한 타이밍 오라클이 유효한 이유.
+      Gurobi는 disjunctive 스케줄링에서 CP-SAT보다 약함 — OGC 타이밍 모델에서 CP-SAT를 선택한 근거.
+    </p>
+  </div>
+
+  <h3>추가 비교 자료</h3>
+  <ul class="refs">
+    <li>
+      <strong>OR-Tools vs. Hexaly (종합 비교)</strong>
+      <span class="meta">https://www.hexaly.com/or-tools</span>
+      <span class="desc">Hexaly 관점의 OR-Tools 비교 페이지. 문제 유형별 성능 프로파일 있음.</span>
+    </li>
+    <li>
+      <strong>cpsat-primer 8장: Alternatives</strong>
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/</span>
+      <span class="desc">CP-SAT vs. 상용 솔버(Gurobi·CPLEX·CP Optimizer) vs. ML vs. 양자 컴퓨팅 비교. 공정한 관점에서 언제 CP-SAT가 맞는 선택인지 정리.</span>
+    </li>
+  </ul>
+
+  <h3>실제 산업 사례</h3>
+  <ul class="refs">
+    <li>
+      <strong>Airbus Beluga 물류 배치 계획 (CP/SAT 2025 산업 발표)</strong>
+      <span class="meta">https://sites.google.com/view/excos2025</span>
+      <span class="desc">
+        Airbus의 Beluga 수송기 화물 보관·배치 계획에 CP-SAT를 적용한 산업 사례.
+        조선소·항공기 제조 공정과 유사한 공간 배치+스케줄링 복합 문제.
+      </span>
+    </li>
+    <li>
+      <strong>대규모 직원 로스터링 (월 150명, 2~5분 내 해결)</strong>
+      <span class="meta">https://groups.google.com/g/or-tools-discuss/c/u2pm4Io4R-w</span>
+      <span class="desc">
+        규제 산업 교차 자격 직원 150명 월간 교대 편성. 법적 휴식 제약+공정성 목적함수.
+        150명×30일×50시프트 = 2~5분, 300명 이상은 10~30분. or-tools-discuss 실전 공유 스레드.
+      </span>
+    </li>
+    <li>
+      <strong>2D 빈 패킹 Yet Another Math Programming Consultant 블로그</strong>
+      <span class="meta">http://yetanothermathprogrammingconsultant.blogspot.com/2021/02/2d-bin-packing-with-google-or-tools-cp.html</span>
+      <span class="desc">
+        CP-SAT로 2D 빈 패킹을 구현하고 디버깅하는 실전 블로그 포스트.
+        OGC per-bay 패킹 시도 시 참고할 수 있는 간결한 사례.
+      </span>
+    </li>
+  </ul>
+
+  <hr class="divider">
+
+  <div class="footer">
+    <p>CP-SAT Methodology Series — 12 / 12 · 모든 링크 2026-06 기준 실존 확인 완료</p>
+    <a href="index.html">← 개요로</a>
+    &nbsp;|&nbsp;
+    <a href="https://github.com/google/or-tools" target="_blank">google/or-tools</a>
+    &nbsp;|&nbsp;
+    <a href="https://d-krupke.github.io/cpsat-primer/" target="_blank">cpsat-primer</a>
+    &nbsp;|&nbsp;
+    <a href="https://groups.google.com/g/or-tools-discuss" target="_blank">or-tools-discuss</a>
+  </div>
+
+</div>
+</body>
+</html>

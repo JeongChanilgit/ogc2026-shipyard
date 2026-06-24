@@ -1,0 +1,283 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>OGC 2026 — 개선방향 2-에이전트 토론</title>
+<style>
+ body{font-family:'Segoe UI',system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1c2733;line-height:1.6}
+ header{background:#0f2c44;color:#fff;padding:30px 40px}
+ header h1{margin:0 0 6px;font-size:25px} header p{margin:0;opacity:.85}
+ .wrap{max-width:1180px;margin:0 auto;padding:24px 28px 80px}
+ section{background:#fff;border-radius:10px;padding:22px 26px;margin:18px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+ section h2{margin:0 0 14px;font-size:19px;border-bottom:2px solid #eef1f4;padding-bottom:8px}
+ h3{font-size:16px;margin:18px 0 8px}
+ .tldr{background:#fff;border-left:6px solid #2e9e5b;padding:16px 20px;border-radius:6px;font-size:15px;margin:6px 0 0}
+ .cols{display:flex;gap:18px;flex-wrap:wrap}
+ .col{flex:1;min-width:300px;border-radius:10px;padding:4px 0}
+ .agentA{border-top:5px solid #b5532e} .agentB{border-top:5px solid #2e6fb5}
+ .card{background:#fff;border:1px solid #eef1f4;border-radius:10px;padding:16px 18px}
+ .card.a{border-top:4px solid #b5532e} .card.b{border-top:4px solid #2e6fb5}
+ .tag{display:inline-block;border-radius:5px;padding:1px 8px;font-size:12px;font-weight:700;color:#fff}
+ .ta{background:#b5532e} .tb{background:#2e6fb5}
+ table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+ th,td{padding:9px 11px;text-align:left;border-bottom:1px solid #eef1f4;vertical-align:top}
+ th{background:#0f2c44;color:#fff}
+ td.c,th.c{text-align:center;white-space:nowrap}
+ .p0{background:#e8f6ee} .p1{background:#fff8e6} .p2{background:#eef3fb}
+ .agree{color:#2e9e5b;font-weight:700} .dis{color:#c0392b;font-weight:700}
+ code{background:#eef1f4;border-radius:4px;padding:1px 5px;font-size:12.5px}
+ .note{background:#fff8e6;border-left:5px solid #e0a800;padding:12px 16px;border-radius:6px;margin:12px 0}
+ .note.g{background:#e8f6ee;border-left-color:#2e9e5b}
+ .note.r{background:#fdecea;border-left-color:#c0392b}
+ ul{margin:6px 0} li{margin:3px 0}
+ .small{color:#5a6b7b;font-size:13px}
+ .diff{display:inline-block;border-radius:5px;padding:0 7px;font-size:12px;font-weight:700;color:#fff}
+ .ds{background:#2e9e5b} .dm{background:#e0a800} .dl{background:#c0392b}
+</style></head><body>
+<header><h1>OGC 2026 — 개선방향 2-에이전트 토론</h1>
+<p>공세파(Score Maximizer) vs 수성파(−1 Guardian) · 평가결과 <code>eval_report.html</code> 근거 · 2026-06-01</p></header>
+<div class="wrap">
+
+ <section>
+  <h2>TL;DR — 토론 결론</h2>
+  <div class="tldr">
+   두 에이전트는 <b>P0 3개에 완전 합의</b>했다(즉시·저위험·검증가능):
+   <b>① force-place를 due_date-aware로</b>(Z1 폭발의 직접 원인 봉쇄) ·
+   <b>② Phase-1에 진짜 hard deadline 주입</b>(<code>_place_blocks</code>엔 시간가드가 0개) ·
+   <b>③ 경쟁 환경 스케일 회귀 CI</b>. 여기에 <b>CP-SAT 베이배정 seed 뱅킹</b>(s204 −92% 실측이 dead)도 양자합의.
+   <b>유일한 비합의는 단 하나</b>: "잠든 ALNS 탐색을 지금 대형 인스턴스에 켜느냐". 공세파는 "켜라(패배 5칸의 구조적 배치 열위는 탐색만 풂)", 수성파는 "절벽(격리 12.3M↔경쟁 376M, 30×)을 먼저 메운 뒤 게이트 통과해야". → <b>둘이 합의한 <i>실험 X</i>로 데이터가 판정</b>한다.
+  </div>
+ </section>
+
+ <section>
+  <h2>0. 토론이 발굴한 핵심 사실 (코드 직접검증)</h2>
+  <ul>
+   <li><b>잠든 탐색</b>: 기본 플래그에서 baseline floor가 trivial보다 나으면 <code>algorithm()</code>은
+       <b>즉시 반환</b>(<code>myalgorithm.py</code> L1769/1771/1790). 그 아래 ALNS·CP-SAT·assignment hill-climb
+       (L1792~2098)은 <b>대형 인스턴스에서 한 번도 실행되지 않는 dead code</b>. 즉 현재 제출물 ≈
+       "스케일-예산 baseline greedy(+n≤150 postprocess)".</li>
+   <li><b>Z1 폭발의 정확한 메커니즘</b>: <code>baseline_greedy.py</code>의 <code>_force_place</code>(L451)는
+       <code>prefs</code>로만 베이를 고르고 <code>_empty_bay_entry</code>(L267~297)가
+       <code>entry = max(entry, e)</code>로 빈 윈도우를 찾아 <b>먼 미래로 밀어냄 — due_date를 전혀 안 봄</b>.
+       후반 force-place 블록이 due를 한참 넘겨 <b>tardiness 폭발</b>(prob_14 Z1=47,922 → w1·Z1≈8.5억).</li>
+   <li><b>Phase-1엔 시간가드가 없다</b>: <code>_place_blocks</code>(L479~661)는 <code>timelimit</code> 인자조차
+       받지 않음. 예산가드(myalgorithm L1704~1724)는 greedy에 <i>넘기는</i> budget만 줄일 뿐 Phase-1 자체는
+       끝까지 돈다 → 60s 초과 7건(63~67s)의 직접 원인.</li>
+   <li><b>타이밍 절벽</b>: 같은 코드·같은 60s인데 prob_16 격리 12.3M(=baseline) ↔ 경쟁 376M (<b>30×</b>),
+       prob_14 80M↔853M (10×). 대형 품질이 CPU 경쟁/타이밍에 좌우됨.</li>
+  </ul>
+  <p class="small">전체 수치·차트: <code>results/eval_fresh_20260601_1500/eval_report.html</code></p>
+ </section>
+
+ <section>
+  <h2>현재 솔버 전략 (구현 그대로)</h2>
+  <p class="small">기본 플래그(<code>OGC_CRANE_SAFE=on</code>, <code>OGC_BUDGET_DECODE=on</code>,
+   <code>OGC_SEARCH_AFTER_BASELINE=off</code>, <code>OGC_CPSAT_FIRST=off</code>) 기준 실제 실행 경로.</p>
+  <table>
+   <thead><tr><th class="c">#</th><th>단계</th><th>하는 일</th><th class="c">상태</th></tr></thead>
+   <tbody>
+    <tr><td class="c">1</td><td><b>안전 floor</b> (trivial)</td>
+      <td>모든 블록을 베이 안에서 완전 직렬화(동시 재실 0). 검증 없이도 항상 feasible — 최후의 −1 방어선.</td>
+      <td class="c"><span class="diff ds">활성</span></td></tr>
+    <tr><td class="c">2</td><td><b>스케일-예산 baseline greedy</b> (fork)</td>
+      <td>형상별 budget 부여(<code>skip_greedy_floor</code>·축소budget, L1704~1724). EDD 그리디 배치 + Phase-2 repair.
+       공식 active-block 충돌필터(<code>e_k&gt;r_time</code>) 이식.</td>
+      <td class="c"><span class="diff ds">활성</span></td></tr>
+    <tr><td class="c">3</td><td><b>검증 + 조기반환</b></td>
+      <td><code>check_feasibility</code>로 baseline 검증 → trivial보다 나으면 floor로 승격하고
+       <b>즉시 반환</b>(<code>verified_greedy_floor</code>, L1771).</td>
+      <td class="c"><span class="diff ds">활성</span></td></tr>
+    <tr><td class="c">4</td><td><b>소형 postprocess</b> (n≤150)</td>
+      <td>feasible 해에 EDD left-shift 재스케줄 + 단일블록 move/insert를 게이트하며 시도(악화 시 원해 유지).</td>
+      <td class="c"><span class="diff dm">활성(소형만)</span></td></tr>
+    <tr><td class="c">5</td><td><b>seed 디코드 + ALNS + CP-SAT</b></td>
+      <td>most-preferred/load-balanced/tardiness seed 디코드 → assignment hill-climb(ALNS) + CP-SAT 베이배정 → 게이트.
+       잠재적 핵심 최적화기.</td>
+      <td class="c"><span class="diff dl">잠듦(dead)</span></td></tr>
+   </tbody>
+  </table>
+  <div class="note g">
+   <b>설계 철학:</b> "<b>절대 baseline보다 나쁘지 않게</b>"(floor 보존) + "모든 채택은 floor+gate(<code>check_feasibility</code>)
+   통과한 것만" → 개선 실패·크래시·타임아웃이어도 검증된 floor 반환 → <b>설계상 −1 불가</b>.
+  </div>
+  <div class="note r">
+   <b>이번 평가가 드러낸 현재 전략의 한계:</b> ① 일반 경로가 3단계에서 끝나 <b>대형은 사실상 맨 greedy floor</b>
+   (4·5단계 미적용) → 패배 5칸; ② floor+gate가 못 막는 구멍 = <b>벽시계 초과</b>(greedy Phase-1엔 시간가드 0개, 7건 60s 초과);
+   ③ greedy force-place의 due-blind 배치가 만든 <b>타이밍 절벽</b>(품질 비결정, prob_16 격리↔경쟁 30×).
+  </div>
+ </section>
+
+ <section>
+  <h2>1. 라운드 1 — 두 입장 (독립 작성)</h2>
+  <div class="cols">
+   <div class="col agentA"><div class="card a">
+    <span class="tag ta">A · 공세파 (Score Maximizer)</span>
+    <h3>THESIS</h3>
+    <p>feasibility는 끝났다(20/20). 리더보드를 오르는 <b>유일한 레버는 대형 w1-지배 인스턴스의 Z1을 실제로 최적화</b>하는 것. 우리는 코드 안에 ALNS·CP-SAT를 갖고도 조기반환으로 꺼둔 채, 움직일 수 있는 10칸(패배 5 + 살얼음 5)의 점수를 흘리고 있다. baseline 패배는 <code>_force_place</code>의 결함이지 "최적화를 피하라"는 신호가 아니다.</p>
+    <h3>주요 방향</h3>
+    <ul>
+     <li><b>A-D1</b> 대형에서 조기반환 해제 → <code>_local_search</code>(ALNS) 가동(게이트가 floor 보존). <span class="diff dm">M</span></li>
+     <li><b>A-D2</b> due-aware force-place 사후보수, <code>_postprocess</code>의 n≤150 가드 해제. <span class="diff dm">M</span></li>
+     <li><b>A-D3</b> 대형 baseline budget 0.5~0.6T로 줄여 탐색에 시간 양보. <span class="diff ds">S</span></li>
+     <li><b>A-D4</b> w1-지배 대형에 CP-SAT 베이배정 seed 뱅킹(s204 −92% 실측). <span class="diff ds">S</span></li>
+     <li><b>A-D5</b> 탐색의 전제로 벽시계 하드가드 강화(work 0.75T). <span class="diff ds">S</span></li>
+    </ul>
+   </div></div>
+   <div class="col agentB"><div class="card b">
+    <span class="tag tb">B · 수성파 (−1 Guardian)</span>
+    <h3>THESIS</h3>
+    <p>점수는 잔인하게 비대칭(−1 = 평균 R/2 손실). 우리 R−nb 우위(35 vs 16)의 <b>다수는 baseline의 infeasible 5개</b>에서 나왔다 → 이 채점에선 feasibility>품질이 입증됨. 그런데 우리 feasibility는 <b>타이밍 지뢰밭</b> 위에 있다(7건 60s 초과, Phase-1 시간가드 0개). 1순위는 새 탐색이 아니라 <b>이 지뢰를 먼저 제거</b>하는 것.</p>
+    <h3>주요 방향</h3>
+    <ul>
+     <li><b>B-D1</b> Fork <code>_place_blocks</code>에 진짜 hard deadline 주입(초과 시 force-place fast-path). <span class="diff ds">S</span></li>
+     <li><b>B-D2</b> <code>_force_place</code>/<code>_empty_bay_entry</code>를 tardiness-aware로. 연산 0, 절벽 완화. <span class="diff dm">M</span></li>
+     <li><b>B-D3</b> 스케일 회귀 CI 게이트(feasible 20/20·wall&lt;0.95T·obj 회귀 0). <span class="diff dm">M</span></li>
+     <li><b>B-D4</b> 60s 초과 형상(200×4·300×4) base_budget을 ≤0.92T로 죔. <span class="diff ds">S</span></li>
+    </ul>
+   </div></div>
+  </div>
+  <p class="small">※ 두 입장이 <b>독립적으로 같은 결론</b>에 도달한 지점: due-aware force-place(A-D2 = B-D2). 이것이 합의의 씨앗.</p>
+ </section>
+
+ <section>
+  <h2>2. 라운드 2 — 상호 공격 (요지)</h2>
+  <div class="cols">
+   <div class="col"><div class="card a">
+    <span class="tag ta">A → B 공격</span>
+    <ul>
+     <li><b>"feasibility>품질"은 잠긴 5칸에서만 참.</b> 단독feasible 5개는 이미 만점(개선 한계효용 0). 실제로 <b>움직이는 점수는 패배 5 + 살얼음 5 = 10칸</b>이고 전부 대형 Z1로 갈린다 — B의 harden-only는 이 10칸 obj를 한 푼도 안 내림.</li>
+     <li><b>B의 −1 명분은 60s 하네스의 산물.</b> briefing §6: 실서버 timelimit은 수분~30분. 67s는 실서버에서 −1 아님 → B-D4(예산 선제 삭감)는 존재하지 않는 위협을 막느라 탐색 예산을 깎는 자해.</li>
+    </ul>
+   </div></div>
+   <div class="col"><div class="card b">
+    <span class="tag tb">B → A 공격</span>
+    <ul>
+     <li><b>A-D3(budget 삭감)는 floor 자체를 깎는 자해.</b> A-D1의 "단조개선→점수≥현재"는 <i>floor 고정</i>일 때만 성립하는데, A-D3가 그 floor 예산을 절반으로 줄여 고정을 깬다(L1696 회귀 주석이 증거). ALNS가 깎인 floor를 못 넘으면 순손실.</li>
+     <li><b>A-D1은 절벽 위에서 칼춤.</b> prob_16의 30× 분산은 "탐색할 시간이 있다"가 아니라 "경쟁 환경 deadline 추정을 못 믿는다"는 신호. ALNS가 deadline에 잘리면 force-place 경로로 떨어져 <b>376M 절벽을 스스로 생성</b>한다.</li>
+    </ul>
+   </div></div>
+  </div>
+ </section>
+
+ <section>
+  <h2>3. 합의된 실행 우선순위 (P0 → P2)</h2>
+  <table>
+   <thead><tr><th class="c">순위</th><th>항목 (무엇을)</th><th>근거 / 대상</th><th class="c">합의</th><th class="c">난이도</th></tr></thead>
+   <tbody>
+    <tr class="p0"><td class="c"><b>P0</b></td>
+      <td><b>due-aware force-place</b> — <code>_force_place</code>(L451)·<code>_empty_bay_entry</code>(L267~297)를 tardiness 최소 베이선택으로 + <code>_postprocess_verified_solution</code>의 <code>n≤150</code> 가드(L1759) 해제해 대형(prob_14~20)에도 보수 적용</td>
+      <td>Z1 폭발의 직접 원인. <b>timelimit 무관 순수 품질</b>, 연산 0 추가. 패배 5칸(prob_1,14,15,16,19) + 살얼음 칸</td>
+      <td class="c agree">✅ 양자</td><td class="c"><span class="diff dm">M</span></td></tr>
+    <tr class="p0"><td class="c"><b>P0</b></td>
+      <td><b>Phase-1 hard deadline</b> — fork <code>_place_blocks</code>에 deadline 파라미터 + 초과 시 force-place fast-path 즉시 전환</td>
+      <td><code>_place_blocks</code>에 timelimit 인자조차 없음(검증). 60s 초과 7건 제거. <b>탐색을 켜기 위한 전제 안전망</b></td>
+      <td class="c agree">✅ 양자<br><span class="small">(명분: 인에이블러)</span></td><td class="c"><span class="diff ds">S</span></td></tr>
+    <tr class="p1"><td class="c"><b>P1</b></td>
+      <td><b>스케일 회귀 CI 게이트</b> — feasible 20/20 + wall&lt;임계 + quick_objective≈real objective 일치, <b>경쟁(4잡 동시) 환경에서 측정</b>, 실패 시 빌드 차단</td>
+      <td>비결정성(prob_16 30×)이 변경을 조용히 깸. 12h 쿨다운 → 깨진 제출 1회 = 반나절 손실. 이후 모든 변경의 검증 라이선스</td>
+      <td class="c agree">✅ 양자</td><td class="c"><span class="diff dm">M</span></td></tr>
+    <tr class="p1"><td class="c"><b>P1</b></td>
+      <td><b>CP-SAT 베이배정 seed 뱅킹</b> — w1-지배 대형에서 <code>_cpsat_assignment</code> seed를 디코드·게이트 후보로 추가(조기반환·예산가드 불변)</td>
+      <td>코드 주석 실측 s204 cpsat 894.8 vs baseline 10822 (<b>−92%</b>)가 현재 dead. seed 1개 추가일 뿐 → 안전망과 무충돌, 순수 상방</td>
+      <td class="c agree">✅ 양자</td><td class="c"><span class="diff ds">S</span></td></tr>
+    <tr class="p2"><td class="c"><b>P2</b></td>
+      <td><b>대형에 ALNS 탐색 on</b> (A-D1) + 벽시계 하드가드 work 0.75T (A-D5) — n≥200·w1-지배 한정, <b>조건부</b></td>
+      <td>패배 5칸의 <b>구조적 배치 열위</b>는 due-aware 보수로 안 풀림 — 다른 배치를 제안하는 탐색만 풂. 단 가드레일 통과 후</td>
+      <td class="c dis">⚖️ 조건부<br><span class="small">실험 X 판정</span></td><td class="c"><span class="diff dm">M</span></td></tr>
+   </tbody>
+  </table>
+  <p class="small">난이도: <span class="diff ds">S</span> 상수/소규모 · <span class="diff dm">M</span> 함수 수준 변경. 모든 항목은 <code>src/utils.py</code>·<code>baseline/</code> 미수정, 시그니처 불변, floor+gate 안전구조 유지.</p>
+ </section>
+
+ <section>
+  <h2>4. 유일한 비합의 + 이를 판정할 실험 X</h2>
+  <div class="cols">
+   <div class="col"><div class="card a"><span class="tag ta">A 고수</span>
+    <p>P0/P1는 탐색의 <b>전제조건이지 대체재가 아니다</b>. 패배 5칸은 Phase-1 greedy 배치 자체가 구조적으로 열위(prob_14는 격리에서도 baseline의 10×) → ALNS/CP-SAT가 <b>다른 배치를 제안</b>해야 풀린다. 켜는 비용은 floor+gate가 0으로 만든다.</p>
+    <p class="small"><b>+ A 단독 반대</b>: B-D4(예산 선제 삭감) — 실서버 수분~30분에선 불필요하고, 못 이기는 10칸은 예산을 <i>더</i> 줘야 움직인다.</p>
+   </div></div>
+   <div class="col"><div class="card b"><span class="tag tb">B 고수</span>
+    <p><b>순서가 전부다.</b> ALNS가 deadline에 잘리면 결과는 force-place 경로로 떨어진다 — D2(due-aware)가 없으면 A-D1은 <b>절벽 생성기</b>를 켜는 것. 탐색은 <b>경쟁 환경 회귀CI 그린 + wall&lt;0.9T + (격리 대비 경쟁 obj 분산 ≤1.5×)</b> 3게이트가 동시에 충족된 뒤에만.</p>
+    <p class="small"><b>+ B 단독 반대</b>: A-D3(budget 0.5~0.6T 삭감) — floor를 깎아 −1 안전망 약화. 시간이 필요하면 budget이 아니라 <b>D1(Phase-1 deadline)으로 벽시계를 회수</b>하라.</p>
+   </div></div>
+  </div>
+  <div class="note g">
+   <b>실험 X (양측 합의한 판정자)</b> — 대상 <b>prob_9,11,12,14,15,16,19</b>(움직이는 대형 7칸).
+   모든 arm에 <b>P0(D1+D2)+하드가드(0.75T) 고정 적용</b>. <b>arm-C</b>=현행(조기반환) vs
+   <b>arm-T</b>=탐색 on(ALNS + CP-SAT seed). <b>격리 1회 + 경쟁(동시4잡) 3회</b>, <b>timelimit 60s·300s 둘 다</b>, seed 고정.
+   <ul>
+    <li><b>합격(→ 탐색 채택)</b>: arm-T가 격리·경쟁 양쪽에서 obj <b>단조 비악화</b>(floor+gate 정상 입증) AND 7칸 중 <b>≥3칸 유의 개선</b>(특히 300s에서 패배칸 gap 축소), 회귀 0, wall&lt;임계.</li>
+    <li><b>불합격(→ harden-only로 후퇴)</b>: arm-T가 경쟁 조건에서 deadline 컷으로 floor 미달 / wall 임계 초과.</li>
+   </ul>
+   12h 쿨다운 한 사이클 안에 추측 없이 결판. <b>B의 3게이트 = 실험 X의 합격 판정과 동일 물건</b> — 즉 두 입장은 "켜기 전 무엇을 측정하느냐"에 이미 합의했고, 남은 건 그 측정 결과뿐이다.
+  </div>
+ </section>
+
+ <section>
+  <h2>5. 권고 — 지금 바로 할 것</h2>
+  <div class="note g">
+   <b>이번 작업 사이클(코드 변경):</b> <b>P0 두 개를 먼저 구현</b> — ① due-aware force-place(<code>_postprocess</code> n-가드 해제 + tardiness 최소 베이선택), ② Phase-1 hard deadline. 둘 다 <b>floor를 절대 안 깎고 −1 위험만 줄이며 패배 5칸을 직접 겨냥</b>. 이어 P1의 회귀 CI를 깔아 검증 라이선스를 확보하고, CP-SAT seed 뱅킹을 추가(순수 상방).
+  </div>
+  <div class="note">
+   <b>그다음:</b> P0/P1가 경쟁 환경 회귀 CI 그린이 되면 <b>실험 X</b>를 1사이클 돌려 ALNS 탐색(P2)을 켤지 데이터로 결정. <b>A-D3(budget 삭감)·B-D4(budget 선제 죔)는 둘 다 보류</b> — 벽시계는 budget이 아니라 Phase-1 deadline으로 회수하는 데 합의됨.
+  </div>
+  <div class="note r">
+   <b>제출 전 필수:</b> 현재 코드는 prob_14/15/16/19에서 baseline에 <b>10~30× 패배</b> + 일부 60s 초과. P0를 적용하기 전 제출은 이 패배칸을 그대로 안고 간다. 또한 평가서버 timelimit이 의외로 빡빡한 인스턴스가 있으면 60s 초과분이 −1이 될 수 있으니, <b>Phase-1 deadline(P0)은 제출 전 필수</b>.
+  </div>
+ </section>
+
+ <section>
+  <h2>6. 예상 개선안 — 로드맵 &amp; 예상 효과</h2>
+  <p class="small">토론의 P0~P2를 단계별 로드맵으로. 효과는 평가 데이터 기반 <b>추정</b>(측정 아님) —
+   격리 실행 수치가 "절벽만 막으면 도달 가능한 수준"의 근거다.</p>
+  <table>
+   <thead><tr><th class="c">단계</th><th>개선</th><th>대상</th><th>예상 효과(추정)</th><th class="c">리스크</th></tr></thead>
+   <tbody>
+    <tr class="p0"><td class="c"><b>1차<br>(P0)</b></td>
+      <td>due-aware force-place + Phase-1 hard deadline</td>
+      <td>대형 패배 5칸 + 60s 초과 7건</td>
+      <td>force-place Z1 폭발 봉쇄 → 패배칸을 baseline 동점권으로 회복; 벽시계 초과 → 마진 내 복귀(−1 위험 제거)</td>
+      <td class="c agree">낮음</td></tr>
+    <tr class="p1"><td class="c"><b>2차<br>(P1)</b></td>
+      <td>경쟁환경 회귀 CI + CP-SAT seed 뱅킹</td>
+      <td>전 인스턴스(검증) + dense w1지배 대형</td>
+      <td>회귀 사고 차단(현 35점 보호); CP-SAT seed로 베이배정 개선 → dense 대형 Z1 추가 절감(s204 −92% 실측)</td>
+      <td class="c">낮음</td></tr>
+    <tr class="p2"><td class="c"><b>3차<br>(P2)</b></td>
+      <td>대형 ALNS 탐색 on(조건부) + 하드가드 0.75T</td>
+      <td>n≥200·w1지배(살얼음 4 + 패배 잔여)</td>
+      <td>구조적 배치 열위 해소 → 근소승·패배칸 obj 추가 하락. <b>실험 X 통과 시에만</b></td>
+      <td class="c dis">중(타이밍)</td></tr>
+   </tbody>
+  </table>
+
+  <h3>패배 5칸 — 예상 도달 목표 (추정)</h3>
+  <table>
+   <thead><tr><th>인스턴스</th><th class="c">baseline</th><th class="c">현재(경쟁)</th>
+     <th class="c">격리 실측</th><th class="c">예상 도달(P0 후)</th><th>판단 근거</th></tr></thead>
+   <tbody>
+    <tr><td>prob_16 (250×4)</td><td class="c">12.3M</td><td class="c dis">376M</td><td class="c">12.3M</td>
+      <td class="c agree">~12M (동점권)</td><td class="small">절벽이 contention-driven, 격리=baseline. deadline+due-aware로 경쟁서도 회복</td></tr>
+    <tr><td>prob_15 (250×4)</td><td class="c">38.8M</td><td class="c dis">655M</td><td class="c">38.8M</td>
+      <td class="c agree">~39M (동점권)</td><td class="small">위와 동일 — 격리에서 이미 baseline과 정확히 일치</td></tr>
+    <tr><td>prob_14 (250×4)</td><td class="c">85M</td><td class="c dis">853M</td><td class="c">853M</td>
+      <td class="c">~85~150M (추정)</td><td class="small">격리도 나쁨 = force-place Z1 폭발(Z1=47,922). due-aware로 대폭↓, 잔여 구조열위는 P2</td></tr>
+    <tr><td>prob_19 (300×4)</td><td class="c">33.8M</td><td class="c dis">685M</td><td class="c">685M</td>
+      <td class="c">~34~120M (추정)</td><td class="small">force-place Z1=64,074 직격. due-aware 후 잔여는 P2 탐색</td></tr>
+    <tr><td>prob_1 (100×2)</td><td class="c">3.47M</td><td class="c dis">5.2M</td><td class="c">6.45M</td>
+      <td class="c">~3.5~5M (추정)</td><td class="small">진짜 품질격차(격리도 baseline 초과). postprocess 확장 + P2 탐색으로 축소</td></tr>
+   </tbody>
+  </table>
+  <div class="note g">
+   <b>점수 기대(vs baseline 2-team proxy):</b> P0가 패배 5칸을 동점/승으로 돌리면 R−nb proxy가
+   <b>ours 35 → 40+</b>로(패배칸마다 nb −1 회복). 단 이는 baseline 대비 추정이고 실제 대회는 R팀 필드라
+   절대 보장 아님 — 그래서 살얼음 칸(prob_5/7/9/11/12, 현재 −4~−12%)을 지키려면 P2(ALNS)로
+   obj <b>절대값</b>을 더 낮춰 두는 게 중요하다.
+  </div>
+  <div class="note">
+   <b>비용/순서 요약:</b> 1차(P0)는 <span class="diff ds">S</span>~<span class="diff dm">M</span> 난이도·저위험·즉시 →
+   <b>먼저</b>. 2차(P1)로 검증 라이선스 확보. 3차(P2)는 실험 X가 그린일 때만. budget 삭감(A-D3)·budget 선제 죔(B-D4)은
+   <b>둘 다 보류</b> — 벽시계는 Phase-1 deadline으로 회수.
+  </div>
+ </section>
+
+ <p class="small">근거 자료: 평가 리포트 <code>results/eval_fresh_20260601_1500/eval_report.html</code> ·
+  토론 브리핑 <code>notes/_debate-briefing.md</code> · 코드 <code>src/myalgorithm.py</code>, <code>src/baseline_greedy.py</code>.</p>
+</div></body></html>

@@ -1,0 +1,443 @@
+{
+  "config": {
+    "instances_spec": "prob_26,prob_28,prob_31,prob_32",
+    "timelimit": 120.0,
+    "tag": "force30-check",
+    "generated": "2026-06-17 00:15:00"
+  },
+  "totals": {
+    "instances_spec": "prob_26,prob_28,prob_31,prob_32",
+    "timelimit": 120.0,
+    "n_instances": 4,
+    "sum_marginal_gain": 4613218.0,
+    "n_fired": 3,
+    "n_feasible": 4,
+    "n_bays_improved": 6,
+    "n_bays_skipped_maxn": 0,
+    "max_wall": 138.60999999998603,
+    "sum_final_obj": 64020629.0,
+    "sum_pre_obj": 68633847.0,
+    "sum_competitor_obj": 67743279.39,
+    "sum_final_obj_with_comp": 64020629.0
+  },
+  "instances": [
+    {
+      "instance": "prob_26",
+      "n_blocks": 150,
+      "n_bays": 3,
+      "w1": 13333,
+      "w2": 7,
+      "w3": 150,
+      "final_obj": 26886816.0,
+      "final_obj1": 1948.0,
+      "final_obj2": 1976,
+      "final_obj3": 6002.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 137.64000000001397,
+      "fired": true,
+      "n_bays_improved": 2,
+      "n_bays_skipped_maxn": 0,
+      "z1_before": 2025.0,
+      "z1_after": 1948.0,
+      "dz1": 77.0,
+      "marginal_gain": 1026641.0,
+      "pre_obj": 27913457.0,
+      "marginal_pct": 0.03677942864619026,
+      "n_calls": 1,
+      "sum_bay_wall": 30.10899999999674,
+      "bay_records": [
+        {
+          "bay": 0,
+          "n_blocks": 57,
+          "cur_tard": 904.0,
+          "new_tard": 875.0,
+          "wall": 10.219000000040978,
+          "status": "improved",
+          "err": null
+        },
+        {
+          "bay": 1,
+          "n_blocks": 59,
+          "cur_tard": 716.0,
+          "new_tard": 764.0,
+          "wall": 10.10899999999674,
+          "status": "noop",
+          "err": null
+        },
+        {
+          "bay": 2,
+          "n_blocks": 34,
+          "cur_tard": 405.0,
+          "new_tard": 357.0,
+          "wall": 9.780999999959022,
+          "status": "improved",
+          "err": null
+        }
+      ],
+      "telemetry_raw": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 30.0,
+          "n_blocks_total": 150,
+          "n_bays_total": 3,
+          "n_work_bays": 3,
+          "fired": true,
+          "total_wall": 30.10899999999674,
+          "z1_before": 2025.0,
+          "z1_after": 1948.0,
+          "bays": [
+            {
+              "bay": 0,
+              "n_blocks": 57,
+              "cur_tard": 904.0,
+              "new_tard": 875.0,
+              "wall": 10.219000000040978,
+              "status": "improved",
+              "err": null
+            },
+            {
+              "bay": 1,
+              "n_blocks": 59,
+              "cur_tard": 716.0,
+              "new_tard": 764.0,
+              "wall": 10.10899999999674,
+              "status": "noop",
+              "err": null
+            },
+            {
+              "bay": 2,
+              "n_blocks": 34,
+              "cur_tard": 405.0,
+              "new_tard": 357.0,
+              "wall": 9.780999999959022,
+              "status": "improved",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "competitor_obj": 30417445.0,
+      "baseline_obj": 319505803.0
+    },
+    {
+      "instance": "prob_28",
+      "n_blocks": 150,
+      "n_bays": 3,
+      "w1": 13333,
+      "w2": 3,
+      "w3": 300,
+      "final_obj": 8492459.0,
+      "final_obj1": 515.0,
+      "final_obj2": 788,
+      "final_obj3": 5412.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 138.60999999998603,
+      "fired": true,
+      "n_bays_improved": 3,
+      "n_bays_skipped_maxn": 0,
+      "z1_before": 749.0,
+      "z1_after": 515.0,
+      "dz1": 234.0,
+      "marginal_gain": 3119922.0,
+      "pre_obj": 11612381.0,
+      "marginal_pct": 0.2686720320320182,
+      "n_calls": 1,
+      "sum_bay_wall": 30.17200000002049,
+      "bay_records": [
+        {
+          "bay": 1,
+          "n_blocks": 34,
+          "cur_tard": 274.0,
+          "new_tard": 165.0,
+          "wall": 10.077999999979511,
+          "status": "improved",
+          "err": null
+        },
+        {
+          "bay": 2,
+          "n_blocks": 65,
+          "cur_tard": 260.0,
+          "new_tard": 166.0,
+          "wall": 10.235000000044238,
+          "status": "improved",
+          "err": null
+        },
+        {
+          "bay": 0,
+          "n_blocks": 51,
+          "cur_tard": 215.0,
+          "new_tard": 184.0,
+          "wall": 9.85899999999674,
+          "status": "improved",
+          "err": null
+        }
+      ],
+      "telemetry_raw": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 30.0,
+          "n_blocks_total": 150,
+          "n_bays_total": 3,
+          "n_work_bays": 3,
+          "fired": true,
+          "total_wall": 30.17200000002049,
+          "z1_before": 749.0,
+          "z1_after": 515.0,
+          "bays": [
+            {
+              "bay": 1,
+              "n_blocks": 34,
+              "cur_tard": 274.0,
+              "new_tard": 165.0,
+              "wall": 10.077999999979511,
+              "status": "improved",
+              "err": null
+            },
+            {
+              "bay": 2,
+              "n_blocks": 65,
+              "cur_tard": 260.0,
+              "new_tard": 166.0,
+              "wall": 10.235000000044238,
+              "status": "improved",
+              "err": null
+            },
+            {
+              "bay": 0,
+              "n_blocks": 51,
+              "cur_tard": 215.0,
+              "new_tard": 184.0,
+              "wall": 9.85899999999674,
+              "status": "improved",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "competitor_obj": 9388393.51,
+      "baseline_obj": 166869314.0
+    },
+    {
+      "instance": "prob_31",
+      "n_blocks": 200,
+      "n_bays": 4,
+      "w1": 13333,
+      "w2": 3,
+      "w3": 267,
+      "final_obj": 21444299.0,
+      "final_obj1": 1346.0,
+      "final_obj2": 2441,
+      "final_obj3": 13074.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 131.25,
+      "fired": true,
+      "n_bays_improved": 1,
+      "n_bays_skipped_maxn": 0,
+      "z1_before": 1381.0,
+      "z1_after": 1346.0,
+      "dz1": 35.0,
+      "marginal_gain": 466655.0,
+      "pre_obj": 21910954.0,
+      "marginal_pct": 0.021297794701225697,
+      "n_calls": 1,
+      "sum_bay_wall": 23.25,
+      "bay_records": [
+        {
+          "bay": 3,
+          "n_blocks": 69,
+          "cur_tard": 506.0,
+          "new_tard": 595.0,
+          "wall": 7.797000000020489,
+          "status": "noop",
+          "err": null
+        },
+        {
+          "bay": 0,
+          "n_blocks": 66,
+          "cur_tard": 412.0,
+          "new_tard": 417.0,
+          "wall": 7.672000000020489,
+          "status": "noop",
+          "err": null
+        },
+        {
+          "bay": 2,
+          "n_blocks": 47,
+          "cur_tard": 329.0,
+          "new_tard": 349.0,
+          "wall": 7.452999999979511,
+          "status": "noop",
+          "err": null
+        },
+        {
+          "bay": 1,
+          "n_blocks": 18,
+          "cur_tard": 134.0,
+          "new_tard": 99.0,
+          "wall": 0.3279999999795109,
+          "status": "improved",
+          "err": null
+        }
+      ],
+      "telemetry_raw": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 30.0,
+          "n_blocks_total": 200,
+          "n_bays_total": 4,
+          "n_work_bays": 4,
+          "fired": true,
+          "total_wall": 23.25,
+          "z1_before": 1381.0,
+          "z1_after": 1346.0,
+          "bays": [
+            {
+              "bay": 3,
+              "n_blocks": 69,
+              "cur_tard": 506.0,
+              "new_tard": 595.0,
+              "wall": 7.797000000020489,
+              "status": "noop",
+              "err": null
+            },
+            {
+              "bay": 0,
+              "n_blocks": 66,
+              "cur_tard": 412.0,
+              "new_tard": 417.0,
+              "wall": 7.672000000020489,
+              "status": "noop",
+              "err": null
+            },
+            {
+              "bay": 2,
+              "n_blocks": 47,
+              "cur_tard": 329.0,
+              "new_tard": 349.0,
+              "wall": 7.452999999979511,
+              "status": "noop",
+              "err": null
+            },
+            {
+              "bay": 1,
+              "n_blocks": 18,
+              "cur_tard": 134.0,
+              "new_tard": 99.0,
+              "wall": 0.3279999999795109,
+              "status": "improved",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "competitor_obj": 22256964.05,
+      "baseline_obj": 1243855824.0
+    },
+    {
+      "instance": "prob_32",
+      "n_blocks": 200,
+      "n_bays": 3,
+      "w1": 3333,
+      "w2": 5,
+      "w3": 600,
+      "final_obj": 7197055.0,
+      "final_obj1": 2115.0,
+      "final_obj2": 4952,
+      "final_obj3": 205.0,
+      "feasible": true,
+      "status": "OK",
+      "err": null,
+      "wall": 138.31199999997625,
+      "fired": false,
+      "n_bays_improved": 0,
+      "n_bays_skipped_maxn": 0,
+      "z1_before": 2115.0,
+      "z1_after": 2115.0,
+      "dz1": 0.0,
+      "marginal_gain": 0.0,
+      "pre_obj": 7197055.0,
+      "marginal_pct": 0.0,
+      "n_calls": 1,
+      "sum_bay_wall": 30.31199999997625,
+      "bay_records": [
+        {
+          "bay": 0,
+          "n_blocks": 67,
+          "cur_tard": 1115.0,
+          "new_tard": 1255.0,
+          "wall": 10.28100000001723,
+          "status": "noop",
+          "err": null
+        },
+        {
+          "bay": 1,
+          "n_blocks": 65,
+          "cur_tard": 906.0,
+          "new_tard": 1387.0,
+          "wall": 10.125,
+          "status": "noop",
+          "err": null
+        },
+        {
+          "bay": 2,
+          "n_blocks": 68,
+          "cur_tard": 94.0,
+          "new_tard": 160.0,
+          "wall": 9.905999999959022,
+          "status": "noop",
+          "err": null
+        }
+      ],
+      "telemetry_raw": [
+        {
+          "event": "perbay_improve",
+          "time_budget": 30.0,
+          "n_blocks_total": 200,
+          "n_bays_total": 3,
+          "n_work_bays": 3,
+          "fired": false,
+          "total_wall": 30.31199999997625,
+          "z1_before": 2115.0,
+          "z1_after": 2115.0,
+          "bays": [
+            {
+              "bay": 0,
+              "n_blocks": 67,
+              "cur_tard": 1115.0,
+              "new_tard": 1255.0,
+              "wall": 10.28100000001723,
+              "status": "noop",
+              "err": null
+            },
+            {
+              "bay": 1,
+              "n_blocks": 65,
+              "cur_tard": 906.0,
+              "new_tard": 1387.0,
+              "wall": 10.125,
+              "status": "noop",
+              "err": null
+            },
+            {
+              "bay": 2,
+              "n_blocks": 68,
+              "cur_tard": 94.0,
+              "new_tard": 160.0,
+              "wall": 9.905999999959022,
+              "status": "noop",
+              "err": null
+            }
+          ]
+        }
+      ],
+      "competitor_obj": 5680476.83,
+      "baseline_obj": 7476180.0
+    }
+  ]
+}

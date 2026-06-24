@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>시퀀스별 시간·목적함수 프로파일 + CP-SAT 아이디어 — OGC 2026 (2026-06-17)</title>
+<style>
+  :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--ink:#e6edf3;--muted:#9aa7b4;
+    --line:#2d3744;--accent:#58a6ff;--good:#3fb950;--warn:#d29922;--bad:#f85149;--chip:#21314a;--chipink:#9ecbff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',-apple-system,'Malgun Gothic',sans-serif;line-height:1.6;font-size:15px}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 26px 80px}
+  h1{font-size:28px;margin:0 0 6px;letter-spacing:-.5px}
+  h2{font-size:21px;margin:40px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--accent)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 22px}
+  p{margin:9px 0}
+  code{background:#0b1220;padding:1px 6px;border-radius:5px;font-size:13px;color:#ffd9a0;font-family:Consolas,monospace}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:16px 0}
+  .tldr{background:linear-gradient(135deg,#16213a,#161b22);border:1px solid #2b4a78}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:#cfe0f0;font-weight:600}
+  tr:nth-child(even) td{background:#11161f}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .good{color:var(--good);font-weight:600}.warn{color:var(--warn);font-weight:600}.bad{color:var(--bad);font-weight:600}
+  .bar{display:inline-block;height:13px;border-radius:3px;vertical-align:middle}
+  .pill{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin:12px 0}
+  .pill.good{border-color:var(--good)}.pill.warn{border-color:var(--warn)}.pill.bad{border-color:var(--bad)}
+  ul{margin:8px 0;padding-left:22px}li{margin:5px 0}
+  .small{font-size:13px;color:var(--muted)}
+  .rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#07101f;font-weight:700;margin-right:7px;font-size:13px}
+  .tag{display:inline-block;background:var(--chip);color:var(--chipink);border-radius:20px;padding:1px 9px;font-size:12px;margin:1px 3px 1px 0}
+  .win{background:#13371f;color:#6ee7a0}
+  .waste{background:#3a1d1d;color:#ff9b9b}
+  hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+  .toc{columns:2;font-size:14px}@media(max-width:760px){.toc{columns:1}}
+  .toc a{display:block;padding:2px 0;color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>시퀀스별 시간 · 목적함수 프로파일 + CP-SAT 모델링 아이디어</h1>
+<p class="sub">OGC 2026 하이브리드 솔버 · 2026-06-17 · 실측(<code>OGC_STAGE_TIMING=1</code>, T=300s, 3 인스턴스: prob_26 중형 · prob_30 z1-갭 · prob_38 z1-벽) · 목적: <b>시간 소요 절감</b></p>
+
+<div class="panel tldr">
+  <h3 style="margin-top:0">한 화면 결론</h3>
+  <p class="lead"><b>레거시가 벽시계의 45%(~130s)를 먹지만 그 결과는 항상 버려진다.</b> 모든 인스턴스에서 box·gassign(둘 다 CP-SAT)이 레거시 결과를 절반의 시간으로 짓밟는다. 그리고 obj를 실제로 줄이는 건 <b>전부 CP-SAT 단계</b>다 — 그리디 플로어(~65s)는 "feasible하지만 나쁜 출발점"만 만들고, CP-SAT 타이밍 오라클은 3.5s로 428M→218M을 깎는다.</p>
+  <ul>
+    <li><b class="bad">최대 낭비 = 레거시 예산.</b> prob_26: 레거시 130s→200M(버려짐) vs box 74s→27.9M vs gassign 67s→21.96M(승). 레거시의 130s 정제는 box가 독립적으로 더 좋은 해를 내므로 <b>거의 전부 헛일</b>(피드백: 첫 산출물 아님 — 데이터로 확정).</li>
+    <li><b class="good">실제 일꾼 = CP-SAT 4종</b>: <code>cpsat_timing</code>(레거시 내부, 초당 최대 효율) · <code>box</code> · <code>gassign</code> · <code>perbay</code>. 그리디는 출발점 생성만.</li>
+    <li><b class="warn">시간 절감 레버 ①</b> set2에서 <b>레거시 예산을 "feasible 플로어"용으로 축소</b>(~130s→~35s)하고 남은 시간을 box/gassign에. ② <b>4코어 병렬 후보 실행</b>(현재 순차) → 같은 벽시계에 각 후보 풀예산 → gassign 굶주림 해소(prob_39서 gassign@full이 경쟁자 격파).</li>
+    <li><b class="warn">CP-SAT 방향</b>: 그리디를 더 줄이고 CP-SAT를 더 쓰되, <b>warm-start·증분모델·적응형 worker</b>로 가속. §5 참조.</li>
+  </ul>
+</div>
+
+<div class="panel"><b>목차</b><div class="toc">
+<a href="#m1">§1 측정 방법</a><a href="#m2">§2 후보 레벨 — 시간 대 가치 ★</a>
+<a href="#m3">§3 레거시 내부 단계</a><a href="#m4">§4 시간 낭비 진단 + 절감 권고</a>
+<a href="#m5">§5 CP-SAT 모델링 아이디어 ★</a><a href="#m6">§6 요약 표</a>
+</div></div>
+
+<!-- 1 -->
+<h2 id="m1">§1 측정 방법</h2>
+<p>하이브리드 <code>myalgorithm.algorithm()</code>에 후보별 <code>_stage_timer</code> + 채택 obj <code>_stage_obj</code> 계측을 추가(게이트 <code>OGC_STAGE_TIMING</code>, 미설정 시 zero-overhead·동작불변 → 평가서버 영향 0). T=300s에서 4개 후보가 모두 활성(gassign은 T≥200, box는 reserve≥20). 3개 인스턴스로 서로 다른 레짐을 커버: prob_26(중형 150블록), prob_30(z1-갭), prob_38(z1-벽). 단계는 <b>순차 실행</b>(legacy→box→gassign→perbay)이라 합이 곧 벽시계.</p>
+
+<!-- 2 -->
+<h2 id="m2">§2 후보 레벨 — 시간 대 가치 ★ (핵심)</h2>
+<p>각 후보의 소요 시간과, 그 후보가 incumbent를 얼마나 줄였는지(채택 시 in→out). <b>승자</b>=best-of 최종 채택.</p>
+
+<h3>prob_26 (중형, w1=13,333) — 승자: gassign 21.96M</h3>
+<table>
+<tr><th>시퀀스</th><th class="num">시간</th><th class="num">% 벽시계</th><th>obj in → out</th><th class="num">감소%</th><th>판정</th></tr>
+<tr><td>legacy</td><td class="num">130.1s</td><td class="num"><span class="bar" style="width:89px;background:#f85149"></span> 44.5%</td><td>428.3M → 200.3M <span class="small">(내부: cpsat_timing이 428→218)</span></td><td class="num">−53.2%</td><td><span class="tag waste">버려짐</span></td></tr>
+<tr><td>box</td><td class="num">74.4s</td><td class="num"><span class="bar" style="width:51px;background:#d29922"></span> 25.5%</td><td>200.3M → <b>27.9M</b></td><td class="num good">−86.1%</td><td><span class="tag">중간채택</span></td></tr>
+<tr><td><b>gassign</b></td><td class="num">67.2s</td><td class="num"><span class="bar" style="width:46px;background:#3fb950"></span> 23.0%</td><td>27.9M → <b>21.96M</b></td><td class="num good">−21.3%</td><td><span class="tag win">★ 승자</span></td></tr>
+<tr><td>perbay</td><td class="num">20.1s</td><td class="num"><span class="bar" style="width:14px;background:#6b7280"></span> 6.9%</td><td>개선 없음</td><td class="num">0%</td><td><span class="tag waste">no-op</span></td></tr>
+</table>
+
+<h3>prob_30 (z1-갭) — 승자: gassign 9.63M</h3>
+<table>
+<tr><th>시퀀스</th><th class="num">시간</th><th class="num">% 벽시계</th><th>obj in → out</th><th class="num">감소%</th><th>판정</th></tr>
+<tr><td>legacy</td><td class="num">130.6s</td><td class="num bad">44.7%</td><td>→ 255.4M</td><td class="num">—</td><td><span class="tag waste">버려짐</span></td></tr>
+<tr><td>box</td><td class="num">74.4s</td><td class="num">25.5%</td><td>255.4M → <b>13.2M</b></td><td class="num good">−94.8%</td><td><span class="tag">중간채택</span></td></tr>
+<tr><td><b>gassign</b></td><td class="num">69.3s</td><td class="num good">23.7%</td><td>13.2M → <b>9.63M</b></td><td class="num good">−27.1%</td><td><span class="tag win">★ 승자</span></td></tr>
+<tr><td>perbay</td><td class="num">17.5s</td><td class="num">6.0%</td><td>개선 없음</td><td class="num">0%</td><td><span class="tag waste">no-op</span></td></tr>
+</table>
+
+<h3>prob_38 (z1-벽, 거대) — 승자: perbay-polished box 80.95M</h3>
+<table>
+<tr><th>시퀀스</th><th class="num">시간</th><th class="num">% 벽시계</th><th>obj in → out</th><th class="num">감소%</th><th>판정</th></tr>
+<tr><td>legacy</td><td class="num">128.4s</td><td class="num bad">43.9%</td><td>147.3M → 145.4M <span class="small">(cpsat_timing)</span></td><td class="num">−1.3%</td><td><span class="tag waste">버려짐</span></td></tr>
+<tr><td>box</td><td class="num">74.4s</td><td class="num">25.5%</td><td>145.4M → <b>84.87M</b></td><td class="num good">−41.6%</td><td><span class="tag">중간채택</span></td></tr>
+<tr><td>gassign</td><td class="num">69.3s</td><td class="num">23.7%</td><td>개선 없음(box가 더 좋음)</td><td class="num">0%</td><td><span class="tag waste">no-op</span></td></tr>
+<tr><td><b>perbay</b></td><td class="num">19.8s</td><td class="num good">6.8%</td><td>84.87M → <b>80.95M</b></td><td class="num good">−4.6%</td><td><span class="tag win">★ 승자</span></td></tr>
+</table>
+
+<div class="pill bad"><b>관찰 1 (시간 낭비):</b> 레거시는 매번 가장 큰 슬라이스(~130s, 44%)를 받지만 그 obj(200M/255M/147M)는 box·gassign에 의해 즉시 폐기된다. box는 <b>레거시 결과를 입력으로 쓰지 않는</b> 독립 솔버라, 레거시의 130s 정제는 "feasible 출발점 1개"를 넘는 가치가 거의 0이다.</div>
+<div class="pill good"><b>관찰 2 (CP-SAT 효율):</b> 모든 큰 감소가 CP-SAT에서 나온다 — box(−86~95%), gassign(−21~27%), perbay(−4.6%), 그리고 레거시 내부의 <code>cpsat_timing</code>이 단 3.5s로 428M→218M(−49%). 그리디 단계는 감소를 거의 못 만든다.</div>
+<div class="pill warn"><b>관찰 3 (굶주림):</b> gassign·box가 각각 67~74s만 받는데도 승자다. 더 주거나 병렬화하면 더 낫다 — 별도 측정에서 <b>gassign@120s는 prob_39서 경쟁자(29.74M)를 28.84M로 이김</b>. 하이브리드에선 67s로 굶어 못 살림.</div>
+
+<!-- 3 -->
+<h2 id="m3">§3 레거시 내부 단계 (왜 130s나 쓰나)</h2>
+<p>레거시의 130s 내부 분해(prob_26):</p>
+<table>
+<tr><th>레거시 내부 단계</th><th class="num">시간</th><th>역할</th><th>obj 기여</th></tr>
+<tr><td><code>baseline</code> (그리디 플로어)</td><td class="num bad">65.5s</td><td>EDD + BL 배치로 feasible 해 구성</td><td>플로어 ~428M (나쁨, 출발점)</td></tr>
+<tr><td>(미계측 내부)</td><td class="num">~60s</td><td>배정·디코드·single_move 등</td><td>428M→200M</td></tr>
+<tr><td class="good"><code>cpsat_timing</code></td><td class="num good">3.5s</td><td>per-bay disjunctive 타이밍 오라클(CP-SAT)</td><td class="good">428M→218M (−49%, 최고 효율)</td></tr>
+<tr><td><code>cum_level</code></td><td class="num">1.0s</td><td>orders×alphas best-of</td><td>−0.4% (미미)</td></tr>
+</table>
+<div class="pill"><b>레거시 시간의 절반(65s)이 그리디 플로어 구성</b>이고, 정작 obj를 깎는 <code>cpsat_timing</code>은 3.5s뿐이다. 그리디 플로어는 "feasible하기만 한 나쁜 해"를 비싸게 만든다 — 그리고 그 결과는 box에 의해 폐기된다(§2).</div>
+
+<!-- 4 -->
+<h2 id="m4">§4 시간 낭비 진단 + 절감 권고</h2>
+<table>
+<tr><th>낭비/기회</th><th>근거(실측)</th><th>절감 레버</th><th>리스크</th></tr>
+<tr><td class="bad">레거시 과예산</td><td>130s→결과 폐기(box가 −86~95%)</td><td><b>set2에서 레거시 예산 ~130s→~35s</b>(feasible 플로어만), 남은 시간 box/gassign에</td><td>레거시=set1 승자 + −1 backstop → <b>set2 한정</b> + 플로어 보장 필수</td></tr>
+<tr><td class="bad">순차 실행</td><td>legacy+box+gassign+perbay = 292s 직렬</td><td><b>4코어 병렬 후보</b> → 각 후보 ~풀 TL, best-of. gassign 굶주림 해소</td><td>CP-SAT worker 충돌 → 후보당 worker 수 배분(2×2/1×4)</td></tr>
+<tr><td class="warn">그리디 플로어 65s</td><td>비싼데 obj는 cpsat가 깎음</td><td>플로어를 더 빠르게(타임캡) 또는 더 가벼운 구성 후 CP-SAT에 위임</td><td>플로어가 너무 약하면 큰 인스턴스 feasibility 위험</td></tr>
+<tr><td class="warn">perbay no-op 빈번</td><td>prob_26/30서 개선 0 (20s 소비)</td><td>승자가 gassign일 때 perbay 스킵(이미 조밀) 또는 짧은 타임캡</td><td>prob_38선 perbay가 승자 → 조건부만</td></tr>
+<tr><td class="warn"><code>cheaper_steps</code> / <code>cum_level</code> alpha</td><td>메모리상 "무익", cum_level −0.4%</td><td>set2에서 비활성/축소</td><td>set1 회귀 점검 필요</td></tr>
+</table>
+<div class="pill good"><b>가장 큰 단일 레버 = 병렬 후보 실행.</b> 4코어 서버에서 legacy(작게)·box·gassign을 병렬로 각각 풀예산 → 같은 벽시계에 각 후보 잠재력 100% 실현. 이는 §2 관찰3(굶주림)을 직접 해소하고, gassign@full의 경쟁자-격파(prob_39)를 하이브리드에서 realize한다.</div>
+
+<!-- 5 -->
+<h2 id="m5">§5 CP-SAT 모델링 아이디어 ★</h2>
+<p class="small">이미 CP-SAT인 자산: <code>cpsat_timing</code>(per-bay disjunctive 타이밍) · <code>box</code>(box-decomp 2D) · <code>gassign</code>(LBBD 배정+디코드+타이밍) · <code>perbay</code>(NoOverlap2D+크레인 joint). 실측상 obj 감소의 사실상 전부가 이들에서 나온다 → 방향은 "그리디↓ CP-SAT↑ + CP-SAT 가속".</p>
+
+<h3>A. 시간 절감 — CP-SAT가 대체하는 휴리스틱 제거/축소</h3>
+<ul>
+<li><span class="rank">1</span><b>그리디 플로어 → CP-SAT seed 축소.</b> 플로어 65s는 폐기될 나쁜 해. set2에선 빠른 feasible 플로어(타임캡 ~20s)만 만들고 CP-SAT(box/gassign)에 위임. (cpsat_timing이 428→218 깎는 걸 보면 CP-SAT가 그리디 정제보다 압도적.)</li>
+<li><span class="rank">2</span><b><code>crossbay_relocate</code>(휴리스틱) → gassign이 이미 대체.</b> gassign=CP-SAT 전역 재배정. 활성 시 중복 → 게이트 스킵으로 시간 절약.</li>
+<li><span class="rank">3</span><b><code>z1_repair</code> 반복 휴리스틱 → cpsat_timing 오라클 1회.</b> gassign이 이미 이 패턴(고정 레이아웃에 disjunctive 타이밍 1-shot) 사용 → 더 빠르고 더 좋음. 레거시 z1_repair를 오라클로 교체.</li>
+<li><span class="rank">4</span><b><code>cheaper_steps</code>·<code>cum_level</code> alpha 멀티스타트 축소</b>(set2). obj 기여 미미한데 시간 점유.</li>
+</ul>
+
+<h3>B. 기존 CP-SAT 가속 (같은 품질, 적은 시간)</h3>
+<ul>
+<li><span class="rank">5</span><b>warm-start / hint 재사용.</b> gassign 마스터·cpsat_timing·perbay가 매번 scratch. 직전 incumbent 레이아웃을 <code>AddHint</code> → 수렴 가속. (gassign은 balanced_seed 힌트만 씀 → incumbent 추가.)</li>
+<li><span class="rank">6</span><b>증분 모델 재사용 (LBBD).</b> gassign이 LBBD iter마다 모델 rebuild. 모델 유지 + cut만 추가하면 재구성 비용 절감.</li>
+<li><span class="rank">7</span><b>fix-and-optimize (CP-SAT LNS).</b> perbay/timing에서 전체 재풀이 대신 윈도우 변수만 풀고 나머지 고정 → 큰 bay에서 시간↓.</li>
+<li><span class="rank">8</span><b>적응형 worker 수.</b> 작은 bay/instance는 1-worker+seed(4-worker 스폰 오버헤드 제거 + 결정성↑), 큰 것만 4-worker. 병렬 후보(레버9)와 결합 시 코어 배분에 필수.</li>
+</ul>
+
+<h3>C. 병렬화 (4코어) — 시간-효율 #1</h3>
+<ul>
+<li><span class="rank">9</span><b>후보 병렬 실행.</b> 현재 순차(292s). legacy(축소)·box·gassign을 병렬 프로세스로 각각 ~풀 TL → best-of of full-budget. 같은 벽시계에 굶주림 해소. CP-SAT worker는 후보당 분배(예: box 2 + gassign 2). <span class="small">ledger상 "achievable ceiling"으로 식별됨.</span></li>
+</ul>
+
+<h3>D. 새 CP-SAT 정식화 (품질 레버)</h3>
+<ul>
+<li><span class="rank">10</span><b>z3-near-preferred 패킹.</b> 경쟁자 승점(moderate z1, low z3)을 per-bay CP-SAT로: "선호 베이 유지 최대화 s.t. z1 ≤ budget". perbay_t3가 K² 폭발했으니 skyline/contact 후보 가지치기 + NoOverlap2D 직접 모델로 재시도. <span class="small">(단 prob_38류 크레인-멀티레이어 벽은 falsified.)</span></li>
+<li><span class="rank">11</span><b>gassign 마스터에 z3-aware cut.</b> 현 area-time relaxation은 z3 무관 → 과스필. 마스터가 z3-spill 비용을 보게 하면 굶주림 해소 시 더 나은 점 도달.</li>
+</ul>
+
+<!-- 6 -->
+<h2 id="m6">§6 요약 표</h2>
+<table>
+<tr><th>항목</th><th>실측/판정</th></tr>
+<tr><td>벽시계 구성(T=300)</td><td>legacy ~130s(44%) · box ~74s(25%) · gassign ~68s(23%) · perbay ~19s(7%), <b>순차</b></td></tr>
+<tr><td>레거시 결과</td><td class="bad">3/3 인스턴스 모두 폐기됨(box/gassign이 −86~95% 격파)</td></tr>
+<tr><td>obj 감소 출처</td><td class="good">사실상 전부 CP-SAT(box·gassign·perbay·cpsat_timing). 그리디=출발점만</td></tr>
+<tr><td>최고 시간효율 단계</td><td class="good">cpsat_timing: 3.5s에 −49%(428M→218M)</td></tr>
+<tr><td>#1 시간 절감 레버</td><td>set2 레거시 예산 축소(~130→35s) + <b>4코어 병렬 후보</b></td></tr>
+<tr><td>#1 CP-SAT 레버</td><td>병렬 후보로 굶주림 해소(gassign@full=prob_39 경쟁자 격파) + warm-start/증분모델 가속</td></tr>
+</table>
+
+<hr>
+<p class="small">생성 2026-06-17 · 계측 <code>OGC_STAGE_TIMING=1</code>(게이트, 동작불변) · 원자료 <code>notes/stage-parsed.json</code>, <code>notes/stage-prob_*.stderr.txt</code> · 관련 원장 <code>notes/research/perbay-loop-ledger.md</code> E23.</p>
+
+</div>
+</body>
+</html>

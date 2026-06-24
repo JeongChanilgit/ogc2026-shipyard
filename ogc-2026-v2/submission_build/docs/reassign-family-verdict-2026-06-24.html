@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>z1-피드백 재배정 계열 종합 판정 (M1·M2) — 2026-06-24</title>
+<style>
+  :root{--bg:#0e1014;--panel:#171a21;--ink:#e7eaf0;--muted:#98a2b3;--line:#2a2f3a;
+        --orig:#3fb950;--m1:#d29922;--m2:#f85149;--accent:#58a6ff;--cyan:#39d0d8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:30px 22px 90px}
+  h1{font-size:24px;margin:0 0 4px} h2{font-size:18px;margin:32px 0 8px;border-top:1px solid var(--line);padding-top:12px;color:var(--accent)}
+  .sub{color:var(--muted);margin:0 0 18px}
+  .verdict{background:#1d130f;border:1px solid #6e2b21;border-radius:12px;padding:16px 19px;margin:14px 0}
+  .verdict b{color:var(--m2)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+  th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--muted);font-weight:600;border-bottom:1px solid #3a4150}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .o{color:var(--orig)} .a{color:var(--m1)} .b{color:var(--m2)} .mut{color:var(--muted)}
+  ul,ol{margin:6px 0;padding-left:20px} li{margin:4px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;font-size:12.5px}
+  .legend{display:flex;gap:18px;margin:6px 0 2px;font-size:13px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:22px;height:3px;display:inline-block;border-radius:2px}
+  .charts{display:flex;gap:18px;flex-wrap:wrap}
+  .chart{background:#0b0d11;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .ann{font:11px ui-monospace,Consolas,monospace;fill:var(--muted)}
+</style></head><body><div class="wrap">
+
+<h1>z1-피드백 재배정 계열 — 종합 판정 (M1 · M2)</h1>
+<p class="sub">2026-06-24 · 제출본 코드(_m1base = v-v3postproc-seq) · 풀 파이프라인(그리디→txyo→재그리디→txyo 끝까지) · 같은 예산 · 공식 global_eval</p>
+
+<div class="verdict">
+<b>판정: 재배정 피드백 계열(M1 + M2) 전부 falsified.</b> 순위가 일관되게
+<b class="o">ORIGINAL</b> &lt; <b class="a">M1</b> &lt; <b class="b">M2</b> —
+<b>재배정으로 흔들수록 더 나쁨.</b> 어떤 재그리디도 ORIGINAL(그리디→txyo) 수렴해 아래로 못 내려감.
+근본: 제출본 그리디는 이미 구조적 제약하 near-optimal 배정을 찾고, z1 은 co-presence 구조라
+재배정 perturbation 은 <b>더 나쁜 basin</b> 으로 빠지며 txyo 가 이를 회복 못 함.
+</div>
+
+<h2>1. 최종 순위 (완전수렴)</h2>
+<table>
+<tr><th>인스턴스</th><th class="o">ORIGINAL</th><th class="a">M1 (tardy블록 페널티)</th><th class="b">M2 (선행블록 페널티)</th><th>패턴</th></tr>
+<tr><td>prob_38</td><td class="mono o">54,658,258</td><td class="mono a">57,162,888<br><span class="mut">+2.50M</span></td><td class="mono b">59,201,776<br><span class="mut">+4.54M</span></td><td class="mut">O&lt;M1&lt;M2</td></tr>
+<tr><td>prob_30 <span class="mut">(완전수렴)</span></td><td class="mono o">5,330,072</td><td class="mono a">6,007,202<br><span class="mut">+0.68M</span></td><td class="mono b">6,607,093<br><span class="mut">+1.28M</span></td><td class="mut">O&lt;M1&lt;M2</td></tr>
+<tr><td><b>합계</b></td><td class="mono o">59,988,330</td><td class="mono a">63,170,090</td><td class="mono b">65,808,869</td><td></td></tr>
+</table>
+
+<h2>2. 수렴곡선 — 세 방식 모두 (txyo 시간 → obj, 아래=좋음)</h2>
+<div class="legend">
+  <span><i class="sw" style="background:var(--orig)"></i> ORIGINAL</span>
+  <span><i class="sw" style="background:var(--m1)"></i> M1 (tardy블록)</span>
+  <span><i class="sw" style="background:var(--m2)"></i> M2 (선행블록)</span>
+  <span class="mut">점선↑ = 재그리디 리셋(더 나쁜 배정)</span>
+</div>
+<div class="charts">
+
+<div class="chart">
+<div style="color:var(--cyan);font-size:13px;margin-bottom:4px">prob_38</div>
+<svg width="470" height="300" viewBox="0 0 470 300">
+  <g stroke="#1c2029"><line x1="70" y1="20" x2="450" y2="20"/><line x1="70" y1="69.5" x2="450" y2="69.5"/>
+  <line x1="70" y1="119" x2="450" y2="119"/><line x1="70" y1="168.6" x2="450" y2="168.6"/>
+  <line x1="70" y1="218.1" x2="450" y2="218.1"/><line x1="70" y1="267.6" x2="450" y2="267.6"/></g>
+  <g class="ann" text-anchor="end"><text x="64" y="24">64M</text><text x="64" y="73">62M</text>
+  <text x="64" y="123">60M</text><text x="64" y="172">58M</text><text x="64" y="222">56M</text><text x="64" y="271">54M</text></g>
+  <g class="ann" text-anchor="middle"><text x="70" y="288">0</text><text x="165" y="288">300</text>
+  <text x="260" y="288">600</text><text x="355" y="288">900</text><text x="450" y="288">1200s</text></g>
+  <!-- ORIGINAL -->
+  <polyline fill="none" stroke="var(--orig)" stroke-width="2.5" points="70,66 165,217 260,243 355,250 450,251"/>
+  <text class="ann" x="450" y="247" text-anchor="end" fill="var(--orig)">54.66M</text>
+  <!-- M1: measure 56.84, re-greedy 63.57 -->
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2" points="70,66 165,197"/>
+  <line x1="165" y1="197" x2="165" y2="31" stroke="var(--m1)" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2" points="165,31 260,141 355,162 450,189"/>
+  <text class="ann" x="450" y="185" text-anchor="end" fill="var(--m1)">57.16M</text>
+  <!-- M2: measure 55.45, re-greedy 63.59 -->
+  <polyline fill="none" stroke="var(--m2)" stroke-width="2" points="70,66 165,232"/>
+  <line x1="165" y1="232" x2="165" y2="30" stroke="var(--m2)" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <polyline fill="none" stroke="var(--m2)" stroke-width="2" points="165,30 260,107 355,132 450,139"/>
+  <text class="ann" x="450" y="135" text-anchor="end" fill="var(--m2)">59.20M</text>
+</svg>
+</div>
+
+<div class="chart">
+<div style="color:var(--cyan);font-size:13px;margin-bottom:4px">prob_30 (완전수렴)</div>
+<svg width="470" height="300" viewBox="0 0 470 300">
+  <g stroke="#1c2029"><line x1="70" y1="20" x2="450" y2="20"/><line x1="70" y1="48.9" x2="450" y2="48.9"/>
+  <line x1="70" y1="106.6" x2="450" y2="106.6"/><line x1="70" y1="164.4" x2="450" y2="164.4"/>
+  <line x1="70" y1="222.2" x2="450" y2="222.2"/><line x1="70" y1="279.9" x2="450" y2="279.9"/></g>
+  <g class="ann" text-anchor="end"><text x="64" y="24">7.0M</text><text x="64" y="53">6.8M</text>
+  <text x="64" y="110">6.4M</text><text x="64" y="168">6.0M</text><text x="64" y="226">5.6M</text><text x="64" y="284">5.2M</text></g>
+  <g class="ann" text-anchor="middle"><text x="70" y="288">0</text><text x="165" y="288">300</text>
+  <text x="260" y="288">600</text><text x="355" y="288">900</text><text x="450" y="288">1200s</text></g>
+  <!-- ORIGINAL flat 5.33 -->
+  <polyline fill="none" stroke="var(--orig)" stroke-width="2.5" points="70,221 165,261 260,261 355,261 450,261"/>
+  <text class="ann" x="450" y="256" text-anchor="end" fill="var(--orig)">5.33M</text>
+  <!-- M1: measure 5.34, re-greedy 6.78 -->
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2" points="70,221 165,260"/>
+  <line x1="165" y1="260" x2="165" y2="52" stroke="var(--m1)" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <polyline fill="none" stroke="var(--m1)" stroke-width="2" points="165,52 260,156 355,163 450,163"/>
+  <text class="ann" x="450" y="158" text-anchor="end" fill="var(--m1)">6.01M</text>
+  <!-- M2: measure 5.33, re-greedy 6.74 -->
+  <polyline fill="none" stroke="var(--m2)" stroke-width="2" points="70,221 165,261"/>
+  <line x1="165" y1="261" x2="165" y2="57" stroke="var(--m2)" stroke-width="1.2" stroke-dasharray="4 3"/>
+  <polyline fill="none" stroke="var(--m2)" stroke-width="2" points="165,57 260,76 355,76 450,76"/>
+  <text class="ann" x="450" y="72" text-anchor="end" fill="var(--m2)">6.61M</text>
+</svg>
+</div>
+
+</div>
+<p class="mut" style="font-size:12.5px">세 곡선 모두 재그리디 후 점선만큼 <b>위로 리셋</b>(더 나쁜 배정). M1·M2 둘 다 ORIGINAL(초록) 바닥에 못 닿음.
+M2(빨강)가 더 높음 = 더 나쁨. prob_30 은 셋 다 평탄 = 완전수렴, 순위 확정.</p>
+
+<h2>3. 왜 M2 가 M1 보다 더 나쁜가</h2>
+<div class="card">
+<ul>
+<li><b>M1</b> = tardy 블록(증상)을 다른 베이로. <b>M2</b> = 그 tardy 를 막은 *선행블록*(원인, 잘-배치된 non-tardy)을 다른 베이로.</li>
+<li>선행블록은 원래 <b>잘 놓여 있던</b> 블록이라 옮기면 그 좋은 구조를 더 많이 깬다 → <b>z3 폭증</b>(prob_38 5746→7807, 선호베이 이탈) + z1 도 악화(4264 vs ORIGINAL 3970).</li>
+<li>tardy 가 풀릴 만큼 크레인창이 열리지도 않음(co-presence 가 한 선행블록 제거로 안 풀림 — 크로스베이 front 가 이미 보인 결과).</li>
+</ul>
+</div>
+
+<h2>4. 종합 결론 — 재배정 피드백 라인 종료</h2>
+<div class="card">
+<p><b>같은 구조벽에 막힌 모든 시도 (여러 세션 누적):</b></p>
+<ul>
+<li class="b">M1 (tardy블록 재배정) · M2 (선행블록 재배정) — falsified (이번)</li>
+<li class="mut">v4 reassign / reassign_balance (z1 2~16배 폭발) · 크로스베이 front/cluster · moveall 강화 — 전부 falsified (이전)</li>
+</ul>
+<p><b>공통 진실</b>: z1 은 <b>구조적 co-presence-bound</b>. 제출본 그리디가 이미 그 구조하 near-optimal 배정을 찾음.
+<b>배정을 어떻게 재조정하든(tardy·선행·균형·크로스베이) perturbation → 더 나쁜 basin</b>, txyo 복구 불가.
+"정확한 z1 피드백" 자체는 옳았으나, <b>배정은 이미 z1 을 거의 최적화한 상태</b>라 되먹일 여지가 없었다.</p>
+</div>
+
+<h2>5. 피벗 (남은 진짜 레버)</h2>
+<div class="card">
+<ol>
+<li><b>never−1 검증 + 제출 굳히기</b> — 진짜 점수게임(인스턴스당 −1 회피 ≈ +R/2). 프로덕션 set2 271.93M(경쟁자 +7.89M)·feasible 40/40 을 ALL40 운영/짧은 TL 에서 never−1 확정 → 제출. <b>obj 미세개선보다 우선.</b> ← 추천</li>
+<li><b>per-bay 패킹밀도</b>(구조 root) — 유일하게 안 막힌 레버지만 우리 패커 이미 경쟁력(27 vs 천장 33)·NFP 폴리곤 네스팅 난도 높음. 장기 연구.</li>
+<li class="mut">재배정/피드백 계열은 <b>재시도 금지</b> (M1·M2·v4·크로스베이·moveall 모두 구조벽 확인).</li>
+</ol>
+</div>
+
+<p class="mut" style="font-size:12px;margin-top:24px">데이터: <code>_m2_ledger.md</code> · <code>_m12loop_ledger.md</code> · 하니스 <code>_m2.py</code>/<code>_m1_2loop.py</code> ·
+코드 <code>_m1base/</code>(제출본+gated patch, 기본 OFF=프로덕션 무영향) · 설계 <code>docs/z1-feedback-loop-design-2026-06-24.html</code></p>
+</div></body></html>

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>합의안 재검증 — Defender vs Aggressor vs Minimalist</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --fg: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --card: #14141a;
+    --card-2: #1a1a22;
+    --card-3: #1f1f28;
+    --border: #2a2a30;
+    --d: #3b82f6;
+    --d-bg: rgba(59,130,246,0.12);
+    --a: #ef4444;
+    --a-bg: rgba(239,68,68,0.12);
+    --m: #10b981;
+    --m-bg: rgba(16,185,129,0.12);
+    --warn: #f59e0b;
+    --warn-bg: rgba(245,158,11,0.12);
+    --code-bg: #1f1f28;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre { font-family: "SF Mono", Monaco, "Cascadia Code", Consolas, monospace; }
+  .wrapper { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* HERO */
+  .hero {
+    padding: 64px 0 48px;
+    text-align: center;
+    background:
+      radial-gradient(circle at 25% 30%, var(--d-bg) 0%, transparent 45%),
+      radial-gradient(circle at 75% 30%, var(--a-bg) 0%, transparent 45%),
+      radial-gradient(circle at 50% 75%, var(--m-bg) 0%, transparent 45%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .hero .lead {
+    font-size: 17px;
+    color: var(--muted);
+    max-width: 720px;
+    margin: 0 auto 32px;
+  }
+
+  /* TRIANGLE VISUAL */
+  .triangle-wrap {
+    max-width: 700px;
+    margin: 40px auto 0;
+    padding: 0 20px;
+  }
+  .triangle {
+    position: relative;
+    aspect-ratio: 16/9;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* SECTION */
+  section { padding: 56px 0; }
+  section.alt { background: rgba(0,0,0,0.2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .section-tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--dim);
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .section-h2 {
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .section-desc {
+    color: var(--muted);
+    margin-bottom: 32px;
+    max-width: 720px;
+    font-size: 15px;
+  }
+  h3.sub {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 32px 0 12px;
+  }
+  h4.sub {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 20px 0 8px;
+  }
+  p.body { font-size: 14.5px; margin: 10px 0; }
+  ul.body { margin: 10px 0; padding-left: 24px; font-size: 14px; }
+  ul.body li { margin: 4px 0; }
+
+  /* PERSONA CARDS - TOP */
+  .personas-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 32px 0;
+  }
+  @media (max-width: 800px) { .personas-row { grid-template-columns: 1fr; } }
+  .persona-mini {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    border-top: 4px solid;
+    transition: transform 0.15s;
+  }
+  .persona-mini:hover { transform: translateY(-3px); }
+  .persona-mini.d { border-top-color: var(--d); }
+  .persona-mini.a { border-top-color: var(--a); }
+  .persona-mini.m { border-top-color: var(--m); }
+  .persona-mini .icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .persona-mini h5 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .persona-mini h5.d { color: var(--d); }
+  .persona-mini h5.a { color: var(--a); }
+  .persona-mini h5.m { color: var(--m); }
+  .persona-mini .role {
+    font-size: 11px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+  .persona-mini .stance {
+    font-size: 13px;
+    color: var(--fg);
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .persona-mini .quote {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+  }
+
+  /* CONFLICT BLOCK */
+  .conflict {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin: 32px 0;
+  }
+  .conflict h3 { margin-top: 0; }
+  .conflict-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  @media (max-width: 700px) { .conflict-grid { grid-template-columns: 1fr; } }
+  .conflict-cell {
+    background: var(--card);
+    padding: 16px;
+  }
+  .conflict-cell.d-cell { border-top: 3px solid var(--d); }
+  .conflict-cell.a-cell { border-top: 3px solid var(--a); }
+  .conflict-cell.m-cell { border-top: 3px solid var(--m); }
+  .conflict-cell h6 {
+    font-size: 11px;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .conflict-cell .val {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .conflict-cell.d-cell .val { color: var(--d); }
+  .conflict-cell.a-cell .val { color: var(--a); }
+  .conflict-cell.m-cell .val { color: var(--m); }
+  .conflict-cell .desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* TIMELINE - 6-week plan */
+  .week-timeline {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .week-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .week {
+    background: var(--card-2);
+    border-radius: 6px;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .week .w-label {
+    color: var(--dim);
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+  .week .w-task {
+    color: var(--fg);
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .week.m-work { background: var(--m-bg); border-color: var(--m); }
+  .week.d-work { background: var(--d-bg); border-color: var(--d); }
+  .week.a-work { background: var(--a-bg); border-color: var(--a); }
+  .week.mix { background: linear-gradient(135deg, var(--m-bg), var(--d-bg)); border-color: var(--warn); }
+  .week-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 16px;
+  }
+  .week-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .legend-dot.m { background: var(--m); }
+  .legend-dot.d { background: var(--d); }
+  .legend-dot.a { background: var(--a); }
+  .legend-dot.mix { background: linear-gradient(135deg, var(--m), var(--d)); }
+
+  /* TABLE OF ROUND OUTPUTS */
+  .round-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0;
+  }
+  @media (max-width: 900px) { .round-cards { grid-template-columns: 1fr; } }
+  .round-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .round-card.d { border-left: 3px solid var(--d); }
+  .round-card.a { border-left: 3px solid var(--a); }
+  .round-card.m { border-left: 3px solid var(--m); }
+  .round-card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .round-card.d h4 { color: var(--d); }
+  .round-card.a h4 { color: var(--a); }
+  .round-card.m h4 { color: var(--m); }
+  .round-card .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--card-2);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .round-card ul {
+    padding-left: 20px;
+    margin-top: 10px;
+  }
+  .round-card li {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 5px 0;
+    line-height: 1.55;
+  }
+  .round-card li strong { color: var(--fg); }
+
+  /* EVOLUTION CARD */
+  .evo-card {
+    background: var(--d-bg);
+    border: 1px solid var(--d);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 24px 0;
+  }
+  .evo-card h4 {
+    color: var(--d);
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .evo-list {
+    padding-left: 0;
+    list-style: none;
+  }
+  .evo-list li {
+    padding: 10px 12px;
+    background: var(--card);
+    border-radius: 6px;
+    margin: 8px 0;
+    font-size: 13px;
+    border-left: 2px solid var(--d);
+  }
+  .evo-list li strong { color: var(--d); }
+
+  /* CONVERGENCE */
+  .converge-box {
+    background: linear-gradient(135deg, var(--d-bg) 0%, var(--m-bg) 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin: 32px 0;
+  }
+  .converge-box h3 {
+    margin-top: 0;
+    color: var(--fg);
+  }
+
+  /* SELF CHECK */
+  .self-check-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  @media (max-width: 800px) { .self-check-grid { grid-template-columns: 1fr; } }
+  .sc-card {
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .sc-card.d { background: var(--d-bg); border-color: var(--d); }
+  .sc-card.a { background: var(--a-bg); border-color: var(--a); }
+  .sc-card.m { background: var(--m-bg); border-color: var(--m); }
+  .sc-card h6 {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .sc-card.d h6 { color: var(--d); }
+  .sc-card.a h6 { color: var(--a); }
+  .sc-card.m h6 { color: var(--m); }
+
+  /* CODE */
+  pre.code {
+    background: #08080d;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 12px 0;
+    color: #e7e7ea;
+  }
+  code.inline {
+    background: var(--code-bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    color: #c084fc;
+  }
+
+  /* QUOTE */
+  blockquote {
+    border-left: 3px solid var(--dim);
+    padding: 6px 16px;
+    margin: 16px 0;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .footer {
+    padding: 32px 0;
+    text-align: center;
+    color: var(--dim);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .footer a { color: var(--d); text-decoration: none; }
+
+  svg { display: block; max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrapper">
+    <span class="hero-tag">합의안 재검증 토론 · 2 라운드</span>
+    <h1>Defender vs Aggressor vs Minimalist</h1>
+    <p class="lead">
+      이전 3-에이전트 토론 (Theorist/Pragmatist/Contrarian) 의 결과 도출된 합의안에 대해,
+      <strong>옹호자 1명 + 서로 다른 두 입장의 비판자 2명</strong> 이 다시 검증.
+      셋 다 최선의 항변 → 합의안은 살아남았는가?
+    </p>
+
+    <!-- Triangle SVG -->
+    <div class="triangle-wrap">
+      <svg viewBox="0 0 600 280">
+        <defs>
+          <marker id="arr-d" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#3b82f6"/>
+          </marker>
+          <marker id="arr-a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
+          </marker>
+          <marker id="arr-m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+          </marker>
+        </defs>
+
+        <!-- 가운데: Defender / 합의안 -->
+        <circle cx="300" cy="140" r="58" fill="#3b82f620" stroke="#3b82f6" stroke-width="2"/>
+        <text x="300" y="125" font-size="13" fill="#3b82f6" text-anchor="middle" font-weight="700">합의안</text>
+        <text x="300" y="143" font-size="11" fill="#a1a1aa" text-anchor="middle">5 Phase</text>
+        <text x="300" y="160" font-size="10" fill="#a1a1aa" text-anchor="middle">Defender 🛡️</text>
+
+        <!-- 왼쪽: Aggressor -->
+        <circle cx="90" cy="140" r="58" fill="#ef444420" stroke="#ef4444" stroke-width="2"/>
+        <text x="90" y="125" font-size="13" fill="#ef4444" text-anchor="middle" font-weight="700">더 복잡하게</text>
+        <text x="90" y="143" font-size="11" fill="#a1a1aa" text-anchor="middle">ASYM-RAID</text>
+        <text x="90" y="160" font-size="10" fill="#a1a1aa" text-anchor="middle">Aggressor ⚔️</text>
+
+        <!-- 오른쪽: Minimalist -->
+        <circle cx="510" cy="140" r="58" fill="#10b98120" stroke="#10b981" stroke-width="2"/>
+        <text x="510" y="125" font-size="13" fill="#10b981" text-anchor="middle" font-weight="700">더 단순하게</text>
+        <text x="510" y="143" font-size="11" fill="#a1a1aa" text-anchor="middle">Lean Baseline</text>
+        <text x="510" y="160" font-size="10" fill="#a1a1aa" text-anchor="middle">Minimalist 🪶</text>
+
+        <!-- 양쪽 화살표 -->
+        <line x1="148" y1="140" x2="242" y2="140" stroke="#ef4444" stroke-width="2" marker-end="url(#arr-d)" stroke-dasharray="4,3"/>
+        <text x="195" y="130" font-size="9" fill="#ef4444" text-anchor="middle">너무 약함</text>
+
+        <line x1="358" y1="140" x2="452" y2="140" stroke="#10b981" stroke-width="2" marker-end="url(#arr-m)" stroke-dasharray="4,3"/>
+        <text x="405" y="130" font-size="9" fill="#10b981" text-anchor="middle">너무 복잡</text>
+
+        <!-- 충돌 화살표 (양쪽 끼리) -->
+        <path d="M 130 200 Q 300 250 470 200" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <text x="300" y="248" font-size="10" fill="#f59e0b" text-anchor="middle">서로 정반대 — 동시 옳을 수 없음</text>
+
+        <!-- 위에 R-nb -->
+        <text x="300" y="40" font-size="11" fill="#71717a" text-anchor="middle" font-style="italic">"점수공식 R−nb 를 어떻게 해석하는가" 의 차이</text>
+        <line x1="200" y1="50" x2="400" y2="50" stroke="#2a2a30"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 세 입장 소개 -->
+<!-- ============================================================ -->
+<section>
+  <div class="wrapper">
+    <span class="section-tag">세 입장 한눈에</span>
+    <h2 class="section-h2">셋이 *각자* 어떻게 점수공식을 해석했는가</h2>
+    <p class="section-desc">
+      셋 다 같은 점수공식 <code class="inline">R − nb</code> 를 봤다. 그러나 *어떻게 살아남을지* 의 결론이 완전히 갈렸다.
+    </p>
+
+    <div class="personas-row">
+      <div class="persona-mini d">
+        <div class="icon">🛡️</div>
+        <h5 class="d">Defender (옹호자)</h5>
+        <div class="role">합의안을 옹호</div>
+        <div class="stance">
+          "합의안은 3 라운드 토론을 거친 *균형점*. Phase 4 safety floor + Phase 1·3 ceiling 추구.
+          6개 직교 각도가 *동시* 작동. 분해 불가."
+        </div>
+        <div class="quote">
+          "두 비판자가 정반대 방향인 게 *역으로* 합의안의 위치를 증명한다."
+        </div>
+      </div>
+
+      <div class="persona-mini a">
+        <div class="icon">⚔️</div>
+        <h5 class="a">Aggressor (과격파)</h5>
+        <div class="role">"더 과격해야 우승"</div>
+        <div class="stance">
+          "합의안은 *평균 클로드의 학구적 정제판*. R−nb 우측 비대칭 보상을 손에 쥐고도
+          R/2 안주. *우측 꼬리* 를 자발적으로 닫는 설계."
+        </div>
+        <div class="quote">
+          "30명 중 1등 시도자가 *명시적으로 0명* 이면 시도하는 자가 자동 1등."
+        </div>
+      </div>
+
+      <div class="persona-mini m">
+        <div class="icon">🪶</div>
+        <h5 class="m">Minimalist (회의주의자)</h5>
+        <div class="role">"6주에 못 만든다"</div>
+        <div class="stance">
+          "베이스라인 962줄 + 17줄 stub 에 6 모듈 + 3 도구는 공학적 비현실.
+          Risk-adjusted EV 가 답 — Lean Baseline + simple LNS + safety net."
+        </div>
+        <div class="quote">
+          "*복잡함은 야망의 증거가 아니라 시간 부족의 증거가 된다*."
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Round 1 -->
+<!-- ============================================================ -->
+<section class="alt">
+  <div class="wrapper">
+    <span class="section-tag">Round 1 · 각자 입장 표명</span>
+    <h2 class="section-h2">서로 모르는 상태에서 각자 출발</h2>
+    <p class="section-desc">
+      세 에이전트가 *서로의 의견을 모르는 상태에서* 합의안에 대한 입장 표명.
+      각자 자기 페르소나에 맞게 최선의 항변.
+    </p>
+
+    <div class="round-cards">
+      <div class="round-card d">
+        <h4>🛡️ Defender R1 <span class="badge">옹호</span></h4>
+        <ul>
+          <li><strong>6 직교 각도 동시 작동</strong> — Phase 0 probe / dual compass / 매니폴드 K=3 / race + vote / 1비트 회귀 / R-nb 비대칭</li>
+          <li><strong>Phase 간 정보 의존성</strong> — Phase 0 → 시간배분, Phase 1 → dual λ, Phase 1/2 → 롤백 기준점</li>
+          <li><strong>예상 공격 선제 답변</strong> — Phase 3 실패 시 단순 LNS 다운그레이드 가능</li>
+          <li><strong>약점 자인</strong>: 분기 실험 미완료 / dual 보장 약함 / profiling 정확도 보장 약함</li>
+        </ul>
+      </div>
+
+      <div class="round-card a">
+        <h4>⚔️ Aggressor R1 <span class="badge">5 비판</span></h4>
+        <ul>
+          <li><strong>K=3 직교성은 수사</strong> — EDD/LP-MIP/Anti-EDD 다 학술 도구</li>
+          <li><strong>Dual-guided LNS 절반 차별화</strong> — Polyak 비볼록 자기기만</li>
+          <li><strong>R-nb 와 반대로 설계</strong> — Phase 4 너무 크고 MIPGap 너무 안전</li>
+          <li><strong>4분기는 시간배분만</strong> — 클래스마다 *완전 다른 알고리즘* 필요</li>
+          <li><strong>조선업 도메인 지식 0줄</strong> — LG CNS = 한국 조선소 컨설팅</li>
+          <li><strong>대안</strong>: ASYM-RAID — 7 클래스 + Forest-ALNS + 도메인 인터뷰</li>
+        </ul>
+      </div>
+
+      <div class="round-card m">
+        <h4>🪶 Minimalist R1 <span class="badge">6 비판</span></h4>
+        <ul>
+          <li><strong>9개 작업 ÷ 60일 = 6.7일</strong> — 디버그 시간 무시</li>
+          <li><strong>멀티 워커 평가서버 위험</strong> — fork/spawn, Shapely pickle, Gurobi 라이선스</li>
+          <li><strong>Aggregate LP-MIP 가장 위험</strong> — 라이선스 + 모델 정확도 + 큰 인스턴스</li>
+          <li><strong>Dual-LNS 5개 기능 통합</strong> — 어느 부분 깨졌나 디버그 불가</li>
+          <li><strong>K=3 시간분할 + OOM</strong> — 4코어/16GB 한계</li>
+          <li><strong>대안</strong>: Lean Baseline — 작업 3개, 14일, 분산 작음</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Round 2 — EV 산수 충돌 -->
+<!-- ============================================================ -->
+<section>
+  <div class="wrapper">
+    <span class="section-tag">Round 2 · 결정적 충돌</span>
+    <h2 class="section-h2">EV 산수가 *세 가지로 갈렸다*</h2>
+    <p class="section-desc">
+      셋이 *같은 점수공식* 을 본 결과 *서로 다른 산수* 를 제시. 어느 산수가 옳은가?
+    </p>
+
+    <div class="conflict">
+      <h3 class="sub" style="margin-top:0;">R=30·15 인스턴스 가정 — 인스턴스 점수 합산</h3>
+      <p class="body" style="color:var(--muted)">
+        <strong style="color:var(--d)">Defender 의 통찰</strong>: OGC 2026 의 점수는
+        <em>상금 분배가 아니라 *인스턴스별 R−nb 합산*</em>. Minimalist 의 EV 산수는 단위가 틀렸다.
+      </p>
+
+      <div class="conflict-grid">
+        <div class="conflict-cell d-cell">
+          <h6>합의안 (잘 작동)</h6>
+          <div class="val">~354</div>
+          <div class="desc">
+            상위 클러스터 진입, 0% −1.<br>
+            인스턴스당 ≈ 23.6점
+          </div>
+        </div>
+        <div class="conflict-cell a-cell">
+          <h6>합의안 (부분 작동)</h6>
+          <div class="val">~315</div>
+          <div class="desc">
+            상위 절반 진입.<br>
+            인스턴스당 ≈ 21점
+          </div>
+        </div>
+        <div class="conflict-cell m-cell">
+          <h6>Lean Baseline</h6>
+          <div class="val">~270</div>
+          <div class="desc">
+            중위 클러스터.<br>
+            인스턴스당 ≈ 18점
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sub">완성 확률을 가중하면?</h3>
+    <p class="body" style="color:var(--muted)">
+      Minimalist 의 진짜 무기는 <em>완성 확률</em> 을 EV 에 곱하는 것. 어느 가정이 옳은가?
+    </p>
+
+    <div class="conflict">
+      <h4 class="sub" style="margin-top:0;">시나리오 1 — Defender 의 산수 (완성 60%/부분 30%/실패 10%)</h4>
+      <pre class="code">합의안 EV = 0.6 × 354 + 0.3 × 315 + 0.1 × (−15) = 305.4 점
+Lean EV   = 0.9 × 270 + 0.1 × 260                = 269.0 점
+→ 합의안 13% 우월</pre>
+
+      <h4 class="sub">시나리오 2 — Aggressor 의 정정 (Safety Net 회귀 차단 = 부분 작동 30%, 완전 실패 0%)</h4>
+      <pre class="code">합의안 EV = 0.7 × 354 + 0.3 × 270 (baseline fallback) = 328 점
+Lean EV   = 270 점
+→ 합의안 21% 우월</pre>
+
+      <h4 class="sub">시나리오 3 — Minimalist 의 정정 (작업 시점 EV, 분산까지)</h4>
+      <pre class="code">합의안 EV 1200만원 (분산 큼: 왼쪽 꼬리 300만)
+Lean EV   1234만원 (분산 작음)
+ASYM-RAID 945만원 (Aggressor 의 대안)
+→ Sharpe ratio 관점에서 Lean 우월</pre>
+    </div>
+
+    <blockquote>
+      <strong>핵심 통찰</strong>: 세 산수의 차이는 *완성 확률* 의 가정에 있다.
+      합의안 §5 A2 (safety net 자동 회귀 차단) 가 *진짜* 작동하면 Defender·Aggressor 의 산수가 옳다.
+      *작동 안 하면* Minimalist 의 산수가 옳다. <em>이건 실험으로만 결판날 문제</em>.
+    </blockquote>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- ASYM-RAID 의 진실 -->
+<!-- ============================================================ -->
+<section class="alt">
+  <div class="wrapper">
+    <span class="section-tag">Round 2 · Aggressor vs Minimalist 직격</span>
+    <h2 class="section-h2">"ASYM-RAID 가 사실은 11개 알고리즘이다"</h2>
+    <p class="section-desc">
+      Minimalist 가 Aggressor 의 "5 → 3 축소" 라는 *수사* 를 분해.
+      ASYM-RAID 가 실제로는 *합의안보다 더 복잡* 함을 폭로.
+    </p>
+
+    <div class="conflict">
+      <h4 class="sub" style="margin-top:0;">Aggressor 의 ASYM-RAID 진화판 (R2)</h4>
+      <ul class="body">
+        <li><strong style="color:var(--a)">분기 A — Exact-First</strong> (작은 n) — MIP, MIPGap=0.05 공격적</li>
+        <li><strong style="color:var(--a)">분기 B — Domain-Heuristic</strong> (중간 n) — 조선업 가중 EDD + 도메인 인터뷰</li>
+        <li><strong style="color:var(--a)">분기 C — Matroid-Destroy ALNS</strong> (큰 n) — 시공간 매니폴드 destroy</li>
+      </ul>
+      <p class="body" style="color:var(--muted)">표면적으로 3 분기. 그러나 Minimalist 가 풀어보면:</p>
+
+      <pre class="code">SA·Tabu·MIP·도메인 greedy·Topology-MIP·Lawler·Hungarian·workload-balance + K=3 race(3)
+= <span style="color:var(--a)">11개의 독립 구현체</span></pre>
+
+      <p class="body">
+        Minimalist 의 결론:
+        <strong>"ASYM-RAID 는 '5 → 3 축소' 라는 *수사* 로 *실제는 합의안보다 복잡* 한 시스템"</strong>.
+      </p>
+    </div>
+
+    <h3 class="sub">Aggressor 의 반박</h3>
+    <p class="body">
+      Aggressor 는 *Minimalist 의 EV 산수* 를 가차없이 짚었다. 특히:
+    </p>
+    <ul class="body">
+      <li><strong>산수 오류 1</strong>: "우승 5% × 7천만 = 350만 vs 중상위 60% × 1.5천만 = 900만" 은 <em>상금 분배 가정</em>. OGC 2026 점수는 인스턴스 합산.</li>
+      <li><strong>산수 오류 2</strong>: "완전 실패 10%" 는 합의안 §5 A2 (safety net 회귀 차단) 무시 — 실제로는 0% 에 근접.</li>
+      <li><strong>산수 오류 3</strong>: "우승 0%" 는 자기 충족 예언 — 시도조차 안 하면 0이 보장된다.</li>
+    </ul>
+
+    <blockquote>
+      <strong>Aggressor 의 메타-비판</strong>: "Defender 와 Minimalist 모두 *우리는 평균 클로드를 못 이긴다* 는 가정.
+      Defender 는 평균의 *학구적 정제판*, Minimalist 는 평균의 *축소판*.
+      <em>진짜 우승 시도가 없다</em>."
+    </blockquote>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Defender 의 진화 -->
+<!-- ============================================================ -->
+<section>
+  <div class="wrapper">
+    <span class="section-tag">Round 2 · Defender 의 진화</span>
+    <h2 class="section-h2">합의안의 R2 양보 — 3가지 변경</h2>
+    <p class="section-desc">
+      Defender 는 두 비판자의 *진짜로 옳은 부분* 을 받아 합의안을 진화시켰다.
+      틀은 유지, 세부는 조정.
+    </p>
+
+    <div class="evo-card">
+      <h4>🛡️ 합의안 R2 진화판</h4>
+      <ol class="evo-list">
+        <li>
+          <strong>Phase 4 시간 3분 → 90초</strong>, 절약된 90초를 Phase 3 의 *risk-seeking branch* 에 배정.
+          MIPGap 0.05 → 0.15 공격적, 단 *더 좋으면 채택, 아니면 기존 incumbent 유지* (downside 0).
+          <em>→ Aggressor §3 비판 부분 인정 (R-nb 비대칭 적극 활용)</em>
+        </li>
+        <li>
+          <strong>Dual-LNS 를 2단계 incremental 통합</strong> — 2주차에 reactive ALNS only 검증,
+          4주차에 LP-dual guidance 추가. 통합 실패 시 1단계만 유지.
+          <em>→ Minimalist §4 비판 부분 인정 (5개 기능 동시 위험)</em>
+        </li>
+        <li>
+          <strong>Phase 0 에 인스턴스 데이터 프로파일링</strong> — 블록 크기·deadline 밀도·베이 가중치 분산을
+          데이터에서 추출해 파라미터 적응. 도메인 *추측* 대신 *데이터 기반*.
+          <em>→ Aggressor §5 + Minimalist 의 "측정 없는 가설 금지" 원칙</em>
+        </li>
+      </ol>
+    </div>
+
+    <p class="body">
+      Defender 의 핵심 무기: <strong>"Aggressor 와 Minimalist 가 *동시에 옳을 수 없다*"</strong>.
+      Aggressor 는 "더 복잡하게 (7 알고리즘)", Minimalist 는 "더 단순하게 (3 작업)".
+      <em>두 입장 사이의 절충점이 합의안</em> — 한쪽이 옳다면 다른 쪽이 틀린다.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 진짜 수렴점 -->
+<!-- ============================================================ -->
+<section class="alt">
+  <div class="wrapper">
+    <span class="section-tag">결론 · 토론의 수렴</span>
+    <h2 class="section-h2">셋이 동시에 satisfy 되는 단계적 구현</h2>
+    <p class="section-desc">
+      세 입장이 *반대 방향* 으로 보이지만, *단계적 구현 전략* 으로 모두 수용 가능.
+      이게 토론의 진짜 결론.
+    </p>
+
+    <div class="converge-box">
+      <h3 class="sub" style="margin-top:0;">핵심 통찰</h3>
+      <p class="body">
+        <strong>Minimalist 의 진화판 (작업 4개) ≈ 합의안 §5 A1~A4</strong>.
+        즉 <em>합의안의 *부분 폐기 fallback 라인* 과 Lean Baseline 이 같은 것</em>.
+        둘은 <em>대립이 아니라 같은 베이스 위에 다른 ceiling</em>.
+      </p>
+      <p class="body">
+        그러므로: <strong>먼저 Lean Baseline 을 *반드시* 만들고, 그 위에 합의안 모듈을 *증분 추가*</strong>.
+        깨지면 Lean 으로 자동 폴백. Aggressor 의 도메인 인터뷰는 *zero-risk* — Week 1 에 시도.
+      </p>
+    </div>
+
+    <h3 class="sub">6주 단계적 구현 timeline</h3>
+    <div class="week-timeline">
+      <div class="week-bar">
+        <div class="week m-work">
+          <div class="w-label">Week 1</div>
+          <div class="w-task">Lean Baseline 시작<br>+ 조선업 인터뷰</div>
+        </div>
+        <div class="week m-work">
+          <div class="w-label">Week 2</div>
+          <div class="w-task">Lean 완성 + 검증<br>(R0~R2 안전 제출)</div>
+        </div>
+        <div class="week d-work">
+          <div class="w-label">Week 3</div>
+          <div class="w-task">Profiler + Aggregate LP<br>모듈 증분</div>
+        </div>
+        <div class="week d-work">
+          <div class="w-label">Week 4</div>
+          <div class="w-task">K=3 race + reactive ALNS<br>(Dual 1단계)</div>
+        </div>
+        <div class="week mix">
+          <div class="w-label">Week 5</div>
+          <div class="w-task">분기 실험 §4.1·4.2·4.4<br>+ LP-dual 2단계</div>
+        </div>
+        <div class="week mix">
+          <div class="w-label">Week 6</div>
+          <div class="w-task">튜닝 + 본선 캘리브레이션<br>+ risk-seeking branch</div>
+        </div>
+      </div>
+
+      <div class="week-legend">
+        <span class="week-legend-item"><span class="legend-dot m"></span>Minimalist 영역 (Lean baseline)</span>
+        <span class="week-legend-item"><span class="legend-dot d"></span>Defender 영역 (합의안 증분)</span>
+        <span class="week-legend-item"><span class="legend-dot a"></span>Aggressor 기여 (도메인 인터뷰, risk-seeking)</span>
+        <span class="week-legend-item"><span class="legend-dot mix"></span>분기 실험·튜닝</span>
+      </div>
+    </div>
+
+    <h3 class="sub">셋의 기여가 단계별로 어떻게 흡수되는가</h3>
+    <div class="round-cards">
+      <div class="round-card m">
+        <h4>🪶 Minimalist 의 흡수</h4>
+        <ul>
+          <li><strong>Week 1~2</strong>: Lean Baseline 이 *베이스* 가 됨 (안전 제출 라인)</li>
+          <li><strong>전체</strong>: 매 증분 모듈 추가 시 *깨지면 Lean 으로 자동 폴백* 보장</li>
+          <li><strong>EV 산수 정정</strong>: Sharpe ratio 관점에서 분산 관리</li>
+          <li>핵심 통찰: <em>"먼저 산수부터 하자"</em></li>
+        </ul>
+      </div>
+
+      <div class="round-card d">
+        <h4>🛡️ Defender 의 흡수</h4>
+        <ul>
+          <li><strong>Week 3~4</strong>: 합의안 모듈 (profiler, K=3 race, Dual-LNS) 증분</li>
+          <li><strong>R2 진화 3가지</strong>: Phase 4 축소·Dual 2단계·데이터 프로파일링</li>
+          <li><strong>Phase 간 정보 의존성</strong>: 모듈 간 인터페이스 명세</li>
+          <li>핵심 통찰: <em>"두 비판자가 동시에 옳을 수 없다"</em></li>
+        </ul>
+      </div>
+
+      <div class="round-card a">
+        <h4>⚔️ Aggressor 의 흡수</h4>
+        <ul>
+          <li><strong>Week 1</strong>: 조선업 인터뷰 (zero-risk, 1시간) — 도메인 가중치 5개 확보 시도</li>
+          <li><strong>Week 6</strong>: Phase 3 의 risk-seeking branch (MIPGap=0.15)</li>
+          <li><strong>실패 시 fallback</strong>: 도메인 가중치 = 1.0 균등 (Lean 동등)</li>
+          <li>핵심 통찰: <em>"R-nb 우측 비대칭 보상에 명시적 베팅"</em></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- Self check -->
+<!-- ============================================================ -->
+<section>
+  <div class="wrapper">
+    <span class="section-tag">자가검열</span>
+    <h2 class="section-h2">셋의 정직한 자가 평가</h2>
+    <p class="section-desc">
+      세 명 모두 "이 답이 평균 클로드와 얼마나 다른가" 자가검열. 누구도 완벽한 차별화를 주장하지 않았다.
+    </p>
+
+    <div class="self-check-grid">
+      <div class="sc-card d">
+        <h6>🛡️ Defender</h6>
+        "골격은 여전히 학구적 (ALNS+MIP+race+safety).
+        <em>EV 산수 정정</em> 과 <em>risk-seeking branch</em> 는 평균이 안 하는 디테일.
+        그러나 차별화의 결정적 1% 는 R3 에서 더 들어가야 함."
+      </div>
+
+      <div class="sc-card a">
+        <h6>⚔️ Aggressor</h6>
+        "클로드 100명 중 5~10명 도달 가능. 0.1% 천재 답안은 아님.
+        도메인 인터뷰 + R-nb 우측 꼬리 명시는 *진정한 차별점*.
+        그러나 ALNS·MIP·race 골격 자체는 흔함."
+      </div>
+
+      <div class="sc-card m">
+        <h6>🪶 Minimalist</h6>
+        "Lean Baseline 자체는 평균과 비슷. <em>차별화는 답이 아니라 EV 가 답</em>.
+        평균 클로드는 7천만 우승에 끌려 환영을 EV 전부로 착각.
+        <em>Risk-adjusted EV 가 진짜 차별화</em>."
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 다음 행동 -->
+<!-- ============================================================ -->
+<section class="alt">
+  <div class="wrapper">
+    <span class="section-tag">즉시 실행할 액션</span>
+    <h2 class="section-h2">토론의 결과 → 실행 계획</h2>
+    <p class="section-desc">
+      세 입장이 *모두* 동의할 5가지 즉시 실행 항목.
+    </p>
+
+    <div class="conflict">
+      <h3 class="sub" style="margin-top:0;">5 액션 — 우선순위 순</h3>
+
+      <h4 class="sub">A1. Lean Baseline 먼저 짜기 (Week 1~2, 10일) <span style="color:var(--m); font-size:11px; font-weight:600;">[Minimalist 채택]</span></h4>
+      <p class="body" style="color:var(--muted)">
+        baseline_greedy + simple LNS + safety net + Phase 0 mini-profiling (1지표).
+        <code class="inline">src/myalgorithm.py</code> 가 *반드시 작동하는* 안전 라인 확보.
+        R0~R2 안전 제출 가능. 합의안 §5 A1~A4 와 사실상 동일.
+      </p>
+
+      <h4 class="sub">A2. 조선업 인터뷰 시도 (Week 1, 1시간) <span style="color:var(--a); font-size:11px; font-weight:600;">[Aggressor 의 zero-risk 제안]</span></h4>
+      <p class="body" style="color:var(--muted)">
+        한국 거주 + 조선업 종사자 25만명. 지인 1명 30분 인터뷰로 *알고리즘에 박을 변수 우선순위 top-3* 확보 시도.
+        실패 시 fallback: 가중치 = 1.0 균등. <em>다운사이드 0, 업사이드 차별화</em>.
+      </p>
+
+      <h4 class="sub">A3. 합의안 모듈 증분 추가 (Week 3~5) <span style="color:var(--d); font-size:11px; font-weight:600;">[Defender 의 ceiling]</span></h4>
+      <p class="body" style="color:var(--muted)">
+        Profiler · Aggregate LP-MIP · K=3 race · reactive ALNS · LP-dual guidance 순차 증분.
+        매 모듈 추가 시 <em>로컬 6 인스턴스 검증 통과해야 zip 생성</em> (Minimalist 의 위험 매트릭스).
+        모듈 실패 시 Lean 으로 자동 폴백.
+      </p>
+
+      <h4 class="sub">A4. 분기 실험 §4.1·4.2·4.4 (Week 5) <span style="color:var(--warn); font-size:11px; font-weight:600;">[합의안 §4]</span></h4>
+      <p class="body" style="color:var(--muted)">
+        Phase 1 의 정체 (Aggregate LP vs Topology-MIP) / ρ&gt;0.85 처리 (의도적 포기?) / Phase 3 dual 사용처.
+        세 입장의 진짜 결판은 이 실험에 의존. <em>로컬에서만 결판, 제출 예산 소비 X</em>.
+      </p>
+
+      <h4 class="sub">A5. Phase 3 risk-seeking branch (Week 6) <span style="color:var(--a); font-size:11px; font-weight:600;">[Aggressor R2 진화]</span></h4>
+      <p class="body" style="color:var(--muted)">
+        Defender 의 R2 진화 ①. MIPGap 0.05 → 0.15 공격적, 단 *더 좋으면 채택* (downside 0).
+        R-nb 우측 비대칭 보상에 *명시적* 베팅. 본선 캘리브레이션 시 적용.
+      </p>
+    </div>
+
+    <blockquote style="background:var(--card); border-color:var(--warn); padding:20px; font-style:normal;">
+      <strong style="color:var(--warn)">단 하나 결판 안 난 것</strong>:
+      <em style="color:var(--muted); font-style:normal">합의안 §5 A2 (safety net 회귀 차단) 가 *진짜* 모든 부분 실패에서 작동하는가?</em>
+      Defender 와 Aggressor 는 *작동한다고 가정* (그래서 합의안 EV 가 더 큼).
+      Minimalist 는 *작동 안 할 위험* (그래서 분산 큼). <em>이건 Week 2 검증으로 결판</em>.
+      만약 작동하면 합의안 채택, 작동 안 하면 Lean 유지.
+    </blockquote>
+  </div>
+</section>
+
+<div class="footer">
+  <div class="wrapper">
+    관련 문서 ·
+    <a href="strategy-debate.html">strategy-debate.html</a> (원본 토론) ·
+    <a href="strategy-explained.html">strategy-explained.html</a> (7가지 원칙) ·
+    <a href="algorithm-detail.html">algorithm-detail.html</a> (5 Phase 상세)
+  </div>
+</div>
+
+</body>
+</html>

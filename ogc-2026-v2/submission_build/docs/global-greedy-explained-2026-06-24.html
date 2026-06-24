@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전역 그리디 배치 — 모바일</title>
+<style>
+  html{-webkit-text-size-adjust:100%}
+  :root{--bg:#0e1014;--panel:#181b22;--ink:#e9ecf2;--mut:#9aa3b2;--line:#2a2f3a;
+        --g:#3fb950;--p:#c79cff;--acc:#6cb0ff;--warn:#e3b341;--t:#3fd0d8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:18px 15px 70px;max-width:680px;margin:0 auto}
+  h1{font-size:22px;line-height:1.3;margin:4px 0 2px}
+  h2{font-size:19px;margin:28px 0 8px;padding-top:14px;border-top:1px solid var(--line);color:var(--acc)}
+  h3{font-size:16.5px;margin:16px 0 4px;color:var(--g)}
+  .sub{color:var(--mut);font-size:14px;margin:0 0 14px}
+  p{margin:9px 0}
+  code{background:#0b0d11;padding:1px 5px;border-radius:5px;
+       font:13.5px ui-monospace,Consolas,monospace;color:#dbe3ef;word-break:break-word}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:12px 0}
+  .key{background:#0f1722;border:1px solid #23414e;border-left:4px solid var(--acc);border-radius:10px;padding:13px 15px;margin:13px 0}
+  .gbox{background:#0c180f;border-left:4px solid var(--g)}
+  .wbox{background:#1c1708;border-left:4px solid var(--warn)}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:10px;padding:12px 13px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      font:13px/1.6 ui-monospace,Consolas,monospace;color:#cfd8e6;margin:9px 0}
+  ul,ol{margin:8px 0;padding-left:22px} li{margin:6px 0}
+  .mut{color:var(--mut)} b.g{color:var(--g)} b.p{color:var(--p)} b.w{color:var(--warn)}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin:9px 0}
+  .step .n{display:inline-block;background:var(--g);color:#06121f;font-weight:700;font-size:12px;
+           border-radius:6px;padding:1px 7px;margin-right:6px}
+</style></head><body>
+
+<h1>전역 그리디 배치<br>정확히 무엇을 하나</h1>
+<p class="sub"><code>unified_greedy.unified()</code> · OGC_GLOBAL=1 (Pass B) · 제출본 · 2026-06-24</p>
+
+<div class="key">
+<b>한 줄 요약</b><br>
+베이를 <b>미리 정하지 않는다.</b> 블록을 순서대로 하나씩 꺼내, <b>모든 베이에 실제로 놓아보고</b>
+지각·부하·선호를 합친 <b>marginal 점수가 최소인 베이</b>에 확정. <b>배정은 이 과정의 결과(emergent)</b>다.
+한 번 놓으면 그 위치 그대로 굳히고, 마지막에 <b>CP-SAT timing</b>으로 시각만 마감.
+</div>
+
+<h2>0. 큰 그림</h2>
+<pre>블록을 순서(blend)대로 하나씩:
+  ┌ 모든 fit 베이에 place_one 시도
+  │    → 각 베이의 품질 위치 + 예상 지각
+  └ marginal(지각·부하·선호) 최소 베이에 확정
+모두 배치 후
+  → CP-SAT timing 으로 entry 시각 재최적화(z1 마감)
+  → postproc(txyo) 로 미세 다듬기</pre>
+
+<h2>1. 배치 순서 — blend</h2>
+<div class="card gbox">
+<pre>order = 블록을 (release + 0.5·processing) 오름차순
+        <span class="mut">OGC_ORDER=blend, set2 +9.2% vs EDD</span></pre>
+<b>왜</b> — 일찍 들어올 수 있고(release 작고) 빨리 나가는(처리 짧은) 블록을 먼저 놓는다(<b>exit 임박 우선</b>) →
+시간축이 깔끔하게 정리돼 뒤 블록들이 들어갈 자리가 남음. (EDD=마감 빠른 순 보다 좋았음.)
+</div>
+
+<h2>2. 블록마다 — 모든 베이 시도 → marginal 최소</h2>
+<div class="card gbox">
+<pre>for 블록 i (순서대로):
+  best = None
+  for 각 fit 베이 j:
+     rec = place_one(i, 베이 j)      # 그 베이의 품질 위치
+     if rec 없음: skip
+     sc = w1·tardy + w2·Δz2 + w3·(smax − 선호[j])
+     best = sc 최소인 (j, rec)
+  best 베이에 rec 확정 (재패킹 없음)
+  배정[i] = best 베이</pre>
+</div>
+<h3>marginal 점수 뜯어보기</h3>
+<div class="card">
+<ul>
+<li><b>w1·tardy</b> — <code>tardy = max(0, rec.exit − due)</code>. 이 블록을 이 베이에 놓으면 얼마나 늦나.</li>
+<li><b>w2·Δz2</b> — 이 블록을 더하면 <b>베이 간 작업부하 불균형</b>이 얼마나 커지나.</li>
+<li><b>w3·(smax − 선호[j])</b> — 이 베이가 <b>선호 베이에서 얼마나 벗어나나</b>(선호도 페널티).</li>
+</ul>
+세 항의 가중합이 최소인 베이를 고름 → <b>배정이 emergent</b>.
+</div>
+
+<div class="card wbox">
+<b class="w">★ 여기가 약점</b><br>
+<code>tardy</code>가 <b>myopic</b> — "지금 이 블록만" 본 exit 기준이라, <b>나중에 같은 시간창에 들어올 블록이 만들
+크레인 직렬화</b>를 못 본다. 게다가 <code>w1</code>이 거대(set2 수천~3만)해서 작은 <code>w3</code>를 자릿수로 깔아뭉갬.<br>
+→ <b>이걸 "정확한 z1 피드백"으로 고치려던 게 M1·M2</b>인데, 배정이 이미 near-optimal이라 재배정은 더 나빠져 실패(구조벽).
+</div>
+
+<h2>3. place_one — 한 베이에 어떻게 놓나</h2>
+<div class="card gbox">
+한 블록을 한 베이의 현재 상태에 <b>가장 이른·가장 조밀한·크레인 가능한</b> 자리로 증분 배치.
+<span class="fl mut">temporal_pack.py:574</span>
+</div>
+
+<div class="step"><span class="n">1</span><b>진입 시각 후보</b>
+<pre>lo = max(release, 마지막 진입시각)
+cand_t = {lo} ∪ {기존 블록들의 exit 시각 중 lo 이후}
+         (가장 이른 시각부터 시도)</pre>
+블록이 들어갈 만한 시점 = 출시 직후 + <b>기존 블록이 빠져 자리가 나는 시각들</b>.
+</div>
+
+<div class="step"><span class="n">2</span><b>각 시각 t 에서 위치 찾기</b>
+<pre>present = t 시점에 베이에 있는 블록들 → 점유 그리드
+각 방향(회전) × BL 위치 후보:
+   BL = bottom-left (각 행의 leftmost 빈자리, 몇 개)
+   채점 = contact (기존 블록·벽·바닥에 얼마나 붙나)
+          많이 붙을수록 빈틈없이 조밀</pre>
+</div>
+
+<div class="step"><span class="n">3</span><b>게이트 통과 검증</b>
+<pre>① crane_ok  : 크레인이 위에서 넣을 수 있나 (j≥k)
+② trap_ok   : 이 블록이 남을·뺄 길을 막지 않나
+③ check_entry: 공식 체커 진입 가능 게이트</pre>
+<b>contact 점수 높은 순으로 정렬 → 게이트 통과하는 첫 위치 채택.</b>
+</div>
+
+<div class="step"><span class="n">4</span><b>결과</b>
+<pre>rec = { x, y, 방향, entry = t, exit = t + P, world }</pre>
+못 놓으면 <b>최후의 보루</b>: 빈 베이 시각에 강제 배치(맞는 베이면 항상 가능).
+</div>
+
+<h2>4. 그 다음 — CP-SAT timing</h2>
+<div class="card">
+모든 블록 배치가 끝나면 <b>위치·배정은 고정</b>하고, <code>parallel_timing</code>(CP-SAT)이
+각 블록 <b>entry 시각을 재최적화</b>해 z1을 마감한다. (그리디의 tardy는 "어느 베이"만 흔들고,
+실제 z1은 이 timing이 정한다.)<br>
+<span class="mut">→ timing 상세: cpsat-timing-and-x-explained / cpsat-xt-ranges HTML 참고.</span>
+</div>
+
+<h2>5. 핵심 직관 3가지</h2>
+<div class="key gbox">
+<ol>
+<li><b>배정은 emergent</b> — "이 블록 어느 베이"를 미리 안 정하고, 모든 베이에 놓아본 marginal로 결정.</li>
+<li><b>한 번 놓으면 굳힘</b> — 위치는 재패킹 안 함(비가역). 이후 timing=시각만, postproc=미세 좌표/크레인 조정.</li>
+<li><b>품질 배치</b> — place_one은 그냥 빈자리가 아니라 <b>가장 이른 시각 + contact 최대(조밀) + 크레인 가능</b> 위치를 고름. 그래서 이미 꽤 좋은 배정이 나오고, 그래서 사후 재배정(M1·M2)이 못 이긴다.</li>
+</ol>
+</div>
+
+<p class="mut" style="font-size:12px;margin-top:22px">근거: unified_greedy.py(unified·order blend·marginal) · temporal_pack.py:574 place_one(cand_t·_bl_candidates·_contact·_crane_ok·_trap_ok·check_entry) · ptiming.py(parallel_timing)</p>
+
+</body></html>

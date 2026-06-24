@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>set1 갭 진단 — z1이 아니라 z3 (2026-06-22)</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--ink:#e6e9ef;--mut:#9aa3b2;--accent:#5ad1c7;--bad:#ff6b6b;--good:#7ee787;--warn:#f0c674;--line:#262b35}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--mut);margin-bottom:24px}
+  h2{font-size:18px;margin:34px 0 12px;border-left:3px solid var(--accent);padding-left:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
+  td.l,th.l{text-align:left}
+  .z3{color:var(--bad);font-weight:700}
+  .z1{color:var(--warn)}
+  .good{color:var(--good)}
+  .big{font-size:34px;font-weight:800;letter-spacing:-.5px}
+  .kpis{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0}
+  .kpi{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .kpi .lab{color:var(--mut);font-size:12px}
+  .bar{height:9px;border-radius:5px;background:#2a2f3a;overflow:hidden;display:flex;margin-top:3px}
+  .bar i{display:block;height:100%}
+  .note{color:var(--mut);font-size:12.5px}
+  code{background:#0b0d11;padding:1px 6px;border-radius:5px;color:#bfe3ff}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>set1 갭 진단 — <span class="z3">z1이 아니라 z3가 전쟁</span></h1>
+  <div class="sub">2026-06-22 · v2-alone(arsenal: TOSS+FIXOPT+postproc, scale 1.0) @TL300 vs 경쟁자 공식(2026-06-15)</div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lab">우리 set1 총 obj</div><div class="big">2,556,817</div></div>
+    <div class="kpi"><div class="lab">경쟁자 set1 총 obj (official)</div><div class="big good">931,465</div></div>
+    <div class="kpi"><div class="lab">갭</div><div class="big z3">+1,625,352 (+174%)</div></div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:6px">갭의 구성 — 어디서 지는가</h2>
+    <div class="note">갭을 z1·z2·z3 기여로 분해하면(Σ w·(우리−경쟁자)):</div>
+    <div style="margin:12px 0">
+      <div>z3 (선호도) <b class="z3">~95%</b></div>
+      <div class="bar"><i class="z3" style="width:95%;background:var(--bad)"></i><i style="width:3%;background:var(--warn)"></i><i style="width:2%;background:#4a90d9"></i></div>
+      <div class="note" style="margin-top:4px">빨강 z3 95% · 노랑 z1 &lt;8%(중첩분 보정 전) · 파랑 z2 ~2%. z1=0을 5개 다 달성해도 갭은 1.63M→1.50M (여전히 +160%).</div>
+    </div>
+  </div>
+
+  <h2>인스턴스별 분해 (우리 obj = w1·z1 + w2·z2 + w3·z3)</h2>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr>
+      <th class="l">inst</th><th>w1</th><th>w2</th><th>w3</th>
+      <th>z1·w1</th><th>z2·w2</th><th class="l">z3·w3</th><th>우리 obj</th>
+      <th>경쟁 obj</th><th>경쟁 z3</th><th>갭</th><th class="l">갭 지배</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="l">prob_1</td><td>29091</td><td>7</td><td>200</td><td>0</td><td>2,373</td><td class="l z3">70,800</td><td>73,173</td><td>1,500</td><td>2</td><td>71,673</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_2</td><td>29091</td><td>10</td><td>150</td><td>0</td><td>5,750</td><td class="l z3">40,050</td><td>45,800</td><td>3,696</td><td>15</td><td>42,104</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_3</td><td>26667</td><td>10</td><td>150</td><td>0</td><td>28,590</td><td class="l z3">79,350</td><td>107,940</td><td>39,109</td><td>100</td><td>68,831</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_4</td><td>21918</td><td>7</td><td>200</td><td class="z1">21,918</td><td>8,708</td><td class="l z3">164,000</td><td>194,626</td><td>16,917</td><td>8</td><td>177,709</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_5</td><td>16000</td><td>7</td><td>150</td><td>0</td><td>14,350</td><td class="l z3">86,850</td><td>101,200</td><td>47,041</td><td>228</td><td>54,159</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_6</td><td>29630</td><td>7</td><td>150</td><td class="z1">59,260</td><td>20,510</td><td class="l z3">83,100</td><td>162,870</td><td>53,239</td><td>287</td><td>109,631</td><td class="l z1">z1</td></tr>
+      <tr><td class="l">prob_7</td><td>17778</td><td>7</td><td>150</td><td>0</td><td>12,089</td><td class="l z3">60,000</td><td>72,089</td><td>75,134</td><td>387</td><td class="good">−3,045</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_8</td><td>10000</td><td>4</td><td>200</td><td>0</td><td>7,292</td><td class="l z3">19,600</td><td>26,892</td><td>11,252</td><td>8</td><td>15,640</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_9</td><td>13333</td><td>5</td><td>150</td><td class="z1">13,333</td><td>9,210</td><td class="l z3">107,850</td><td>130,393</td><td>62,103</td><td>367</td><td>68,290</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_10</td><td>14545</td><td>7</td><td>133</td><td>0</td><td>11,032</td><td class="l z3">110,124</td><td>121,156</td><td>76,783</td><td>492</td><td>44,373</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_11</td><td>22857</td><td>7</td><td>133</td><td>0</td><td>2,576</td><td class="l z3">119,301</td><td>121,877</td><td>21,571</td><td>146</td><td>100,306</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_12</td><td>21918</td><td>7</td><td>133</td><td>0</td><td>14,945</td><td class="l z3">165,984</td><td>180,929</td><td>71,509</td><td>439</td><td>109,420</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_13</td><td>18605</td><td>5</td><td>133</td><td>0</td><td>13,335</td><td class="l z3">205,618</td><td>218,953</td><td>71,823</td><td>432</td><td>147,130</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_14</td><td>17778</td><td>5</td><td>133</td><td class="z1">17,778</td><td>8,820</td><td class="l z3">156,807</td><td>183,405</td><td>60,118</td><td>419</td><td>123,287</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_15</td><td>14815</td><td>5</td><td>133</td><td class="z1">14,815</td><td>18,645</td><td class="l z3">96,957</td><td>130,417</td><td>36,548</td><td>121</td><td>93,869</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_16</td><td>8889</td><td>5</td><td>133</td><td>0</td><td>14,975</td><td class="l z3">55,461</td><td>70,436</td><td>41,083</td><td>185</td><td>29,353</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_17</td><td>9697</td><td>4</td><td>133</td><td>0</td><td>29,764</td><td class="l z3">88,445</td><td>118,209</td><td>59,467</td><td>256</td><td>58,742</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_18</td><td>13333</td><td>4</td><td>133</td><td>0</td><td>16,544</td><td class="l z3">152,285</td><td>168,829</td><td>34,173</td><td>143</td><td>134,656</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_19</td><td>10667</td><td>4</td><td>133</td><td>0</td><td>22,104</td><td class="l z3">101,745</td><td>123,849</td><td>67,550</td><td>373</td><td>56,299</td><td class="l z3">z3</td></tr>
+      <tr><td class="l">prob_20</td><td>26667</td><td>6</td><td>125</td><td>0</td><td>12,774</td><td class="l z3">191,000</td><td>203,774</td><td>80,848</td><td>515</td><td>122,926</td><td class="l z3">z3</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="note">z1·w1 노랑 = 잔여 tardy(prob_4,6,9,14,15만). z3·w3 빨강이 거의 모든 행의 최대항. 경쟁자 z3는 2~515로 미미 — 선호도를 거의 완벽히 지킴.</div>
+
+  <h2>근본 원인 — 왜 우리 z3가 3~10배 큰가</h2>
+  <div class="card">
+    <p><b>1. myopic-tardy marginal이 거대 w1으로 블록을 선호베이서 쫓아냄</b> (원래 연구 가설, 코드 확인).
+    배치 점수 <code>sc = w1·tardy + w2·Δz2 + w3·(smax−pr[j])</code> 에서
+    <code>tardy = max(0, rec["exit"]−D)</code> 는 place_one의 first-feasible exit 기준 <b>비관적 추정</b>.
+    w1(16K~29K) ≫ w3(125~200) 이라, 선호베이서 추정 tardy 1만 나와도 w1·1 ≈ 2만 ≫ 선호포기 w3·gap →
+    <b>v2가 선호베이를 버리고 z3를 헛지불</b>. 그런데 그 tardy는 배치 후 타이밍 오라클이 없애줄 것.</p>
+    <p><b>2. 선호베이 조밀 패킹 실패</b> (알려진 벽). 경쟁자는 ~95% 밀도로 선호 블록을 다 욱여넣어
+    z3≈0 AND z1=0 동시 달성. 우리 패커는 ~80%서 막혀 다 못 넣음 → 넘치면 tardy(z1) 또는 추방(z3).</p>
+    <p class="note">두 원인은 같은 뿌리: 조밀 패킹이 되면 myopic tardy도 안 생기고 → 선호베이 유지 → z3 작음.</p>
+  </div>
+
+  <h2>실험 사다리 (set1, v2-alone)</h2>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr><th class="l">config</th><th>set1 총 obj</th><th>z1=0 개수</th><th class="l">메모</th></tr></thead>
+    <tbody>
+      <tr><td class="l">H0 (scale 1.0, arsenal OFF)</td><td>2,690,959</td><td>12/20</td><td class="l">Pass B + 오라클만</td></tr>
+      <tr><td class="l">M1 scale 0.8 (arsenal OFF)</td><td>2,466,899</td><td>~16</td><td class="l">w1 디스카운트 → z3↓</td></tr>
+      <tr><td class="l">M1 scale 0.5 (arsenal OFF)</td><td>2,338,645</td><td>~14</td><td class="l">최소(디스카운트만) −13.1% vs H0</td></tr>
+      <tr><td class="l">M1 scale 0.2 (arsenal OFF)</td><td>2,361,210</td><td>낮음</td><td class="l">z1 비용 잠식 시작</td></tr>
+      <tr><td class="l">M2 낙관 entry (극단)</td><td class="z3">23,551,367</td><td>거의0</td><td class="l">tardy 인식 제거 → z1 폭발(기각)</td></tr>
+      <tr><td class="l">arsenal (scale 1.0, TOSS+FIXOPT+pp)</td><td>2,556,817</td><td>15/20</td><td class="l">z1 머신러리 가동</td></tr>
+      <tr><td class="l good">arsenal + strongX (free-all X-repack)</td><td class="good">2,464,964</td><td class="good">18/20</td><td class="l">layout-bound z1 청소: prob_6/14/15 →0, obj도↓. 잔여=prob_4·9(패킹벽)</td></tr>
+      <tr><td class="l">M1 0.5 + arsenal</td><td class="good">2,342,130</td><td>14/20</td><td class="l">총 obj 최소 (z3↓), 단 z1 일부 재발</td></tr>
+      <tr style="background:#15241e"><td class="l good"><b>M1 0.5 + arsenal + strongX (3중, BEST)</b></td><td class="good"><b>2,184,873</b></td><td class="good"><b>18/20</b></td><td class="l">두 지표 모두 최선. prob_4 HARD→z1=0(obj 194K→81K). 잔여=prob_12·18(시간기아 의심)</td></tr>
+      <tr><td class="l good">경쟁자 (목표)</td><td class="good">931,465</td><td class="good">20/20</td><td class="l">z3≈0 + z1=0 (조밀 패킹)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>전략 결론</h2>
+  <div class="card">
+    <p><b>z1=0은 set1 승리의 필요조건이지 핵심 레버가 아니다.</b> z1 전체 기여는 갭의 &lt;8%.
+    set1 전쟁은 <b class="z3">z3(선호도 = 선호베이 조밀 패킹)</b> 이고, 이게 갭의 ~95%.</p>
+    <p>따라서 올바른 v2 개선 방향:</p>
+    <ol>
+      <li><b>z3를 낮추는 배치</b> — M1(myopic-tardy 디스카운트)로 블록을 선호베이에 유지 (#1 원인 직격).</li>
+      <li><b>그 결과 생기는 tardy를 오라클·arsenal이 z1=0으로 마감</b> — 합성(M1+arsenal)이 둘을 동시에.</li>
+      <li><b>잔존 갭 = 패킹 밀도 벽</b> — 선호베이에 더 조밀하게(이형 폴리곤 NFP/compaction). 알려진 난제.</li>
+    </ol>
+    <p class="note">judged by full-set 총 obj · never−1 (사용자 측정 규칙). z1=0은 추적하되 목표함수는 총 obj.</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:6px">현 위치 (2026-06-22)</h2>
+    <p><b>v2-alone 최고 = 3중 합성 2,184,873 (z1=0 18/20, never−1)</b> — H0 2.69M 대비 −19%.
+    M1(z3↓ 실제 갭 공략) + arsenal(TOSS/FIXOPT) + strongX(layout-bound z1 free-all 청소)의 합.</p>
+    <ul>
+      <li><b>남은 z1 잔여 prob_12·18</b> (z1=1): 시간기아 의심(둘 다 ~TL까지 가동). 진단/예산조정으로 20/20 가능성.</li>
+      <li><b>v2-alone(2.18M)은 아직 v1-하이브리드 set1(~1.39M)에 미달</b> — 갭 전부 z3.
+      v1을 드롭하려면 v2가 z3(패킹밀도)를 더 깎아야. <b>이형 폴리곤 NFP/compaction</b> = 알려진 난제(이전 falsified 이력).</li>
+      <li><b>strongX는 set2서 precompute 폭발 위험</b> → 채택 시 size-gate(작은 베이/set1-type 한정) 필수. 현 제출 경로 무영향(기본 off).</li>
+    </ul>
+  </div>
+
+  <h2>set2 (점수의 ~67%) — 레버는 postproc 예산 + MOVEALL</h2>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr><th class="l">set2 config</th><th>총 obj</th><th>vs baseline</th><th class="l">메모</th></tr></thead>
+    <tbody>
+      <tr><td class="l">baseline (cap90, arsenal off, moveall off)</td><td>171,852,444</td><td>—</td><td class="l">= 제출본 set2 핸들링 (v2+postproc)</td></tr>
+      <tr><td class="l">arsenal+moveall (cap250)</td><td class="z3">176,791,397</td><td class="z3">+2.9%</td><td class="l">v2가 예산 먹어 postproc 굶음 → 나쁨</td></tr>
+      <tr style="background:#15241e"><td class="l good"><b>MOVEALL only (cap90)</b></td><td class="good"><b>167,740,679</b></td><td class="good"><b>−2.4%</b></td><td class="l">C3 cross-bay z1 수리. never-worse·cheap·never−1</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card">
+    <p><b>set2 발견:</b> set2 z1 감소의 주역은 v2 내부 arsenal이 아니라 <b>postproc crane_repack</b>.
+    그래서 V2_CAP을 낮춰(postproc에 예산 몰아주기) + <b>MOVEALL(C3)</b>로 C2가 놓친 전-베이 z1 이동까지 잡으면
+    <b class="good">−2.4%</b>. C3는 never-worse 게이트라 회귀 불가 + cheap(strongX와 달리 set2 안전).
+    <b>arsenal/높은 V2_CAP은 postproc를 굶겨 해롭다</b>(+2.9%).</p>
+    <p class="note"><b>채택 매트릭스:</b> MOVEALL=범용 ON · M1(z3↓)=set1 전용(set2 z1 위험→adaptive) ·
+    strongX=set1 z1=0 전용(set2 size-gate) · arsenal=set1 도움/set2 중립~해 · V2_CAP=낮게.
+    이 노브들은 실험판(myalgorithm_fix)에만 있고, 실제 제출(myalgorithm.py) 배선은 사용자 승인 후 별도.</p>
+  </div>
+
+  <h2>z3 벽 정면돌파 (방향 B) — forced-preference 진단</h2>
+  <div class="card">
+    <p><b>실험:</b> 모든 블록을 선호도-최고 fit 베이에 강제 배치(<code>OGC_FORCE_PREF</code>, z3≈0) + 풀 z1 회복 arsenal. 결과 <b>양극단(bimodal)</b>:</p>
+  </div>
+  <div class="card" style="overflow-x:auto">
+  <table>
+    <thead><tr><th class="l">inst</th><th>forced-pref</th><th>triple</th><th>경쟁자</th><th class="l">판정</th></tr></thead>
+    <tbody>
+      <tr><td class="l">prob_1</td><td class="good">29,095</td><td>58,559</td><td>1,500</td><td class="l good">z3≈0 공짜(z1=0)</td></tr>
+      <tr><td class="l">prob_2</td><td class="good">6,620</td><td>45,800</td><td>3,696</td><td class="l good">z3=0 공짜</td></tr>
+      <tr><td class="l">prob_4</td><td class="good">37,450</td><td>81,044</td><td>16,917</td><td class="l good">z3=112, 경쟁자 11×→2×</td></tr>
+      <tr><td class="l">prob_8</td><td class="good">12,412</td><td>17,408</td><td>11,252</td><td class="l good">z3=0 공짜</td></tr>
+      <tr><td class="l">prob_12</td><td class="z3">1,767,372</td><td>182,162</td><td>71,509</td><td class="l z3">z1=68 폭발(벽)</td></tr>
+      <tr><td class="l">prob_14</td><td class="z3">3,354,261</td><td>134,825</td><td>60,118</td><td class="l z3">z1=186 폭발(벽)</td></tr>
+      <tr><td class="l">prob_20</td><td class="z3">15,591,485</td><td>203,774</td><td>80,848</td><td class="l z3">z1=574 폭발(벽)</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card">
+    <p><b>벽은 인스턴스별로 다르다:</b> 저혼잡(prob_1/2/4/8)은 선호 강제가 z3≈0 AND z1=0 → obj 절반(우리 marginal이 과-추방했던 것). 고혼잡(prob_12/14/20)은 강제 시 z1 폭발 = <b>진짜 패킹밀도 벽</b>(동시공존이 우리 패커 천장 초과).</p>
+    <p><b class="good">best-of(forced-pref, triple) per-instance = 2,067,601</b> (triple 2.18M 대비 −5.4%, never-worse). 단일패스로 잡으려면 <b>M3 혼잡-적응 강제</b>(<code>OGC_PLACE_CEIL</code>: 베이 동시공존이 천장 미만이면 선호 강제, 이상이면 marginal) — 검증 중.</p>
+    <p class="note">남은 진짜 벽 = 고혼잡 인스턴스의 z3(prob_12/20 등, 경쟁자는 거기서도 z3 낮음). 우리 패커가 동시공존을 다 못 욱여넣음 → research-backed 미구현 레버 = semi-discrete BLF(NFP 없이 조밀 nesting).</p>
+  </div>
+</div>
+</body>
+</html>

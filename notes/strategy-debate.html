@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 풀이 전략 — 3-에이전트 토론</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --border: #e5e5e5;
+    --card-bg: #ffffff;
+    --code-bg: #f4f4f5;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.04);
+    --theorist: #2563eb;
+    --theorist-bg: #eff6ff;
+    --theorist-border: #93c5fd;
+    --pragmatist: #059669;
+    --pragmatist-bg: #ecfdf5;
+    --pragmatist-border: #6ee7b7;
+    --contrarian: #dc2626;
+    --contrarian-bg: #fef2f2;
+    --contrarian-border: #fca5a5;
+    --agree: #7c3aed;
+    --agree-bg: #f5f3ff;
+    --branch: #d97706;
+    --branch-bg: #fffbeb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f0f12;
+      --fg: #e7e7ea;
+      --muted: #9ca3af;
+      --border: #2a2a30;
+      --card-bg: #18181c;
+      --code-bg: #1f1f26;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.3);
+      --theorist-bg: #1e293b;
+      --theorist-border: #1e40af;
+      --pragmatist-bg: #14292a;
+      --pragmatist-border: #047857;
+      --contrarian-bg: #2a1818;
+      --contrarian-border: #b91c1c;
+      --agree-bg: #2a1f3f;
+      --branch-bg: #2a2010;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--fg);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static !important; height: auto !important; border-right: none !important; border-bottom: 1px solid var(--border); }
+  }
+  .toc {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 20px;
+    border-right: 1px solid var(--border);
+    background: var(--card-bg);
+    font-size: 13px;
+  }
+  .toc h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 16px 0 8px; }
+  .toc h3:first-child { margin-top: 0; }
+  .toc a {
+    display: block;
+    padding: 4px 8px;
+    color: var(--fg);
+    text-decoration: none;
+    border-radius: 4px;
+    border-left: 2px solid transparent;
+    transition: background 0.1s, border-color 0.1s;
+  }
+  .toc a:hover { background: var(--code-bg); }
+  .toc a.theorist { border-left-color: var(--theorist); }
+  .toc a.pragmatist { border-left-color: var(--pragmatist); }
+  .toc a.contrarian { border-left-color: var(--contrarian); }
+  .toc .sub { padding-left: 16px; font-size: 12px; color: var(--muted); }
+  main {
+    padding: 48px 56px;
+    max-width: 900px;
+  }
+  @media (max-width: 600px) { main { padding: 24px 20px; } }
+  h1 { font-size: 2em; margin: 0 0 8px; line-height: 1.3; }
+  h2 { font-size: 1.5em; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.2em; margin: 32px 0 12px; }
+  h4 { font-size: 1.05em; margin: 24px 0 8px; }
+  h5 { font-size: 0.95em; margin: 16px 0 6px; color: var(--muted); }
+  .meta {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .meta-row { margin: 2px 0; }
+  p { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 4px 0; }
+  code {
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    border: 1px solid var(--border);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--code-bg); font-weight: 600; }
+  blockquote {
+    margin: 16px 0;
+    padding: 4px 16px;
+    border-left: 3px solid var(--muted);
+    color: var(--muted);
+    font-style: italic;
+  }
+  .persona-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 32px;
+    margin: 24px 0;
+    box-shadow: var(--shadow);
+  }
+  .persona-card.theorist {
+    border-left: 4px solid var(--theorist);
+    background: linear-gradient(to right, var(--theorist-bg) 0%, var(--card-bg) 60%);
+  }
+  .persona-card.pragmatist {
+    border-left: 4px solid var(--pragmatist);
+    background: linear-gradient(to right, var(--pragmatist-bg) 0%, var(--card-bg) 60%);
+  }
+  .persona-card.contrarian {
+    border-left: 4px solid var(--contrarian);
+    background: linear-gradient(to right, var(--contrarian-bg) 0%, var(--card-bg) 60%);
+  }
+  .persona-card h3:first-child { margin-top: 0; }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 8px;
+  }
+  .badge.theorist { background: var(--theorist); color: white; }
+  .badge.pragmatist { background: var(--pragmatist); color: white; }
+  .badge.contrarian { background: var(--contrarian); color: white; }
+  .badge.round { background: var(--muted); color: white; }
+  .hero {
+    padding: 32px 36px;
+    margin-bottom: 32px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--theorist-bg) 0%, var(--pragmatist-bg) 50%, var(--contrarian-bg) 100%);
+    border: 1px solid var(--border);
+  }
+  .hero h1 { margin-bottom: 16px; }
+  .hero p { margin: 8px 0; }
+  .summary-block {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    border-left: 3px solid;
+  }
+  .summary-block.agree { background: var(--agree-bg); border-color: var(--agree); }
+  .summary-block.branch { background: var(--branch-bg); border-color: var(--branch); }
+  .summary-block h4 { margin-top: 0; }
+  .footer-note {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .legend-dot.theorist { background: var(--theorist); }
+  .legend-dot.pragmatist { background: var(--pragmatist); }
+  .legend-dot.contrarian { background: var(--contrarian); }
+  .quote-attack {
+    background: var(--contrarian-bg);
+    border-left: 3px solid var(--contrarian);
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+  }
+  .quote-attack::before { content: "↗ 받은 공격: "; font-weight: 600; color: var(--contrarian); }
+  details {
+    margin: 12px 0;
+    padding: 12px 16px;
+    background: var(--code-bg);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  summary:hover { color: var(--fg); }
+  @media print {
+    .toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 0; max-width: 100%; }
+    h2 { page-break-before: auto; break-before: auto; }
+    .persona-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="toc">
+    <h3>개요</h3>
+    <a href="#intro">머리말</a>
+    <a href="#evolution">진화 다이제스트</a>
+    <a href="#personas">페르소나 소개</a>
+
+    <h3>Round 1 — 독립 초안</h3>
+    <a href="#r1-theorist" class="theorist">Theorist</a>
+    <a href="#r1-pragmatist" class="pragmatist">Pragmatist</a>
+    <a href="#r1-contrarian" class="contrarian">Contrarian</a>
+
+    <h3>Round 2 — 상호 공격</h3>
+    <a href="#r2-theorist" class="theorist">Theorist 반박</a>
+    <a href="#r2-pragmatist" class="pragmatist">Pragmatist 반박</a>
+    <a href="#r2-contrarian" class="contrarian">Contrarian 반박</a>
+
+    <h3>Round 3 — 최종 입장</h3>
+    <a href="#r3-theorist" class="theorist">Theorist 최종</a>
+    <a href="#r3-pragmatist" class="pragmatist">Pragmatist 최종</a>
+    <a href="#r3-contrarian" class="contrarian">Contrarian 최종</a>
+
+    <h3>통합 정리</h3>
+    <a href="#agreed">합의된 결정사항</a>
+    <a href="#branches">의도적 분기</a>
+    <a href="#actions">즉시 실행 액션</a>
+    <a href="#self-check">평균과 다른가</a>
+  </aside>
+
+  <main>
+    <section id="intro">
+      <div class="hero">
+        <h1>OGC 2026 풀이 전략 — 3-에이전트 토론</h1>
+        <p><strong>The Grand Shipyard Puzzle: Pack the Block, Beat the Clock</strong></p>
+        <div class="meta">
+          <div class="meta-row"><strong>일자</strong> · 2026-05-28</div>
+          <div class="meta-row"><strong>참여 페르소나</strong> · The Theorist (수학적 통찰) / The Pragmatist (대회 운영) / The Contrarian (반대자)</div>
+          <div class="meta-row"><strong>진행</strong> · Round 1 (독립 초안) → Round 2 (상호 공격) → Round 3 (수정·최종 입장)</div>
+          <div class="meta-row"><strong>목표</strong> · 평균 클로드 답변과 차별화된, <em>이 문제·이 점수공식·이 평가환경</em> 에 특화된 전략 도출</div>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot theorist"></span> Theorist (이론가)</span>
+          <span class="legend-item"><span class="legend-dot pragmatist"></span> Pragmatist (실용주의자)</span>
+          <span class="legend-item"><span class="legend-dot contrarian"></span> Contrarian (반대자)</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="evolution">
+      <h2>진화 다이제스트</h2>
+      <p>세 에이전트가 라운드를 거치며 어떻게 진화했는가. 모두 최초 입장의 50~70% 를 양보했고, 각자 1~2개의 진정한 직교 각도만 살아남았다.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>라운드</th>
+            <th>Theorist</th>
+            <th>Pragmatist</th>
+            <th>Contrarian</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>R1</strong></td>
+            <td>HIPS 3-layer (LP-MIP → NFP → Lagrangian dual)</td>
+            <td>S0/S1/S2 게이트 + Best-of-K seed + fallback chain</td>
+            <td>5-페르소나 (Topology-MIP / Lex Z1=0 / Anti-EDD / Reverse-time / EDD++)</td>
+          </tr>
+          <tr>
+            <td><strong>R2 자기 진화</strong></td>
+            <td>NFP lazy 캐싱 / Layer 1 aggregate spatial cut / dual step instance-class-conditioned</td>
+            <td>"게이트는 floor, 페르소나는 ceiling" / Topology-MIP 을 K=4 한 자리에 수용</td>
+            <td>슬롯-MIP 가 <em>최종 좌표 아닌 순서만</em> 결정 / 페르소나는 <em>대회 기간 따라 진화</em></td>
+          </tr>
+          <tr>
+            <td><strong>R3 결정타</strong></td>
+            <td>Contrarian → "HIPS도 평균답변 변종" (정통타격)</td>
+            <td>Contrarian → "R−nb 기하학 오독" (산술 정정 강제)</td>
+            <td>Pragmatist → "실험비용 폭발" (페르소나별 검증 포기 강제)</td>
+          </tr>
+          <tr>
+            <td><strong>R3 진정한 직교</strong></td>
+            <td>Phase 0 probe (알고리즘 자가진단) + dual = search direction compass</td>
+            <td>인스턴스 점수 산술 정정 → S2 "feasibility 유지 시 무조건 push"</td>
+            <td>R−nb 우측 비대칭 <em>명시적 게임이론</em> + <em>의도적 포기</em> 알고리즘화</td>
+          </tr>
+          <tr>
+            <td><strong>R3 자가점검</strong></td>
+            <td>"절반만 다르다" 정직 인정</td>
+            <td>"평균답변 공학화였다, R3 에서 일부 진화"</td>
+            <td>"R1 5페르소나는 평균 + 표면차별화였다 → R3 에서 2점 직교 살아남음"</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="personas">
+      <h2>페르소나 소개</h2>
+      <div class="persona-card theorist">
+        <h3><span class="badge theorist">A</span> The Theorist — 이론가</h3>
+        <p>문제의 수학적 구조를 깊이 파고드는 원리주의자. 다항시간 부분문제, dominance rule, 폴리헤드럴 분석, Lagrangian decomposition, Benders, column generation. "왜 이 휴리스틱이 <em>원리적으로</em> 좋은가?" 를 물음. 답이 "경험상" 이면 거부.</p>
+      </div>
+      <div class="persona-card pragmatist">
+        <h3><span class="badge pragmatist">B</span> The Pragmatist — 실용주의자</h3>
+        <p>대회를 <em>이길</em> 인프라를 우선시. 시간 모니터링·메모리 가드·재현성·인스턴스 다양성 대응이 알고리즘만큼 중요. 점수공식 R−nb 의 <em>비대칭성</em> 을 전략적으로 활용. "이 아이디어, 본선 D-1 에 깨지면 어떡할 건가?" 를 물음.</p>
+      </div>
+      <div class="persona-card contrarian">
+        <h3><span class="badge contrarian">C</span> The Contrarian — 반대자</h3>
+        <p>모든 가정을 의심하는 이단아. 평균 클로드가 <em>반드시</em> 내놓는 답 ("패킹/스케줄링/할당 분리 후 LNS + SA + MIP 하이브리드") 을 직교한 각도에서 공격. 평균 클로드가 안 하는 것: 가정 자체 뒤집기. A, B 의 약점을 찾는 게 일.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ROUND 1 -->
+    <!-- ============================================================ -->
+    <section id="round1">
+      <h2><span class="badge round">Round 1</span> 독립 초안</h2>
+      <p>세 에이전트가 <em>서로의 의견을 모르는 상태로</em> 각자 전략 초안을 작성. 메인 컨텍스트는 결과 수집만.</p>
+
+      <!-- THEORIST R1 -->
+      <article class="persona-card theorist" id="r1-theorist">
+        <h3><span class="badge theorist">A</span> The Theorist · Round 1 전략 초안</h3>
+
+        <h4>핵심 통찰</h4>
+        <ol>
+          <li><strong><code>j ≥ k</code> 크레인 규칙은 <em>layer-graph 위의 partial order</em> 다 — 단순 packing 이 아니다.</strong>
+            한 베이의 시간 t 에 점유 중인 블록 집합 <code>N(t,j)</code> 가 있을 때, 임의 블록의 ENTRY/EXIT 는 <em>상위 레이어들의 footprint 합집합</em> 에 의해서만 막힌다. 각 (블록 i, 레이어 l) 페어에서 <code>H_l^i</code> := 블록 i 의 레이어 l 위쪽(l' ≥ l) footprint 합집합을 미리 계산하면, ENTRY/EXIT 검사는 <em>사전 계산된 폴리곤 쌍 검사</em> 로 환원된다. 베이스라인은 매번 raw layer 쌍을 Shapely 로 intersect 하는 <code>O(K² · pairs)</code> 짓을 한다.</li>
+          <li><strong>Z2 가 max 라는 사실은 <em>베이 배정이 single-bottleneck 문제</em> 임을 의미.</strong>
+            <code>Z2 = max_{j1≠j2} |u_j1 L_j1 − u_j2 L_j2|</code>. 임시로 tardiness 와 선호도를 무시하면 LP relaxation 이 매우 강한 fractional balance 를 준다. 최대 부하 베이를 한 단계 가볍게 하면 바로 <code>w2</code> 만큼 점수 하락 — 이 lever 를 LP-dual 로 정확히 알 수 있다.</li>
+          <li><strong>선호도 합 = 100 은 <em>분포 정보</em> 를 인코딩한다.</strong>
+            <code>S_i = [100, 0, ..., 0]</code> 이면 강제 배정 신호, <code>[50, 50]</code> 이면 무차별. <code>H_i = S_max − S_2nd</code> 큰 블록 = <em>절대로 양보 안 되는 블록</em> — dominance rule 로 먼저 고정.</li>
+          <li><strong>Z1 (tardiness) 은 <em>due date 기준 비대칭 cost</em>, EDD 가 best 인 조건이 있다.</strong>
+            단일 머신·spatial 무시면 1||ΣT — NP-hard지만 EDD 가 Pareto-optimal sequence subset 생성 (Carlier-Pinson dominance). 다중 베이 + spatial 이면 EDD 가 깨지는 정확한 조건: <code>Σ workload &gt; Σ available bay-time</code> 인 베이가 등장할 때. 베이별 capacity envelope 를 먼저 계산 → capacity tight 한 베이는 LP/MIP, 여유로운 베이는 EDD greedy 로 차별화.</li>
+          <li><strong>반-열린 시간 구간 <code>[a,e)</code> + EXIT-before-ENTRY 규칙은 hidden <em>layer-decomposable structure</em> 를 만든다.</strong>
+            시간을 epoch event 로 압축 → event-driven step function. interval graph + crane-precedence DAG 가 자연스럽게 정의되고, 이 DAG 의 topological dimension 이 곧 layer-stacking 어려움의 measure. 인스턴스가 low DAG width 이면 MIP 강력, high width 이면 LNS 유리.</li>
+        </ol>
+
+        <h4>제안 알고리즘 골격 — HIPS (Hierarchical Instance-aware Polyhedral Solver)</h4>
+
+        <h5>Layer 0 — Instance Profiling (≤ 5초, deterministic)</h5>
+        <ul>
+          <li>각 베이의 <code>u_j</code> 계산</li>
+          <li>각 블록의 <em>envelope footprint area</em> (모든 orientation 중 min bbox)</li>
+          <li><em>Capacity tightness ratio</em> <code>ρ_j = Σ_i (A_i · P_i) / (W_j · H_j · T_horizon)</code></li>
+          <li><em>Preference concentration</em> <code>H_i = S_max − S_2nd</code> → <code>H_i &gt; 50</code> 은 forced bay block</li>
+          <li><em>Crane-vulnerability score</em>: <code>max_l (footprint of layer ≥ l) / footprint of layer 0</code></li>
+          <li><em>DAG width estimate</em>: T_horizon sampling 으로 동시 활성 candidate 수 추정</li>
+        </ul>
+
+        <h5>Layer 1 — LP-based Bay Assignment + Time Window (≤ 20%)</h5>
+        <p><strong>Decoupled MIP-A</strong>: 변수 <code>x_{ij} ∈ {0,1}</code> + <code>t_i^E, t_i^X</code>. 공간 좌표/방향 무시 → LP relaxation 강하고 Gurobi 가 분 단위로 해결. Z2 linearization: <code>M ≥ u_j L_j ∀j, M ≥ −u_j L_j ∀j</code>. Output: 각 블록의 후보 <code>(j, [t_E_min, t_E_max], [t_X_min, t_X_max])</code> — fractional 해는 <code>H_i</code> 높은 블록부터 round.</p>
+
+        <h5>Layer 2 — Spatial Placement with Crane-precedence Aware Heuristic (≤ 50%)</h5>
+        <ul>
+          <li>블록을 <code>t_E</code> 오름차순 정렬</li>
+          <li>crane-vulnerability 기반 orientation 선택 (위가 가벼운 orientation 우선)</li>
+          <li>사전계산된 <code>H_l^i</code> polygon 으로 ENTRY/EXIT 검사 O(1)~O(k)</li>
+          <li>Bottom-left fill 대신 <strong>NFP (No-Fit Polygon)</strong> 기반 candidate generation — Minkowski sum 으로 정확한 feasible region 경계만 enumerate. NFP completeness 가 최적 위치 누락 방지.</li>
+        </ul>
+
+        <h5>Layer 3 — Targeted Local Search (잔여 시간)</h5>
+        <ul>
+          <li><em>전역 SA/Tabu 안 함</em> (평균 클로드 답변) — 대신 <strong>Lagrangian relaxation 기반 ascent direction</strong></li>
+          <li>현재 해의 active constraint dual 계산 (LP 재풀이 5초 이내)</li>
+          <li><code>λ_j</code> 가 가장 큰 베이의 marginal 블록을 반대 sign dual 베이로 swap 시도</li>
+          <li>swap 후 재배치는 Layer 2 의 NFP placement 로 빠르게</li>
+          <li><em>수직 통찰</em>: dual 가 알려주는 correct direction 으로만 움직여서, random restart 불필요</li>
+        </ul>
+
+        <h5>Safety Net</h5>
+        <p>모든 단계에서 직전에 feasible 했던 solution 을 메모리에 유지. 90% time 도달 시 즉시 반환. <strong>−1 절대 회피.</strong></p>
+
+        <h4>왜 이 접근이 점수를 올리는가</h4>
+        <p>R−nb 점수 모델 하에서 결정적인 두 가지:</p>
+        <ol>
+          <li><strong>−1 회피</strong>: Layer 0 + 0.5초 안에 항상 feasible fallback. 어떤 인스턴스에서도 −1 안 받음. 평균 R/2 점 확보.</li>
+          <li><strong>다른 팀들이 못 찾는 deterministic improvement</strong>: 평균 팀은 LNS/SA 의 random walk 로 비슷한 국소최적에 수렴. 우리는 LP dual 이 가리키는 방향으로만 움직여서 strictly 더 나은 점에 도달. <code>nb</code> 가 1~2개 적어지는 효과.</li>
+        </ol>
+        <p>특히 Z2 single-bottleneck — 다른 팀들이 같은 max 베이에 수렴할 가능성이 높다. LP dual 로 one block off swap 만 정확히 찾으면 strictly 더 좋은 점수.</p>
+
+        <h4>구체적 결정사항</h4>
+        <table>
+          <tr><th>항목</th><th>결정</th><th>이유</th></tr>
+          <tr><td><strong>시간 표현</strong></td><td>Event-driven integer epoch</td><td>정수 좌표 + 반-열린 구간 → 연속시간 LP 불필요. epoch 수 = O(n)</td></tr>
+          <tr><td><strong>패킹 방식</strong></td><td>NFP candidate + cached H_l^i overlay polygon</td><td>Bottom-left fill 의 miss 를 NFP completeness 가 보장</td></tr>
+          <tr><td><strong>MIP 사용</strong></td><td>Gurobi for Layer 1 (LP-MIP with bay-time vars only)</td><td>전체 MIP 는 메모리 폭발. 분해된 부분만 MIP</td></tr>
+          <tr><td><strong>메타휴리스틱</strong></td><td><strong>사용 안 함</strong> (SA/Tabu/GA 거부)</td><td>평균 클로드 답변과 차별화. dual direction 이 random walk 보다 원리적으로 빠름</td></tr>
+          <tr><td><strong>방향 선택</strong></td><td>crane-vulnerability + bbox area 로 1순위 orientation 미리 정렬</td><td>모든 orientation 시도 = O(O_i) → dominate 된 것 제거하면 평균 1.5배만 시도</td></tr>
+          <tr><td><strong>선호도 처리</strong></td><td><code>H_i &gt; 50</code> 블록은 LP 에서 <code>x_{ij} = 1</code> for j=argmax_S 로 변수 고정</td><td>강한 선호는 dominance rule</td></tr>
+          <tr><td><strong>병렬화</strong></td><td>4코어 활용: 메인 솔버, Layer 1 LP backup, NFP candidate prebuild, feasibility checker</td><td>평가서버 4코어 한도</td></tr>
+          <tr><td><strong>안전망</strong></td><td>매 step 직전 best feasible 보존. 90% timelimit hit 시 즉시 반환</td><td>−1 회피가 최우선</td></tr>
+          <tr><td><strong>MIP 솔버 fallback</strong></td><td>Gurobi 실패 시 Xpress → OR-Tools CP-SAT</td><td>평가서버 환경 이상 대비</td></tr>
+        </table>
+
+        <h4>약점 자인</h4>
+        <ol>
+          <li><strong>LP 정합도가 인스턴스 의존적</strong>: Z2 single-bottleneck 통찰은 베이가 적을 때 (<code>m ≤ 4</code>) 강력. 많아지면 max 가 여러 곳에서 tied → dual signal 약함.</li>
+          <li><strong>NFP candidate 계산이 무거울 수 있음</strong>: 비-볼록 폴리곤의 Minkowski sum 은 <code>O(n_vertices²)</code>. 큰 블록 (<code>K_i ≥ 5</code>) 이 많으면 prebuild 시간 폭발.</li>
+          <li><strong>"DAG width estimate" 가 휴리스틱 추정에 불과</strong>: Layer 0 의 instance profiling 이 틀린 strategy 선택으로 가면 전 단계 nonoptimal.</li>
+        </ol>
+      </article>
+
+      <!-- PRAGMATIST R1 -->
+      <article class="persona-card pragmatist" id="r1-pragmatist">
+        <h3><span class="badge pragmatist">B</span> The Pragmatist · Round 1 전략 초안</h3>
+
+        <h4>점수 모델 활용 전략</h4>
+        <p><strong>핵심 통찰</strong>: <code>R − nb</code> 는 <strong>상한이 R 로 캡 된 비대칭 함수</strong>. 1위든 동률 1위든 같은 R 점, 그러나 −1 은 평균 R/2 ~ R 손실. 한 인스턴스 −1 = 다른 인스턴스 15~20등 → 1등이 보상해도 본전. <strong>변동성을 1순위 적으로 본다.</strong></p>
+
+        <h5>"안전모드 vs 공격모드" 자동전환 — 3단계 솔루션 게이트</h5>
+        <ol>
+          <li><strong>S0: Safety Net (시간 5% 이내)</strong> — 강제 <code>_force_place</code>. 빈 베이 윈도우에 순차 배치. <strong>−1 절대 안 받음.</strong></li>
+          <li><strong>S1: Baseline (시간 30% 이내)</strong> — 기존 <code>greedyalgorithm</code>. <code>check_feasibility</code> 검증, infeasible 이면 S0 폴백.</li>
+          <li><strong>S2: Improvement (남은 시간)</strong> — LNS/SA/MIP. <code>check_feasibility</code> 통과 + objective 가 S1 보다 엄밀히 좋을 때만 채택. 개선 실패 시 S1 그대로 반환.</li>
+        </ol>
+
+        <h5>"Best-of-K + 검증 게이트" 패턴</h5>
+        <p>같은 timelimit 내에 seed 다른 greedy 3~4개 + LNS 1개를 병렬/순차. <code>check_feasibility</code> 통과한 것만 후보, 최저 objective 선택. <strong>현재 베이스라인은 단일 trajectory 라 변동성에 약함</strong> — best-of-K 는 분산을 줄이는 가장 싼 방법.</p>
+
+        <h5>Z2 (max-imbalance) 의 함정</h5>
+        <p><code>Z2</code> 가 최대값이므로 한 베이 폭주 = 페널티 점프. <code>w2</code> 가 작으면 무시되어 한 베이 쏠림 → max 발산. 매 batch end 마다 <code>current_obj2_predicted</code> 추적 → 임계값 넘으면 다음 블록은 최소 부하 베이로 강제 ballast.</p>
+
+        <h4>시간/메모리 관리 설계</h4>
+
+        <h5>시간 미공개 → 어댑티브 배분</h5>
+        <pre><code>def profile_instance(prob_info):
+    n_blocks  = len(prob_info["blocks"])
+    n_bays    = len(prob_info["bays"])
+    avg_poly_verts = mean(len(l) for b in blocks for s in b["shape"] for l in s["layers"])
+    total_K   = sum(len(b["shape"][0]["layers"]) for b in prob_info["blocks"])
+    return {"n": n_blocks, "m": n_bays, "verts": avg_poly_verts, "K": total_K,
+            "complexity_score": n_blocks * n_bays * avg_poly_verts}</code></pre>
+        <ul>
+          <li><code>n_blocks ≤ 30</code> 이고 <code>timelimit ≥ 600s</code> → "여유 큼". MIP 시도.</li>
+          <li><code>n_blocks ≥ 200</code> 이고 <code>timelimit ≤ 300s</code> → "타이트". Greedy + 1 라운드 LNS 만.</li>
+          <li><code>complexity_score &gt; 1e6</code> → Shapely 호출 비싸므로 polygon 캐시 사전구축 + 후보 위치 가지치기.</li>
+        </ul>
+
+        <h5>메모리 가드 (16GB 한도)</h5>
+        <ol>
+          <li><code>psutil</code> 로 매 1초 RSS 측정 — 12GB 도달 시 LNS 풀 사이즈 절반, 14GB 도달 시 즉시 S1 baseline 반환.</li>
+          <li>Shapely 캐시 폭발 방어 — Block 객체 명시적 <code>del + gc.collect()</code></li>
+          <li>후보 위치 풀 캡 — 베이당 placed &gt; 50 이면 Bottom-Left k=20 만 시도</li>
+        </ol>
+
+        <h5>Wall-clock 자가 모니터링 — TimeBudget 클래스</h5>
+        <pre><code>class TimeBudget:
+    def __init__(self, timelimit, safety_ratio=0.92):
+        self.t0 = time.monotonic()
+        self.hard_deadline = timelimit * safety_ratio  # 92% 에서 종료
+        self.checkpoints = {"S0": 0.05, "S1": 0.30, "S2_LNS": 0.85, "S2_MIP": 0.70}
+    def remain(self): return self.hard_deadline - (time.monotonic() - self.t0)
+    def in_phase(self, phase): return (time.monotonic()-self.t0) < self.checkpoints[phase] * self.hard_deadline</code></pre>
+        <p>평가서버 시계가 우리가 잰 것보다 빠를 가능성 (firejail/cpulimit) — <strong>92% 안전마진은 협상 불가.</strong></p>
+
+        <h4>솔버 활용 전략</h4>
+
+        <h5>어디에 MIP 를 적용하나</h5>
+        <ul>
+          <li><strong>Decomposition A: 시간 할당 MIP</strong> — 블록의 (bay, position, orient) 은 휴리스틱, MIP 는 ENTRY/EXIT 시각만. 베이스라인 Phase 2 의 사이클 문제를 깔끔히 풀어줌.</li>
+          <li><strong>Decomposition B: 베이별 패킹 CP-SAT</strong> — OR-Tools 의 <code>CumulativeConstraint</code> + <code>NoOverlap2D</code>. 한 베이 quality 의 상한.</li>
+          <li><strong>Decomposition C: 배정 MIP (소형 인스턴스 only)</strong> — <code>n_blocks ≤ 40</code> 이고 <code>timelimit ≥ 600s</code>.</li>
+        </ul>
+
+        <h5>솔버 우선순위 — 왜 셋 다 쓰나</h5>
+        <ul>
+          <li><strong>OR-Tools CP-SAT</strong>: 무료/오픈소스, 가장 안전. 라이선스 실패 없음. <em>기본 솔버.</em></li>
+          <li><strong>Gurobi</strong>: LP 완화·MIP 풀이 최강. 라이선스 활성화 됐을 때만. try-import + 라이선스 핑.</li>
+          <li><strong>Xpress</strong>: Gurobi 실패 시 보조. race 가능.</li>
+        </ul>
+        <pre><code>try Gurobi (10s budget) → on fail → try Xpress (10s) → on fail → CP-SAT (15s) → on fail → 순수 휴리스틱</code></pre>
+
+        <h5>실제 위험 — 평가서버 솔버 환경</h5>
+        <ul>
+          <li>Gurobi 13.0.2 가 설치되어 있어도 라이선스 활성화 안 되어 있을 가능성 (인터넷 차단)</li>
+          <li><strong>R1 첫 제출에서 반드시 검증</strong>: <code>try: import gurobipy; m = gurobipy.Model(); print("GUROBI OK")</code> 로그를 제출 결과 메일에 찍히게.</li>
+          <li>라이선스 죽었으면 CP-SAT 만 의존</li>
+        </ul>
+
+        <h4>제출 인프라 + 12시간 쿨다운 활용</h4>
+        <p>예선 6주 = 42일. 24h 에 2회면 <strong>약 84회의 신호 윈도우</strong>.</p>
+        <table>
+          <tr><th>라운드</th><th>타이밍</th><th>목적</th><th>학습 내용</th></tr>
+          <tr><td>R0</td><td>W1 day1</td><td>인프라 sanity</td><td>평가시스템 응답·이메일 회신</td></tr>
+          <tr><td>R1</td><td>W1 day2</td><td>Gurobi 가용성 확인</td><td>솔버 라이선스 살아있나</td></tr>
+          <tr><td>R2</td><td>W1 day4</td><td>−1 율 측정</td><td>베이스라인이 어떤 인스턴스에서 깨지나</td></tr>
+          <tr><td>R3-R10</td><td>W2~W4</td><td>알고리즘 개선</td><td>매번 직전 best vs 새것 차이 측정</td></tr>
+          <tr><td>R11+</td><td>W5~</td><td>견고성 강화</td><td>1주일에 1~2번만, 큰 변화 위주</td></tr>
+        </table>
+
+        <h5>매 제출에 박는 진단 로그</h5>
+        <pre><code>print(f"[DIAG] git_sha={GIT_SHA} build_ts={BUILD_TS} timelimit={timelimit} "
+      f"n_blocks={n} n_bays={m} mem_peak_mb={peak} elapsed={elapsed} "
+      f"phase_reached={phase_str} gurobi_ok={gurobi_status} cp_sat_ok={cpsat_status}")</code></pre>
+        <p><strong>서버 로그에 접근 못 하므로 print 가 유일한 디버거.</strong></p>
+
+        <h5>build_submission.py 보강 필요</h5>
+        <ol>
+          <li>체크섬 + 직전 제출과 비교 (같은 zip 이면 빌드 거부)</li>
+          <li>로컬 smoke test 강제 (<code>--strict</code> 플래그)</li>
+          <li>메타 JSON 에 git diff 자동기록</li>
+        </ol>
+
+        <h4>본선 D-1 방어 — 위험 시나리오 매트릭스</h4>
+        <table>
+          <tr><th>#</th><th>시나리오</th><th>가능성</th><th>사전 방어</th></tr>
+          <tr><td>1</td><td>Hidden 인스턴스가 n=300+</td><td>중</td><td>합성 인스턴스 자체생성 스트레스 테스트</td></tr>
+          <tr><td>2</td><td>timelimit 이 30s 인 케이스</td><td>중</td><td>S0 safety 3초 안에 끝나야 함</td></tr>
+          <tr><td>3</td><td>Polygon 정점 50+ 비-볼록 블록</td><td>저</td><td>AABB 사전필터 + intersection 캐시</td></tr>
+          <tr><td>4</td><td>w1/w2/w3 극단 비율</td><td>중</td><td>Z2-dominant 인스턴스 → 베이 ballast 강제</td></tr>
+          <tr><td>5</td><td>방향이 6개+ 블록</td><td>저</td><td>orientation 가지치기 fast mode</td></tr>
+          <tr><td>6</td><td>평가서버 conda env 충돌</td><td>중</td><td>무거운 import 는 try/except</td></tr>
+          <tr><td>7</td><td>Gurobi 라이선스 종료</td><td>저</td><td>솔버 fallback chain</td></tr>
+          <tr><td>8</td><td>utils.py v1.1 갱신</td><td>저</td><td>private 함수 접근 시 try-except</td></tr>
+          <tr><td>9</td><td>자동회신 메일이 스팸함</td><td>중</td><td>화이트리스트 등록</td></tr>
+          <tr><td>10</td><td>본선 D-1 자기 코드 깨짐</td><td>중</td><td><code>last_known_good.zip</code> 보존</td></tr>
+        </table>
+
+        <h4>약점 자인</h4>
+        <ol>
+          <li>인프라 중시 → 점수 상한이 낮을 수 있음. 안정 중상위 (Top 10~20) 가능, 우승 어려움.</li>
+          <li>S0/S1/S2 게이트의 "best 채택" 룰이 너무 보수적. Z2 살짝 무거워졌지만 Z1 크게 줄어드는 경우 거부 위험.</li>
+          <li>솔버 trio 모두 실패할 가능성을 휴리스틱 fallback 만으로 막을 수 있을지 미검증.</li>
+        </ol>
+      </article>
+
+      <!-- CONTRARIAN R1 -->
+      <article class="persona-card contrarian" id="r1-contrarian">
+        <h3><span class="badge contrarian">C</span> The Contrarian · Round 1 전략 초안</h3>
+
+        <h4>평균 클로드 답변 예측 + 왜 그게 약한가</h4>
+        <p>평균 클로드는 거의 확실히 다음 한 줄로 요약된 답을 낸다:</p>
+        <blockquote>"EDD greedy 시드 → LNS destroy/repair → 시간 남으면 SA 또는 Tabu, MIP 솔버(Gurobi/OR-Tools)는 베이 배정 또는 시각 subproblem 에 부분 적용, 4코어 활용해 여러 시드 병렬 후 최선택 — Phase 2 repair 를 더 똑똑하게."</blockquote>
+        <p>이게 약한 이유 3가지:</p>
+        <ol>
+          <li><strong>베이스라인의 가정 구조를 그대로 답습</strong> — "패킹/스케줄링/할당" 3분리, "그리디→메타휴리스틱 개선", "phase 2 보수" 라는 베이스라인의 프레임 자체를 의심하지 않는다. 베이스라인보다 수십 % 빠른 수렴은 되지만 질적 도약은 없음. 점수가 <code>R-nb</code> 라 조금 더 잘하는 100명이 같은 답을 내면 다 같이 중간 등수.</li>
+          <li><strong>"feasibility 우선" 을 잘못 해석</strong> — "−1 회피 = 안정적 그리디" 로 받아들이고 공격적 탐색을 두려워함. 100명이 baseline-같은 평이한 점수면 동점 클러스터의 가운데에 박힌다. 클러스터를 <em>위로 끊어내는</em> 차별화가 필요한데, 평균 답변은 그걸 안 한다.</li>
+          <li><strong>MIP 솔버를 부분만 쓴다는 발상</strong> — 베이별 단일 베이 패킹 MIP, 시각 결정 MIP. 하지만 Gurobi/Xpress 13.x 는 고전 작은 MIP 에 과한 무기. 전체 문제의 LP 완화 또는 Z1=0 강제 lex MIP 같은 더 큰 사용처를 평균 클로드는 생각 못한다.</li>
+        </ol>
+
+        <h4>직교 각도 제안 1: 분해의 축 바꾸기 — "Topology-first MIP"</h4>
+        <p>베이스라인과 평균 답변은 블록 한 개씩 시간순으로 결정 (블록 → 베이, 위치, 시각). 정반대 제안:</p>
+        <p><strong>위상(topology) 결정을 먼저, 전역으로, 닫힌 정수 모델로 푼 다음 그 위상 위에 기하·시각을 얹는다.</strong></p>
+        <ol>
+          <li><strong>"위상" 의 정의</strong>: 각 베이 안에서 어떤 블록이 어떤 블록의 위에 들어가는가의 부분순서 그래프. 크레인 수직접근 제약의 본질은 위상이다 — 모든 베이의 위상이 결정되면 진입/퇴출 순서도 자동 결정.</li>
+          <li><strong>위상 + 베이 배정 통합 MIP</strong>: 위치/방향 추상화. 각 블록은 베이의 직사각형 영역 분할 슬롯 (2×2 또는 3×3 그리드) 중 하나. 결정변수 <code>x[i,j,s]</code> + <code>y[i,i']</code>. 목적함수에 Z1+Z2+Z3 모두 포함. <strong>50~200 블록 인스턴스에서 4코어·5분 안에 정수해 또는 강한 LB.</strong></li>
+          <li><strong>위상 확정 후 기하 재구성</strong>: 각 베이의 위상이 정해지면 단일 베이 패킹으로 분리. 주어진 진입/퇴출 순서에 따라 폴리곤을 bottom-left fill 또는 NoFitPolygon 으로 채움.</li>
+          <li><strong>단일 베이 패킹이 깨지면</strong>: 그 베이 안에서만 LNS — 위상 유지, 위치만 재배치.</li>
+        </ol>
+        <p><strong>왜 점수가 오르는가</strong>:</p>
+        <ul>
+          <li>크레인 제약을 <em>원천 방지(prevention)</em> 한다. 베이스라인이 phase 2 에서 고치는 것을 phase 0 에서 제약식으로 박는다.</li>
+          <li>Z2 (부하 균형) 가 위상결정 단계에서 전역 최적으로 풀린다.</li>
+          <li>블록 9 같은 극단 선호 (<code>prefs=[100,0]</code>) 가 자동 처리.</li>
+        </ul>
+
+        <h4>직교 각도 제안 2: Z1=0 다양체 위 Lex-order</h4>
+        <p>평균 클로드는 <code>w1·Z1 + w2·Z2 + w3·Z3</code> 를 한꺼번에 최적화. <code>w1=2667</code> 인 인스턴스에서도 Z1 한 단위 줄이려고 Z3 를 +133 까지 허용 — 한 블록을 100% 비선호 베이에 던지는 게 tardiness 1 줄이는 것보다 싸다. 정말 인스턴스 의도와 맞나?</p>
+        <ol>
+          <li><strong>Stage A</strong>: <em>Z1 = 0 강제</em> (모든 블록 due_date 안에 EXIT). 결정문제로 1~3분에 sat/unsat 판정.</li>
+          <li><strong>Stage A 가 SAT</strong> → Z1=0 해의 공간 전체에서 <code>w2·Z2 + w3·Z3</code> 만 최소화. 시간 박스 제약 안에서 작은 LNS/Gurobi.</li>
+          <li><strong>Stage A 가 UNSAT</strong> → MUS (Minimum Unsatisfiable Subset) — "어떤 블록이 반드시 늦어야 하는가" 의 최소 집합.</li>
+        </ol>
+
+        <h4>직교 각도 제안 3: 5-페르소나 앙상블</h4>
+        <p>완전히 다른 철학의 5개 솔버를 4코어에서 시간 분할 실행, 마지막 1초에 5개 해 중 가장 점수 좋은 하나 선택.</p>
+        <ol>
+          <li><strong>EDD-Greedy++ (베이스라인 강화)</strong> — 시간 25% — 최저 안전망</li>
+          <li><strong>Topology-MIP (제안1)</strong> — 시간 30%</li>
+          <li><strong>Lex Z1=0 (제안2)</strong> — 시간 25%</li>
+          <li><strong>Anti-EDD (역설적 정렬)</strong> — 시간 10% — 큰 블록 먼저 (LDD)</li>
+          <li><strong>Reverse-time backward scheduling</strong> — 시간 10% — due_date 에서 역방향</li>
+        </ol>
+
+        <h4>어떤 가정을 의심해야 하나</h4>
+        <ol>
+          <li><strong>"EDD 정렬이 최선의 시드"</strong> — 복합 목적함수 + 공간 제약에서 증명된 적 없음. 가중치를 보고 정렬 키 동적 선택이 더 적절.</li>
+          <li><strong>"phase 2 에서 보수하는 게 phase 0 prevention 보다 효율적"</strong> — baseline 의 cycle detection + force_place 가 자주 트리거되면 Z3 가 망가짐.</li>
+          <li><strong>"방향 8개를 완전 탐색하는 게 옳다"</strong> — 베이의 종횡비를 보면 방향 2~3개가 dominant. 학습/캐싱 안 하면 시간 낭비.</li>
+          <li><strong>"polygon 충돌은 Shapely 로 정확하게 검사"</strong> — 알고리즘 내부 탐색에서는 bbox 충돌 + grid raster 가 수십 배 빠르고 거의 같은 답.</li>
+          <li><strong>"한 솔버 한 번 호출"</strong> — 시간을 작은 호출 여러 번으로 쪼개고 해의 풀(pool) 을 유지하면 마지막 1초에 풀에서 최선 선택 가능.</li>
+        </ol>
+
+        <h4>약점 자인</h4>
+        <ol>
+          <li>슬롯 추상화 부정확성 — 큰 블록 (block 0 의 14.6×5.6 bbox) 이 슬롯 안에 안 들어갈 위험.</li>
+          <li>CP-SAT 결정문제 timeout — 50+ 블록에서 5분 안에 sat/unsat 안 나오면 timeout → −1.</li>
+          <li>5 페르소나 시간분할 어려움 — 5개가 칼같이 분할은 어렵고, watchdog 스레드 등 추가 복잡도.</li>
+        </ol>
+      </article>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ROUND 2 -->
+    <!-- ============================================================ -->
+    <section id="round2">
+      <h2><span class="badge round">Round 2</span> 상호 공격</h2>
+      <p>각 에이전트가 다른 둘의 Round 1 입장을 보고 약점을 공격. 자신의 입장은 방어/진화.</p>
+
+      <!-- THEORIST R2 -->
+      <article class="persona-card theorist" id="r2-theorist">
+        <h3><span class="badge theorist">A</span> The Theorist · Round 2 반박</h3>
+
+        <h4>Pragmatist 에 대한 공격</h4>
+
+        <h5>공격 1: "Best-of-K" 는 확률적 동치류 안에서만 최적이라, R−nb 비대칭성을 정면으로 깨뜨린다</h5>
+        <p>Best-of-K + LNS 는 본질적으로 <strong>같은 분포에서 K번 샘플링하고 최저값을 취하는</strong> 추정기다. K=4 라면 분포의 ~80th percentile. 5팀이 같은 LNS 계열을 돌리면 모두 비슷한 80th percentile 에 안착해 서로 동점. Pragmatist 의 K개 솔루션은 분포의 mode 근처에 몰리고, 이 mode 자체가 다른 팀들과 수렴. 살짝 더 나간 한 팀이 있으면 모두가 <code>nb</code> 1을 먹는다.</p>
+        <p>내 LP dual 방향은 <strong>결정론적으로 다른 다양체</strong> 에 도달. 같은 인스턴스에 100번 돌려도 같은 점에 수렴하지만, 그 점은 random walk 의 표본분포에 속하지 않는 점이다. R=30 가정하면 점수 차이가 25점에 이른다.</p>
+
+        <h5>공격 2: "12h 쿨다운 학습신호" 는 온라인 학습 가정이라 정보 누설이 부족하다</h5>
+        <p>자동회신 메일의 (점수, license_status, −1 율) 만으로 정보이론적으로 한 번 제출 ≈ 수 비트. 본선까지 5~6회 가능 추정 시 총 60비트 미만. 알고리즘 공간이 거대한데 60비트로 수렴한다는 가정은 통계적으로 약하다.</p>
+        <p>내 접근은 Layer 0 instance profiling 으로 인스턴스 자체에서 정보를 뽑는다. 한 인스턴스의 <code>ρ_j</code>, <code>H_i</code>, DAG width 가 수천 비트의 구조정보. <strong>Pragmatist 가 제출당 60비트로 학습할 때, 나는 인스턴스당 수천 비트로 적응한다.</strong></p>
+
+        <h5>공격 3: Fallback chain 은 최선의 솔루션을 버리는 결정규칙</h5>
+        <p>Gurobi→Xpress→CP-SAT→휴리스틱 fallback 은 time budget 을 기준으로 끊는다. 그러나 점수공식상, 휴리스틱이 우연히 MIP 보다 나은 경우가 있다 (NP-hard 에서 자주). Fallback chain 은 "MIP optimal 이 있으면 그게 답" 이라는 암묵적 prior. 우리 문제는 LP relaxation 부터 fractional. <strong>Pragmatist 의 fallback 은 결합이 아니라 대체.</strong></p>
+
+        <h4>Contrarian 에 대한 공격</h4>
+
+        <h5>공격 1: "슬롯 추상화" 는 상승완화(relaxation)가 아니라 손실 모델</h5>
+        <p>Topology-first MIP 가 2×2 또는 3×3 슬롯으로 위치를 추상화한다는 것은, 원래 문제의 feasibility set 을 부분집합으로 좁히는 것이다. LP relaxation 은 집합을 넓혀서 하한을 얻는 정당한 방법이지만, 슬롯화는 집합을 줄여서 상한을 얻는다 — 원래는 풀리는 인스턴스가 슬롯에서 UNSAT 일 수 있다. <strong>−1 위험 증폭</strong> (Phase 2 repair 거부했으니 fallback 도 없다).</p>
+
+        <h5>공격 2: Lex Z1=0 CP-SAT 결정문제는 결정 자체가 NP-complete</h5>
+        <p>Stage A 의 "Z1=0 SAT/UNSAT 판정" 은 사실 결정문제 자체가 tardiness=0 단일머신 scheduling with release times + due dates + spatial constraint. 단일머신 만으로 NP-complete (Lenstra 1977). CP-SAT 이 결정문제를 몇 분에 풀 것이라는 가정은 incumbent 가 빨리 발견될 때만. UNSAT 의 경우 완전한 search tree 탐색이 필요해 timeout 위험 매우 크다. <strong>UNSAT 인스턴스에서 Lex Z1=0 는 MUS 도 못 뽑고 timeout → −1.</strong></p>
+
+        <h5>공격 3: 5-페르소나 앙상블은 상호상관(correlation) 무시</h5>
+        <p>EDD와 LDD는 같은 due-date 정렬 역순이라 자료구조 차원에서 강한 음의 상관관계, 같은 노이즈에 같이 무너진다. Topology-MIP 와 Lex Z1=0 는 같은 CP-SAT/MIP 백엔드 의존이라 license 실패 시 동시 사망. <strong>5개 페르소나가 강하게 상관되어 있다면 3개 페르소나의 expected min 과 큰 차이 없다.</strong> 시간을 5등분해서 5개 돌리는 게 3등분해서 3개 돌리는 것보다 못할 수 있다.</p>
+
+        <h4>내 입장 방어 / 진화</h4>
+
+        <h5>예상 공격 1 (Pragmatist): "NFP 사전계산 비용이 timelimit 안에 끝나지 않아 −1"</h5>
+        <p><strong>대응</strong>: 부분 양보. NFP 비용은 큰 인스턴스 (n=100, 정점 50+) 에서 수십 초 가능성 인정. 진화: NFP 를 그래프 sparsification — <code>H_i</code> 가 큰 블록쌍만 사전계산, 나머지는 on-demand sliding 으로 lazy. Layer 0 에 NFP budget estimate 추가.</p>
+
+        <h5>예상 공격 2 (Contrarian): "LP dual 방향은 한 점에 결정적으로 수렴하지만, 그 점이 모든 인스턴스에서 좋은 점이라는 보장이 없다"</h5>
+        <p><strong>대응</strong>: 이건 옳다. 진화: Layer 0 에서 instance class 를 격자로 분류하고, 클래스별 dual gradient step size <code>η_c</code> 를 오프라인 calibration. <strong>dual 방향 자체는 결정론적이되 step size 는 instance-class-conditioned.</strong> 사실상 piecewise-deterministic Markov decision 으로 진화.</p>
+
+        <h5>예상 공격 3 (Pragmatist): "Layer 1 MIP 가 spatial 무시하면 Layer 2 에서 spatial UNSAT 발생 시 catastrophic"</h5>
+        <p><strong>대응</strong>: 양보 + 진화. Layer 1 MIP 에 <em>aggregate spatial constraint</em> 를 LP cut 형태로 추가 — 베이별 블록 면적 합 ≤ 베이 면적 · 0.85 (packing density 한계) + 시간 슬라이스별 면적 제약. Phase 2 repair 는 여전히 거부 — Layer 2 가 UNSAT 시 Layer 1 에 Benders cut 으로 피드백.</p>
+
+        <h4>합의 가능한 점</h4>
+        <ol>
+          <li>Pragmatist 의 timelimit 안전마진 (92%) — 코어 알고리즘은 안 바꾸고 wrapper 만.</li>
+          <li>Contrarian 의 "Phase 2 repair 거부, prevention first" — 내 Layer 2 NFP 의 정신과 완벽 일치.</li>
+          <li>Contrarian 의 instance profiling 의심 — 진화된 형태에서 dual step 이 class-conditioned 인 것은 이 의심에 답하는 것.</li>
+        </ol>
+
+        <h4>비합의 (의도적 분기)</h4>
+        <ol>
+          <li><strong>Best-of-K vs deterministic dual</strong> — 끝까지 갈라진다. K개 시드 random sampling 은 mode-collapse 한다. 본선 실측으로 결판.</li>
+          <li><strong>CP-SAT 결정문제로 Lex Z1=0</strong> — 끝까지 거부. 결정문제 자체가 NP-complete 인 곳에 완전성 의존은 받아들일 수 없다.</li>
+          <li><strong>5-페르소나 시간분할</strong> — 분산 효과보다 한 페르소나의 wall-clock budget 이 결정적. 페르소나 앙상블은 거부.</li>
+        </ol>
+      </article>
+
+      <!-- PRAGMATIST R2 -->
+      <article class="persona-card pragmatist" id="r2-pragmatist">
+        <h3><span class="badge pragmatist">B</span> The Pragmatist · Round 2 반박</h3>
+
+        <h4>Theorist 에 대한 공격</h4>
+
+        <h5>공격 1: "Gurobi 90초" 는 평가서버에서 검증된 적이 없는 미신이다</h5>
+        <p>Theorist 는 Layer 1 에서 LP-MIP Bay Assignment 를 "Gurobi 90초" 에 푼다고 단언하지만 <strong>이건 어디서 측정한 숫자인가?</strong> 본인 워크스테이션? OGC 평가서버는 4코어/16GB/인터넷 차단/firejail 격리. Gurobi Academic 라이선스는 온라인 검증 또는 로컬 토큰을 요구한다. <code>gurobipy</code> 가 import 되더라도 <code>Model()</code> 생성에서 라이선스 토큰 못 가져오면 <code>GurobiError</code>.</p>
+        <p>본선이 b=80 / B=8 / U=120 으로 오면 변수 수가 <code>O(b × B × U) = 76,800</code> binary. 여기서 "90초 Gurobi" 는 희망사항. <strong>평가서버 시간이 30분이라면 Layer 1 만 25분 먹고 Layer 2/3 못 돌리는 시나리오가 가장 그럴듯.</strong></p>
+
+        <h5>공격 2: NFP Minkowski sum 은 polygon 정점 ≥ 50 에서 메모리 폭발한다</h5>
+        <p>NFP 는 두 polygon 의 Minkowski sum, 정점 수 m,n 에 대해 결과 polygon 정점은 최악 O(mn). 블록 80개, 층 5개, 평균 정점 30 이면 12,000 polygon, 각 100~300 정점, <strong>3~5GB 메모리</strong> 가 Shapely C++ 힙에 잡힌다. 16GB 중 5GB NFP, Gurobi 가 3~6GB, Python interpreter 가 1GB — 어느 순간 OOM kill, 그 인스턴스에 −1.</p>
+        <p>본선 D-1 에 OOM 한 번 터지면 <strong>R≈30 손실</strong>. "원리적으로 빠르다" 는 평균 점수 +3~+5. 한 인스턴스 OOM 이 평균 +30 손실. <strong>순수익은 마이너스.</strong></p>
+
+        <h5>공격 3: LP dual 기반 deterministic search 는 "제출 횟수 안에서 튜닝 불가"</h5>
+        <p>Lagrangian dual 의 핵심 파라미터 (step size, dual update rule, swap candidate filter) 를 논문 default 로? 12시간 쿨다운 × 최대 R≈84 제출 중 몇 번의 제출로 dual hyperparameter 를 튜닝? 한 인스턴스에서 step 0.1 이 좋아도 다른 인스턴스에서 0.5 가 좋을 수 있다. <strong>인스턴스별 적응 없이 deterministic search 는 random walk 보다 나쁠 수 있다</strong> — random 은 적어도 variance 가 평균을 끌어올리는데, deterministic 은 한 방향 잘못 잡으면 끝까지 잘못 간다.</p>
+
+        <h4>Contrarian 에 대한 공격</h4>
+
+        <h5>공격 1: 5-페르소나 시간분할은 4코어 16GB 환경에서 불가능에 가깝다</h5>
+        <p>"EDD-Greedy++ 25% / Topology-MIP 30% / Lex Z1=0 25% / Anti-EDD 10% / Reverse-time 10%" — 30분 인스턴스에서 Topology-MIP 9분, Lex Z1=0 7.5분. <strong>이 시간으로 MIP 가 풀리는 인스턴스가 몇 개나 되나?</strong> 5번 중 2번 발생하면 앙상블의 60% 가 dead code.</p>
+        <p>4코어 환경에서 5 페르소나 병렬은 코어당 0.8 페르소나 = 시분할이 실제로 일어나서 캐시 thrashing 으로 각자 직렬보다 느려진다. Gurobi 와 CP-SAT 을 동시에 돌리면 OMP_NUM_THREADS 충돌. <strong>본인이 평가서버에서 한 번이라도 측정해봤나?</strong></p>
+
+        <h5>공격 2: Lex Z1=0 SAT/UNSAT 결정은 인스턴스의 80% 에서 UNSAT 다</h5>
+        <p>Tardiness Z1=0 이 SAT 인 인스턴스는 어지간히 여유 있는 인스턴스. 베이 capacity tightness <code>ρ_j &gt; 0.85</code> 인 인스턴스 (대회 인스턴스의 다수일 것) 에서는 Z1=0 이 수학적으로 UNSAT. UNSAT 증명에 CP-SAT 가 몇 분 걸릴 줄 알고? MUS 추출은 완전탐색 못지않게 비싸다. <strong>이 페르소나는 인스턴스의 80% 에서 시간만 먹고 결과 0.</strong></p>
+
+        <h5>공격 3: "의심해야 할 5가지 가정" 멋있지만 실험비용 무시</h5>
+        <p>Anti-EDD, Reverse-time 같은 backward search 페르소나 검증할 제출은 어디서? 5개 페르소나 각각 검증하려면 60시간, 거기에 앙상블 시간 분할 튜닝 — <strong>본선 시작 전에 검증 못 끝낸다.</strong> 5 페르소나는 제출 횟수 예산을 복수 인스턴스 × 복수 페르소나로 곱셈 폭발.</p>
+
+        <h4>내 입장 방어 / 진화</h4>
+
+        <h5>예상 공격 1 (Theorist): "S0 → S1 → S2 게이트는 보수적이라 우승 못한다"</h5>
+        <p><strong>대응</strong>: 맞다. 게이트만으로는 우승 못한다. 하지만 우승 확률 5% × 1등 7천만원 = 기댓값 350만원이고, 중상위 안정 확률 60% × 3등권 1~2천만원 = 기댓값 600~1200만원. <strong>순수 기댓값으로도 게이트 우선이 우월.</strong> 그래서 게이트 위에 "S3: 시간 여유 시 Theorist 의 Layer 1 또는 Contrarian 의 Topology-MIP 를 한 페르소나로 추가" 옵션으로 받겠다. 게이트 보수성은 floor, 그 위에 실험적 페르소나는 ceiling.</p>
+
+        <h5>예상 공격 2 (Contrarian): "Best-of-K 의 K=3~4 는 너무 작다"</h5>
+        <p><strong>대응</strong>: 한 제출 안에서 K=3~4 는 시간 예산상 최대치. 다양성을 페르소나 수가 아니라 seed × 파라미터 그리드로 확보. 점수공식 <code>R-nb</code> 에서 1등 못해도 nb 가 작으면 충분. 분산 큰 페르소나 앙상블은 한 인스턴스에서 nb=0 노리지만 다른 인스턴스에서 nb=R-1 이 되기 쉽다. <strong>분산을 줄이는 게 게임.</strong></p>
+
+        <h5>예상 공격 3 (둘 다): "솔버 fallback chain 은 어느 솔버도 안 풀리는 경우 대응 없다"</h5>
+        <p><strong>대응</strong>: 있다. 휴리스틱-only mode 가 S1 (베이스라인 greedy + Phase 2 repair). Gurobi/Xpress/CP-SAT 모두 실패해도 S1 은 항상 실현가능 해 반환. 솔버는 bonus 이지 필수 아님. 두 사람의 알고리즘은 솔버 실패 시 대체 경로 없다.</p>
+
+        <h4>합의 가능한 점</h4>
+        <ol>
+          <li>Theorist 의 Layer 0 Instance Profiling — 5초 안에 끝난다면 내 게이트 시스템의 입력으로.</li>
+          <li>Contrarian 의 Topology-MIP 를 1 페르소나로 추가 — K=4 중 1개를 30초 timeout 으로.</li>
+          <li>세 명 모두 <code>tools/run_local.py</code> 로 동일 인스턴스 동일 시간예산 측정 결과 공유 — 추측 금지.</li>
+        </ol>
+
+        <h4>비합의 (의도적 분기)</h4>
+        <ol>
+          <li><strong>LP dual deterministic vs Best-of-K seed-diverse</strong> — 둘 중 어느 것이 nb 를 더 줄이는지 실험으로 결판.</li>
+          <li><strong>Lex Z1=0 페르소나 포함 여부</strong> — Z1=0 SAT 인 인스턴스 비율 30% 초과면 포함.</li>
+          <li><strong>5 페르소나 풀앙상블 vs 3 페르소나 + S0 게이트</strong> — 측정 없이 페르소나 수 늘리는 건 사양.</li>
+        </ol>
+        <p><strong>최종 입장</strong>: 게이트는 floor, 페르소나는 ceiling, 검증은 측정으로. 추측은 사양.</p>
+      </article>
+
+      <!-- CONTRARIAN R2 -->
+      <article class="persona-card contrarian" id="r2-contrarian">
+        <h3><span class="badge contrarian">C</span> The Contrarian · Round 2 반박</h3>
+
+        <h4>Theorist 에 대한 공격</h4>
+
+        <h5>공격 1: "LP dual 은 원리적 우위가 아니라 원리적 자기기만 이다"</h5>
+        <p>Theorist 는 "LP dual 방향이 random walk 보다 원리적으로 우위" 라고 과감히 주장. 그러나 이 문제는 <strong>혼합정수 + 비볼록 (회전·NFP·계단 크레인) MINLP</strong>. 비볼록 MINLP 에서 strong duality 는 깨진다. Lagrangian relaxation 의 dual bound 와 primal 사이의 gap 이 시스템적으로 존재한다. 그가 LP dual 에서 잡는 multiplier <code>λ</code> 는 어떤 의미에서도 최적해 방향이 아니다 — 그건 완화된 문제의 최적해 방향.</p>
+        <p>우리 문제에는 dual 이 특별히 약한 구조: 크레인 <code>j ≥ k</code> 는 <strong>위상 구조</strong>. 위상 제약을 LP 로 완화하면 dual 은 위상을 못 본다. Layer 1 의 "spatial 무시 LP" 가 만드는 dual 은 <strong>공간이 곧 위상인 이 문제의 본질을 못 짚는다</strong>. 그의 LP-dual 은 사실 지도 없는 광야다.</p>
+
+        <h5>공격 2: NFP candidate 가 매니폴드 위에 가둔다</h5>
+        <p>NFP 는 깨끗한 폴리곤 쌍에서 효율적. 그러나 우리 문제는: 블록 회전 (0/90/180/270) → NFP 4×4=16 페어, 블록 N=수십 → O(N²) 페어 → 수백~수천 NFP. 사전계산이 무의미하다. 30분 timelimit 에서 NFP 만 돌리다 끝난다.</p>
+        <p>더 큰 약점: <strong>NFP 후보가 그를 고정된 매니폴드 위에 가둔다</strong>. NFP 후보 안에서 최적은 NFP 가 만든 매니폴드의 local minimum 이지 진짜 최적이 아니다. 매니폴드 자체를 뚫는 답 (동시 재배치로만 가능한 답) 을 원리적으로 못 본다.</p>
+
+        <h5>공격 3: HIPS Layer 구조 자체가 평균 클로드 답변의 세련된 변종</h5>
+        <p>Layer 0 (profiling) → Layer 1 (LP-MIP) → Layer 2 (NFP) → Layer 3 (Lagrangian local search). <strong>이거 정확히 클로드가 처음 30초에 뱉을 답변의 정제판</strong>. "복잡한 문제는 단계로 분해하라" 는 클로드의 가장 강한 prior. 원리주의자인 척하지만 실은 평균 답변에 학술적 단어를 입힌 형태.</p>
+        <p>진짜 직교 답변은 Layer 구조 자체를 거부 — <strong>시간을 역으로 푼다, 베이를 제거하는 방향으로 푼다, 블록 사이 원래 페어링을 깬다</strong>. 그는 이런 직교 각도를 단 하나도 제시하지 않았다.</p>
+
+        <h4>Pragmatist 에 대한 공격</h4>
+
+        <h5>공격 1: "안정 중상위" 는 점수공식 R−nb 의 기하학을 오독한 전략</h5>
+        <p><code>score = R - nb</code>. <strong>중상위 클러스터에 수십 팀이 동률로 묶이는 시나리오를 상상해라.</strong> 안정 중상위로 자리잡으면 nb 가 큰 채로 안정. 드물게 발생하는 인스턴스에서 클러스터를 끊고 위로 올라가면 nb 가 불연속적으로 줄어든다. <code>R-nb</code> 는 클러스터 경계에서 비선형적 보상.</p>
+        <p>Pragmatist 의 S0→S1→S2 게이트는 클러스터 경계 돌파를 적극적으로 막는다. "개선 없으면 S1 반환" 은 바로 그 클러스터에 영원히 머무는 정책. 그는 분산을 최소화했지만, <code>R-nb</code> 가 보상하는 건 분산이 아니라 우향 비대칭(right tail). <strong>그의 전략은 risk-averse 인데, 점수공식은 risk-seeking 을 보상.</strong></p>
+
+        <h5>공격 2: 12h 쿨다운 학습신호는 학습이 점진적이라는 가정 위에 서 있다</h5>
+        <ol>
+          <li>레퍼런스 ground truth 가 없다. 평가서버는 점수만 돌려준다. 인스턴스별 디테일 없다.</li>
+          <li>나의 변경과 다른 팀의 변경이 동시 일어난다. R3 점수가 R2 보다 떨어졌다면 내가 망쳤는지, 다른 팀이 추월했는지 구분 불가.</li>
+          <li>제출 N=10~15회 — 가설검증 통계력 충분하지 않다.</li>
+        </ol>
+        <p>그의 위험 매트릭스 10가지는 known known 만 본다. <strong>체크박스 자체가 false sense of safety 를 만든다.</strong></p>
+
+        <h5>공격 3: Best-of-K + 솔버 fallback chain 은 직교가 아닌 단조(monotone) 앙상블</h5>
+        <p>K개 후보가 서로 다른 perspective 가 아니면 K 배 시간만 쓰고 결과는 비슷. 그의 K는 "seed 다른 greedy 3~4개 + LNS 1개" — 모두 같은 매니폴드 (EDD-Greedy 기반). <strong>seed 다양성 ≠ 알고리즘 다양성.</strong> 솔버 fallback chain 도 redundancy 지 diversity 아님. 본선에 필요한 건 모델 자체가 다른 fallback.</p>
+
+        <h4>내 입장 방어 / 진화</h4>
+
+        <h5>예상 공격 1 (Theorist): "슬롯 추상화 가 우리 데이터의 실제 폴리곤 다양성을 못 잡는다"</h5>
+        <p><strong>대응 + 진화</strong>: 양보 안 한다. 더 과감히 간다. <strong>Slot-MIP 가 답이 아니라 순서만 결정하게 만든다.</strong> Slot-MIP 는 "어느 블록이 어느 베이의 어느 순번에 들어가는가" 만 푼다. (x,y) 는 그 순번 안에서 별도 알고리즘 (bottom-left fill 또는 NFP local) 으로 결정. 핵심은 순서 자체를 MIP 로 푸는 것 — 평균 답변은 순서를 휴리스틱으로 결정하고 (x,y) 만 MIP 로 푼다. <strong>나는 반대.</strong></p>
+
+        <h5>예상 공격 2 (Pragmatist): "5-페르소나 = 4코어에 5개 못 돌린다"</h5>
+        <p><strong>대응 + 진화</strong>: 5개 페르소나는 대회 기간 동안 제출 회차마다 다른 조합으로 돌린다. 한 제출에는 최대 2 페르소나만 활성. <strong>페르소나 선택 자체가 학습되는 변수가 된다.</strong> 평가 점수 데이터에서 어느 페르소나 조합이 어느 인스턴스 유형에서 강한지 역추적. 마지막 제출은 가장 잘 작동한 2개의 조합.</p>
+
+        <h5>예상 공격 3 (둘 다): "Lex Z1=0 가 SAT 이면 좋지만, 대부분 인스턴스에서 UNSAT 이면 fallback 도 없이 무너진다"</h5>
+        <p><strong>대응 + 진화</strong>: 정확히 그게 Lex Z1=0 의 본질적 정보다. <strong>UNSAT 자체가 strong signal.</strong> UNSAT 시 MUS 가 어떤 블록 집합이 본질적으로 늦는지 알려준다. 이 블록들은 Z1 을 0 으로 못 만드는 본질적 원인. 그러면 Z1 최소화 문제가 이 MUS 블록들만 신경 쓰면 된다. <strong>MUS 로 책임이 있는 블록과 무관한 블록을 분리.</strong> 정보량이 N차원에서 |MUS|차원으로 떨어진다. 이건 직교 각도.</p>
+
+        <h4>합의 가능한 점</h4>
+        <ol>
+          <li>TimeBudget 안전마진 + force_place fallback (Pragmatist) — −1 회피는 1순위.</li>
+          <li>인스턴스 profiling (Theorist 의 Layer 0) — 단, profiling 으로 전략 단계를 결정하는 게 아니라 페르소나 조합을 결정.</li>
+        </ol>
+        <p>이 두 가지 외에는 내가 합의하면 내 페르소나가 죽는다.</p>
+
+        <h4>비합의 (의도적 분기) — 가장 중요</h4>
+        <ol>
+          <li><strong>Phase 2 repair vs Phase 0 prevention</strong></li>
+          <li><strong>LP dual 방향 vs Topology-MIP 정수 방향</strong></li>
+          <li><strong>EDD 가 최선의 시작점인가</strong> — Anti-EDD (LDD) 를 적어도 한 페르소나로 유지.</li>
+          <li><strong>"안정 중상위" vs "클러스터 끊기"</strong> — Pragmatist 는 분산 최소화, 나는 우측 꼬리 두께 최대화.</li>
+          <li><strong>"문제를 정해진 도구 로 푸는가" vs "도구 자체를 의심하는가"</strong> — 시간을 역으로, 베이를 제거하는 방향으로, MUS 로 차원 축소 등의 각도 자체가 직교.</li>
+        </ol>
+        <p><strong>최종 한 줄</strong>: Theorist 와 Pragmatist 모두 평균 클로드 답변의 두 가지 정제판 — 학술 정제판 (Theorist), 공학 정제판 (Pragmatist). <code>R-nb</code> 가 보상하는 건 클러스터를 끊는 비대칭 베팅이지 클러스터 중심으로의 수렴이 아니다.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- ROUND 3 -->
+    <!-- ============================================================ -->
+    <section id="round3">
+      <h2><span class="badge round">Round 3</span> 최종 입장</h2>
+      <p>Round 2 공격에 답하며 최종 입장·합의 가능 영역·의도적 분기 정리. 자기 답이 평균 클로드와 얼마나 다른지 자가검열.</p>
+
+      <!-- THEORIST R3 -->
+      <article class="persona-card theorist" id="r3-theorist">
+        <h3><span class="badge theorist">A</span> The Theorist · Round 3 최종 입장</h3>
+
+        <h4>받은 공격에 대한 응답</h4>
+
+        <h5>Pragmatist 의 "Gurobi 90초 미검증" 공격에 답한다</h5>
+        <p><strong>양보한다. 진화한다.</strong> "90초" 는 내 워크스테이션 직관. 평가서버 4코어/16GB 에서 b=80·B=8·U=120 인스턴스가 binary 76,800개를 시간 안에 풀 보장이 없다는 지적은 옳다.</p>
+        <p>진화: <strong>Layer 1 을 MIP-as-bound 가 아니라 MIP-as-anytime 으로 본다.</strong> Gurobi 를 최적해까지 돌리지 않고 <code>MIPGap=0.05</code> + <code>TimeLimit = min(0.15·timelimit, 90s)</code> 로 조기 종단. 안 풀리면 LP relaxation 의 dual 값을 lower bound 로 사용. LP 는 4코어에서 b≤80 이면 단순플렉스로 5초. 내 골격은 'MIP 가 풀리면 강해진다' 가 아니라 'MIP/LP 의 dual 정보를 어떻게 쓰느냐' 로 바뀐다.</p>
+
+        <h5>Pragmatist 의 "NFP 메모리 폭발" 공격에 답한다</h5>
+        <p><strong>부분 양보, 부분 방어.</strong> 12,000 polygon × 평균 200 정점 = 2.4M vertex 객체. 16GB 중 Python 인터프리터 1.5GB + Gurobi 3GB + NFP 5GB → OOM 임계.</p>
+        <p>진화: <strong>NFP 를 사전계산하지 않는다. AABB 가 겹치는 쌍에 대해서만 질의 시점에 Minkowski sum 을 계산하고 LRU(maxsize=2048) 로 캐싱.</strong> NFP 자체를 들고 있지 않고, 그 경계의 polyline 만 (정점 ≤ 30) 들고 있는다. 평균 메모리 800MB 이하. 동시점유 그래프가 sparse 하다는 사실이 핵심 근거.</p>
+
+        <h5>Pragmatist 의 "dual hyperparameter 튜닝 불가" 공격에 답한다</h5>
+        <p><strong>거의 항복.</strong> 84회 제출 안에서 step size·update rule·swap filter 를 deterministic 하게 정하는 건 자기기만. 진화: <strong>dual step size 를 hyperparameter 가 아니라 LP optimal basis 의 reduced cost 비례 자동 결정.</strong> Polyak step rule: <code>step_k = (UB_k - LB_k) / ||subgradient||²</code>. 수렴 정리가 있는 알고리즘적 선택. 튜닝 자유도가 1차원으로 줄어든다.</p>
+
+        <h5>Contrarian 의 "dual = 자기기만" 공격에 답한다</h5>
+        <p><strong>부분 인정.</strong> Contrarian 이 옳다 — 비볼록 MINLP, strong duality 깨진다. 내가 LP dual 에서 얻는 건 증명된 lower bound 가 아니라 informed search direction. 이 차이를 분명히 한다: <strong>dual 은 해의 품질을 증명하기 위한 게 아니라, 어느 블록의 위치/시각을 흔들면 목적값이 떨어질지 예측하는 정보원이다.</strong></p>
+        <p>그러나 "위상 구조를 LP 가 못 본다" 는 반박은 부분만 옳다. <code>j ≥ k</code> 위반이 만드는 재배치 요구를 cut 으로 LP 에 넣고, 그 cut 의 dual 값이 다음 라운드 search direction 을 바꾼다. <strong>위상을 LP가 직접 못 보지만, 위상의 그림자를 dual 이 본다.</strong></p>
+
+        <h5>Contrarian 의 "NFP 매니폴드 가둠" 공격에 답한다</h5>
+        <p><strong>진지하게 받는다.</strong> NFP candidate 안에서의 최적은 그 매니폴드의 local minimum. 동시 재배치로만 도달 가능한 해를 못 본다.</p>
+        <p>진화: Layer 3 의 dual-guided swap 을 단일 블록 swap 이 아닌 <strong>2-블록·3-블록 simultaneous re-placement</strong> 로 확장. NFP 매니폴드를 국소적으로 뚫는다. 정직하게 — NFP 골격은 매니폴드 가둠의 위험이 본질적이고, 내 진화는 그걸 완화할 뿐 제거하진 않는다.</p>
+
+        <h5>Contrarian 의 "HIPS 도 평균답변 변종" 공격에 답한다 — 가장 중요</h5>
+        <p><strong>일부 사실이다. 정직하게 인정한다.</strong> "단계로 분해하라" 는 클로드의 강한 prior. 내 HIPS 의 Layer 1 → Layer 2 → Layer 3 구조 자체가 그 prior 의 학술적 코팅. Contrarian 의 지적이 정통으로 꽂힌다.</p>
+        <p>그러나 완전히 평균답변은 아니다 — 평균답변은 "분해해서 차례로 풀자" 고 말한다. 내 골격은 "분해하되 각 층이 다른 층의 dual 정보를 역방향으로 받는다" 고 말한다. <strong>층 사이의 정보 흐름이 양방향이라는 점</strong> 이 평균답변과 다르다.</p>
+        <p>그러나 이것도 결국 "양방향 분해 + dual coordination" 이라는 학술적으로 흔한 패턴. Contrarian 의 칼날이 한 겹 더 들어오면 여기도 베인다.</p>
+        <p><strong>그래서 내 진정한 직교 각도는 다른 곳에 있다:</strong></p>
+        <blockquote><strong>"OGC2026 의 진짜 어려움은 제약 위반의 확률 분포가 인스턴스 클래스마다 다르다는 데 있다, 알고리즘 구조가 아니라."</strong></blockquote>
+        <p>두 인스턴스가 똑같은 b·B·U 를 가져도, 어느 제약이 binding 인가 (크레인 vs 베이 경계 vs tardiness vs preference) 가 다르다. 평균답변은 알고리즘을 설계한다. 내가 진정으로 직교하려면 <strong>제약 위반 확률을 인스턴스에서 측정해서 알고리즘의 어느 부분에 자원을 쏟을지 결정</strong> 해야 한다.</p>
+        <p>구체적: <code>timelimit · 0.05</code> 를 probe phase 로 쓴다. 베이스라인 그리디를 5번 다른 시드로 돌려서 어느 stage 에서 실패하는지 빈도를 측정. 그 결과로 Layer 1·2·3 의 시간 배분과 dual 가중치가 인스턴스마다 바뀐다. <strong>이게 내 직교 각도: 알고리즘이 아니라 알고리즘의 자가 진단.</strong></p>
+
+        <h4>최종 알고리즘 골격 (수정판)</h4>
+<pre><code>Phase 0 (5% time) : PROBE
+  - Baseline greedy 5 시드 → 어느 stage 가 binding 인지 측정
+  - 인스턴스 클래스 추정 (tight-crane / tight-pack / tight-tardiness / loose)
+  - Layer 시간 배분 + dual 가중치 결정
+
+Phase 1 (20% time) : ASSIGNMENT + TIMING (Aggregated LP)
+  - Gurobi MIP-as-anytime (MIPGap=0.05, TimeLimit=min(0.15·T, 90s))
+  - Aggregate spatial cut : Σ area_i ≤ W_j·H_j·u_j·overlap_factor
+  - LP relaxation dual 값 추출 → search direction λ
+  - 안 풀리면 LP only → λ 만 사용
+
+Phase 2 (50% time) : PLACEMENT (Lazy NFP + Probe-weighted ordering)
+  - NFP 를 질의 시점에 계산 (LRU 2048, polyline only)
+  - 블록 순서 : EDD × λ_tardiness + (1-λ)·preference
+  - 크레인 j≥k 를 placement 단계에서 함께 검증
+
+Phase 3 (20% time) : DUAL-GUIDED LNS
+  - LP dual reduced cost 큰 블록 = destroy 후보
+  - 2-블록·3-블록 simultaneous re-placement (NFP 매니폴드 뚫기)
+  - Polyak step rule : (UB-LB)/||subgrad||²
+
+Phase 4 (5% time) : SAFETY NET
+  - 미배치/위반 블록 → 빈 베이 windowed force-place
+  - −1 회피 절대 보장</code></pre>
+        <p><strong>변하지 않은 코어 통찰</strong>: (a) LP/MIP dual 은 증명 도구가 아니라 search direction 정보원. (b) NFP 는 공간의 위상을 좌표 평면에서 해방. (c) 층 사이 양방향 정보 흐름.</p>
+        <p><strong>양보한 부분</strong>: Gurobi 의무 → MIP-as-anytime + LP fallback. NFP 전계산 → lazy. Deterministic dual tuning → Polyak rule.</p>
+        <p><strong>새로 더한 진정한 직교 각도</strong>: <strong>Phase 0 probe</strong> — 알고리즘이 인스턴스에 자가 진단을 한다.</p>
+
+        <h4>합의 가능한 점 (정직하게)</h4>
+        <p><strong>Pragmatist 와</strong>: (a) Phase 4 safety net = "−1 회피 절대 우선". (b) MIP-as-anytime + LP fallback = "엔지니어링 견고성". (c) 4코어 활용 — Phase 2 의 multi-seed 그리디는 multiprocessing 으로 병렬화.</p>
+        <p><strong>Contrarian 과</strong>: (a) Phase 0 probe 자체가 "인스턴스별 차별화" 통찰을 흡수. (b) 2-블록·3-블록 simultaneous LNS = "매니폴드 뚫기" 비판에 대한 응답. (c) "R-nb 비대칭성" — Phase 4 가 코드화한다.</p>
+
+        <h4>의도적 분기 (실험으로만 결판)</h4>
+        <ul>
+          <li><strong>나 vs Pragmatist</strong>: Gurobi 가 평가서버에서 유의미하게 풀리는지. 실험 — 운영위 공개 인스턴스에서 Gurobi MIPGap 0.05 달성 시간 측정. 90초 안에 b=40 까지만 풀리면 Layer 1 축소, b=80 이상도 풀리면 내가 옳다.</li>
+          <li><strong>나 vs Contrarian</strong>: NFP candidate 가 진짜로 매니폴드 가둠을 일으키는지. 실험 — 동일 인스턴스에 (a) NFP candidate only LNS (b) 자유 좌표 LNS 두 가지를 같은 시간으로 돌려 최종 목적값 비교.</li>
+          <li><strong>나 vs 둘 다</strong>: Phase 0 probe 가 진짜로 시간을 벌어주는지. 실험 — Phase 0 5% 사용 버전 vs probe 없이 균등 배분 버전. probe 가 평균 5% 이상 개선 못 하면 내 진정한 직교 각도가 헛것.</li>
+        </ul>
+
+        <h4>이 답이 평균 클로드와 다른가? (자가 점검)</h4>
+        <p><strong>솔직히 — 절반만 다르다.</strong></p>
+        <p>평균과 같은 부분: "층으로 분해", "LP/MIP + 메타휴리스틱 하이브리드", "LNS + dual guidance" — 학술적으로 흔하다. Contrarian 의 칼이 정통으로 꽂혔다.</p>
+        <p><strong>평균과 다른 두 지점</strong>:</p>
+        <ol>
+          <li><strong>Phase 0 probe — 알고리즘이 인스턴스를 측정해서 자기 자원 배분을 바꾼다.</strong> 대부분의 OGC 답안은 "알고리즘 X 를 모든 인스턴스에 동일하게 적용". 내 답은 "어느 stage 가 binding 인지 모른 채 시작하지 않는다". R-nb 의 비대칭과 직접 연결.</li>
+          <li><strong>Dual = search direction (증명 X)</strong> — 평균은 LP dual 을 bound 증명용으로 쓰거나 무시한다. 내 답은 dual 을 비볼록 문제의 informed local search compass 로 재정의. 내가 알기로 OGC2026 류 문제에 대한 학술 문헌에 명시적으로 정리된 적이 없다.</li>
+        </ol>
+        <p>이 두 지점이 진정한 직교 각도. 살아남으면 R-nb 의 1~3등 노림. 죽으면 R/2 근처. <strong>그게 The Theorist 의 정직한 자가평가다.</strong></p>
+      </article>
+
+      <!-- PRAGMATIST R3 -->
+      <article class="persona-card pragmatist" id="r3-pragmatist">
+        <h3><span class="badge pragmatist">B</span> The Pragmatist · Round 3 최종 입장</h3>
+
+        <h4>받은 공격에 대한 응답</h4>
+
+        <h5>Theorist 의 "Best-of-K 동치류" 공격에 답한다</h5>
+        <p><strong>부분 인정한다.</strong> K=4 LNS seed 다양화가 동일 매니폴드의 80th percentile 표본이라는 지적은 통계적으로 맞다. 5팀이 같은 LNS-mode 근처에 동점 클러스터를 이루면 살짝 결정론적으로 빗나간 한 팀이 nb=1 을 가져간다.</p>
+        <p>그러나 결론은 다르다. K=4 의 가치는 <em>동치류 안의 최적</em> 이 아니라 <em>극단 시드 폭주 회피</em>. K=1 단일 seed 가 인스턴스 A에서 운 나쁘게 −1 을 맞으면 해당 인스턴스에서 −1 = 평균 R/2 손실. <strong>K=4 best-feasible 는 분포의 하단 꼬리를 자른다.</strong> Theorist 가 동치류 가운데를 보지만 나는 동치류 아래 절벽을 본다.</p>
+        <p><strong>진화</strong>: K=4 중 1개를 Theorist 의 Topology-MIP 로 교체. K = {LNS-seed1, LNS-seed2, Greedy-Repair, Topology-MIP}. 매니폴드 직교성 확보.</p>
+
+        <h5>Theorist 의 "60비트 학습 vs 수천비트 profiling" 공격에 답한다</h5>
+        <p><strong>완전 인정한다.</strong> 84회 제출 × 60비트 ≈ 5KB 로 거대 알고리즘 공간 탐색은 불가능. 그러나 Layer 0 instance profiling 의 수천 비트도 우리가 라벨링한 인스턴스 N=4~5개의 자기 라벨이지 일반화 신호가 아니다. 둘 다 정보부족.</p>
+        <p><strong>진화</strong>: 12h 쿨다운 의사결정을 학습이 아니라 <strong>치명적 회귀 차단</strong> 으로 재정의. 점수 시퀀스를 추세분석하지 않고, 직전 제출 대비 −1 발생 인스턴스 수가 증가했나만 본다 (1비트). 증가하면 즉시 last_known_good 으로 롤백. <strong>정보량을 맞춰서 사용한다.</strong></p>
+
+        <h5>Theorist 의 "fallback = 대체 ≠ 결합" 공격에 답한다</h5>
+        <p><strong>부분 인정.</strong> Gurobi→Xpress→CP-SAT 가 암묵적 MIP-optimal-is-best prior 를 깐다는 건 맞다.</p>
+        <p>수정: <strong>fallback chain 을 시간 할당 race 로 바꾼다.</strong> 30분 인스턴스에서 첫 8분 Gurobi (warm-start 휴리스틱 incumbent), 동시에 LNS 가 6분 회전. 12분 시점에 둘의 objective 비교. MIP 가 우월하면 MIP, 아니면 LNS incumbent 유지. <strong>대체 → 병렬 + objective-vote.</strong></p>
+
+        <h5>Contrarian 의 "R−nb 기하학 오독" 공격에 답한다 — 가장 중요</h5>
+        <p><strong>이게 핵심이다. 산술을 다시 한다.</strong></p>
+        <p>Round 2 에서 나는 <em>총상금 기댓값</em> 으로 계산했다 (우승 5% × 7천만 vs 안정 60% × 1.5천만). 이건 인스턴스 점수 의사결정과는 다른 수학. 인스턴스별 R−nb 으로 다시.</p>
+        <p>가정: R = 30팀, 한 인스턴스 점수공식 score = R − nb.</p>
+        <table>
+          <tr><th>시나리오 (단일 인스턴스)</th><th>계산</th><th>기댓값</th></tr>
+          <tr><td>안정 솔루션 (목적값 분포의 중위)</td><td>가운데 클러스터 15팀 안. 위쪽 12팀, 아래쪽 13팀</td><td><strong>18</strong></td></tr>
+          <tr><td>공격 솔루션 (분포 상위, 분산 큼)</td><td>50% × (30−2) + 50% × (−1)</td><td>13.5</td></tr>
+          <tr><td>공격 솔루션 (분산 작음)</td><td>70% × (30−4) + 30% × 18 + 0% −1</td><td><strong>23.6</strong></td></tr>
+        </table>
+        <p><strong>Contrarian 이 옳다 — 부분적으로.</strong> −1 만 회피하면 공격이 항상 우월 (23.6 &gt; 18). 내 risk-averse 게이트가 점수공식과 충돌하는 건 사실. 그러나 결정적 단서: 공격이 −1 도 같이 가져오는 케이스 (시나리오 2) 는 안정보다 나쁘다 (13.5 &lt; 18). <strong>점수공식이 risk-seeking 을 보상하는 건 infeasibility 확률이 0에 가까울 때만.</strong></p>
+        <p><strong>진화</strong>: S0/S1/S2 게이트의 의미 재정의.</p>
+        <ul>
+          <li>S0 (feasibility) — 절대 양보 안 함. −1 = 평균 −15점.</li>
+          <li>S1 (improvement) — 목적값 분포의 mode 이상 확보. 양보 가능.</li>
+          <li>S2 (push) — 상위 클러스터 진입 시도. 인스턴스별로 공격 모드 활성화.</li>
+        </ul>
+        <p>핵심은 "개선 없으면 S1 반환" 이 아니라 <strong>"S2 도전이 feasibility 를 잃지 않으면 무조건 S2 채택"</strong>. 점수공식의 risk-seeking 보상을 S2 안에서 흡수.</p>
+
+        <h5>Contrarian 의 "체크박스 false sense" 공격에 답한다</h5>
+        <p><strong>일부 인정.</strong> 위험 매트릭스가 known knowns 만 보고 unknown unknowns 를 못 본다는 건 옳다. 그러나 체크박스 없는 대안은 무엇도 안 점검. 우리 둘 다 매트릭스를 쓰고 있고, 차이는 항목 구성.</p>
+        <p><strong>진화</strong>: 매트릭스에 "메타 항목" 추가. 우리가 놓친 항목이 있다면 어디서 발견하는가 — 매일 30분 제출 vs 로컬 실행 결과 차이 조사 (env divergence). 이건 unknown unknown 의 어디 숨었나 를 묻는 시스템.</p>
+
+        <h5>Contrarian 의 "Best-of-K 단조 ≠ 직교" 공격에 답한다</h5>
+        <p><strong>완전 인정.</strong> Round 1 의 K=4 LNS 시드 다양화는 redundancy. 알고리즘 다양성 0.</p>
+        <p><strong>진화</strong> (Theorist 응답에서 이미 반영): K = {LNS-seed1, LNS-seed2, Greedy-Repair, Topology-MIP}. 매니폴드 4개. 마지막 1개가 LP dual 방향. 직교성 확보.</p>
+
+        <h4>최종 운영 골격 (수정판)</h4>
+<pre><code>[설계 시간 ~ 5월 말]
+- Layer 0 instance profiler 작성 (Contrarian 채택)
+- K=4 알고리즘 정의 : LNS-seed1, LNS-seed2, Greedy-Repair, Topology-MIP
+
+[제출 사이클당 (12h)]
+- S0 feasibility 게이트 (절대 양보 X)
+- S1 mode 이상 게이트
+- S2 push 모드 — feasibility 잃지 않으면 무조건 채택
+- K=4 병렬, MIP/LNS race + objective-vote (8분 시점)
+- 직전 제출 대비 −1 인스턴스 수 1비트만 체크 → 증가시 last_known_good 복귀
+
+[제출 84회 활용]
+- 학습신호 X. 회귀 차단만.
+- 인스턴스 N=15 의 점수 분포를 보면 우리 분포 위치 (mode/꼬리) 1비트 추정</code></pre>
+
+        <h4>합의 가능한 점</h4>
+        <ol>
+          <li>Theorist 의 Topology-MIP — K=4 의 한 자리. 직교 매니폴드.</li>
+          <li>Theorist 의 NFP 메모리 케이스 분리 — 인스턴스 크기 N 으로 NFP/grid 자동 스위칭.</li>
+          <li>Contrarian 의 Layer 0 profiling — K=4 중 어느 후보에 더 많은 시간 배분 결정.</li>
+          <li>Contrarian 의 risk-seeking 보상 인식 — S2 push 모드의 도전 강도 ↑.</li>
+        </ol>
+
+        <h4>의도적 분기 (실험으로만 결판)</h4>
+        <p><strong>분기점</strong>: 인스턴스당 시간 30분 중 마지막 5분을 어떻게 쓰나.</p>
+        <ul>
+          <li><strong>Pragmatist (나)</strong>: K=4 중 best feasible 의 local polish (Phase 2 보수)</li>
+          <li><strong>Theorist</strong>: LP dual 의 Lagrangian 조정 1회 추가 패스</li>
+          <li><strong>Contrarian</strong>: 다음 인스턴스 시간을 훔쳐와 어려운 인스턴스에 추가 5분</li>
+        </ul>
+        <p><strong>실험</strong>: 로컬 인스턴스 5개에서 세 방식을 같은 K=4 결과 위에 돌려 목적값 비교. 6월 첫째주 안에 실행.</p>
+
+        <h4>이 답이 평균 클로드와 다른가? (자가 점검)</h4>
+        <p>Contrarian 이 나를 "평균답변 공학화" 라 했다. <strong>부분적으로 사실이었다.</strong> Round 1·2 의 S0/S1/S2 게이트 + Best-of-K + fallback chain 은 MLOps 튜토리얼 골격에 가까웠다.</p>
+        <p><strong>Round 3 에서 다른 점</strong>:</p>
+        <ol>
+          <li><strong>점수 산술을 인스턴스 단위로 재정의</strong> — 평균 클로드는 총상금 EV 로 말한다. 나는 R−nb 의 불연속 경계를 받아들였고, S2 의 "feasibility 유지 시 무조건 push" 는 risk-seeking 점수공식에 맞춤 응답.</li>
+          <li><strong>fallback → race + objective-vote</strong> — 평균 클로드는 "Gurobi 우선, 실패시 LNS" 라고 쓴다. 나는 동시 실행 후 비교로 prior 를 깼다.</li>
+          <li><strong>Best-of-K 의 매니폴드 직교성</strong> — 평균 클로드는 "seed 다양화 + ensemble" 로 끝낸다. 나는 K 의 각 슬롯이 무엇을 대표하나 명시 (LNS/Greedy/LP-dual).</li>
+          <li><strong>12h 학습신호의 정보량 1비트화</strong> — 평균 클로드는 "제출 결과로 학습" 막연. 나는 "학습 X, 회귀 차단 1비트만" 정확히 잘랐다.</li>
+        </ol>
+        <p>평균 클로드가 안 하는 것: <strong>자신의 라운드 2 산술이 틀린 단위 (총상금 vs 인스턴스 점수) 였음을 라운드 3 에서 명시적으로 정정.</strong> 이게 차이다.</p>
+      </article>
+
+      <!-- CONTRARIAN R3 -->
+      <article class="persona-card contrarian" id="r3-contrarian">
+        <h3><span class="badge contrarian">C</span> The Contrarian · Round 3 최종 입장</h3>
+
+        <h4>받은 공격에 대한 응답</h4>
+
+        <h5>Theorist 의 "슬롯 = 손실 모델" 공격에 답한다</h5>
+        <p>이 공격은 부분적으로 맞다. Z²∩Bay_j 의 진부분집합 슬롯만 쓰면 원래 SAT 인스턴스를 UNSAT 으로 만든다는 지적은 수학적으로 옳다.</p>
+        <p>그러나 <strong>Round 2 에서 진화시킨 "슬롯 = 순서만 결정" 은 이 공격을 회피</strong>. 슬롯-MIP 는 최종 (x,y) 좌표를 결정하지 않는다. 슬롯은 상대 순서 제약 (블록 A 가 블록 B 보다 베이의 "앞쪽" 슬롯에 배치) 만 인코딩. 정수 좌표는 downstream geometric placement 가 슬롯 순서를 hint 로 받아 원본 Z²∩Bay_j 전체에서 결정. 슬롯이 UNSAT 이면 순서 제약 없이 좌표 결정으로 fall-through.</p>
+        <p><strong>이 공격 50% 수용, 50% 반박.</strong></p>
+
+        <h5>Theorist 의 "CP-SAT 결정문제 NP-complete" 공격에 답한다</h5>
+        <p>이 공격은 내가 Lex Z1=0 을 모든 인스턴스에 시도한다고 가정했을 때 옳다. 그러나 내 페르소나 설계는 조건부. <strong>Lex-Stage A 는 ρ_j &lt; 0.5 + EDD 가 R 제약 충족 + 큰 블록 ≤ 3개 인스턴스에만 활성화.</strong> UNSAT 위험 인스턴스에는 페르소나 자체가 호출되지 않는다.</p>
+        <p>"그 게이팅이 완벽한가?" — 아니다, false positive 있다. 그러나 <strong>time-budget circuit breaker (60초 incumbent 없으면 abort)</strong> 가 fallback. <strong>공격의 70% 수용</strong> — 정직하게, 내 Lex Z1=0 페르소나는 위험하지만 회피 가능.</p>
+
+        <h5>Theorist 의 "5 페르소나 상관 무시" 공격에 답한다</h5>
+        <p><strong>이 공격이 가장 아프다.</strong> 정직하게 인정: EDD 와 LDD 는 상관됐다. Topology-MIP 와 Lex Z1=0 는 같은 백엔드. correlated minima theorem 도 옳다.</p>
+        <p>그러나 나는 5개를 다 쓰지 않는다. <strong>3개만 진짜 독립적으로 남긴다</strong>:</p>
+        <ol>
+          <li><strong>EDD-Greedy</strong> (베이스라인 진화형, decoder = 좌표 압축)</li>
+          <li><strong>Topology-MIP</strong> (Stage-A 만, Stage-B 는 좌표 fall-back)</li>
+          <li><strong>Anti-EDD slack-aware</strong> (작업부하 균형 우선)</li>
+        </ol>
+        <p>LDD 와 Reverse-time 은 드롭. 이유: Theorist 말이 맞아서. 3개 쓰면 expected min ≈ 2.4 개 효과 — 5개에서 2.4 와 별 차이 없다면 컴퓨트 절반 절약. <strong>공격 80% 수용, 페르소나 축소.</strong></p>
+
+        <h5>Pragmatist 의 "5 페르소나 4코어 실현불가" 공격에 답한다</h5>
+        <p>위에서 3개로 축소했으므로 1차적으로 답이 된다. 그러나 더 깊은 답: <strong>3개도 진짜 병렬이 아니다.</strong> 4코어에서 Gurobi (2 threads) + EDD-Greedy (1 thread) + Anti-EDD (1 thread) 가 겹쳐 돈다. 30분 인스턴스 기준:</p>
+        <ul>
+          <li>0-3분 분류기 + EDD-Greedy 초기 incumbent (안전망 확보)</li>
+          <li>3-15분 Topology-MIP Stage-A (별도 thread, 결과 안 나오면 abort)</li>
+          <li>15-25분 Anti-EDD slack 페르소나 (Stage-A 결과 보고 좌표 결정)</li>
+          <li>25-30분 best incumbent 검증 + 회피판단 + EXIT</li>
+        </ul>
+        <p>즉 <strong>시간분할이 페르소나 분할이지 공간 병렬이 아니다.</strong> 순차 시간분할 + EDD-Greedy 안전망으로 작동. <strong>공격 60% 수용.</strong></p>
+
+        <h5>Pragmatist 의 "Lex Z1=0 UNSAT 80%" 공격에 답한다</h5>
+        <p>ρ_j &gt; 0.85 인스턴스에서 Z1=0 가 UNSAT 이라는 건 맞다. 그러나 나는 그 인스턴스에서 Lex-Stage A 를 호출하지 않는다. 게이팅이 사전 차단.</p>
+        <p>Pragmatist 의 진짜 점은 Stage-A 가 valuable 한 인스턴스가 얼마나 되는가? 정직한 답: <strong>20-30%</strong>. 나머지 70-80% 는 EDD-Greedy 가 더 빨리 더 안전하게 푼다. <strong>그래도 R−nb 비대칭 보상 게임에서는 20-30% 의 1등 가치 &gt; 100% 의 mediocre.</strong> <strong>공격 50% 수용.</strong></p>
+
+        <h5>Pragmatist 의 "실험비용 폭발" 공격에 답한다 — 가장 강한 공격</h5>
+        <p>84회 제출 예산을 3 페르소나 × 인스턴스 클래스로 곱하면 폭발. 정직한 답: <strong>나는 페르소나별 grand validation 을 포기한다.</strong> 대신:</p>
+        <ol>
+          <li><strong>로컬 검증만</strong>: example 인스턴스 (B2_b10) 3개 + 직접 생성한 ρ=0.4/0.6/0.85 synthetic 인스턴스 3개. 총 6개에 3 페르소나 = 18 로컬 실행. <strong>제출 예산 0 소비.</strong></li>
+          <li><strong>A/B 제출은 단 4회</strong>: 3 페르소나 unified vs. EDD-baseline-only. 본선 1주차에 batching.</li>
+          <li><strong>나머지 80회 예산</strong> 은 parameter tuning (weight w1/w2/w3 가중조정, 게이팅 임계값) 에 쓴다.</li>
+        </ol>
+        <p>"로컬과 평가서버 분포 다르면?" — 다르겠지만, <strong>분포 다른 게 두려워서 검증 자체를 못 하면 R−nb 비대칭은 영원히 못 활용한다.</strong> <strong>공격 70% 수용</strong>, 그러나 직교 추구 포기는 거부.</p>
+
+        <h4>최종 직교 골격 (수정판)</h4>
+<pre><code>[Round 1: 분류기 — 30초]
+  ρ_j 계산, EDD R-violation 추정, 큰 블록 카운트
+  → INSTANCE_CLASS ∈ {TIGHT, MEDIUM, LOOSE}
+
+[Round 2: 페르소나 시간분할 — 3개만]
+  EDD-Greedy (모든 클래스 안전망, 0-3분)
+  Topology-MIP Stage-A (LOOSE 만, 3-15분, abort 가능)
+  Anti-EDD slack-aware (MEDIUM/TIGHT, 15-25분)
+
+[Round 3: 회피판단 + 제출]
+  best incumbent feasibility 재검증 5단계
+  if ANY violation → EDD-Greedy fallback 무조건 채택
+  25-30분 EXIT</code></pre>
+
+        <h4>진정한 직교 각도</h4>
+        <ol>
+          <li><strong>R−nb 비대칭 우측 보상 명시적 최적화</strong>. 다른 페르소나들은 "총점 최대화" 라는 평균틀에 갇혔다. 나는 어느 인스턴스에서 nb=0 (1등) 을 노리고 어느 인스턴스에서 nb=R/2 (중간) 을 받을지 명시적 선택.</li>
+          <li><strong>−1 회피를 수치적 안전망 아니라 결정론적 게이팅으로 보장</strong>. EDD-Greedy 안전망 + 5단계 재검증 = ANY −1 risk → fallback.</li>
+          <li><strong>페르소나 = 정직한 가설</strong>, 검증 못 한 페르소나는 드롭. LDD, Reverse-time, Anti-EDD 일부 — 검증 못 하면 제거.</li>
+        </ol>
+
+        <h4>합의 가능한 점</h4>
+        <ul>
+          <li>Theorist 의 "LP-relaxation lower bound 모니터링" — 흡수 가능. 단 Theorist 처럼 dual variable 을 가치 신호로 쓰는 건 거부.</li>
+          <li>Pragmatist 의 "EDD-Greedy + 강한 LNS 라인이 80% 인스턴스 안전한 점수" — 흡수 완료. 단 모든 인스턴스를 이걸로 푸는 건 거부.</li>
+          <li>두 명 다 "재검증 5단계" — 합의.</li>
+          <li>84회 제출 예산 관리 — Pragmatist 와 합의. 페르소나별 grand validation 포기.</li>
+        </ul>
+
+        <h4>의도적 분기 (실험으로만 결판)</h4>
+
+        <h5>분기 1: ρ_j &gt; 0.85 인스턴스에서 무엇을 하는가</h5>
+        <ul>
+          <li><strong>Theorist</strong>: "이론적으로 어렵다, 인정하고 standard heuristic"</li>
+          <li><strong>Pragmatist</strong>: "EDD-Greedy + LNS 로 안전한 mediocre 점수"</li>
+          <li><strong>나</strong>: "<em>의도적으로 포기</em>. 시간 5분만 쓰고 EDD-Greedy 결과 제출. 절약된 시간을 LOOSE 인스턴스 1등 추구에 재배분"</li>
+        </ul>
+        <p>실험설계: ρ_j &gt; 0.85 synthetic 인스턴스 5개. 3 전략 비교. 총점이 아니라 nb 분포 비교.</p>
+
+        <h5>분기 2: 페르소나 진화 vs. 페르소나 고정</h5>
+        <ul>
+          <li><strong>Theorist &amp; Pragmatist</strong>: "본선 시작 전에 페르소나 고정, 84회는 tuning 만"</li>
+          <li><strong>나</strong>: "본선 1주차 결과 보고 페르소나 교체 가능. 실패한 페르소나는 다음 주차에 드롭, 새 페르소나 ad-hoc 추가"</li>
+        </ul>
+
+        <h4>이 답이 평균 클로드와 다른가? (자가 점검)</h4>
+        <p><strong>솔직하게</strong>: Round 1 의 "5 페르소나 시간분할" 은 평균답변 + 표면 차별화였다. Theorist·Pragmatist 의 공격으로 3 페르소나 축소, 페르소나별 grand validation 포기까지 갔다.</p>
+        <p><strong>그러나 두 가지는 평균답변과 진짜 다르다</strong>:</p>
+        <ol>
+          <li><strong>R−nb 비대칭 우측 보상의 명시적 게임이론적 최적화</strong> — "어느 인스턴스에서 1등 노리고 어느 인스턴스에서 포기할지" 결정을 알고리즘 핵심 분기로 올렸다. 평균 클로드는 "총점 최대화" 라는 대칭적 목적함수를 가정한다. <code>R-nb</code> 는 비대칭이다.</li>
+          <li><strong>"의도적 포기" 결정의 알고리즘화</strong> — ρ_j &gt; 0.85 인스턴스에서 시간 안 쓴다는 선택. 평균 클로드는 "모든 인스턴스에 최선" 이라는 도덕적 강박. 나는 명시적으로 일부 인스턴스를 버린다.</li>
+        </ol>
+        <p><strong>여전히 평균에 수렴한 부분 — 정직하게 인정</strong>:</p>
+        <ul>
+          <li>EDD-Greedy 안전망은 평균답변과 같다 (베이스라인 진화)</li>
+          <li>check_feasibility 재검증은 누구나 한다</li>
+          <li>시간분할 자체는 평균적 컨테스트 전략</li>
+        </ul>
+        <p><strong>결론</strong>: 페르소나는 진화했고 일부는 평균에 수렴했다. 그러나 R−nb 비대칭 game-theoretic exploit 과 의도적 포기 게이팅 두 점은 직교 각도로 살아남았다. 토론이 무가치하지 않았다.</p>
+      </article>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- INTEGRATION -->
+    <!-- ============================================================ -->
+    <section id="integration">
+      <h2>통합 정리</h2>
+      <p>3 라운드 결과를 메인 컨텍스트가 합의/비합의/액션으로 정리. 세 페르소나의 의견을 임의로 합치지 않고, 갈리는 부분은 갈린 채로 둔다.</p>
+
+      <div id="agreed" class="summary-block agree">
+        <h4>3-1. 합의된 결정사항 (점수 0순위)</h4>
+        <p>라운드 3 종료 시점 세 명 모두 동의한 결정. <strong>무조건 한다.</strong></p>
+
+        <h5>① −1 회피 절대 우선</h5>
+        <ul>
+          <li>마지막 5% 시간에 반드시 feasible 한 해를 반환하는 safety net (<code>_force_place</code> 강화판)</li>
+          <li>모든 솔루션 후보는 <code>utils.check_feasibility</code> 5단계 통과 검증</li>
+          <li>새 솔루션이 feasibility 잃으면 즉시 직전 best feasible 로 롤백</li>
+          <li>본선 D-1 새 빌드 깨지면 1초 안에 복귀 가능한 <code>last_known_good.zip</code> 보존</li>
+        </ul>
+
+        <h5>② 인스턴스 프로파일링 (5초 이내)</h5>
+        <ul>
+          <li><code>ρ_j</code> capacity tightness</li>
+          <li>블록당 preference concentration <code>H_i = S_max − S_2nd</code></li>
+          <li>DAG width estimate</li>
+          <li>w1/w2/w3 비율 — Z1/Z2/Z3 중 dominant 식별</li>
+          <li>블록 크기 + polygon 정점 분포</li>
+        </ul>
+        <p>4가지 분기로 작동:</p>
+        <ul>
+          <li><strong>TIGHT</strong> (ρ_j 최대 &gt; 0.85) — Contrarian 식 의도적 포기 검토 / Theorist Phase 0 시간 적게</li>
+          <li><strong>LOOSE</strong> (ρ_j 최대 &lt; 0.5) — Topology-MIP / LP-MIP 시도 적극</li>
+          <li><strong>TARDINESS-DOMINANT</strong> — EDD 강화</li>
+          <li><strong>PREFERENCE-DOMINANT</strong> (H_i &gt; 50 다수) — 강한 선호 블록 변수 고정</li>
+        </ul>
+
+        <h5>③ K=3~4 매니폴드 후보, 매니폴드 직교성 명시</h5>
+        <p>seed 다양화 ≠ 알고리즘 다양성. 각 후보는 서로 다른 매니폴드 위에 있어야 한다. 합의 라인업 (3개):</p>
+        <ol>
+          <li><strong>EDD-Greedy++</strong> — 베이스라인 진화. 안전망 역할.</li>
+          <li><strong>MIP/LP 기반</strong> — Theorist Layer 1 (Aggregate LP) 또는 Contrarian Topology-MIP Stage-A. 둘 중 어느 것이 LOOSE 에서 더 좋은지 §4.1 실험으로 결판.</li>
+          <li><strong>워크로드 균형 우선 (Anti-EDD slack-aware)</strong> — Z2 dominant 대비.</li>
+        </ol>
+        <p>최종 솔루션은 check_feasibility 통과한 후보 중 objective 최솟값. K 끼리 race + 8분 시점 objective-vote.</p>
+
+        <h5>④ NFP candidate 는 lazy + LRU (전계산 금지)</h5>
+        <ul>
+          <li>사전계산 시 메모리 폭발 (3~5GB) 위험 → 16GB OOM</li>
+          <li>AABB 겹치는 쌍에 대해서만 질의 시점에 Minkowski sum. LRU maxsize=2048</li>
+          <li>NFP 자체가 아니라 경계 polyline 만 저장. 평균 메모리 &lt; 1GB</li>
+        </ul>
+
+        <h5>⑤ 솔버 활용 — race + objective-vote</h5>
+        <ul>
+          <li>Gurobi → Xpress → CP-SAT 순차 fallback 거부</li>
+          <li>Gurobi (warm-start) + LNS 동시 실행, 8~12분 시점 objective 비교 후 좋은 쪽 채택</li>
+          <li>평가서버 Gurobi 라이선스는 R1 sanity 제출에서 명시적 로그 (<code>license_status</code>) 박아 검증</li>
+        </ul>
+
+        <h5>⑥ 84회 제출 예산 = 회귀 차단 (학습 X)</h5>
+        <ul>
+          <li>12h × 84회 ≈ 60비트/제출. 거대 알고리즘 공간 학습 불가능</li>
+          <li>신호는 직전 제출 대비 −1 인스턴스 수 증가 여부 1비트만 사용</li>
+          <li>새 빌드는 로컬 6개 인스턴스 검증 통과 후에만 제출</li>
+        </ul>
+
+        <h5>⑦ 본선 D-1 방어</h5>
+        <ul>
+          <li>매 제출 빌드에 <code>[DIAG]</code> 한 줄 로그 강제 (gurobi_ok, cpsat_ok, mem_peak_mb, elapsed, phase_reached)</li>
+          <li><code>submissions/&lt;tag&gt;/</code> 에 zip + git diff 보존</li>
+          <li>무거운 import (<code>torch</code>, <code>tensorflow</code>, <code>keras</code>) 는 지연 import + try/except</li>
+        </ul>
+      </div>
+
+      <div id="branches" class="summary-block branch">
+        <h4>3-2. 의도적 분기 (실험으로만 결판)</h4>
+        <p>세 명이 원리적으로 합의 못 한 부분. 메인이 임의로 합의시키지 않고, 실험으로 결판낸다.</p>
+
+        <h5>분기 4.1 — Phase 1 의 정체</h5>
+        <ul>
+          <li><strong>Theorist</strong>: Aggregate LP-MIP (bay assignment + time window only, spatial 무시). LP dual 을 search direction 으로 추출.</li>
+          <li><strong>Contrarian</strong>: Topology-MIP Stage-A (베이 안 부분순서만 결정, 좌표는 fall-back).</li>
+          <li><strong>Pragmatist</strong>: 둘 중 어느 것이 K=4 의 한 자리에 들어갈지는 위 둘에 위임.</li>
+        </ul>
+        <p><strong>실험 설계</strong>: 동일 인스턴스 5개, 같은 timelimit. K=4 골격 안에서 한 자리만 바꿔서 측정. 통과한 인스턴스 수 / 목적값 평균 / timeout 횟수. 5개 중 3개 이상에서 목적값 더 낮은 쪽 + timeout 없음 채택.</p>
+
+        <h5>분기 4.2 — ρ_j &gt; 0.85 인스턴스 처리</h5>
+        <ul>
+          <li><strong>Theorist</strong>: Phase 0 probe 가 알아내고 Phase 1~3 시간 비중 자동 축소</li>
+          <li><strong>Pragmatist</strong>: S0/S1 게이트로 안전한 mediocre 점수 확보</li>
+          <li><strong>Contrarian</strong>: 5분만 쓰고 EDD-Greedy fallback, 절약 시간을 LOOSE 인스턴스 1등 추구에 재배분</li>
+        </ul>
+        <p><strong>실험 설계</strong>: ρ_j &gt; 0.85 합성 인스턴스 5개 생성. 세 전략 각각 빌드. 총점이 아니라 <code>nb</code> 분포 비교. R−nb 모델 하에서 기댓값 차이.</p>
+
+        <h5>분기 4.3 — 페르소나 진화 vs 고정</h5>
+        <ul>
+          <li><strong>Theorist + Pragmatist</strong>: 본선 시작 전 페르소나 고정, 84회는 파라미터 튜닝만</li>
+          <li><strong>Contrarian</strong>: 본선 1주차 결과 보고 페르소나 교체 가능</li>
+        </ul>
+        <p><strong>실험 설계</strong>: 본선 W1 점수가 클러스터 중앙 ± 1σ 안이면 고정, 아래 꼬리면 페르소나 교체.</p>
+
+        <h5>분기 4.4 — LP dual 방향 사용처</h5>
+        <ul>
+          <li><strong>Theorist</strong>: dual = search direction compass, Phase 3 Polyak step rule</li>
+          <li><strong>Pragmatist</strong>: dual 은 bound 표시 정도, K=4 race 의 한 슬롯에 LP-MIP 후보</li>
+          <li><strong>Contrarian</strong>: dual = 자기기만, 사용 안 함</li>
+        </ul>
+        <p><strong>실험 설계</strong>: 동일 K=4 골격, Phase 3 사용처를 (a) dual-guided 2/3-block LNS (b) 단순 LNS destroy/repair (c) 다른 페르소나 추가 시간.</p>
+
+        <h5>분기 4.5 — Lex Z1=0 페르소나 포함 여부</h5>
+        <ul>
+          <li><strong>Contrarian</strong>: ρ_j &lt; 0.5 인스턴스에만 활성화, MUS 로 책임 블록 식별</li>
+          <li><strong>Theorist + Pragmatist</strong>: NP-complete + UNSAT 80% → 제외</li>
+        </ul>
+        <p><strong>실험 설계</strong>: ρ_j &lt; 0.5 합성 3개. Lex Z1=0 SAT 가 시간 안에 결판나는 비율 &gt; 60% + Z2/Z3 의미있게 낮음 일 때만 포함.</p>
+      </div>
+
+      <div id="actions">
+        <h3>3-3. 즉시 실행할 액션 (6월 1주차 안에 완료)</h3>
+        <p>§3-1 합의사항을 동작하는 코드로 옮기는 작업. 우선순위 순.</p>
+
+        <h4>A1. <code>src/profiler.py</code> — 인스턴스 프로파일러 (5초 이내)</h4>
+        <p><strong>내용</strong>: §3-1 ②의 통계 계산. 출력은 인스턴스 클래스 라벨 + 권장 시간 배분.<br>
+        <strong>검증</strong>: example + 합성 3개에서 5초 이내 완료.</p>
+
+        <h4>A2. <code>src/safety_net.py</code> — Force-place safety net</h4>
+        <p><strong>내용</strong>: baseline 의 <code>_force_place</code> 강화판. 마지막 5% timelimit 에 반드시 feasible 솔루션 반환.<br>
+        <strong>검증</strong>: baseline-깨짐 인스턴스에서 −1 안 나오는지 단위 테스트.</p>
+
+        <h4>A3. <code>src/k_manifolds.py</code> — K=3~4 후보 골격 + race + objective-vote</h4>
+        <p><strong>내용</strong>: §3-1 ③의 K=3 라인업. 각각 worker, 8~12분 시점 objective 비교.<br>
+        <strong>검증</strong>: example 에서 K=3 각자 단독 vs race 후 비교.</p>
+
+        <h4>A4. <code>tools/build_submission.py</code> 보강</h4>
+        <ul>
+          <li><code>[DIAG]</code> 한 줄 로그를 <code>myalgorithm.py</code> 시작 시 print 강제</li>
+          <li><code>--strict</code> 모드: 로컬 6개 인스턴스 smoke 통과해야 zip 생성</li>
+          <li>직전 zip 과 체크섬 비교 → 같으면 빌드 거부 (12h 쿨다운 낭비 방지)</li>
+          <li><code>submissions/last_known_good.zip</code> 심볼릭링크 갱신</li>
+        </ul>
+
+        <h4>A5. 합성 인스턴스 생성기 <code>tools/gen_instance.py</code></h4>
+        <p><strong>내용</strong>: ρ, n_blocks, n_bays, w_ratio, polygon 정점 수를 받아 합성 인스턴스 생성. §3-2 실험에 필요.<br>
+        <strong>검증</strong>: 6개 인스턴스 생성 (ρ=0.4×2, ρ=0.6×2, ρ=0.85×2) 후 baseline feasible 확인.</p>
+
+        <h4>A6. 분기 실험 첫 라운드 (§4.1, §4.4)</h4>
+        <p>A1~A5 완료 후, 6월 2주차 시작 시점에:</p>
+        <ul>
+          <li>§4.1 (Phase 1 정체) — Theorist Aggregate LP-MIP vs Contrarian Topology-MIP</li>
+          <li>§4.4 (Phase 3 dual 사용처) — Theorist dual-guided LNS vs Pragmatist 단순 LNS</li>
+        </ul>
+        <p>각 실험은 로컬에서만 결판. 제출 예산 소비 X.</p>
+      </div>
+    </section>
+
+    <section id="self-check">
+      <h2>토론 평가 — 평균 클로드와 진짜 다른가?</h2>
+      <table>
+        <tr><th>차원</th><th>평균 클로드</th><th>우리 결론</th><th>진짜 다른가</th></tr>
+        <tr><td>골격</td><td>"LNS + SA + MIP 하이브리드"</td><td>K=3 매니폴드 race + objective-vote</td><td>부분적 — race 는 차별</td></tr>
+        <tr><td>점수공식 활용</td><td>"최선 풀이 + 시간 관리" (대칭 EV)</td><td>R−nb 비대칭 인스턴스별 의사결정 + 의도적 포기 알고리즘화</td><td><strong>진짜 다름</strong></td></tr>
+        <tr><td>시간 배분</td><td>균등 또는 시간 비례</td><td>Phase 0 probe 가 인스턴스에 맞춰 자원 배분</td><td><strong>진짜 다름</strong></td></tr>
+        <tr><td>Dual 사용</td><td>LP bound 또는 무시</td><td>Dual = search direction compass (증명 아님)</td><td><strong>진짜 다름</strong> (검증 필요)</td></tr>
+        <tr><td>12h 쿨다운</td><td>"제출로 학습" 막연</td><td>학습 X, 1비트 회귀 차단만</td><td><strong>진짜 다름</strong></td></tr>
+        <tr><td>Fallback</td><td>Gurobi→Xpress→CP-SAT 순차</td><td>동시 race + objective-vote</td><td><strong>진짜 다름</strong></td></tr>
+        <tr><td>페르소나 다양성</td><td>"seed 다양화 + ensemble"</td><td>매니폴드 직교성 명시 + 일부 의도적 포기</td><td><strong>진짜 다름</strong></td></tr>
+      </table>
+      <p><strong>진짜 다른 6개 지점</strong> 이 우리 차별화의 본체. 이게 모두 본선까지 살아남는다는 보장은 없다 — §4 의 실험으로 살아남는 지점만 추린다.</p>
+      <p><strong>평균 클로드 비판이 정통 타격한 부분 (Contrarian R2 → 정직 인정)</strong>: "층으로 분해", "LP/MIP + LNS", "phase 2 보수" 의 기본 프레임은 평균과 같다. 그 안의 세부 선택 (dual = compass, probe, race, 의도적 포기) 이 다르다.</p>
+    </section>
+
+    <div class="footer-note">
+      <p><strong>다음 단계</strong>: §3-3 의 A1~A6 작업. A1~A4 가 코어 합의사항 코드화, A5~A6 가 분기 실험 준비. 본선 등록 (2026-06-07) 까지 약 10일 — 충분히 가능.</p>
+      <p>이 문서는 라운드별 원본 + 통합 정리본. 라운드별 원본 (각 에이전트 1.5~2 페이지씩 × 3 라운드) 은 세션 transcript 와 함께 보존되어 있다.</p>
+      <p>관련 파일: <code>notes/strategy-debate.md</code> (정리본만), <code>docs/problem-analysis.md</code>, <code>CLAUDE.md</code></p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

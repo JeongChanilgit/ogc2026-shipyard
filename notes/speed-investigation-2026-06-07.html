@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC 2026 — 속도 최적화 조사 (2026-06-07)</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d212b; --ink:#e7ebf0; --mut:#9aa4b2;
+    --line:#2a2f3a; --accent:#4da3ff; --good:#37c871; --warn:#ffb13b; --bad:#ff5d5d;
+    --pur:#b07bff; --teal:#2dd4bf;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  h1{font-size:26px;margin:0 0 4px}
+  .sub{color:var(--mut);margin:0 0 26px;font-size:14px}
+  h2{font-size:19px;margin:34px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-weight:700;margin-right:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;margin:12px 0}
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.g2,.g3{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;margin:6px 0;font-size:14px}
+  th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.03em}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  .bar{height:9px;border-radius:5px;background:var(--line);overflow:hidden;min-width:80px}
+  .bar>span{display:block;height:100%;background:var(--accent)}
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;
+    border:1px solid transparent;white-space:nowrap}
+  .t-good{background:rgba(55,200,113,.13);color:var(--good);border-color:rgba(55,200,113,.3)}
+  .t-bad{background:rgba(255,93,93,.13);color:var(--bad);border-color:rgba(255,93,93,.3)}
+  .t-warn{background:rgba(255,177,59,.13);color:var(--warn);border-color:rgba(255,177,59,.3)}
+  .t-mut{background:rgba(154,164,178,.12);color:var(--mut);border-color:rgba(154,164,178,.3)}
+  .t-acc{background:rgba(77,163,255,.13);color:var(--accent);border-color:rgba(77,163,255,.3)}
+  code{background:#11141a;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+    font:13px/1.4 'JetBrains Mono',Consolas,monospace;color:#cdd6e3}
+  .lead{font-size:15.5px}
+  .mut{color:var(--mut)}
+  .kpi{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0}
+  .kpi .box{flex:1;min-width:150px;background:var(--card2);border:1px solid var(--line);
+    border-radius:10px;padding:12px 14px}
+  .kpi .v{font-size:24px;font-weight:700}
+  .kpi .l{color:var(--mut);font-size:12.5px;margin-top:2px}
+  ol.steps{margin:6px 0;padding-left:0;list-style:none;counter-reset:s}
+  ol.steps>li{position:relative;padding:10px 0 10px 40px;border-bottom:1px solid var(--line);counter-increment:s}
+  ol.steps>li:last-child{border-bottom:none}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:10px;width:26px;height:26px;
+    border-radius:50%;background:var(--card2);border:1px solid var(--line);color:var(--accent);
+    font-weight:700;font-size:13px;display:grid;place-items:center}
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .flow .step{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:13px}
+  .flow .arr{color:var(--mut)}
+  .hl{border-left:3px solid var(--accent);padding-left:12px}
+  .hl.bad{border-color:var(--bad)} .hl.good{border-color:var(--good)} .hl.warn{border-color:var(--warn)}
+  .small{font-size:13px}
+  .footer{margin-top:40px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+  .pill{font-size:11.5px;padding:1px 7px;border-radius:4px;background:#11141a;border:1px solid var(--line);color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>OGC 2026 — 속도 최적화 조사</h1>
+  <p class="sub">목표: <b>속도 10× ↑ &amp; 성능(z1·obj) 유지</b> · 2026-06-07 · <span class="pill">작업 진행 중</span></p>
+
+  <div class="card hl">
+    <span class="lead"><b>한 줄 결론(현재):</b></span>
+    병목은 <b>baseline이 아니라 cum_level</b>(전체의 70~76%)이다. 기하 연산은 <code>utils.py</code>(수정불가)에 잠겨 단가를 못 줄이므로, 레버는 <b>cum_level의 수렴 속도</b>다.
+    cum_level 탐색 폭을 줄여도 <span class="tag t-good">품질 유지(z1=0·obj 동일)</span> 확인됨. 솔로(경합 없는) 타이밍 이득은 <span class="tag t-warn">측정 진행 중</span>.
+  </div>
+
+  <!-- 1 -->
+  <h2><span class="n">1</span>목표 &amp; 제약</h2>
+  <div class="grid g2">
+    <div class="card">
+      <b>목표</b>
+      <ul style="margin:8px 0">
+        <li>전체 실행시간 <b>10× 단축</b></li>
+        <li><b>성능 유지</b> — z1, 목적값이 나빠지면 안 됨</li>
+        <li>인스턴스별 트릭 금지 (일반화)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <b>고정 제약</b>
+      <ul style="margin:8px 0">
+        <li><code>utils.py</code>·<code>baseline/</code> 수정 금지 (평가서버가 덮어씀)</li>
+        <li>수정 가능: <code>myalgorithm.py</code>, <code>baseline_greedy.py</code>, <code>parallel_decode.py</code></li>
+        <li>평가서버 = <b>인스턴스당 4코어 단독</b>, 16GB, 인터넷 차단</li>
+        <li><b>−1 회피 최우선</b> (infeasible/timeout/crash = −1)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <h2><span class="n">2</span>이번 세션 작업 타임라인</h2>
+  <ol class="steps">
+    <li><b>"z1=0 후에도 도는" 버그 수정</b> — cum_level이 베이가 하한(0) 도달 후에도 느린 크레인 재디코드를 2~3회 더 돌리던 것을 <b>order-level break</b>로 차단(순차+병렬 양쪽). <span class="tag t-good">prob_3 64.7s → 39.3s</span> · objective-safe(채택 해 불변).</li>
+    <li><b>"baseline 빼자" → A/B로 반증</b> — baseline 제거 시 z1이 <b>0 → 1만~3만으로 폭발</b>(2,800배 악화). baseline은 cum_level이 재타이밍할 토대였음. <span class="tag t-bad">제거 불가(load-bearing)</span></li>
+    <li><b>1차 속도 시도 → 막다른 길</b> — greedy <code>_find_earliest_slot</code> byte-identical 재구성. 16/16 출력 동일(정확)이나 <b>2~4× 느려서</b> 되돌림. 게이트 OFF라 제출 영향 0.</li>
+    <li><b>프로파일 + 단계 타이밍</b> — 진짜 병목이 cum_level(70~76%)임을 확인. (아래 §3·§4)</li>
+    <li><b>cum_level 탐색폭 A/B</b> — 폭 줄여도 품질 유지 확인. 타이밍은 경합 오염 → <b>솔로 재측정 진행 중</b>.</li>
+  </ol>
+
+  <!-- 3 -->
+  <h2><span class="n">3</span>병목 지도 <span class="mut small">(측정 기반)</span></h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>단계</th><th>비중 (z1=0 인스턴스)</th><th class="num">예: prob_1 / 6 / 17</th><th>성격</th><th>수정 가능?</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>cum_level</b></td>
+          <td><div class="bar"><span style="width:73%"></span></div></td>
+          <td class="num">156 / 190 / 193 s</td>
+          <td>재디코드 탐색 (3α×3order/베이)</td>
+          <td><span class="tag t-good">✅ 우리 코드 + env</span></td>
+        </tr>
+        <tr>
+          <td>baseline (greedy)</td>
+          <td><div class="bar"><span style="width:20%;background:var(--mut)"></span></div></td>
+          <td class="num">67 / 26 / 21 s</td>
+          <td>O(n²) 포지션 × shapely</td>
+          <td><span class="tag t-warn">△ 포지션만(위험)</span></td>
+        </tr>
+        <tr>
+          <td>crossbay / cpsat_timing / bbox</td>
+          <td><div class="bar"><span style="width:12%;background:var(--pur)"></span></div></td>
+          <td class="num">~0–36 s</td>
+          <td>보조 lever</td>
+          <td><span class="tag t-acc">✅ 우리 코드</span></td>
+        </tr>
+        <tr>
+          <td>shapely 폴리곤 교차 <span class="small mut">(위 단계들 내부)</span></td>
+          <td class="mut small">단가 자체</td>
+          <td class="num">126만 회</td>
+          <td>기하 핵심 비용</td>
+          <td><span class="tag t-bad">❌ utils 잠김</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="small mut" style="margin:8px 0 0">※ 위 절대시간은 <b>4개 동시 경합</b> 측정이라 부풀려져 있음(평가서버는 솔로 4코어 → 실제 더 빠름). 비중은 유효.</p>
+  </div>
+
+  <!-- 4 -->
+  <h2><span class="n">4</span>핵심 실험 결과</h2>
+
+  <div class="card">
+    <b>4·1 &nbsp;baseline 제거 A/B</b> — <span class="tag t-bad">제거 불가 판정</span>
+    <table>
+      <thead><tr><th>인스턴스</th><th class="num">baseline ON (z1)</th><th class="num">baseline OFF (z1)</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>prob_3</td><td class="num">0</td><td class="num">9,834</td><td rowspan="4" style="vertical-align:middle">z1 1,000~3,000배 폭발.<br>feasible는 유지(트리비얼 floor)지만 사실상 전 인스턴스 꼴찌.</td></tr>
+        <tr><td>prob_8</td><td class="num">0</td><td class="num">29,760</td></tr>
+        <tr><td>prob_5</td><td class="num">0</td><td class="num">21,182</td></tr>
+        <tr><td>prob_7</td><td class="num">0</td><td class="num">21,925</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <b>4·2 &nbsp;cum_level 탐색폭 (full 3×3 vs lean 1×1 vs mid 1×2)</b>
+    <table>
+      <thead><tr><th>인스턴스</th><th class="num">full obj</th><th class="num">lean obj</th><th class="num">mid obj</th><th>품질</th></tr></thead>
+      <tbody>
+        <tr><td>prob_1</td><td class="num">3,673</td><td class="num">3,673</td><td class="num">3,673</td><td><span class="tag t-good">동일</span></td></tr>
+        <tr><td>prob_6</td><td class="num">271,417</td><td class="num">270,830</td><td class="num">271,417</td><td><span class="tag t-good">동일~↑</span></td></tr>
+        <tr><td>prob_17</td><td class="num">295,513</td><td class="num">289,856</td><td class="num">289,856</td><td><span class="tag t-good">lean이 ↑</span></td></tr>
+        <tr><td>prob_3 / 8</td><td class="num" colspan="3" style="text-align:center">모두 z1=0, obj 동일</td><td><span class="tag t-good">동일</span></td></tr>
+      </tbody>
+    </table>
+    <p class="small" style="margin:8px 0 0"><b>해석:</b> cum_level 탐색폭을 1/9로 줄여도 <b>z1=0·obj 유지(일부 개선)</b>. 단 이 실험의 <i>wall</i>은 3 config 동시실행 경합으로 오염 → 솔로 재측정으로 시간 이득 확정 예정.</p>
+  </div>
+
+  <!-- 5 -->
+  <h2><span class="n">5</span>핵심 사실 &amp; 함정</h2>
+  <div class="grid g2">
+    <div class="card hl good"><b>wall = "z1=0 도달 시각"</b><br><span class="small">z1=0 즉시 early-exit. 그래서 timelimit을 줄여도 z1=0 인스턴스는 안 빨라짐 — <b>수렴 속도</b>가 곧 속도.</span></div>
+    <div class="card hl warn"><b>경합이 측정을 부풀림</b><br><span class="small">대시보드의 209s 등은 4개 동시. 평가서버는 솔로 4코어 → 실제 wall은 더 작음. "10× 기준점"을 솔로로 다시 잡아야 함.</span></div>
+    <div class="card hl bad"><b>기하 단가는 못 줄임</b><br><span class="small">shapely 교차는 <code>utils.py</code> 내부. 가능한 건 <b>호출 횟수</b> 감소뿐.</span></div>
+    <div class="card hl"><b>±20× 비결정성</b><br><span class="small">cum_level CP-SAT는 비결정적. prob_3가 솔로 39s vs 경합 197s(다른 경로). 분산 자체도 손봐야 할 대상.</span></div>
+  </div>
+
+  <!-- 6 -->
+  <h2><span class="n">6</span>현재 20개 인스턴스 상태 <span class="mut small">(전 항목 feasible — −1 없음)</span></h2>
+  <div class="kpi">
+    <div class="box"><div class="v" style="color:var(--good)">12 / 20</div><div class="l">z1 = 0 달성</div></div>
+    <div class="box"><div class="v" style="color:var(--warn)">8</div><div class="l">z1 &gt; 0 (그 중 5개는 z1≤2)</div></div>
+    <div class="box"><div class="v" style="color:var(--good)">0</div><div class="l">infeasible / −1</div></div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>z1=0 (12)</th><th>z1&gt;0 (8) — Goal 1 잔여</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="small">prob_1, 2, 3, 5, 6, 7, 8, 10, 11, 17, 18, 19</td>
+          <td class="small">prob_4<b>(1)</b>, 13<b>(1)</b>, 16<b>(1)</b>, 9<b>(2)</b>, 15<b>(2)</b> · &nbsp; 12<b>(20)</b>, 20<b>(18)</b>, 14<b>(35)</b></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="small mut" style="margin:8px 0 0">잔여 8개 중 5개는 0에 한 끗(z1≤2). 진짜 어려운 건 prob_12·14·20.</p>
+  </div>
+
+  <!-- 7 -->
+  <h2><span class="n">7</span>결정 트리 / 다음 수</h2>
+  <div class="card">
+    <div class="flow">
+      <span class="step">솔로 A/B 결과</span><span class="arr">→</span>
+      <span class="step" style="border-color:var(--good)">lean이 솔로에서 빠름</span><span class="arr">→</span>
+      <span class="step">전 20개 검증 후 <b>lean 채택</b> (공짜 이득)</span>
+    </div>
+    <div class="flow">
+      <span class="step" style="visibility:hidden">솔로</span><span class="arr" style="visibility:hidden">→</span>
+      <span class="step" style="border-color:var(--warn)">병렬 wall은 안 줄어듦<br><span class="small mut">(가장 느린 베이가 지배)</span></span><span class="arr">→</span>
+      <span class="step">레버 전환 ↓</span>
+    </div>
+    <p style="margin:14px 0 6px"><b>후속 안전 레버 후보</b> (모두 end-to-end A/B로 z1 유지 검증):</p>
+    <table>
+      <thead><tr><th>레버</th><th>기대 이득</th><th>위험</th></tr></thead>
+      <tbody>
+        <tr><td>cum_level 탐색폭 lean화 (α·order ↓)</td><td>CPU work ~9× ↓</td><td><span class="tag t-good">낮음(품질 확인됨)</span></td></tr>
+        <tr><td>placed-block <code>bounding_rect</code> 캐시</td><td>기하 호출 일부 ↓ (정확/공짜)</td><td><span class="tag t-good">없음(exact)</span></td></tr>
+        <tr><td>cum_level budget 재배분 (70%→적응)</td><td>하드 베이 spin ↓</td><td><span class="tag t-warn">중간</span></td></tr>
+        <tr><td>greedy 포지션 가지치기 (O(n²)↓)</td><td>baseline 30%↓</td><td><span class="tag t-bad">높음(floor 품질)</span></td></tr>
+        <tr><td>비결정성 축소 (시드 고정/멀티스타트)</td><td>분산↓ → 빠른 수렴 안정</td><td><span class="tag t-warn">중간</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    생성: 2026-06-07 · 측정 스크립트: <code>notes/_stage_timing.py</code>, <code>notes/_ab_cumlevel.py</code>, <code>notes/_ab_baseline.py</code>, <code>notes/_verify_greedy_fastslot.py</code> ·
+    솔로 cum_level 타이밍 A/B(<code>bp6t3aiw6</code>) 결과 수신 시 본 문서 §4·2 / §7 갱신 예정.
+  </div>
+
+</div>
+</body>
+</html>

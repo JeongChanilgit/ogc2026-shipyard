@@ -1,0 +1,15 @@
+{
+  "timelimit": 600.0,
+  "instances": [
+    {
+      "instance": "prob_38",
+      "status": "OK",
+      "feasible": true,
+      "box_obj": 82751836.0,
+      "z1": 6002.0,
+      "z2": 1735,
+      "z3": 9079.0,
+      "wall": 556.4369999999763
+    }
+  ]
+}

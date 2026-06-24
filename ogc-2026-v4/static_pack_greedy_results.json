@@ -1,0 +1,35 @@
+[
+  {
+    "prob": 38,
+    "worst_bay": 2,
+    "bay_z1": 2033.0,
+    "S": 57,
+    "area_pct": 36.9,
+    "M_ours": 27,
+    "F_greedy": 20,
+    "gap_F_M": -7,
+    "wall_s": 45.6
+  },
+  {
+    "prob": 40,
+    "worst_bay": 2,
+    "bay_z1": 1450.0,
+    "S": 39,
+    "area_pct": 28.3,
+    "M_ours": 23,
+    "F_greedy": 19,
+    "gap_F_M": -4,
+    "wall_s": 20.1
+  },
+  {
+    "prob": 27,
+    "worst_bay": 1,
+    "bay_z1": 1659.0,
+    "S": 62,
+    "area_pct": 36.0,
+    "M_ours": 29,
+    "F_greedy": 25,
+    "gap_F_M": -4,
+    "wall_s": 22.6
+  }
+]

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>05 목적함수·선형화 — CP-SAT Methodology</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html" class="active">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+<div class="hero">
+  <div class="kicker">CP-SAT Methodology · 05</div>
+  <h1>목적함수 &amp; 선형화<br><span style="color:var(--muted);font-size:1.3rem">max/min/abs/element/곱셈, 다목적 가중합</span></h1>
+  <p class="lead">
+    CP-SAT는 <strong>정수 선형 목적식</strong>만 직접 지원한다.
+    비선형 항(최댓값·절댓값·곱셈 등)은 모두 <em>보조 변수 + 등식 제약</em>으로 선형화한다.
+    이 페이지는 비선형 인코딩 헬퍼 6종, 테이블 제약 2종, 다목적 최적화 패턴(가중합·사전식),
+    부동소수 가중치의 정수 스케일링 전략을 코드와 함정 중심으로 정리한다.
+  </p>
+</div>
+
+<!-- OGC 관련성 callout -->
+<div class="callout ogc">
+  <div class="ttl">★ OGC 2026 관련성</div>
+  <p style="margin:0">
+    OGC 2026 목적함수 <code>min w1·Z1 + w2·Z2 + w3·Z3</code>는 세 개의 이질적 항으로 구성된다.
+    <strong>Z1 = Σ tardiness</strong> → 블록마다 <code>max(0, exit − due)</code>를 <code>AddMaxEquality</code>로 인코딩.
+    <strong>Z2 = max workload imbalance</strong> (베이별 부하의 최댓값 최소화) → 보조 변수에 <code>AddMaxEquality</code> 후 <code>Minimize</code>.
+    <strong>Z3 = Σ(S_max − S_chosen)</strong> 선호편차 → 선형 합산.
+    가중치 w1이 667 ~ 29,600으로 자릿수가 크게 다르므로 <strong>정수 스케일 × 1,000</strong> 후
+    <code>LinearExpr.weighted_sum</code>을 weight-adaptive하게 쓰는 것이 핵심.
+  </p>
+</div>
+
+<!-- ─── 1. 기초 ─── -->
+<h2 id="basics">1. 기초: Minimize / Maximize</h2>
+
+<p>CP-SAT의 목적식은 하나의 <strong>선형 표현식</strong>이어야 한다.
+<code>model.minimize(expr)</code> 또는 <code>model.maximize(expr)</code>를 한 번만 호출한다.
+나중에 호출하면 이전 목적식을 덮어쓴다.</p>
+
+<pre><code>from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+x = model.new_int_var(0, 100, "x")
+y = model.new_int_var(0, 100, "y")
+
+# 단순 선형 목적
+model.minimize(3 * x + 7 * y)
+
+# 가중합 헬퍼 — 변수·가중치 리스트
+xs = [model.new_int_var(0, 50, f"x{i}") for i in range(5)]
+weights = [10, 20, 5, 15, 8]
+model.minimize(cp_model.LinearExpr.weighted_sum(xs, weights))
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — LinearExpr.weighted_sum</div>
+  <p style="margin:0">
+    리스트 내포보다 <code>LinearExpr.weighted_sum(vars, coeffs)</code>가 가독성·안정성 모두 낫다.
+    가중치가 부동소수점이라면 먼저 정수로 스케일 변환(§6 참조)하고 넘겨야 한다.
+  </p>
+</div>
+
+<!-- ─── 2. 비선형 헬퍼 ─── -->
+<h2 id="nonlinear">2. 비선형 인코딩 헬퍼 6종</h2>
+
+<p>비선형 항은 <em>보조 변수 선언 → 등식 제약 추가 → 목적식에 보조 변수 포함</em> 패턴으로 처리한다.
+CP-SAT는 이 보조 변수의 도메인을 전파 시 활용하므로, <strong>도메인 상한을 꽉 잡아야 전파가 강해진다</strong>.</p>
+
+<h3 id="addmax">2.1 AddMaxEquality / AddMinEquality</h3>
+<p><code>model.add_max_equality(target, exprs)</code> — <code>target == max(exprs)</code><br>
+<code>model.add_min_equality(target, exprs)</code> — <code>target == min(exprs)</code></p>
+
+<pre><code># ── Makespan(최대 완료시각) 최소화 ──
+end_times = [model.new_int_var(0, horizon, f"end_{i}") for i in range(n_tasks)]
+makespan = model.new_int_var(0, horizon, "makespan")
+model.add_max_equality(makespan, end_times)
+model.minimize(makespan)
+
+# ── 워크로드 불균형(베이별 부하 최댓값−최솟값) 최소화 ──
+loads = [model.new_int_var(0, max_load, f"load_{j}") for j in range(n_bays)]
+max_load_var = model.new_int_var(0, max_load, "max_load")
+min_load_var = model.new_int_var(0, max_load, "min_load")
+model.add_max_equality(max_load_var, loads)
+model.add_min_equality(min_load_var, loads)
+model.minimize(max_load_var - min_load_var)
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — 순수 minimax는 선형 불등식이 더 빠를 수 있다</div>
+  <p style="margin:0">
+    최댓값을 <em>최소화</em>만 할 경우 <code>add_max_equality</code> 대신
+    <code>model.add(max_var &gt;= load_j)</code>를 모든 j에 적용하고 <code>minimize(max_var)</code>를 쓰면
+    전파 회로가 단순해져 종종 더 빠르다.
+    반대로 최댓값을 제약 좌변에 사용하거나 다른 목적항과 결합할 때는 <code>add_max_equality</code>가 필수다.
+  </p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 — 도메인 상한 미설정</div>
+  <p style="margin:0">
+    <code>model.new_int_var(0, cp_model.INT_MAX, "max_var")</code>처럼 상한을 INT_MAX로 두면
+    CP-SAT가 bound를 추론하기 어렵고 전파가 크게 약해진다.
+    반드시 <code>horizon</code>이나 <code>sum(all_processing_times)</code> 같은 의미 있는 상한을 쓴다.
+  </p>
+</div>
+
+<h3 id="addabs">2.2 AddAbsEquality</h3>
+<p><code>model.add_abs_equality(target, expr)</code> — <code>target == |expr|</code><br>
+편차·잔차·이진 분류 비용 등에 활용한다.</p>
+
+<pre><code># ── 목표 편성 수 대비 절댓값 편차 최소화 ──
+target_slots = 8
+total_slots = model.new_int_var(0, max_slots, "total")
+deviation_raw = model.new_int_var(-max_slots, max_slots, "dev_raw")
+model.add(deviation_raw == total_slots - target_slots)
+
+abs_dev = model.new_int_var(0, max_slots, "abs_dev")
+model.add_abs_equality(abs_dev, deviation_raw)
+model.minimize(abs_dev)
+
+# ── Σ|x_i − median| 형태 (다수 변수의 MAD) ──
+diffs = []
+for i in range(n):
+    raw = model.new_int_var(-big, big, f"raw_{i}")
+    model.add(raw == x[i] - median_var)
+    ab = model.new_int_var(0, big, f"ab_{i}")
+    model.add_abs_equality(ab, raw)
+    diffs.append(ab)
+model.minimize(sum(diffs))
+</code></pre>
+
+<h3 id="addmult">2.3 AddMultiplicationEquality</h3>
+<p><code>model.add_multiplication_equality(target, exprs)</code> — <code>target == exprs[0] * exprs[1] * …</code></p>
+
+<pre><code># ── 이진 변수 × 연속 변수 (선택적 비용) ──
+selected = model.new_bool_var("selected")
+cost = model.new_int_var(0, 1000, "cost_val")
+active_cost = model.new_int_var(0, 1000, "active_cost")
+model.add_multiplication_equality(active_cost, [selected, cost])
+
+# 단, 이진×연속은 OnlyEnforceIf 패턴이 훨씬 강력한 전파를 줌:
+active_cost_alt = model.new_int_var(0, 1000, "active_cost_alt")
+model.add(active_cost_alt == cost).only_enforce_if(selected)
+model.add(active_cost_alt == 0).only_enforce_if(selected.negated())
+</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">함정 — AddMultiplicationEquality의 도메인 폭발과 약한 전파</div>
+  <p style="margin:0">
+    두 변수 a∈[0,100], b∈[0,100]의 곱은 도메인 크기가 10,001이 된다.
+    CP-SAT는 이 제약에 대해 전파가 약하고, 탐색 시간이 선형 모델 대비 수배 이상 늘어날 수 있다.
+    <strong>이진×연속은 <code>only_enforce_if</code>로, 정수×정수는 테이블/열거로 대체</strong>하는 것이 원칙이다.
+    세 개 이상의 변수 곱은 구버전에서 지원하지 않는다 (≥v9.4 에서는 배열 지원).
+  </p>
+</div>
+
+<h3 id="addelem">2.4 AddElement (인덱스 기반 조회)</h3>
+<p><code>model.add_element(index, variables, target)</code> — <code>target == variables[index]</code><br>
+변수 인덱스로 다른 변수를 조회하거나, 비선형 함수를 룩업 테이블로 대체한다.</p>
+
+<pre><code># ── 비선형 함수를 룩업 테이블로 ──
+# f(x) = x^2 을 정수 룩업으로 처리
+x = model.new_int_var(0, 20, "x")
+table = [i * i for i in range(21)]          # [0, 1, 4, 9, … 400]
+f_x = model.new_int_var(0, 400, "x_sq")
+model.add_element(x, table, f_x)           # f_x == table[x]
+
+# ── 배정 결과에 따른 가중치 조회 ──
+bay_assigned = model.new_int_var(0, n_bays - 1, "bay")
+preference_weights = [10, 25, 15, 30, 5]   # 베이별 선호도
+pref_score = model.new_int_var(0, max(preference_weights), "pref")
+model.add_element(bay_assigned, preference_weights, pref_score)
+model.maximize(pref_score)
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — AddElement는 비선형 블랙박스 함수의 CP-SAT 내 최선 대안</div>
+  <p style="margin:0">
+    도메인이 작고 함수값이 미리 계산 가능하면 <code>add_element</code>로 O(1) 조회가 가능하다.
+    단, 도메인이 크면 테이블 크기 자체가 메모리를 잡아먹으므로 적정 도메인 범위(≤10,000)를 유지한다.
+  </p>
+</div>
+
+<h3 id="div-mod">2.5 AddDivisionEquality / AddModuloEquality</h3>
+<pre><code># target == a // b  (정수 나눗셈, b는 상수여야 전파 강함)
+quotient = model.new_int_var(0, 100, "q")
+model.add_division_equality(quotient, a_var, b_const)
+
+# target == a % m
+remainder = model.new_int_var(0, m - 1, "rem")
+model.add_modulo_equality(remainder, a_var, m)
+</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">함정 — 분모가 변수일 때 전파 극도 약화</div>
+  <p style="margin:0">
+    <code>add_division_equality(q, a, b)</code>에서 b가 변수이면 CP-SAT는 케이스 열거에 의존하며
+    매우 느려진다. 가능하면 b를 상수로 고정하거나 <code>add_element</code> 룩업으로 대체한다.
+  </p>
+</div>
+
+<!-- ─── 3. 테이블 제약 ─── -->
+<h2 id="table">3. 테이블 제약: AddAllowedAssignments / AddForbiddenAssignments</h2>
+
+<p>여러 변수의 결합(joint) 값 집합을 명시적으로 허용하거나 금지한다.
+조건부 비용 행렬, 복잡한 선호 규칙, 이산 페어링 패턴에 유용하다.</p>
+
+<pre><code># ── 허용 배정 ──
+# (block_type, bay_type) 페어의 허용 목록
+block_type = model.new_int_var(0, 3, "bt")
+bay_type   = model.new_int_var(0, 2, "bayt")
+allowed = [(0,0),(0,1),(1,0),(1,2),(2,1),(3,2)]
+model.add_allowed_assignments([block_type, bay_type], allowed)
+
+# ── 금지 배정 ──
+forbidden = [(0,2),(1,1),(2,0),(3,0),(3,1)]
+model.add_forbidden_assignments([block_type, bay_type], forbidden)
+
+# ── 조건부 비용: (레이어, 방향) → 추가 비용 룩업 ──
+layer   = model.new_int_var(0, 3, "layer")
+orient  = model.new_int_var(0, 1, "orient")
+penalty = model.new_int_var(0, 100, "penalty")
+cost_table = [(l, o, (l+1)*(o*50+10)) for l in range(4) for o in range(2)]
+model.add_allowed_assignments([layer, orient, penalty], cost_table)
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — 튜플 크기 불일치는 ValueError</div>
+  <p style="margin:0">
+    <code>add_allowed_assignments(vars, tuples)</code>에서 각 튜플의 길이가 <code>vars</code> 리스트 길이와 다르면
+    즉시 <code>ValueError</code>가 발생한다. 비용 변수를 함께 넣을 경우 튜플 길이를 맞춰야 한다.
+  </p>
+</div>
+
+<!-- ─── 4. 목적식 패턴 ─── -->
+<h2 id="objective-patterns">4. 목적식 조합 패턴</h2>
+
+<h3 id="tardiness">4.1 Z1 — 지연합 (Tardiness)</h3>
+<p><code>tardiness_i = max(0, exit_i − due_i)</code>는 CP-SAT에서 아래 두 방법으로 인코딩한다.</p>
+
+<pre><code># 방법 A: add_max_equality 사용
+tardiness = []
+for i in range(n_blocks):
+    t = model.new_int_var(0, horizon, f"tard_{i}")
+    model.add_max_equality(t, [0, exit_time[i] - due_date[i]])
+    tardiness.append(t)
+z1 = sum(tardiness)
+
+# 방법 B: 불등식으로 하한만 설정 (전파 동등, 종종 더 빠름)
+tardiness_b = []
+for i in range(n_blocks):
+    t = model.new_int_var(0, horizon, f"tard_b_{i}")
+    model.add(t >= exit_time[i] - due_date[i])
+    model.add(t >= 0)
+    tardiness_b.append(t)
+# 최소화 목적이면 방법 B의 t가 자동으로 tight해진다
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — 최소화 시 방법 B가 선호</div>
+  <p style="margin:0">
+    목적이 Σtardiness를 <em>최소화</em>할 때는 하한 불등식만 설정해도 됩니다.
+    solver가 z1을 낮추려면 t를 최대한 0에 가깝게 유지하려 하므로 자동으로 tight.
+    <code>add_max_equality</code>는 양방향 등식이라 불필요한 전파 단계가 생긴다.
+  </p>
+</div>
+
+<h3 id="z2-minimax">4.2 Z2 — 워크로드 불균형 (minimax)</h3>
+
+<pre><code># 베이별 총 점유 면적을 load_j에 집계
+load_vars = []
+for j in range(n_bays):
+    lv = model.new_int_var(0, max_area, f"load_{j}")
+    model.add(lv == sum(area[i] * assign[i][j] for i in range(n_blocks)))
+    load_vars.append(lv)
+
+# Z2 = max_j(u_j * load_j) — 베이 가중 u_j 반영
+weighted_loads = []
+for j in range(n_bays):
+    wl = model.new_int_var(0, u[j] * max_area, f"wload_{j}")
+    # u_j가 정수라면 직접 곱셈 가능
+    model.add(wl == u[j] * load_vars[j])
+    weighted_loads.append(wl)
+
+z2_var = model.new_int_var(0, max(u) * max_area, "z2")
+model.add_max_equality(z2_var, weighted_loads)
+# 또는 선형 하한:
+for wl in weighted_loads:
+    model.add(z2_var >= wl)
+</code></pre>
+
+<h3 id="z3-preference">4.3 Z3 — 선호편차 (가중 선형합)</h3>
+
+<pre><code># S_chosen: 블록 i가 배정된 베이 j의 선호점수 (AddElement 활용)
+pref_score = []
+for i in range(n_blocks):
+    bay_i = model.new_int_var(0, n_bays-1, f"bay_{i}")
+    ps = model.new_int_var(0, S_MAX, f"pref_{i}")
+    model.add_element(bay_i, S_table[i], ps)   # S_table[i][j] = S_ij
+    pref_score.append(ps)
+
+# Z3 = Σ(S_max_i − pref_score_i)
+z3 = sum(S_max[i] - pref_score[i] for i in range(n_blocks))
+</code></pre>
+
+<h3 id="weighted-sum-combined">4.4 가중합 통합 목적식</h3>
+
+<pre><code># w1, w2, w3 가 부동소수점일 경우 정수 스케일링 (§6 참조)
+SCALE = 1000
+w1_int = round(w1 * SCALE)
+w2_int = round(w2 * SCALE)
+w3_int = round(w3 * SCALE)
+
+objective = cp_model.LinearExpr.weighted_sum(
+    [z1_var, z2_var, z3_var],
+    [w1_int, w2_int, w3_int]
+)
+model.minimize(objective)
+</code></pre>
+
+<!-- ─── 5. 다목적 ─── -->
+<h2 id="multiobjective">5. 다목적 최적화 패턴</h2>
+
+<h3 id="weighted-sum-multi">5.1 가중합 (Weighted Sum) — 단일 Minimize</h3>
+<p>
+  가장 단순하고 빠른 방법. 모든 목적항을 <strong>공통 스케일로 정수화</strong>한 뒤
+  하나의 <code>minimize</code>로 묶는다.
+  장점: 단일 solve 패스, Pareto front 위의 한 점을 찾음.
+  단점: 가중치 선택이 결과를 크게 좌우함, 자릿수 차이가 크면 한 항이 지배.
+</p>
+
+<pre><code>model.minimize(w1_int * z1_var + w2_int * z2_var + w3_int * z3_var)
+</code></pre>
+
+<h3 id="lexicographic">5.2 사전식 최적화 (Lexicographic / 2-Phase)</h3>
+<p>
+  우선순위가 높은 목적을 먼저 최적화하고, 그 값을 고정한 뒤 다음 목적을 최적화한다.
+  OGC처럼 <strong>−1 회피(실현가능성)가 1순위</strong>일 때 유용하다.
+</p>
+
+<pre><code>from ortools.sat.python import cp_model
+import math
+
+solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = time_budget_1
+
+# 1단계: Z1(지연합) 최소화
+model.minimize(z1_var)
+status = solver.solve(model)
+best_z1 = int(solver.objective_value)
+
+# 2단계: Z1 값 고정 후 Z2+Z3 최소화
+model.add(z1_var <= best_z1)          # 엄격 고정 대신 허용 오차 줄 수도 있음
+model.minimize(w2_int * z2_var + w3_int * z3_var)
+solver.parameters.max_time_in_seconds = time_budget_2
+status = solver.solve(model)
+</code></pre>
+
+<div class="tip">
+  <div class="ttl">Tip — 허용 오차(ε-relaxation) 활용</div>
+  <p style="margin:0">
+    1단계 최적값을 엄격히 고정하면 2단계에서 실현가능 해가 없어지거나 검색 공간이 지나치게 좁아질 수 있다.
+    <code>model.add(z1_var &lt;= best_z1 + epsilon)</code>처럼 ε만큼의 여유를 주면
+    2단계에서 훨씬 좋은 Z2/Z3 해를 찾을 수 있다.
+  </p>
+</div>
+
+<pre><code># 고급 패턴: 전 단계 해를 힌트로 활용 (warm start)
+class MultiObjSolver:
+    def __init__(self, model, solver):
+        self.model = model
+        self.solver = solver
+        self._obj_var = None
+
+    def set_objective(self, expr):
+        self._obj_var = expr
+        self.model.minimize(expr)
+
+    def solve(self, time_limit=60.0):
+        self.solver.parameters.max_time_in_seconds = time_limit
+        return self.solver.solve(self.model)
+
+    def fix_and_hint(self, ratio=1.0):
+        """현재 최적값 고정 + 현재 해를 다음 단계의 힌트로 등록"""
+        opt_val = int(math.ceil(self.solver.objective_value * ratio))
+        self.model.add(self._obj_var &lt;= opt_val)
+        # 힌트 등록 (OR-Tools v9.x 이상)
+        for v in self.model.get_bool_vars_from_constraint_indices([]):
+            self.model.add_hint(v, self.solver.value(v))
+</code></pre>
+
+<h3 id="pareto">5.3 Pareto Front 탐색</h3>
+<p>
+  가중치 벡터를 달리 하며 여러 번 풀어 Pareto front를 근사한다.
+  실전에서는 2~5개 가중치 조합이면 의사결정에 충분한 경우가 많다.
+</p>
+
+<pre><code>results = []
+for alpha in [0.0, 0.25, 0.5, 0.75, 1.0]:
+    model2 = model.clone() if hasattr(model, 'clone') else copy_model(model)
+    model2.minimize(round(alpha * 1000) * z1_var +
+                    round((1-alpha) * 1000) * z2_var)
+    s = cp_model.CpSolver()
+    s.parameters.max_time_in_seconds = 30
+    s.solve(model2)
+    results.append((alpha, s.value(z1_var), s.value(z2_var)))
+</code></pre>
+
+<!-- ─── 6. 정수 스케일링 ─── -->
+<h2 id="scaling">6. 부동소수 가중치의 정수 스케일링</h2>
+
+<p>
+  CP-SAT는 목적함수 계수를 <strong>64비트 정수</strong>로 다룬다.
+  부동소수 가중치(예: w1=667.3)는 반드시 정수화해야 한다.
+</p>
+
+<h3>6.1 단순 비례 스케일링</h3>
+
+<pre><code>def scale_weights(weights, precision=1000):
+    """부동소수 가중치 → 정수. precision배 후 반올림."""
+    return [round(w * precision) for w in weights]
+
+# 예: OGC 가중치 (실 인스턴스 범위 667 ~ 29600)
+raw_w = [667.5, 29600.0, 133.0]
+int_w = scale_weights(raw_w, precision=1000)
+# → [667500, 29600000, 133000]
+# ⚠ 최대 계수 29.6M × 최대 변수값 5M ≈ 1.48e14 → int64 범위(9.2e18) 안에 있음
+</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">함정 — int64 오버플로우</div>
+  <p style="margin:0">
+    CP-SAT 목적식 계수 × 변수 최대값이 <strong>2⁶³ ≈ 9.2 × 10¹⁸</strong>을 넘으면
+    INVALID_MODEL("Potential integer overflow in constraint")이 발생한다.
+    스케일 × <code>max(var_domain)</code>가 9.2e18을 넘지 않도록 precision 값을 조정한다.
+    검증: <code>assert max(int_w) * max_var_bound &lt; 9e18</code>
+  </p>
+</div>
+
+<h3>6.2 최소공배수(LCM) 방식 — 소수점 정밀도 보존</h3>
+
+<pre><code>from math import gcd
+from fractions import Fraction
+
+def exact_scale(weights):
+    """분수로 표현 후 분모 LCM을 구해 모두 정수화"""
+    fracs = [Fraction(w).limit_denominator(10000) for w in weights]
+    lcm_den = 1
+    for f in fracs:
+        lcm_den = lcm_den * f.denominator // gcd(lcm_den, f.denominator)
+    return [int(f * lcm_den) for f in fracs], lcm_den
+
+int_w, scale = exact_scale([0.5, 0.333, 1.0])
+# → ([3, 2, 6], 6)  즉 0.5→3, 0.333→2, 1.0→6 (÷6 하면 원래 비율 복원)
+</code></pre>
+
+<h3>6.3 목적값 역변환</h3>
+
+<pre><code>status = solver.solve(model)
+raw_obj = solver.objective_value          # 정수 스케일된 목적값
+actual_obj = raw_obj / precision          # 원래 단위 복원
+print(f"실제 목적값: {actual_obj:.4f}")
+</code></pre>
+
+<!-- ─── 7. 조건부 비용 ─── -->
+<h2 id="conditional">7. 조건부 비용 (Conditional Cost)</h2>
+
+<pre><code># ── 이진 선택에 따른 고정비용 ──
+use_option = model.new_bool_var("use_option")
+fixed_cost = 500
+
+# 방법 1: bool × 상수 = 직접 선형식
+model.minimize(fixed_cost * use_option + variable_cost)
+
+# 방법 2: OnlyEnforceIf (비선형 조건부 구조에서)
+cost_var = model.new_int_var(0, 1000, "cost")
+model.add(cost_var == fixed_cost).only_enforce_if(use_option)
+model.add(cost_var == 0).only_enforce_if(use_option.negated())
+
+# ── Piecewise linear: cpsat_utils 패키지 활용 ──
+# pip install cpsat-utils
+from cpsat_utils.piecewise import PiecewiseLinearFunction
+
+# 체감 비용 함수 (구매량 증가할수록 단가 하락)
+breakpoints = [(0, 0), (1000, 400), (1500, 1300)]
+f = PiecewiseLinearFunction.from_points(breakpoints)
+quantity = model.new_int_var(0, 1500, "qty")
+# 하한 모드: 실제 비용 ≥ f(qty) (볼록 함수면 타이트)
+y_cost = f.add_lower_bound(model, quantity)
+model.minimize(y_cost)
+</code></pre>
+
+<!-- ─── 8. OGC 통합 예제 ─── -->
+<h2 id="ogc-example">8. OGC 2026 통합 예제 (Z1+Z2+Z3 최소화)</h2>
+
+<div class="callout ogc">
+  <div class="ttl">OGC 2026 — 실전 목적함수 조립 패턴</div>
+  <p>
+    아래 코드는 OGC 2026 목적함수 <code>w1·Z1 + w2·Z2 + w3·Z3</code>의
+    CP-SAT 조립 전체를 보여준다. weight-adaptive 처리와 int64 안전성 검증이 포함된다.
+  </p>
+</div>
+
+<pre><code>from ortools.sat.python import cp_model
+import math
+
+def build_objective(model, prob_info,
+                    exit_time, bay_assign, pref_score):
+    """
+    exit_time[i]   : IntVar — 블록 i의 퇴출 시각
+    bay_assign[i]  : IntVar — 블록 i의 베이 인덱스
+    pref_score[i]  : IntVar — 선호 점수 (AddElement로 설정됨)
+    """
+    w1 = prob_info["w1"]
+    w2 = prob_info["w2"]
+    w3 = prob_info["w3"]
+    due = prob_info["due_dates"]        # list[int]
+    bay_weight = prob_info["bay_u"]     # u_j 베이 가중치
+    horizon = prob_info["horizon"]
+    n_blocks = len(exit_time)
+    n_bays = len(bay_weight)
+
+    # ── 1. 정수 스케일 계산 (overflow 안전) ──
+    SCALE = 1000
+    w1i, w2i, w3i = round(w1*SCALE), round(w2*SCALE), round(w3*SCALE)
+    max_z1 = n_blocks * horizon
+    max_z2 = max(bay_weight) * max(sum(b['area'] for b in prob_info['blocks']), 1)
+    max_z3 = sum(prob_info['S_max'])
+    assert max(w1i*max_z1, w2i*max_z2, w3i*max_z3) < 9e18, "int64 overflow 위험"
+
+    # ── 2. Z1: 지연합 (방법 B — 하한 불등식) ──
+    tardiness = []
+    for i in range(n_blocks):
+        t = model.new_int_var(0, horizon, f"tard_{i}")
+        model.add(t >= exit_time[i] - due[i])
+        model.add(t >= 0)
+        tardiness.append(t)
+    z1_var = model.new_int_var(0, max_z1, "z1")
+    model.add(z1_var == sum(tardiness))
+
+    # ── 3. Z2: 베이별 가중 부하의 최댓값 ──
+    block_areas = [prob_info['blocks'][i]['area'] for i in range(n_blocks)]
+    wload = []
+    for j in range(n_bays):
+        raw_load = model.new_int_var(0, sum(block_areas), f"load_{j}")
+        # 블록 i가 베이 j에 배정되면 area[i] 기여
+        assign_ij = [model.new_bool_var(f"aij_{i}_{j}") for i in range(n_blocks)]
+        for i in range(n_blocks):
+            model.add(assign_ij[i] == 1).only_enforce_if(
+                bay_assign[i] == j)   # 주의: 실제로는 별도 bool로 채널링 필요
+        model.add(raw_load == sum(
+            block_areas[i] * assign_ij[i] for i in range(n_blocks)))
+        wl = model.new_int_var(0, bay_weight[j] * sum(block_areas), f"wload_{j}")
+        model.add(wl == bay_weight[j] * raw_load)
+        wload.append(wl)
+    z2_var = model.new_int_var(0, max_z2, "z2")
+    for wl in wload:
+        model.add(z2_var >= wl)       # minimax: 하한 불등식 패턴
+
+    # ── 4. Z3: 선호편차 합 ──
+    S_max_total = sum(prob_info['S_max'])
+    z3_var = model.new_int_var(0, max_z3, "z3")
+    model.add(z3_var == sum(
+        prob_info['S_max'][i] - pref_score[i] for i in range(n_blocks)))
+
+    # ── 5. 통합 목적식 ──
+    model.minimize(
+        cp_model.LinearExpr.weighted_sum(
+            [z1_var, z2_var, z3_var],
+            [w1i,    w2i,    w3i]
+        )
+    )
+    return z1_var, z2_var, z3_var
+</code></pre>
+
+<!-- ─── 9. 핵심 함정 ─── -->
+<h2 id="pitfalls">9. 흔한 함정 요약</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>함정</th>
+      <th>현상</th>
+      <th>해결책</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>보조 변수 도메인 상한 = INT_MAX</td>
+      <td>전파 약화, 탐색 느려짐</td>
+      <td>의미 있는 상한(horizon, sum(areas)) 설정</td>
+    </tr>
+    <tr>
+      <td>add_max_equality에 표현식 직접 전달</td>
+      <td>TypeError (변수만 허용)</td>
+      <td>중간 변수 만들고 model.add()로 표현식 바인딩</td>
+    </tr>
+    <tr>
+      <td>AddMultiplicationEquality 남용</td>
+      <td>도메인 폭발, 전파 극도 약화</td>
+      <td>이진×연속은 only_enforce_if, 정수×정수는 AddElement</td>
+    </tr>
+    <tr>
+      <td>부동소수 가중치를 정수화 않고 사용</td>
+      <td>INVALID_MODEL 또는 자동 반올림 오류</td>
+      <td>SCALE × round() 후 int64 overflow 검증</td>
+    </tr>
+    <tr>
+      <td>사전식 1단계 값 엄격 고정</td>
+      <td>2단계 infeasible 또는 Pareto 탐색 불가</td>
+      <td>ε-relaxation: z1_var ≤ best_z1 + ε</td>
+    </tr>
+    <tr>
+      <td>계수 × 변수상한 > 9.2e18</td>
+      <td>int64 오버플로우 → INVALID_MODEL</td>
+      <td>SCALE 줄이거나 변수 도메인 분할</td>
+    </tr>
+    <tr>
+      <td>Minimize 여러 번 호출</td>
+      <td>마지막 호출만 적용, 이전 목적 무시</td>
+      <td>목적식을 합산한 뒤 한 번만 호출</td>
+    </tr>
+    <tr>
+      <td>AddAllowedAssignments 튜플 길이 불일치</td>
+      <td>ValueError 즉시 발생</td>
+      <td>변수 리스트와 튜플 길이 assert로 검증</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ─── 참고 문헌 ─── -->
+<h2 id="refs">핵심 논문 &amp; 문서</h2>
+
+<ul class="refs">
+  <li>
+    <strong>CP-SAT Primer — Basic Modeling (Objective Functions)</strong>
+    <span class="meta">d-krupke.github.io/cpsat-primer/modelling.html</span>
+    <span class="desc">AddMaxEquality·AddAbsEquality·가중합·사전식 최적화 코드 예제 포함. 실전 CP-SAT 최고의 레퍼런스.</span>
+  </li>
+  <li>
+    <strong>CP-SAT Primer — Coding Patterns (Multi-Objective)</strong>
+    <span class="meta">d-krupke.github.io/cpsat-primer/coding_patterns.html</span>
+    <span class="desc">fix_current_objective + warm-start hint 패턴, 다목적 사전식 확장 클래스 설계.</span>
+  </li>
+  <li>
+    <strong>Google OR-Tools: Weighted Tardiness SAT (C++ 예제)</strong>
+    <span class="meta">github.com/google/or-tools/blob/main/examples/cpp/weighted_tardiness_sat.cc</span>
+    <span class="desc">OR-Tools 공식 가중 지연합 예제. tardiness_var ≥ end − due 패턴의 원형.</span>
+  </li>
+  <li>
+    <strong>A Practical Introduction to Constraint Programming using CP-SAT</strong>
+    <span class="meta">pganalyze.com/blog/a-practical-introduction-to-constraint-programming-using-cp-sat</span>
+    <span class="desc">AddMaxEquality 워크로드 불균형, AddMinEquality 공정성 예제, minimize(max−min) 패턴.</span>
+  </li>
+  <li>
+    <strong>OR-Tools CP-SAT Python API Reference</strong>
+    <span class="meta">or-tools.github.io/docs/pdoc/ortools/sat/python/cp_model.html</span>
+    <span class="desc">add_max_equality·add_abs_equality·add_element·add_allowed_assignments 공식 시그니처.</span>
+  </li>
+  <li>
+    <strong>CP-SAT for Scheduling — Laurent Perron (Google)</strong>
+    <span class="meta">schedulingseminar.com/presentations/SchedulingSeminar_LaurentPerron.pdf</span>
+    <span class="desc">CP-SAT 개발자 Laurent Perron의 스케줄링 슬라이드. int64 오버플로우 주의사항, 목적식 스케일링 팁 포함.</span>
+  </li>
+  <li>
+    <strong>Multi-objective optimization with CP-SAT (GitHub issue #1344)</strong>
+    <span class="meta">github.com/google/or-tools/issues/1344</span>
+    <span class="desc">다목적 최적화 패턴 토론. 사전식·가중합·고정 비율 방법론 비교.</span>
+  </li>
+  <li>
+    <strong>Recipes for Google OR-Tools (xiang.es)</strong>
+    <span class="meta">xiang.es/posts/cp-sat/</span>
+    <span class="desc">AddMultiplicationEquality·AddElement·AddMinEquality 실전 레시피 모음.</span>
+  </li>
+</ul>
+
+<h2 id="github">GitHub · 자료</h2>
+
+<ul class="refs">
+  <li class="repo">
+    <strong>d-krupke/cpsat-primer</strong>
+    <span class="meta">github.com/d-krupke/cpsat-primer</span>
+    <span class="desc">CP-SAT 최고 비공식 가이드. Jupyter 노트북 예제 포함. 목적함수 챕터 직접 실행 가능.</span>
+  </li>
+  <li class="repo">
+    <strong>google/or-tools (examples/python)</strong>
+    <span class="meta">github.com/google/or-tools/tree/stable/ortools/sat/python</span>
+    <span class="desc">공식 파이썬 예제 디렉터리. scheduling_sat.py, assignment_with_constraints_sat.py 등 참조.</span>
+  </li>
+  <li class="repo">
+    <strong>cpsat-utils (piecewise linear helper)</strong>
+    <span class="meta">pypi.org/project/cpsat-utils/</span>
+    <span class="desc">PiecewiseLinearFunction 클래스. 볼록/오목 함수의 상하한 제약 자동 생성, LCM 스케일링 내장.</span>
+  </li>
+  <li class="repo">
+    <strong>hakank/google_or_tools (cp_sat_utils.py)</strong>
+    <span class="meta">hakank.org/google_or_tools/cp_sat_utils.py</span>
+    <span class="desc">AddAbsEquality·AddElement 등을 래핑한 유틸 모음. 학습용 참고.</span>
+  </li>
+</ul>
+
+<div class="footer">
+  <a href="index.html">← 개요로</a>
+  &nbsp;·&nbsp;
+  <a href="04-packing.html">← 04 패킹·배치</a>
+  &nbsp;·&nbsp;
+  <a href="06-search-params.html">06 탐색·파라미터 →</a>
+  <br><br>
+  CP-SAT Methodology Research · OGC 2026 · 2026-06-17
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

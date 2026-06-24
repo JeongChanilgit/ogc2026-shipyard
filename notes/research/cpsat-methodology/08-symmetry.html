@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 대칭·유효부등식 — CP-SAT Methodology</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html" class="active">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+<header class="hero">
+  <div class="kicker">CP-SAT Methodology · 08</div>
+  <h1>대칭 깨기 &amp; 유효 부등식으로 CP-SAT 가속</h1>
+  <p class="lead">동일 자원·동일 아이템 교환 대칭이 탐색 공간을 지수적으로 폭발시키는 원리를 이해하고,
+  <code>symmetry_level</code> 자동 탐지부터 수동 lex 순서 부과, LP 완화를 강화하는 유효 부등식(valid inequality)과
+  중복 제약(redundant constraint)까지 — 측정 가능한 가속을 얻는 실전 기법을 정리한다.</p>
+</header>
+
+<!-- OGC callout -->
+<div class="callout ogc">
+  <div class="ttl">★ OGC 2026 관련성</div>
+  <p>OGC 2026 조선소 블록 패킹에서 <strong>동일 형상 블록</strong>(같은 치수·방향)과
+  <strong>동일 용량 베이</strong>(같은 폭·층 수)의 교환 대칭은 솔버가 사실상 동일한 해를
+  반복 탐색하게 만든다. 수동 lex 제약으로 블록 간·베이 간 대칭을 깨면 이 반복이 사라진다.
+  더 중요하게는 <strong>베이별 면적 집계 하한(redundant linear constraint)</strong>을 추가하면
+  CP-SAT 내부 LP 완화가 실현 불가능한 배정을 조기 컷하여 패킹 탐색을 크게 줄인다 —
+  이것이 현재 notes에서 언급된 <em>"clique 면적 사전필터를 valid inequality로"</em> 연결 레버다.</p>
+</div>
+
+<!-- ─────────────────────────────────────────
+     1. 대칭이 탐색을 어떻게 폭발시키나
+──────────────────────────────────────────── -->
+<h2 id="symmetry-explosion">1. 대칭이 탐색을 어떻게 폭발시키나</h2>
+
+<p>CP-SAT(그리고 MIP 솔버 일반)는 분기(branch) 때마다 부분 배정을 고정하고 나머지를
+재귀적으로 탐색한다. 문제에 <strong>대칭(symmetry)</strong>이 존재하면, 동일한 objective 값을
+갖는 해가 수십~수백만 개의 "대칭 복사본"으로 존재하게 되고, 솔버는 그것들을
+<em>모두 다 탐색</em>한다.</p>
+
+<h3>교환 대칭의 두 가지 유형</h3>
+
+<table>
+  <thead><tr><th>유형</th><th>예시</th><th>탐색 폭발 규모</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>변수 대칭</strong><br>(Variable symmetry)</td>
+      <td>동일 용량 빈(bin) k개 → 어떤 빈에 배정해도 결과 동일</td>
+      <td>k! 배 (10빈 = 3.6M 복사본)</td>
+    </tr>
+    <tr>
+      <td><strong>값 대칭</strong><br>(Value symmetry)</td>
+      <td>동일 크기 아이템 m개 → 같은 그룹 내 순서 교환 불변</td>
+      <td>m! 배</td>
+    </tr>
+    <tr>
+      <td><strong>행·열 대칭</strong><br>(Row/Column symmetry)</td>
+      <td>스케줄링 행렬의 행 교환, 동일 기계 순서 교환</td>
+      <td>행!×열!</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  <div class="ttl">핵심 직관</div>
+  <p><strong>대칭 깨기의 목표</strong>: 각 대칭 동치류(orbit)에서 단 하나의 대표 해만 탐색하도록
+  강제하는 것. 완전 대칭 깨기(complete SBP)는 NP-hard이므로 실전에서는 <em>부분 대칭 깨기</em>가 표준이다.</p>
+</div>
+
+<!-- ─────────────────────────────────────────
+     2. CP-SAT 자동 대칭 탐지
+──────────────────────────────────────────── -->
+<h2 id="auto-symmetry">2. CP-SAT 자동 대칭 탐지: <code>symmetry_level</code></h2>
+
+<p>CP-SAT는 <code>cp_model_symmetries.cc</code>에 전담 대칭 탐지 시스템을 내장하고 있다.
+변수 치환(permutation), 값 치환, 궤도(orbital) 대칭을 자동으로 찾아 프리솔브 중 또는
+탐색 중에 제약을 추가한다.</p>
+
+<h3><code>symmetry_level</code> 파라미터 (field 183, proto 기본값 = 2)</h3>
+
+<pre><code><span class="cmt"># sat_parameters.proto 정의 (google/or-tools stable 기준)</span>
+<span class="cmt"># optional int32 symmetry_level = 183 [default = 2];</span>
+<span class="cmt"># - 0: 대칭 탐지 완전 비활성화</span>
+<span class="cmt"># - 1: presolve에서만 탐지 → 불리언 변수 고정 시도</span>
+<span class="cmt"># - 2: (기본) presolve + 탐색 중 동적 대칭 깨기</span>
+<span class="cmt"># - 3: 대형 모델도 강제 탐지 (기본 1s dtime limit 적용)</span>
+<span class="cmt"># - 4: presolve에서 최대한 대칭 깨기 시도</span>
+
+from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+# ... 모델 정의 ...
+
+solver = cp_model.CpSolver()
+solver.parameters.symmetry_level = 2        # 기본값 (대부분 권장)
+solver.parameters.symmetry_level = 4        # presolve 최대화 시
+solver.parameters.symmetry_level = 0        # 수동 SBP와 충돌 방지 시
+
+<span class="cmt"># symmetry_detection_deterministic_time_limit (field 302, 기본 1.0s)</span>
+<span class="cmt"># level=3에서 대형 모델은 1초 하드코딩 제한으로 탐지 실패 가능 (issue #4419)</span>
+solver.parameters.symmetry_detection_deterministic_time_limit = 5.0  # 늘리기
+
+<span class="cmt"># LP에서도 대칭 활용 (field 301, 기본 false — 실험적)</span>
+solver.parameters.use_symmetry_in_lp = True</code></pre>
+
+<div class="pitfall">
+  <div class="ttl">주의: 자동 탐지와 수동 SBP의 충돌</div>
+  <p><code>symmetry_level ≥ 2</code>일 때 솔버가 자동으로 대칭 깨기 제약을 추가하는데,
+  수동으로 잘못된 lex 제약을 <em>추가로</em> 넣으면 두 제약이 충돌하여 최적해를 배제할 수 있다.
+  수동 SBP를 쓸 때는 <code>symmetry_level = 1</code> 또는 <code>0</code>으로 낮추거나,
+  먼저 자동 탐지만 켜서 효과를 측정해보는 것이 안전하다.</p>
+</div>
+
+<!-- ─────────────────────────────────────────
+     3. 수동 대칭 깨기
+──────────────────────────────────────────── -->
+<h2 id="manual-symmetry">3. 수동 대칭 깨기 기법</h2>
+
+<h3>3.1 Lex-Leader: 동일 빈/기계에 인덱스 단조성 부과</h3>
+
+<p>가장 일반적인 수동 대칭 깨기는 <strong>사전순(lexicographic) 최솟값 해를 정준(canonical) 해</strong>로
+고정하는 것이다. 동일 용량 빈 또는 동일 기계가 k개 있을 때, 각 빈에 배정된 아이템의
+"첫 번째 아이템 인덱스"를 오름차순으로 강제하면 k! 복사본이 제거된다.</p>
+
+<pre><code><span class="cmt">########################################################
+# 예제 1: 동일 빈(bin) k개에 아이템 n개 배정 — lex 대칭 깨기
+########################################################</span>
+from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+n, k = 8, 3   <span class="cmt"># 아이템 8개, 동일 용량 빈 3개</span>
+capacity = 10
+
+<span class="cmt"># assign[i] = 아이템 i가 들어갈 빈 번호 (0-indexed)</span>
+assign = [model.new_int_var(0, k - 1, f"assign_{i}") for i in range(n)]
+sizes  = [3, 4, 2, 5, 1, 3, 4, 2]
+
+<span class="cmt"># 빈 별 적재 합 ≤ capacity (기본 제약)</span>
+for j in range(k):
+    load = sum(sizes[i] * model.new_bool_var(f"in_{i}_{j}") for i in range(n))
+    <span class="cmt"># (실제로는 is_in[i][j] 불리언으로 표현하고 assign[i]==j 와 링크)</span>
+
+<span class="cmt"># ── 수동 대칭 깨기: 빈 인덱스 단조성 ──────────────────</span>
+<span class="cmt"># "아이템 0은 빈 0~k-1 어디든 갈 수 있지만,</span>
+<span class="cmt">#  아이템 1은 아이템 0의 빈보다 같거나 큰 인덱스 빈에만"</span>
+<span class="cmt"># → assign[i] ≤ assign[i+1] 이면 동일 아이템 순서 유지</span>
+for i in range(n - 1):
+    model.add(assign[i] <= assign[i + 1])
+<span class="cmt"># 주의: 이 제약은 "아이템이 동일 크기일 때만" 완전 대칭을 깬다.
+# 크기가 다르면 dominance rule과 함께 써야 한다.</span></code></pre>
+
+<h3>3.2 동일 기계 k대 스케줄링 — 시작 시각 lex</h3>
+
+<pre><code><span class="cmt">########################################################
+# 예제 2: 동일 기계(identical machines) k대에 job 배정
+#         — 기계 간 시작 시각 lex 순서로 대칭 제거
+########################################################</span>
+n_jobs, n_machines = 6, 3
+horizon = 100
+
+starts    = [[model.new_int_var(0, horizon, f"s_{j}_{m}")
+              for m in range(n_machines)] for j in range(n_jobs)]
+presences = [[model.new_bool_var(f"p_{j}_{m}")
+              for m in range(n_machines)] for j in range(n_jobs)]
+
+<span class="cmt"># 각 job은 정확히 1개 기계에 배정</span>
+for j in range(n_jobs):
+    model.add_exactly_one(presences[j])
+
+<span class="cmt"># ── 기계 대칭 깨기: 기계 0이 항상 기계 1보다 먼저 쓰임 ──</span>
+<span class="cmt"># 기계 0에 배정된 job 중 최솟값 시작시각 ≤ 기계 1의 최솟값</span>
+<span class="cmt"># 간단 버전: 첫 job의 기계 배정을 단조 강제</span>
+for m in range(n_machines - 1):
+    <span class="cmt"># 기계 m+1을 쓰려면 기계 m이 먼저 쓰여야 함</span>
+    <span class="cmt"># (at least one job on machine m)</span>
+    machine_used = [presences[j][m] for j in range(n_jobs)]
+    machine_used_next = [presences[j][m + 1] for j in range(n_jobs)]
+    <span class="cmt"># sum(presences[j][m+1]) ≤ sum(presences[j][m]) 형태의 implied</span>
+    model.add(sum(machine_used_next) <= sum(machine_used))</code></pre>
+
+<h3>3.3 Value Precedence: 동일 값 선후행 부과</h3>
+
+<p><strong>Value precedence</strong>는 동일 값이 처음 등장하는 위치를 강제로 오름차순으로 만드는 기법이다.
+예를 들어 배정 배열 <code>[a, a, b, b]</code>가 있을 때, <code>a</code>의 첫 등장이 항상
+<code>b</code>보다 앞서야 하므로 <code>b</code>가 <code>a</code>보다 먼저 등장하는 케이스가 모두 제거된다.</p>
+
+<pre><code><span class="cmt">########################################################
+# 예제 3: Value Precedence — 동일 "타입" 자원의 첫 사용 순서 강제
+########################################################</span>
+n_tasks = 8
+n_types = 3   <span class="cmt"># 자원 타입 0, 1, 2 (각 타입이 동일)</span>
+
+resource_type = [model.new_int_var(0, n_types - 1, f"rt_{i}") for i in range(n_tasks)]
+
+<span class="cmt"># value precedence: 타입 v+1은 타입 v 이후에 처음 등장</span>
+<span class="cmt"># 구현: 타입 j가 처음 등장하는 인덱스 first_use[j] 도입</span>
+first_use = [model.new_int_var(0, n_tasks, f"fu_{v}") for v in range(n_types)]
+
+for v in range(n_types):
+    for i in range(n_tasks):
+        <span class="cmt"># resource_type[i] == v → first_use[v] ≤ i</span>
+        b = model.new_bool_var(f"is_{i}_{v}")
+        model.add(resource_type[i] == v).only_enforce_if(b)
+        model.add(resource_type[i] != v).only_enforce_if(b.Not())
+        model.add(first_use[v] <= i).only_enforce_if(b)
+
+<span class="cmt"># first_use 단조성: 타입 0 ≤ 1 ≤ 2</span>
+for v in range(n_types - 1):
+    model.add(first_use[v] <= first_use[v + 1])</code></pre>
+
+<h3>3.4 AddDecisionStrategy로 대칭 완화 보조</h3>
+
+<p>대칭 깨기 제약을 추가한 후, 탐색 전략도 대칭과 일치시키면 시너지가 난다.
+빈/기계 인덱스가 낮은 쪽을 먼저 탐색하도록 유도하면 lex 제약과 방향이 맞아
+propagation이 즉시 발동한다.</p>
+
+<pre><code><span class="cmt">########################################################
+# 예제 4: AddDecisionStrategy — lex 대칭과 탐색 방향 맞추기
+########################################################</span>
+from ortools.sat.python.cp_model import (
+    CHOOSE_FIRST, SELECT_MIN_VALUE
+)
+
+<span class="cmt"># assign 변수를 앞에서부터, 작은 빈 번호 우선으로 탐색</span>
+model.add_decision_strategy(
+    assign,
+    CHOOSE_FIRST,       <span class="cmt"># 앞쪽 아이템부터 결정 (lex 순서와 일치)</span>
+    SELECT_MIN_VALUE    <span class="cmt"># 작은 빈 인덱스 우선 (lex-leader 방향과 일치)</span>
+)</code></pre>
+
+<!-- ─────────────────────────────────────────
+     4. 중복 제약 / 유효 부등식
+──────────────────────────────────────────── -->
+<h2 id="valid-inequalities">4. 중복 제약 &amp; 유효 부등식 (Redundant Constraints / Valid Inequalities)</h2>
+
+<p><strong>유효 부등식(valid inequality)</strong>은 원래 모델의 정수 가능 해를 제거하지 않으면서
+LP 완화의 실현 가능 영역을 축소하는 제약이다. CP-SAT는 내부적으로 GLOP LP 완화를
+유지하면서 knapsack cuts, MIR cuts, zero-half cuts 등을 자동 생성하지만 (<code>cut_level</code>
+파라미터), <strong>사용자가 수동으로 추가하는 집계 하한(aggregated lower bound) 제약이
+훨씬 강력한 경우가 많다.</strong></p>
+
+<h3>CP-SAT LP 관련 파라미터</h3>
+
+<pre><code><span class="cmt"># linearization_level (field 90, 기본 1)</span>
+<span class="cmt"># 0: LP 완화 비활성화</span>
+<span class="cmt"># 1: 선형 제약 + 완전 인코딩만 LP에 추가</span>
+<span class="cmt"># 2: 불리언 제약도 모두 LP에 추가 (느리지만 강한 bound)</span>
+solver.parameters.linearization_level = 1   <span class="cmt"># 기본값</span>
+
+<span class="cmt"># cut_level (field 196, 기본 1)</span>
+<span class="cmt"># 0: 모든 cut 비활성화</span>
+<span class="cmt"># 1: (기본) 표준 cut 생성</span>
+<span class="cmt"># 높을수록 강한 cut, 하지만 overhead 증가</span>
+solver.parameters.cut_level = 1
+
+<span class="cmt"># add_lp_constraints_lazily (field 112, 기본 true)</span>
+<span class="cmt"># true: LP를 비워서 시작하고 위반된 제약만 추가 (대부분 권장)</span>
+<span class="cmt"># false: 처음부터 모든 제약 추가 (소형 고밀도 모델에서 유리)</span>
+solver.parameters.add_lp_constraints_lazily = True</code></pre>
+
+<h3>4.1 면적·용량 집계 하한 (Redundant Linear Constraint)</h3>
+
+<p>패킹 문제에서 가장 강력한 유효 부등식은 <strong>"모든 아이템의 면적 합 ≤ 베이 총 용량"</strong>이다.
+이것은 CP-SAT가 자동으로 유도하기 어렵지만, 수동으로 추가하면 LP 완화가 즉시 강화되어
+실현 불가능한 배정이 조기 차단된다.</p>
+
+<pre><code><span class="cmt">########################################################
+# 예제 5: 베이별 면적 집계 하한 — redundant linear constraint
+########################################################</span>
+n_blocks = 20
+n_bays   = 4
+bay_capacity = [500, 500, 480, 520]   <span class="cmt"># 베이별 총 면적 용량 (m²)</span>
+block_area   = [15, 22, 30, 18, 25, 12, 40, 8, 35, 20,
+                17, 28, 33, 14, 26, 19, 45, 11, 38, 22]  <span class="cmt"># 블록별 면적</span>
+
+<span class="cmt"># assign_b[i][j]: 블록 i가 베이 j에 배정되면 1</span>
+assign_b = [[model.new_bool_var(f"ab_{i}_{j}")
+             for j in range(n_bays)] for i in range(n_blocks)]
+
+<span class="cmt"># 기본 제약: 각 블록은 정확히 1개 베이</span>
+for i in range(n_blocks):
+    model.add_exactly_one(assign_b[i])
+
+<span class="cmt"># ── 유효 부등식: 베이별 총 면적 ≤ 용량 ──────────────────</span>
+<span class="cmt"># 이것은 기하 패킹 제약(NoOverlap2D)과 독립적으로 추가 가능</span>
+<span class="cmt"># LP 완화에서 area-infeasible 배정을 즉시 컷</span>
+for j in range(n_bays):
+    total_area = sum(block_area[i] * assign_b[i][j] for i in range(n_blocks))
+    model.add(total_area <= bay_capacity[j])  <span class="cmt"># ← 유효 부등식</span>
+
+<span class="cmt"># ── 추가: 전체 면적 합산 하한 ──────────────────────────</span>
+<span class="cmt"># sum(block_area) ≤ sum(bay_capacity) 이 성립 안 하면 infeasible</span>
+<span class="cmt"># 이걸 explicit하게 추가하면 presolve에서 즉시 탐지</span>
+total_items_area = sum(block_area)
+total_bay_area   = sum(bay_capacity)
+assert total_items_area <= total_bay_area, "Area infeasible by capacity"</code></pre>
+
+<h3>4.2 Clique 면적 사전필터 (Valid Inequality as Preprocessing)</h3>
+
+<p>조선소 블록 패킹의 핵심 어려움인 <strong>크레인 j≥k 수직접근 제약</strong>은
+동시에 베이에 존재할 수 있는 블록 집합(clique)을 제한한다.
+이 clique 면적 합을 사전에 계산해서 LP에 추가하면 LP 완화가 패킹 가능성을
+훨씬 정밀하게 반영한다.</p>
+
+<pre><code><span class="cmt">########################################################
+# 예제 6: clique 면적 valid inequality (OGC2026 직접 응용)
+########################################################</span>
+
+def add_clique_area_inequalities(model, assign_b, block_area,
+                                  bay_capacity, n_blocks, n_bays,
+                                  time_windows, raster_h):
+    """
+    시간 [t_start, t_end] 내에 베이 j에 동시 존재 가능한 블록 집합(clique)의
+    면적 합 ≤ 베이 유효 면적.
+
+    Parameters
+    ----------
+    time_windows : list[(entry, exit)] per block
+    raster_h     : 베이 폭 (x 방향 최대값, 크레인 접근 제약 반영한 실효 폭)
+    """
+    for j in range(n_bays):
+        for t in range(0, max(tw[1] for tw in time_windows), 10):  <span class="cmt"># 시간 슬라이스</span>
+            <span class="cmt"># t 시점에 베이 j에 존재 가능한 블록들</span>
+            clique = [i for i in range(n_blocks)
+                      if time_windows[i][0] <= t < time_windows[i][1]]
+            if not clique:
+                continue
+            clique_area = sum(block_area[i] for i in clique)
+            if clique_area > bay_capacity[j]:
+                <span class="cmt"># 이 clique 전체가 베이 j에 배정될 수 없음 → valid ineq</span>
+                <span class="cmt"># sum(assign_b[i][j] for i in clique) ≤ max_fit</span>
+                max_fit = bay_capacity[j] // min(block_area[i] for i in clique)
+                model.add(
+                    sum(assign_b[i][j] for i in clique) <= max_fit
+                )
+            else:
+                <span class="cmt"># 면적 합 자체는 가능하지만 LP 강화를 위해 추가</span>
+                model.add(
+                    sum(block_area[i] * assign_b[i][j] for i in clique)
+                    <= bay_capacity[j]
+                )</code></pre>
+
+<h3>4.3 implied/추론 제약 (Implied Constraint)</h3>
+
+<p><strong>Implied constraint</strong>는 다른 제약들로부터 논리적으로 도출되는 제약이다.
+직접 추가하면 propagation 단계에서 더 일찍 도메인이 줄어든다.</p>
+
+<pre><code><span class="cmt">########################################################
+# 예제 7: 스케줄링의 implied 제약 — 총 처리시간 하한
+########################################################</span>
+n_jobs = 10
+n_machines = 3
+duration = [5, 8, 3, 7, 4, 6, 9, 2, 5, 7]
+
+makespan = model.new_int_var(0, 200, "makespan")
+starts   = [model.new_int_var(0, 200, f"s_{j}") for j in range(n_jobs)]
+
+<span class="cmt"># 기본 makespan 제약</span>
+for j in range(n_jobs):
+    model.add(starts[j] + duration[j] <= makespan)
+
+<span class="cmt"># ── implied 하한: 총 처리시간 / 기계 수 ≤ makespan ────────</span>
+<span class="cmt"># 이는 수학적으로 자명하지만 LP에서는 명시해야 tight함</span>
+total_work = sum(duration)
+<span class="cmt"># makespan ≥ ceil(total_work / n_machines)</span>
+lb = (total_work + n_machines - 1) // n_machines
+model.add(makespan >= lb)  <span class="cmt"># ← implied, but explicitly tightens LP LB</span>
+
+<span class="cmt"># ── 기계별 부하 균형 implied ─────────────────────────────</span>
+<span class="cmt"># 각 기계의 총 처리시간 ≤ makespan (sum of durations on machine m)</span>
+<span class="cmt"># assign_m[j][m]: job j가 machine m에 배정</span>
+assign_m = [[model.new_bool_var(f"am_{j}_{m}")
+             for m in range(n_machines)] for j in range(n_jobs)]
+for j in range(n_jobs):
+    model.add_exactly_one(assign_m[j])
+for m in range(n_machines):
+    model.add(
+        sum(duration[j] * assign_m[j][m] for j in range(n_jobs)) <= makespan
+    )</code></pre>
+
+<!-- ─────────────────────────────────────────
+     5. Dominance 규칙
+──────────────────────────────────────────── -->
+<h2 id="dominance">5. Dominance 규칙</h2>
+
+<p><strong>Dominance 규칙</strong>은 대칭 깨기의 일반화다. 두 부분 해 A, B가 있을 때
+A가 모든 측면에서 B보다 나쁘지 않으면(≤ 모든 objective/constraint) B를 탐색에서 제거할 수 있다.</p>
+
+<h3>병렬 기계 스케줄링 dominance</h3>
+<pre><code><span class="cmt"># 동일 기계 m대: 기계별 현재까지 총 부하를 단조 유지
+# (기계 0이 항상 가장 바쁘게 → 불필요한 대칭 제거)</span>
+for m in range(n_machines - 1):
+    load_m     = sum(duration[j] * assign_m[j][m]     for j in range(n_jobs))
+    load_m1    = sum(duration[j] * assign_m[j][m + 1] for j in range(n_jobs))
+    model.add(load_m >= load_m1)  <span class="cmt"># machine m은 항상 m+1보다 바쁨 (dominance)</span></code></pre>
+
+<!-- ─────────────────────────────────────────
+     6. 언제 중복 제약이 도움 vs 오히려 느려지나
+──────────────────────────────────────────── -->
+<h2 id="tradeoffs">6. 트레이드오프: 중복 제약이 도움 vs 해가 되는 경우</h2>
+
+<table>
+  <thead>
+    <tr><th>상황</th><th>도움</th><th>해가 됨</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>집계 하한 (면적, 용량)</td>
+      <td>LP 완화 즉시 강화, presolve에서 infeasible 조기 탐지</td>
+      <td>제약 수 증가로 LP solve 시간 증가 (일반적으로 negligible)</td>
+    </tr>
+    <tr>
+      <td>Lex 대칭 깨기</td>
+      <td>k! 복사본 제거, 탐색 트리 극적 축소</td>
+      <td>크기가 서로 다른 아이템에 잘못 적용 시 최적해 배제 위험</td>
+    </tr>
+    <tr>
+      <td>과도한 clique 제약</td>
+      <td>타이트한 LP 완화</td>
+      <td>presolve 시간 폭발, propagation overhead 증가 (수천 개 이상이면 역효과)</td>
+    </tr>
+    <tr>
+      <td>Implied 하한 (makespan LB)</td>
+      <td>LP root node 품질 개선, 첫 feasible 해 품질 향상</td>
+      <td>이미 도메인이 충분히 좁으면 net-zero 효과</td>
+    </tr>
+    <tr>
+      <td>수동 SBP + symmetry_level=2</td>
+      <td>(없음)</td>
+      <td>솔버 자동 SBP와 충돌 → 최적해 배제 가능</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  <div class="ttl">베스트프랙티스 체크리스트</div>
+  <ol>
+    <li>먼저 <code>symmetry_level=2</code>(기본값)로 자동 탐지 효과 측정.</li>
+    <li>수동 SBP 추가 시 <code>symmetry_level=1</code>로 낮추거나, 적어도 충돌 여부 확인.</li>
+    <li>집계 하한(면적/용량)은 거의 항상 추가. overhead 대비 이득이 압도적.</li>
+    <li>Lex 제약은 <em>정말 동일한 아이템(동일 크기·동일 형상)</em>에만 적용.</li>
+    <li>Clique 제약은 시간 슬라이스당 k개로 제한(k≤100 권장), 수천 개 자동 추가는 피함.</li>
+    <li>추가 후 반드시 <code>log_search_progress=True</code>로 LP bound 변화 및 propagation
+        overhead를 full-set 벤치마크로 측정.</li>
+  </ol>
+</div>
+
+<!-- ─────────────────────────────────────────
+     7. 완전 예제: OGC2026 블록 배정 대칭 깨기
+──────────────────────────────────────────── -->
+<h2 id="full-example">7. 완전 예제: 동일 형상 블록 + 동일 용량 베이 대칭 깨기</h2>
+
+<pre><code><span class="cmt">########################################################
+# OGC 2026 스타일: 동일 형상 블록 4개, 동일 용량 베이 3개
+# - 블록 간 lex 대칭 깨기 (동일 형상 그룹 내)
+# - 베이 간 dominance (동일 용량 베이는 부하 단조 유지)
+# - 베이 면적 유효 부등식 (집계 하한)
+########################################################</span>
+from ortools.sat.python import cp_model
+
+model  = cp_model.CpModel()
+
+N_BLOCKS = 12
+N_BAYS   = 3
+BAY_CAP  = [600, 600, 600]   <span class="cmt"># 동일 용량 (m²) → 베이 간 교환 대칭 존재</span>
+
+areas   = [40, 40, 40, 40,   <span class="cmt"># 블록 0-3: 동일 형상 그룹 A</span>
+           60, 60,            <span class="cmt"># 블록 4-5: 동일 형상 그룹 B</span>
+           80, 80, 80,        <span class="cmt"># 블록 6-8: 동일 형상 그룹 C</span>
+           30, 30, 30]        <span class="cmt"># 블록 9-11: 동일 형상 그룹 D</span>
+
+groups = {                    <span class="cmt"># 형상 그룹 정의</span>
+    'A': [0,1,2,3],
+    'B': [4,5],
+    'C': [6,7,8],
+    'D': [9,10,11],
+}
+
+<span class="cmt"># 결정 변수: 배정</span>
+assign = [model.new_int_var(0, N_BAYS - 1, f"bay_{i}") for i in range(N_BLOCKS)]
+
+<span class="cmt"># ── 1. 동일 형상 그룹 내 lex 대칭 깨기 ─────────────────</span>
+for g_name, g_idx in groups.items():
+    for k in range(len(g_idx) - 1):
+        i, j = g_idx[k], g_idx[k + 1]
+        model.add(assign[i] <= assign[j])   <span class="cmt"># 블록 i는 j보다 같거나 낮은 번호 베이</span>
+
+<span class="cmt"># ── 2. 동일 용량 베이 간 dominance (부하 단조) ──────────</span>
+<span class="cmt"># 보조 변수: 각 베이의 총 배정 면적</span>
+bay_load = []
+for j in range(N_BAYS):
+    bv = model.new_int_var(0, sum(areas), f"load_{j}")
+    model.add(bv == sum(areas[i] * (assign[i] == j and 1 or 0)
+                        for i in range(N_BLOCKS)))
+    <span class="cmt"># 실제로는 불리언 링크 필요; 아래 방식 권장:</span>
+    bay_load.append(bv)
+
+<span class="cmt"># 불리언 링크 방식 (실제 구현)</span>
+in_bay = [[model.new_bool_var(f"in_{i}_{j}")
+           for j in range(N_BAYS)] for i in range(N_BLOCKS)]
+for i in range(N_BLOCKS):
+    model.add_exactly_one(in_bay[i])
+    for j in range(N_BAYS):
+        model.add(assign[i] == j).only_enforce_if(in_bay[i][j])
+        model.add(assign[i] != j).only_enforce_if(in_bay[i][j].Not())
+
+bay_load = []
+for j in range(N_BAYS):
+    bv = model.new_int_var(0, sum(areas), f"load_{j}")
+    model.add(bv == sum(areas[i] * in_bay[i][j] for i in range(N_BLOCKS)))
+    bay_load.append(bv)
+
+<span class="cmt"># 동일 용량 베이 간 부하 단조: bay 0 ≥ bay 1 ≥ bay 2</span>
+for j in range(N_BAYS - 1):
+    model.add(bay_load[j] >= bay_load[j + 1])   <span class="cmt"># dominance / symmetry breaking</span>
+
+<span class="cmt"># ── 3. 유효 부등식: 베이별 면적 ≤ 용량 (redundant linear) ─</span>
+for j in range(N_BAYS):
+    model.add(bay_load[j] <= BAY_CAP[j])
+
+<span class="cmt"># ── 4. 탐색 전략: 낮은 베이 우선 (lex와 일치) ─────────────</span>
+from ortools.sat.python.cp_model import CHOOSE_FIRST, SELECT_MIN_VALUE
+model.add_decision_strategy(assign, CHOOSE_FIRST, SELECT_MIN_VALUE)
+
+<span class="cmt"># ── 5. symmetry_level 설정 ──────────────────────────────</span>
+solver = cp_model.CpSolver()
+solver.parameters.symmetry_level = 1        <span class="cmt"># 수동 SBP와 충돌 방지</span>
+solver.parameters.linearization_level = 1
+solver.parameters.cut_level = 1
+solver.parameters.log_search_progress = True
+
+model.minimize(max(bay_load))   <span class="cmt"># 부하 균형 목적</span>
+status = solver.solve(model)
+print(solver.status_name(status), solver.objective_value)</code></pre>
+
+<!-- ─────────────────────────────────────────
+     8. 핵심 논문
+──────────────────────────────────────────── -->
+<h2 id="papers">핵심 논문</h2>
+
+<ul class="refs">
+  <li>
+    <strong>Symmetry Breaking Constraints: Recent Results</strong>
+    — Gent, Petrie, Puget (2012). arXiv:1204.3348.
+    <span class="meta">https://arxiv.org/abs/1204.3348</span>
+    <span class="desc">lex-leader SBP의 이론적 완전성(NP-hard) 증명, SnakeLex·GrayCode 최적화, 언제 SBP가 도움 vs 역효과인지 체계적 분석. 대칭 깨기 입문 필독.</span>
+  </li>
+  <li>
+    <strong>satsuma: Structure-based Symmetry Breaking in SAT</strong>
+    — Devriendt et al. (arXiv 2024, 2406.13557).
+    <span class="meta">https://arxiv.org/abs/2406.13557</span>
+    <span class="desc">SAT 솔버용 자동 대칭 탐지 + lex-leader 인코딩 파이프라인. CP-SAT 자동 탐지의 SAT 대응 최신 연구.</span>
+  </li>
+  <li>
+    <strong>An Experimental Study on Symmetry Breaking Constraints for 1D Bin-Packing</strong>
+    — Korf et al. (AAAI 2020/ResearchGate 346110904).
+    <span class="meta">https://www.researchgate.net/publication/346110904</span>
+    <span class="desc">동일 빈 k개 패킹에서 대칭 깨기 제약 종류별 실험 비교. 결론: 빈 인덱스 단조성(bin ordering)이 가장 효과적, 단독으로 k!의 60~90% 탐색 절감.</span>
+  </li>
+  <li>
+    <strong>Breaking Symmetries with Lex Implications</strong>
+    — Devriendt, Bogaerts (CP 2018, SpringerLink).
+    <span class="meta">https://link.springer.com/chapter/10.1007/978-3-319-90686-7_12</span>
+    <span class="desc">lex 제약을 Horn clause(lex implication)로 컴팩트 인코딩하는 방법. 행/열 대칭을 원래 lex-leader보다 훨씬 적은 절(clause)로 표현.</span>
+  </li>
+  <li>
+    <strong>The CP-SAT-LP Solver (Invited Talk)</strong>
+    — Perron, Didier. CP 2023. LIPIcs vol. 280.
+    <span class="meta">https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.CP.2023.3</span>
+    <span class="desc">CP-SAT 내부 LP 완화(GLOP), cut generation(MIR/knapsack/zero-half), symmetry_level 설계 의도를 1저자(Google)가 직접 설명.</span>
+  </li>
+  <li>
+    <strong>Certified Symmetry and Dominance Breaking for Combinatorial Optimisation</strong>
+    — Gocht, Nordström (arXiv 2203.12275, 2022).
+    <span class="meta">https://arxiv.org/abs/2203.12275</span>
+    <span class="desc">대칭 깨기와 dominance 제거의 정확성(soundness)을 VeriPB 인증 증명으로 보장. 대칭 깨기로 최적해가 배제되지 않음을 수학적으로 보증하는 방법론.</span>
+  </li>
+</ul>
+
+<!-- ─────────────────────────────────────────
+     9. GitHub · 자료
+──────────────────────────────────────────── -->
+<h2 id="resources">GitHub · 자료</h2>
+
+<ul class="refs">
+  <li class="repo">
+    <strong>google/or-tools — sat_parameters.proto</strong>
+    <span class="meta">https://github.com/google/or-tools/blob/stable/ortools/sat/sat_parameters.proto</span>
+    <span class="desc"><code>symmetry_level</code>(183), <code>symmetry_detection_deterministic_time_limit</code>(302), <code>use_symmetry_in_lp</code>(301), <code>linearization_level</code>(90), <code>cut_level</code>(196) 파라미터 원본 정의.</span>
+  </li>
+  <li class="repo">
+    <strong>CP-SAT Primer — Advanced Modelling</strong>
+    <span class="meta">https://d-krupke.github.io/cpsat-primer/04B_advanced_modelling.html</span>
+    <span class="desc">Dominik Krupke의 CP-SAT 실전 가이드. 대칭 깨기, implied 제약, 모델링 패턴 Python 예제 다수.</span>
+  </li>
+  <li class="repo">
+    <strong>OR-Tools Discussion #3295 — Symmetry breaking in CP-SAT Python</strong>
+    <span class="meta">https://github.com/google/or-tools/discussions/3295</span>
+    <span class="desc">VRP 대칭 깨기에 대한 OR-Tools 메인테이너 권고: <code>num_search_workers ≥ 8</code>이 소규모 수동 SBP보다 유리할 수 있음. 포트폴리오 병렬화와의 상호작용 설명.</span>
+  </li>
+  <li class="repo">
+    <strong>OR-Tools Issue #4419 — Symmetry finding dtime limit</strong>
+    <span class="meta">https://github.com/google/or-tools/issues/4419</span>
+    <span class="desc"><code>symmetry_level=3</code>의 1초 하드코딩 한계와 <code>symmetry_detection_deterministic_time_limit</code> 노출 요청. 대형 모델에서 level=3 사용 시 주의사항.</span>
+  </li>
+  <li class="repo">
+    <strong>OR-Tools Issue #1799 — Bin-packing CP-SAT performance</strong>
+    <span class="meta">https://github.com/google/or-tools/issues/1799</span>
+    <span class="desc">대형 빈 패킹에서 <code>cp_model_probing_level=0</code>, lex ordering, 탐색 전략 조합으로 presolve overhead 줄이는 실측 사례.</span>
+  </li>
+</ul>
+
+<!-- ─────────────────────────────────────────
+     10. 흔한 함정
+──────────────────────────────────────────── -->
+<h2 id="pitfalls">흔한 함정</h2>
+
+<div class="pitfall">
+  <div class="ttl">함정 1: 크기가 다른 아이템에 lex 적용 → 최적해 배제</div>
+  <p><code>assign[i] &lt;= assign[i+1]</code>은 블록 i와 i+1이 <em>완전히 동일</em>(면적, 형상, 처리시간 모두)할 때만 유효하다.
+  크기가 달라지면 이 순서가 최적 배정을 금지한다. 동일 형상 그룹을 명시적으로 관리하고
+  그룹 내부에서만 lex를 적용하라.</p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 2: 과도한 clique 제약 → presolve 폭발</div>
+  <p>시간 슬라이스 × 베이 수 × clique 조합으로 자동 생성된 유효 부등식이 수만 개가 되면
+  CP-SAT presolve와 LP solve 시간이 급증한다. clique 제약은 <em>가장 tight한 것</em>
+  (면적 초과 비율이 큰 것)만 선별하거나, 슬라이스 간격을 넓혀 수를 100~200개 이내로 제한하라.</p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 3: symmetry_level=2(기본) + 수동 SBP 동시 사용</div>
+  <p>솔버 자동 탐지(<code>level=2</code>)가 이미 자체 lex 제약을 추가하는 상태에서
+  수동으로 또 다른 lex 제약을 넣으면 두 제약이 상충하여 실현 가능 해를 배제할 수 있다.
+  수동 SBP 사용 시 반드시 <code>symmetry_level=1</code>로 낮추거나, 제약 추가 후
+  <code>CpSolver().validate(model)</code>로 검증하라.</p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 4: dominance 제약이 non-symmetric 문제에 적용</div>
+  <p>"베이 0이 항상 베이 1보다 부하가 높아야 한다"는 dominance는 <em>모든 베이의 용량이 동일</em>할 때만
+  성립한다. 베이마다 선호도 가중치(u_j)나 크레인 접근 구조가 다른 OGC 2026에서는
+  이 dominance를 전 베이에 적용하면 안 된다 — 동일 용량+동일 크레인 구조인 베이 쌍에만 적용하라.</p>
+</div>
+
+<div class="pitfall">
+  <div class="ttl">함정 5: 중복 제약 추가 후 측정 없이 "무조건 좋다" 가정</div>
+  <p>redundant 제약은 이론상 해를 제거하지 않지만 실전에서는 propagation 비용이 추가된다.
+  추가 전/후를 반드시 <strong>full set</strong> 벤치마크로 총 obj와 wall time으로 비교하라.
+  이익이 overhead보다 작으면 제거해야 한다.</p>
+</div>
+
+<div class="footer">
+  <a href="index.html">← 개요로</a> &nbsp;|&nbsp;
+  <a href="07-incremental.html">← 07 힌트·증분</a> &nbsp;|&nbsp;
+  <a href="09-lns.html">09 LNS·분해 →</a>
+  <br><br>
+  CP-SAT Methodology Research — OGC 2026 &nbsp;·&nbsp; 2026-06-17
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

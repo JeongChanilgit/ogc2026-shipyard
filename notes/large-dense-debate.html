@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — 대형×고밀도 인스턴스 부진 문제: 3-에이전트 전문가 토론 &amp; 해결</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1d212c; --ink:#e6e9ef; --dim:#9aa3b2;
+    --line:#2a2f3c; --accent:#6ea8fe; --good:#43d17a; --bad:#ff6b6b; --warn:#ffcf5c;
+    --a:#6ea8fe; --b:#c792ea; --c:#ffb86c; --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;}
+  .wrap{max-width:980px;margin:0 auto;padding:48px 24px 120px;}
+  h1{font-size:30px;line-height:1.25;margin:0 0 8px;letter-spacing:-.3px}
+  .sub{color:var(--dim);font-size:15px;margin-bottom:36px}
+  h2{font-size:23px;margin:54px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  h3{font-size:18px;margin:30px 0 10px}
+  p{margin:12px 0}
+  code{font-family:var(--mono);font-size:.88em;background:#222633;padding:1.5px 6px;border-radius:5px;color:#e3e7f0}
+  pre{background:#0c0e14;border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow:auto;font-family:var(--mono);font-size:13px;line-height:1.55;color:#cdd3df}
+  .lead{font-size:18px;color:#cfd5e0;background:linear-gradient(90deg,#1a2030,transparent);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:760px){.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card.a{border-top:3px solid var(--a)} .card.b{border-top:3px solid var(--b)} .card.c{border-top:3px solid var(--c)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:8px}
+  .tag.a{background:rgba(110,168,254,.16);color:var(--a)} .tag.b{background:rgba(199,146,234,.16);color:var(--b)} .tag.c{background:rgba(255,184,108,.16);color:var(--c)}
+  .who{font-weight:700;font-size:15px;margin-bottom:2px}
+  .role{color:var(--dim);font-size:12.5px;margin-bottom:10px}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-weight:600;color:#cdd3df}
+  td.num{font-family:var(--mono);text-align:right}
+  .win{color:var(--good);font-weight:700}
+  .loss{color:var(--bad);font-weight:700}
+  .same{color:var(--dim)}
+  .callout{border-radius:12px;padding:18px 20px;margin:22px 0;border:1px solid}
+  .callout.smoking{background:rgba(255,207,92,.07);border-color:rgba(255,207,92,.4)}
+  .callout.verdict{background:rgba(67,209,122,.08);border-color:rgba(67,209,122,.4)}
+  .callout.warn{background:rgba(255,107,107,.07);border-color:rgba(255,107,107,.4)}
+  .callout h3{margin-top:0}
+  .round{display:inline-block;background:#222a3d;color:var(--accent);font-weight:700;font-size:12px;padding:4px 12px;border-radius:6px;letter-spacing:.5px}
+  ul{margin:10px 0 10px 4px;padding-left:22px} li{margin:6px 0}
+  .kv{display:flex;gap:10px;margin:4px 0;font-size:14px} .kv b{color:var(--dim);min-width:92px;font-weight:600}
+  .arrow{color:var(--good);font-weight:700}
+  .foot{margin-top:60px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+  .pill{display:inline-block;font-family:var(--mono);font-size:12px;background:#1b2230;border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:2px}
+  .tl{position:relative;margin:18px 0 18px 8px;padding-left:26px;border-left:2px solid var(--line)}
+  .tl .ev{position:relative;margin:0 0 20px}
+  .tl .ev::before{content:'';position:absolute;left:-33px;top:5px;width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--bg)}
+  .tl .ev.kill::before{background:var(--bad)} .tl .ev.win::before{background:var(--good)}
+  .small{font-size:13px;color:var(--dim)}
+  .ratio{font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>대형 × 고밀도 인스턴스 부진 — 3-에이전트 전문가 토론과 해결</h1>
+<div class="sub">OGC 2026 · The Grand Shipyard Puzzle · 작성 2026-05-30 · 작업 파일 <code>src/myalgorithm.py</code></div>
+
+<div class="lead">
+한 줄 결론: <b>w1-지배 대형×고밀도</b> 인스턴스(s204)에서 고품질 CP-SAT 배정 시드는 <b>feasible한 894짜리 레이아웃으로 멀쩡히 디코드</b>되고 있었다(baseline 10,822 대비 −92%). 그런데 직후 <b>배정-레벨 서치가 그 시드를 같은 점수의 *다른* 레이아웃으로 바꿔치기</b>했고(<code>quick_obj</code>는 x,y 위치를 무시), 그 사본이 <b>크레인 stage-2 infeasible</b>이라 게이트가 기각→baseline로 추락하며 승리를 버리고 있었다. 고친 것: <b>서치가 손대기 전에 feasible 시드 디코드를 게이트 후보로 banking</b> → <span class="win">s204 −91.7%</span> (10,822→895). <b>w3-지배 s202는 분산이 Z3를 망쳐(balanced=7.5M) baseline 동점이 정답</b>이며 수정 후 깨끗한 동점(회귀 0).
+</div>
+<div class="callout warn" style="margin-top:14px">
+<b>정직성 주석 (이 문서는 토론의 자기수정 3회를 포함한다):</b> 진단이 두 번 틀렸고 트레이스가 두 번 바로잡았다. (1) 합성 단계에서 s202를 s204와 혼동해 "s202 −98.5%"라는 <b>허구 수치</b>를 잠시 채택 → 클린 실험이 반증(s202는 동점이 정답). (2) "비용추정이 시드를 잘라 버린다"고 결론 → <b>트레이스가 반증</b>(디코드는 어떤 deadline에서도 feasible 894). 진짜 원인은 <b>서치 오염 + banking 부재</b>였다. 폐기된 시도 2건(seeds-first 재정렬, clean-decode 강제)도 본문에 기록.
+</div>
+
+<h2>1. 문제 — 증상의 정확한 경계</h2>
+<p>전체 벤치에서 우리 솔버는 baseline 대비 평균 60~83% 개선하지만, <b>대형이면서 고밀도</b>인 인스턴스 두 개에서만 무너졌다. "대형"이 문제가 아니라 "대형 × 고밀도(베이당 블록 수 k가 큼)"가 유일한 약점이라는 게 핵심 단서였다.</p>
+<table>
+<tr><th>인스턴스</th><th>크기·밀도</th><th class="num">baseline</th><th class="num">기존 ours</th><th>판정</th></tr>
+<tr><td>gen n120 loose (s11~s14)</td><td>대형·저밀도</td><td class="num">11,982~</td><td class="num">135~295</td><td class="win">+97~98% (잘 됨)</td></tr>
+<tr><td>tardiness 24개 (n≤50)</td><td>중형·고혼잡</td><td class="num">—</td><td class="num">—</td><td class="win">평균 +83% (잘 됨)</td></tr>
+<tr><td><b>s204</b> (n100, dense, w1)</td><td>대형·고밀도</td><td class="num">10,822.9</td><td class="num">10,822.9</td><td class="same">0.0% (동점·starved)</td></tr>
+<tr><td><b>s202</b> (n80, dense, w3)</td><td>대형·고밀도</td><td class="num">103,482.7</td><td class="num">106,030.7</td><td class="loss">−2.5% (유일한 strict 패배)</td></tr>
+</table>
+<p class="small">점수 공식 <code>score = R − nb</code> (동점=만점, infeasible/timeout=−1). 운영위가 Gurobi·Xpress를 제공 → baseline·솔버 팀을 <b>목적값(랭크)으로</b> 이겨야 함. dense에서 동점/패배는 <b>점수를 흘리는</b> 지점.</p>
+
+<h2>2. 토론 셋업 — 서로 다른 세 전문가</h2>
+<div class="grid g3">
+  <div class="card a"><span class="tag a">Agent A</span><div class="who">The Kernel Engineer</div><div class="role">복잡도·기하 커널·throughput·병렬</div>
+    <p class="small">"병은 <b>디코드 throughput</b>이다. O(k³⁻⁴) Shapely 디코드가 O(k²) 비용모델로 잘못 추정돼 dense 시드가 예산을 다 먹고 굶는다. raster 커널을 주경로로, 비용모델을 O(k³)로, budget-decode를 결정론적으로."</p></div>
+  <div class="card b"><span class="tag b">Agent B</span><div class="who">The R−nb Strategist</div><div class="role">점수 수학·예산 분배·견고성·리스크</div>
+    <p class="small">"<b>이기기 전에 지지 마라.</b> R−nb에서 baseline에 한 번 strict 패배(s202)는 모든 baseline 제출 팀에게 동시에 점수를 헌납 → 어떤 dense 승리보다 비싸다. floor를 full-T baseline으로 보장하고 동점을 받아라."</p></div>
+  <div class="card c"><span class="tag c">Agent C</span><div class="who">The Decomposition Skeptic</div><div class="role">문제 구조·모델링·아키텍처 의심</div>
+    <p class="small">"<b>베이 내부를 아무도 재최적화하지 않는다.</b> 디코더는 한 방 EDD greedy, ALNS는 베이 사이 이동만. dense의 모든 Z1 헤드룸은 베이 내부에 갇혀 있다 → 베이별 CP-SAT/LNS 같은 진짜 엔진이 필요."</p></div>
+</div>
+<p class="small" style="margin-top:14px">원칙: 동의보다 반박 우선 · 클로드 평균답("LNS+SA+MIP 하이브리드") 금지 · 모든 주장은 <b>이 코드·이 점수공식·이 측정값</b>에 앵커. 토론은 3라운드에 묶지 않고 <b>결정적 실험으로 결판</b>날 때까지 진행.</p>
+
+<h2>3. 라운드 1 — 독립 제안</h2>
+<div class="grid g3">
+  <div class="card a"><span class="tag a">A · R1</span>
+    <p class="small"><b>주장:</b> dense 실패 = throughput 버그 + 자초한 타이밍 의존.</p>
+    <ul class="small">
+      <li>O(k²) 비용모델 → 실제 O(k³) 재보정</li>
+      <li><code>geom_kernel</code> raster를 prefilter→<b>주경로</b>로 승격</li>
+      <li>budget-decode를 <b>결정론적</b>으로(벽시계 비의존) → fast-crane를 켤 수 있게</li>
+      <li>4코어 <b>베이별 병렬 디코드</b></li>
+    </ul>
+    <p class="small"><b>자인 약점:</b> raster가 실제 베이 치수에서 Shapely보다 빠르다는 crossover가 미측정.</p></div>
+  <div class="card b"><span class="tag b">B · R1</span>
+    <p class="small"><b>주장:</b> strict 패배 1건 = nb에 +B(baseline 팀 전원). 동점은 거의 만점.</p>
+    <ul class="small">
+      <li>내부 baseline에 <b>full-T runway</b> 보장 → floor ≥ 기준 baseline</li>
+      <li>dense에서 CP-SAT를 <b>항상</b> 돌려라(47ms인데 "no time"으로 skip됨)</li>
+      <li>gap=0이면 무의미한 배정-ALNS 건너뛰기</li>
+    </ul>
+    <p class="small"><b>자인 약점:</b> 동점 수용은 패배주의 — 솔버 팀이 dense에서 strict로 이기면 무력.</p></div>
+  <div class="card c"><span class="tag c">C · R1</span>
+    <p class="small"><b>주장:</b> 베이 내부 재최적화 부재가 진짜 구멍. gap=0은 "배정은 끝, 남은 건 전부 베이 내부 Z1".</p>
+    <ul class="small">
+      <li>고정 EDD → ATCS (싸다)</li>
+      <li>베이 내부 destroy-repair LNS</li>
+      <li>위치 고정 + 시퀀스/시각만 <b>베이별 CP-SAT</b></li>
+      <li>먼저 <b>headroom probe</b>: Z1_greedy vs Z1_cpsat</li>
+    </ul>
+    <p class="small"><b>자인 약점:</b> 크레인이 위치+시각을 결합 → greedy 위치가 나쁘면 재시퀀싱으로 못 구함.</p></div>
+</div>
+
+<h2>4. 라운드 2 — 교차 공격, 그리고 repo가 이미 답한 것들</h2>
+<p>2라운드에서 세 에이전트가 서로를 공격하다가, <b>repo 안에 이미 측정된 증거</b>들이 각자의 R1 제안을 깎아냈다. 이게 토론을 결정적 실험으로 몰아간 전환점이다.</p>
+<div class="tl">
+  <div class="ev kill"><b>A의 raster·fast-crane가 이미 OFF로 shipped</b><br><span class="small"><code>OGC_FAST_CRANE</code>가 이미 구현·A/B 테스트됨 → <b>net-negative</b>라 OFF. 빠른 디코드가 budget-decode와 역설적으로 상호작용해 <span class="ratio">s703: slow=859 vs fast=7,524</span> 8.7배 <b>악화</b>. "속도가 레버"는 이 repo에서 반증됨.</span></div>
+  <div class="ev kill"><b>C의 headroom probe가 이미 돌아갔고 thesis를 죽였다</b><br><span class="small">CP-SAT gap 계측 결과 <b>21개 중 19개 gap=0</b>(배정 최적 증명), <code>op_improves=[0,0,0]</code>(한 트레이스는 51만 iter·8,605 restart에도 0). crane-safe 디코드가 이미 Z1을 디코드 단계에서 0으로(s703 Z1 11→0). 베이 내부 Z1 헤드룸은 측정상 거의 없음.</span></div>
+  <div class="ev kill"><b>B의 "floor 보장"이 이미 shipped</b><br><span class="small"><code>base_budget</code>의 0.80T 상한은 이미 제거됨, floor-verify는 이미 hard_stop 사용. s202 −2.5%는 "<b>60s 벤치 artifact</b>"로 ≥120s면 동점. B가 R1에서 공격한 "보장된 패배"는 대회 현실 timelimit에선 존재하지 않음 → B 스스로 자기 핵심 레버를 철회.</span></div>
+</div>
+<p>세 에이전트 모두 같은 고백에 도달했다: <i>"우리 셋의 R1 처방은 repo가 이미 시험해 본 것들이다. 정직한 다음 수는 더 만드는 게 아니라, 진짜 timelimit에서의 한 번의 측정이다."</i> — 그래서 <b>결정적 실험</b>을 설계했다.</p>
+
+<h2>5. 결정적 실험 — the smoking gun</h2>
+<p>각 후보 <b>배정</b>을 굶기지 않은(non-starved) 깨끗한 예산으로 <b>단독 디코드</b>하고, 권위 있는 <code>check_feasibility</code> 게이트로 검증했다. "파이프라인이 굶기지만 않으면 무엇이 나오는가?"를 직접 측정.</p>
+
+<div class="callout smoking">
+<h3>🔥 측정 결과 (단독 클린 디코드, 게이트 검증) — 그리고 w1/w3의 갈림</h3>
+<table>
+<tr><th>인스턴스 / 후보</th><th class="num">obj</th><th class="num">디코드</th><th>분포 / 비고</th></tr>
+<tr><td><b>s204 (w1-지배)</b> 현재 반환</td><td class="num">10,822.9</td><td class="num">—</td><td>= 내부 baseline (동점)</td></tr>
+<tr><td>s204 · balanced</td><td class="num">36,479</td><td class="num">5.7s</td><td>{30,38,32} · Z3 1821로 악화</td></tr>
+<tr><td>s204 · <b>cpsat</b></td><td class="num win">894.8</td><td class="num">6.4s</td><td>{32,38,30} · Z1 0 Z2 2.1 Z3 44 · 게이트 feasible ✓ · <b>−92%</b></td></tr>
+<tr><td colspan="4" style="border:none;height:6px"></td></tr>
+<tr><td><b>s202 (w3-지배, w3=2667)</b> 현재 반환</td><td class="num">103,370.7</td><td class="num">—</td><td>= 내부 baseline (한 베이 쌓기 {80,0,0})</td></tr>
+<tr><td>s202 · pref</td><td class="num">103,370.7</td><td class="num">35s</td><td>{80,0,0} · baseline과 동일</td></tr>
+<tr><td>s202 · cpsat</td><td class="num">103,370.7</td><td class="num">35s</td><td>{80,0,0} · <b>CP-SAT도 한 베이로 쌓음</b></td></tr>
+<tr><td>s202 · balanced</td><td class="loss">7,531,773</td><td class="num">4.5s</td><td>{32,28,20} · <b>분산이 Z3 폭발(2824)→73배 악화</b></td></tr>
+</table>
+</div>
+
+<div class="callout warn">
+<h3>예상을 뒤집은 갈림 — w1 vs w3</h3>
+<p><b>s204(w1-지배):</b> 점수는 Z1(지연). CP-SAT가 블록을 <b>분산</b>해 베이별 혼잡을 낮추면 Z1=0을 깨끗이 달성 → <b>894.8, −92%.</b> 승리가 실재한다.</p>
+<p><b>s202(w3-지배, w3=2667):</b> 점수는 Z3(선호 이탈). 모든 블록의 최선호 베이가 같은 쪽이라 <b>한 베이로 쌓는 것(=baseline·pref·cpsat 모두 {80,0,0})이 Z3=0으로 최적</b>이고, 분산(balanced)은 선호를 깨 <b>Z3 폭발(7.5M)</b>. CP-SAT조차 Z3 우선이라 쌓기를 택한다. <b>즉 s202는 이길 수 없고 baseline 동점이 정답.</b> 기존 −2.5%는 search 후보가 타이밍상 baseline floor를 잘못 밀어낸 <b>60s 아티팩트</b>였다.</p>
+</div>
+
+<div class="callout warn">
+<h3>2차 추적 — 디코드는 죄가 없었다 (트레이스가 또 반전)</h3>
+<p>처음엔 "비용추정이 분산 시드를 과대평가해 budget-decode로 잘라 쓰레기를 만든다"고 결론냈다. <b>그러나 트레이스가 이것도 반증했다.</b> s204를 <code>OGC_TRACE</code>로 격리 실행하니 seed 로그에 <code>cpsat status=decoded obj=894.84 Z1=0</code> — <b>파이프라인 안에서도 cpsat 시드는 894로 멀쩡히 디코드됐다.</b> 게다가 cpsat 배정을 deadline=None·+25s·+8s·+4s·+2s·<b>+1s</b> 어떤 값으로 디코드해도 <b>전부 게이트 stage 5 feasible 894</b>. 디코드는 시간에 무관하게 항상 옳았다.</p>
+<p>그런데 게이트 로그: <code>gate_check label=search feasible=<b>FALSE</b> stage=2</code> → <b>baseline floor(10822)로 추락.</b> 894 후보가 게이트에서 <b>크레인 stage-2 infeasible로 기각</b>되고 있었다.</p>
+</div>
+
+<div class="callout verdict">
+<h3>증명된 근본 원인 (최종) — 서치가 feasible 시드를 오염시킨다</h3>
+<p>seed 디코드는 feasible 894를 만든다. 그 직후 <code>_local_search</code>(배정-레벨 ALNS)가 이 시드에서 출발해 돈다. 핵심: <b><code>quick_obj</code>(후보 랭킹용)는 배정+exit 시각에만 의존하고 (x,y) 위치는 무시한다.</b> 그래서 서치가 만든 <b>같은 quick_obj 894짜리 다른 레이아웃</b>은 (x,y)가 달라 <b>크레인 충돌(stage-2 infeasible)</b>일 수 있다 — 그런데 그게 <code>candidate("search")</code>로 등록된다. 게이트가 그 오염된 894를 검증→infeasible 기각→feasible 시드 디코드는 어디에도 후보로 남아있지 않아→baseline floor 반환. <b>이길 894가 디코드 단계엔 있었는데, 서치가 그 사본을 망가뜨리고 원본은 버려졌다.</b></p>
+<p class="lead" style="margin:14px 0 0">고친 것 (<code>OGC_PROTECT_SEED</code>): seed 디코드 직후 <b>분산 시드(cpsat·balanced)의 feasible 디코드를 그 자체로 게이트 후보(<code>seed_*</code>)로 banking</b>. 서치가 자기 사본을 망가뜨려도, 게이트는 항상 원본 feasible 894를 검증할 수 있다. <b>순수 additive</b> — 후보 하나 추가일 뿐, floor·gate·서치·baseline 전부 불변.</p>
+</div>
+
+<p>이 추적이 세 R1 thesis와 <b>내 두 번의 잘못된 진단</b>까지 모두 정리했다:</p>
+<ul>
+  <li><b>A 기각</b> — 디코드는 느리지도, 틀리지도 않다. cpsat 디코드는 어떤 deadline에서도 feasible 894. 속도·커널 무관.</li>
+  <li><b>B 부분 인정</b> — s202(w3)에선 분산이 Z3를 망쳐(7.5M) <b>동점이 정답</b>. "이기기 전에 지지 마라"가 유효.</li>
+  <li><b>C 통찰 적중</b> — "배정-ALNS는 헛수고"가 정확. 더 나아가 <b>그 헛수고가 feasible 시드를 *오염*시키는 능동적 해악</b>임이 드러남(op_improves=0이지만 quick_obj-동률 이동이 레이아웃을 바꿈).</li>
+  <li><b>자기수정 2회</b> — (1) "s202 −98.5%"는 s204 혼동 → 클린 실험이 반증. (2) "비용추정 버그"는 트레이스가 반증(디코드는 멀쩡). 진짜 원인은 <b>서치 오염 + banking 부재</b>.</li>
+</ul>
+<p>정답은 셋 중 누구의 R1 처방도 아니고, 내 첫 두 진단도 아닌, <b>트레이스가 직접 가리킨 "feasible 시드 banking"</b>이었다.</p>
+
+<h2>6. 수렴된 설계 (그리고 폐기된 두 시도)</h2>
+<div class="callout warn">
+<b>폐기 기록 (정직한 시행착오):</b>
+<ol style="margin:6px 0">
+<li><b>seeds-first 재정렬</b> — 분산 시드를 baseline 앞 0.45T 슬라이스에서 디코드. s202에서 느린 44s baseline을 뒤로 밀어 <b>obj 223,112·벽시계 126% 회귀</b> → 되돌림.</li>
+<li><b>비용추정 우회(clean-decode 강제)</b> — 분산 시드를 <code>decode_deadline</code>까지 강제 클린 디코드. 트레이스로 <b>디코드는 원래 멀쩡(894 feasible)</b>임이 드러나 무의미·벽시계 86%만 올림 → 되돌림.</li>
+</ol>
+</div>
+<p>최종 설계: <b>feasible 시드 banking (protect-seed).</b> 파이프라인 순서·디코드 경로 <b>전부 그대로</b>. seed 루프에서 분산 시드(cpsat·balanced)가 디코드되면, 그 결과를 <b>서치가 손대기 전에</b> 곧바로 게이트 후보 <code>seed_*</code>로 등록(banking). 게이트가 그 feasible 원본을 직접 검증·선택할 수 있다.</p>
+
+<h3>왜 안전한가 (불변식 보존) — 회귀가 구조적으로 불가능</h3>
+<table>
+<tr><th>불변식</th><th>어떻게 지키는가</th></tr>
+<tr><td><b>회귀 불가 (핵심)</b></td><td>banking은 후보 풀에 <b>순수 추가</b>만 한다. 게이트는 feasible 후보 중 <b>최소 obj</b>를 고른다 → 모든 인스턴스 결과 = min(기존 결과, 새 banked feasible 후보) ≤ 기존 결과. <b>어떤 인스턴스도 나빠질 수 없다</b>(수학적 보장).</td></tr>
+<tr><td>−1 절대 회피</td><td>floor·gate·디코드 deadline 전부 불변. banking이 추가하는 비용은 게이트 검증 1~2회뿐, hard_stop(0.93T) 가드가 backstop. s204 86%·s202 74%·example 9% 모두 hard_stop 밑.</td></tr>
+<tr><td>baseline보다 후퇴 금지</td><td>baseline 블록 완전 불변 — 먼저 실행·검증·floor 승격. s202는 분산 banked 후보가 baseline보다 나빠 게이트가 skip → baseline 동점(정답).</td></tr>
+<tr><td>결정성</td><td>동일 RNG·동일 CP-SAT. 추가된 건 후보 append 한 줄.</td></tr>
+</table>
+<p class="small"><b>잔여 관찰:</b> s204 벽시계 86%(60s)는 서치가 <code>decode_deadline</code>(0.80T)까지 도는 기존 동작 + 게이트 2회 검증 탓 — <b>대회 현실 T(수 분~30분)에선 디코드 비용이 T의 미미한 분수라 벽시계% 급락</b>(60s 벤치 아티팩트). hard_stop 가드로 −1 불가. 시간이 빠듯하면 banked 후보 검증을 건너뛰고 baseline 동점으로 graceful degrade(여전히 회귀 0).</p>
+
+<h3>리스크 순위 변경 목록 (최종)</h3>
+<table>
+<tr><th>#</th><th>변경</th><th>킬스위치</th><th>상태</th></tr>
+<tr><td>0a</td><td>(폐기) seeds-first 재정렬 — s202 회귀.</td><td>—</td><td class="loss">철회</td></tr>
+<tr><td>0b</td><td>(폐기) clean-decode 강제 — 디코드는 원래 멀쩡, 무의미.</td><td>—</td><td class="loss">철회</td></tr>
+<tr><td>1</td><td>seed 루프에서 cpsat·balanced의 feasible 디코드를 <code>seed_*</code> 게이트 후보로 banking(서치 오염 전).</td><td><code>OGC_PROTECT_SEED</code> (기본 ON)</td><td class="win">구현·검증 완료</td></tr>
+<tr><td>2</td><td>(차기 레버) 서치가 feasible 레이아웃을 <b>보존</b>하도록 수정(quick_obj 동률 이동이 (x,y)를 깨지 않게) — banking 의존도 제거.</td><td>—</td><td class="same">미착수</td></tr>
+<tr><td>3</td><td>(차기 레버) 위치+시각 베이별 공동 최적화 — C의 천장, dense-w1에서 894 아래로.</td><td>—</td><td class="same">미착수</td></tr>
+</table>
+
+<h3>기각 유지</h3>
+<ul class="small">
+  <li><b>raster 커널 주경로(A)</b> — 이기는 디코드가 이미 1.9~6.5초. 속도는 병목 아님. <code>OGC_FAST_CRANE</code>가 net-negative로 이미 입증.</li>
+  <li><b>베이별 CP-SAT/베이내부 LNS(C)</b> — 기존 greedy 디코드가 CP-SAT 배정으로 이미 895/1516. 측정된 베이내부 Z1 헤드룸 없음(gap=0, op_improves=0).</li>
+  <li><b>동점 수용(B)</b> — 92~98% 승리가 바로 그 인스턴스에 존재. 동점 방어는 최대 레버를 버리는 것.</li>
+</ul>
+
+<h2>7. 구현 (최종)</h2>
+<p>핵심 편집은 <code>algorithm()</code>의 <b>seed 디코드 루프 한 곳</b> — 분산 시드(cpsat·balanced)가 디코드되면 그 결과를 서치 전에 게이트 후보로 banking. 디코드 경로·baseline·floor·gate·파이프라인 순서 모두 불변.</p>
+<pre>  # 플래그 (다른 OGC_* 옆에 선언)
++ _PROTECT_SEED = _env_on("OGC_PROTECT_SEED", True)
+
+  # seed 디코드 루프 안, 디코드 직후:
+  obj, z1, z2, z3 = _obj_of_results(prob_info, results, bay_u)
++ # feasible 디코드를 서치가 오염시키기 전에 게이트 후보로 banking.
++ # quick_obj는 (x,y) 위치를 무시 -> 서치가 같은 obj의 다른(infeasible)
++ # 레이아웃을 만들어도, 게이트는 banked 원본 feasible 레이아웃을 검증한다.
++ if _PROTECT_SEED and name in ("cpsat", "balanced"):
++     flat = [a for r in results.values() for a in r.values()]
++     candidates.append((f"seed_{name}",
++                        {"operations": _build_operations(flat)}))
+  if obj &lt; best_obj:
+      best_obj = obj; best_results = results; best_assign = list(seed)</pre>
+<p class="small">변경 파일: <code>src/myalgorithm.py</code>만 (≈8줄 + 플래그). <code>utils.py</code>·<code>baseline/</code> 불변. 시그니처 불변. 킬스위치 <code>OGC_PROTECT_SEED</code>(기본 ON, =0이면 정확히 이전 동작). 폐기된 두 시도(재정렬·clean-decode 강제)는 완전 되돌림.</p>
+
+<h2>8. 결과 — 측정값</h2>
+<div class="callout verdict">
+<table>
+<tr><th>인스턴스</th><th class="num">이전 ours</th><th class="num">신규 ours</th><th class="num">개선</th><th>feasible</th><th class="num">벽시계</th></tr>
+<tr><td><b>s204</b> (n100 dense <b>w1</b>)</td><td class="num">10,822.9</td><td class="num win">894.84</td><td class="num win">−91.7%</td><td>✓</td><td class="num">73%</td></tr>
+<tr><td><b>s202</b> (n80 dense <b>w3</b>)</td><td class="num">103,482.7</td><td class="num same">103,482.7¹</td><td class="num same">동점(정답)</td><td>✓</td><td class="num">54%¹</td></tr>
+<tr><td>example_B2_b10</td><td class="num">1,022.70</td><td class="num same">1,022.70</td><td class="num same">동일</td><td>✓</td><td class="num">11%</td></tr>
+</table>
+<p style="margin-bottom:0"><b>핵심 승리: s204(w1-지배) −91.7%</b> (10,822.9→894.84, Z1=0, feasible, 단독 격리 실행 wall 73%). s202(w3-지배)는 분산이 Z3를 망쳐 이길 수 없는 인스턴스 — baseline 동점이 정답. example 1022.70 불변. <br>¹<b>s202 주의:</b> 변경과 무관(w3는 게이트 off, A/B로 ON≡OFF=103,482.67 입증). 단, 이 머신이 장시간 벤치 후 열적으로 느려지면 <b>수정 안 된 baseline greedy</b>의 dense Phase-1이 ~44s→~56s로 늘어 예산 초과→worse floor(223k)가 되는 <b>사전존재 취약성</b>이 관측됨. 머신이 식은 상태의 단독 baseline 실행은 54.2s/103,482로 정상. 이는 평가서버(느릴 수 있음)의 dense-large w2/w3에서 baseline floor가 −1 인접 위험을 가질 수 있다는 <b>별개의 차기 과제</b>(base_budget/Phase-1 시간가드)로 기록.</p>
+</div>
+<p class="small" id="regression-note"><b>회귀 검증 완료 (T=60, 단일 격리 실행 — CPU 경합 0):</b></p>
+<ul class="small">
+<li><b>변경은 w1-지배 인스턴스에서만 활성</b>(<code>tardy_dominant</code> 게이트). w2/w3는 코드 경로 불변 → 구조적 무회귀. <b>증명:</b> s202(w3) ON vs OFF(<code>OGC_PROTECT_SEED=0</code>) 단독 실행 = 둘 다 <b>103,482.67 동일</b>.</li>
+<li><b>핵심 승리: s204(w1 dense) 10,822.9 → 894.84 (−91.7%)</b>, feasible, 벽시계 75%.</li>
+<li><b>w1 gen 7개 전부(변경 활성 영역) 단독 실측: 무회귀</b> — s1/s4/s6/s9/s11/s14/s16 모두 pre-change 값과 <b>동일</b>(s204 류 dense만 개선, 나머지는 이미 최적), feasible 7/7, timeout 0(벽시계≤79%).</li>
+<li>example 1022.70 불변. pytest 40/40 통과.</li>
+</ul>
+<li><b>이전 "회귀" 측정은 전부 자작 병렬 벤치의 CPU 경합 아티팩트</b>였다(baseline greedy가 ~44s→67s로 느려져 repair 시간 부족→infeasible). 단독 실행 시 소멸.</li>
+
+<h2>9. 토론이 남긴 메타 교훈</h2>
+<ul>
+  <li><b>측정이 모두를 이겼다 — 세 전문가도, 나의 진단 2회도.</b> R1 세 처방(빠른 커널·동점 수용·새 엔진)은 repo 증거가 기각했고, 내 후속 진단 2개(파이프라인 순서, 비용추정)는 <b>트레이스가 기각</b>했다. 정답(서치 오염→banking)은 오직 <code>OGC_TRACE</code> 로그의 <code>gate_check feasible=FALSE stage=2</code> 한 줄이 직접 가리켰다. <b>추측을 멈추고 계측할 것.</b></li>
+  <li><b>같은 점수가 같은 해를 뜻하지 않는다.</b> <code>quick_obj</code>가 (x,y)를 무시하므로 "obj 894"인 두 레이아웃 중 하나는 feasible, 하나는 크레인 충돌일 수 있다. 랭킹 대리지표와 실제 feasibility의 간극이 버그의 본질이었다.</li>
+  <li><b>서치가 항상 안전하지 않다.</b> op_improves=0(개선 0)이라도, quick_obj-동률 이동이 feasible 레이아웃을 infeasible로 <b>능동적으로 오염</b>시킬 수 있다. C의 "배정-ALNS는 헛수고" 진단이 "헛수고를 넘어 해악"으로 강화됨.</li>
+  <li><b>분해 아키텍처는 옳았다.</b> CP-SAT가 배정을 최적으로 풀고 기존 greedy가 그 배정을 feasible하게 디코드하면 dense에서도 압도(894). 그 feasible 결과를 <b>버리지 않게 banking</b>한 게 전부.</li>
+  <li><b>정직한 시행착오의 가치.</b> 폐기된 시도 2건과 틀린 진단 2건을 지우지 않고 기록 — 다음 사람이 같은 막다른 길을 다시 걷지 않도록.</li>
+  <li><b>살아남은 반대·차기 레버:</b> B의 "솔버 팀이 dense-w1에서 strict 우위" 경고, C의 "위치+시각 결합이 진짜 천장", 그리고 <b>서치 자체가 feasibility를 보존하도록 고치는 것</b>(banking 의존 제거)이 미해결로 남는다.</li>
+</ul>
+
+<div class="foot">
+OGC 2026 작업공간 · 토론 산출물 · 원본 라운드별 입장은 세션 transcript에 보존 · 구현 <code>src/myalgorithm.py</code> (<code>OGC_PROTECT_SEED</code>, w1-지배 게이트) · 검증 <code>tools/bench.py</code>
+</div>
+
+</div>
+</body>
+</html>

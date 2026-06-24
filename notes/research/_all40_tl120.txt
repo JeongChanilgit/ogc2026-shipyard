@@ -1,0 +1,44 @@
+inst       feas            obj       z1     z3  wall  comp/win
+prob_1     True           1499        0      2  76.5  WIN
+prob_2     True           3690        0     15  74.8  WIN
+prob_3     True          76630        0    407  77.1  loss
+prob_4     True          46011        0    154 112.9  loss
+prob_5     True          64402        0    360  76.8  loss
+prob_6     True          88656        0    509  88.5  loss
+prob_7     True          74997        0    394  85.5  WIN
+prob_8     True          11252        0      8  67.8  WIN
+prob_9     True          64675        0    382 102.4  loss
+prob_10    True          85162        0    578 101.7  loss
+prob_11    True          45703        0    338 110.6  loss
+prob_12    True         104440        0    702 111.1  loss
+prob_13    True         113599        0    808 109.8  loss
+prob_14    True         124751        2    635 110.1  loss
+prob_15    True          46751        0    192 110.4  loss
+prob_16    True          42900        0    205 102.2  loss
+prob_17    True          78233        0    405  93.5  loss
+prob_18    True         103314        0    726 110.2  loss
+prob_19    True          62980        0    368  98.5  WIN
+prob_20    True         181166        0   1336 110.3  loss
+prob_21    True        2298112      144   2468 111.8  WIN
+prob_22    True         856848        0   2124 112.7  WIN
+prob_23    True        7611178      561      2 111.4  loss
+prob_24    True      302073220    22585   3119 114.2  loss
+prob_25    True        6540732     9775    970 114.0  loss
+prob_26    True      319505803    23933   2476 109.4  loss
+prob_27    True      473326762    35444   1850 115.4  loss
+prob_28    True      166869314    12491   1041 112.5  loss
+prob_29    True         664968       15   1505 112.1  WIN
+prob_30    True      218205756    16360    340 114.7  loss
+prob_31    True     1243855824    93216   3324 114.7  loss
+prob_32    True        7476180     2005   1315 110.8  loss
+prob_33    True      274283043    41119    777 114.6  loss
+prob_34    True      118727675    35604     71 112.3  loss
+prob_35    True      897498365    67220   7713 111.2  loss
+prob_36    True         695824      844  10173 109.8  loss
+prob_37    True        8870958     2478    956 109.6  loss
+prob_38    True      147272112    10902   6359 109.2  loss
+prob_39    True       41290004     3012   7438 109.9  loss
+prob_40    True        5881707     8612  10246 110.1  loss
+----------------------------------------------------------------------
+feasible=40/40  infeasible=none
+total_obj=4245225196  wins_vs_competitor(set1 only)=8

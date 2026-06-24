@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — Solver R&D 현황</title>
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #1c2230;
+    --border:    #30363d;
+    --border2:   #21262d;
+    --text:      #e6edf3;
+    --text-muted:#8b949e;
+    --text-dim:  #6e7681;
+    --accent:    #58a6ff;
+    --accent2:   #79c0ff;
+    --green:     #3fb950;
+    --green-bg:  #0d2818;
+    --red:       #f85149;
+    --red-bg:    #2a0f0f;
+    --amber:     #e3b341;
+    --amber-bg:  #2a1f00;
+    --grey:      #8b949e;
+    --grey-bg:   #1c2230;
+    --purple:    #d2a8ff;
+    --cyan:      #39d0d8;
+    --hero-gold: #f0c060;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 24px;
+    min-width: 900px;
+  }
+
+  /* ---- HEADER ---- */
+  .page-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--hero-gold);
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+  }
+  .page-header .subtitle {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 400;
+  }
+  .page-header .as-of {
+    float: right;
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  /* ---- GRID ---- */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .full { grid-column: 1 / -1; }
+
+  /* ---- CARD ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  /* ---- HERO METRICS ---- */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .hero-metric {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .hero-metric .label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+  }
+  .hero-metric .value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--hero-gold);
+    line-height: 1;
+  }
+  .hero-metric .delta {
+    font-size: 10px;
+    color: var(--green);
+    margin-top: 4px;
+  }
+  .hero-metric .note {
+    font-size: 9.5px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+  .hero-metric.highlight { border-color: var(--hero-gold); }
+
+  /* ---- PROGRESS BAR ---- */
+  .progress-wrap {
+    margin: 10px 0 6px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+  .progress-bar-bg {
+    background: var(--border2);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    transition: width 0.3s;
+  }
+  .progress-bar-fill.amber { background: linear-gradient(90deg, var(--amber), #f0a020); }
+  .progress-bar-fill.red   { background: linear-gradient(90deg, var(--red), #c02020); }
+
+  /* ---- STATUS PILLS ---- */
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .pill-green  { background: var(--green-bg);  color: var(--green);  border: 1px solid #1e4a28; }
+  .pill-red    { background: var(--red-bg);    color: var(--red);    border: 1px solid #5a1a1a; }
+  .pill-amber  { background: var(--amber-bg);  color: var(--amber);  border: 1px solid #4a3800; }
+  .pill-grey   { background: var(--grey-bg);   color: var(--grey);   border: 1px solid var(--border); }
+  .pill-blue   { background: #0c2040;          color: var(--accent); border: 1px solid #1a3a6a; }
+  .pill-purple { background: #1e1030;          color: var(--purple); border: 1px solid #4a2a7a; }
+
+  /* ---- TABLE ---- */
+  .tbl-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  thead th {
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border2);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td {
+    padding: 8px 10px;
+    vertical-align: top;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  td.mono { font-family: 'SF Mono', 'Cascadia Code', monospace; }
+  td.muted { color: var(--text-muted); font-size: 11px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.delta-pos { color: var(--green); font-weight: 600; }
+  td.delta-neg { color: var(--red);   font-weight: 600; }
+  .row-highlight td { background: #0e1f10; }
+
+  /* ---- CALLOUT BOX ---- */
+  .callout {
+    border-left: 4px solid var(--amber);
+    background: var(--amber-bg);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+  .callout.blue {
+    border-left-color: var(--accent);
+    background: #0c1a2e;
+  }
+  .callout.green {
+    border-left-color: var(--green);
+    background: var(--green-bg);
+  }
+  .callout.red {
+    border-left-color: var(--red);
+    background: var(--red-bg);
+  }
+  .callout-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 7px;
+  }
+  .callout.blue  .callout-title { color: var(--accent2); }
+  .callout.green .callout-title { color: var(--green); }
+  .callout.red   .callout-title { color: var(--red); }
+  .callout p { color: var(--text); font-size: 12.5px; line-height: 1.7; }
+  .callout strong { color: var(--hero-gold); }
+  .callout em { color: var(--cyan); font-style: normal; }
+
+  /* ---- TIMELINE ---- */
+  .timeline { list-style: none; padding: 0; margin: 0; }
+  .timeline-item {
+    display: flex;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border2);
+    align-items: flex-start;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .tl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+    background: var(--border);
+  }
+  .tl-dot.green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .tl-dot.amber  { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  .tl-dot.red    { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+  .tl-dot.blue   { background: var(--accent); }
+  .tl-body { flex: 1; }
+  .tl-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .tl-cycle {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .tl-title { font-size: 12px; font-weight: 600; color: var(--text); }
+  .tl-result {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+  .tl-result .highlight { color: var(--green); font-weight: 600; }
+  .tl-result .warn      { color: var(--amber); }
+  .tl-result .key       { color: var(--accent2); }
+
+  /* ---- PROBLEM CARD ---- */
+  .problem-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .problem-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .problem-chip span { color: var(--accent2); font-weight: 600; }
+
+  /* ---- MUTED LIST ---- */
+  .muted-list { list-style: none; padding: 0; }
+  .muted-list li {
+    padding: 4px 0;
+    color: var(--text-dim);
+    font-size: 11.5px;
+    border-bottom: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .muted-list li:last-child { border-bottom: none; }
+  .muted-list li::before {
+    content: '✕';
+    color: var(--red);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  /* ---- FOOTER ---- */
+  .footer {
+    border-top: 1px solid var(--border);
+    margin-top: 28px;
+    padding-top: 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .footer strong { color: var(--text-muted); }
+
+  /* ---- SECTION HEADING ---- */
+  .section-heading {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-heading .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* ---- SCORE FORMULA ---- */
+  .formula-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--accent2);
+    margin-top: 8px;
+    font-family: 'SF Mono', monospace;
+    line-height: 1.9;
+  }
+  .formula-box .comment { color: var(--text-dim); }
+
+  /* ---- OBJ CHAIN VIZ ---- */
+  .chain-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+    font-size: 11px;
+  }
+  .chain-bar .tag {
+    width: 28px;
+    text-align: right;
+    color: var(--text-dim);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .chain-bar .bar-bg {
+    flex: 1;
+    background: var(--border2);
+    border-radius: 3px;
+    height: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chain-bar .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #000;
+    white-space: nowrap;
+    transition: width 0.5s;
+  }
+  .chain-bar .val { color: var(--text-muted); font-size: 11px; width: 70px; text-align: right; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ========== PAGE HEADER ========== -->
+<div class="page-header">
+  <span class="as-of">as-of: 2026-06-14</span>
+  <h1>OGC 2026 — Solver R&amp;D 현황</h1>
+  <div class="subtitle">
+    가설 생성 · 구현 · 검증(full-set obj) · 피드백 루프 대시보드 &nbsp;|&nbsp;
+    from-scratch reset 2026-06-14 &nbsp;|&nbsp;
+    current baseline: <strong style="color:var(--hero-gold)">h6</strong>
+  </div>
+</div>
+
+<!-- ========== HERO METRICS ========== -->
+<div class="hero-grid">
+  <div class="hero-metric highlight">
+    <div class="label">Total Obj (ALL40)</div>
+    <div class="value">353M</div>
+    <div class="delta">↓ −98.9% vs v0 (32.13B)</div>
+    <div class="note">lower = better</div>
+  </div>
+  <div class="hero-metric">
+    <div class="label">Feasibility</div>
+    <div class="value" style="color:var(--green)">40/40</div>
+    <div class="delta">never −1</div>
+    <div class="note">priority #1</div>
+  </div>
+  <div class="hero-metric">
+    <div class="label">set1 Wins</div>
+    <div class="value" style="color:var(--amber)">2 / 20</div>
+    <div class="delta">prob_2, prob_8</div>
+    <div class="note">vs competitor table</div>
+  </div>
+  <div class="hero-metric">
+    <div class="label">Max Wall / Instance</div>
+    <div class="value" style="color:var(--cyan)">44s</div>
+    <div class="delta">well within TL</div>
+    <div class="note">eval: a few min–30 min</div>
+  </div>
+  <div class="hero-metric">
+    <div class="label">Current Baseline</div>
+    <div class="value" style="color:var(--purple); font-size:28px">h6</div>
+    <div class="delta">cycle 4–6</div>
+    <div class="note">ALL40 = set1 + set2</div>
+  </div>
+</div>
+
+<!-- ========== PROBLEM CARD ========== -->
+<div class="section-heading">문제 정의</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-title">The Grand Shipyard Puzzle &nbsp;(LG CNS × KIIE)</div>
+  <p style="font-size:12.5px; color:var(--text-muted); line-height:1.8; margin-bottom:12px">
+    블록(block)당 동시에 결정: <strong style="color:var(--accent2)">베이 j</strong>,
+    정수 위치 <strong style="color:var(--accent2)">(x, y)</strong>, 방향 <strong style="color:var(--accent2)">o</strong>,
+    <strong style="color:var(--accent2)">ENTRY</strong> 시각, <strong style="color:var(--accent2)">EXIT</strong> 시각.
+    크레인 수직접근 하드 제약: <span style="color:var(--red)">j ≥ k rule</span>.
+    3개의 NP-hard 문제가 결합: 2D irregular packing + single-machine tardiness scheduling + bay assignment.
+  </p>
+  <div class="formula-box">
+    min &nbsp;w1·Z1 + w2·Z2 + w3·Z3<br>
+    <span class="comment">    Z1 = Σ tardiness</span><br>
+    <span class="comment">    Z2 = max workload imbalance (bay weight u_j)</span><br>
+    <span class="comment">    Z3 = Σ preference deviation</span>
+  </div>
+  <div class="problem-row" style="margin-top:12px">
+    <div class="problem-chip">score = <span>R − nb</span> &nbsp;(R=#teams, nb=#strictly-better)</div>
+    <div class="problem-chip">infeasible / timeout / crash → <span style="color:var(--red)">−1</span></div>
+    <div class="problem-chip">w1 range: <span>667 – 29,091</span> (orders of magnitude) ⇒ weight-adaptive 필수</div>
+    <div class="problem-chip">eval server: <span>4 cores · 16GB · no internet · no GPU</span></div>
+    <div class="problem-chip">instance set: <span>ALL40</span> = set1 (prob_1..20) + set2 (prob_21..40, larger, 3–4 layers)</div>
+  </div>
+</div>
+
+<!-- ========== BINDING LEVER CALLOUT ========== -->
+<div class="callout">
+  <div class="callout-title">핵심 레버 (Binding Lever)</div>
+  <p>
+    잔여 <strong>z1 (Σ tardiness)</strong>이 set1 전체 갭의 원인. z3≈0, z2 is already small — 모든 set1 패배는 순전히
+    <strong>z1 · w1</strong> (예: prob_11: z1=108 × w1=22,857 ≈ 2.47M = its whole objective).<br>
+    2 wins = 정확히 z1=0인 인스턴스. <em>z1_LB = 0 everywhere</em> (검진 확인) ⇒ 완벽한 packing+timing은 z1=0 가능 ⇒ set1 ~전체 승리.<br>
+    구 아카이브 솔버는 z1=0 19/20 달성 — 달성 가능성 증명됨.<br>
+    레버: <strong>better PACKING/SCHEDULING (CP-SAT, global)</strong>, NOT candidate tweaks (cycle 7에서 실패).
+    예외: prob_17은 이미 z1=0이지만 z3=12,164로 패배 → 그 인스턴스는 z3↓ 레버 필요.
+  </p>
+</div>
+
+<!-- ========== OBJ CHAIN VISUALIZATION ========== -->
+<div class="section-heading">베이스라인 체인 (Total Obj 추이)</div>
+<div class="card" style="margin-bottom:20px">
+  <div class="card-title">Total Objective — ALL40 (lower = better)</div>
+  <div style="padding: 6px 0">
+    <div class="chain-bar">
+      <div class="tag">v0</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:100%; background: linear-gradient(90deg,#8b1a1a,#c0302a)">32.13B</div>
+      </div>
+      <div class="val">32.13B</div>
+    </div>
+    <div class="chain-bar">
+      <div class="tag">h1</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:4.3%; background: linear-gradient(90deg,#c07020,#e09030)">1.38B</div>
+      </div>
+      <div class="val">1.38B</div>
+    </div>
+    <div class="chain-bar">
+      <div class="tag">h2</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:3.9%; background: linear-gradient(90deg,#8060a0,#a080c0)">1.257B</div>
+      </div>
+      <div class="val">1.257B</div>
+    </div>
+    <div class="chain-bar">
+      <div class="tag">h3</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:1.2%; background: linear-gradient(90deg,#2060a0,#3080c0)">386M</div>
+      </div>
+      <div class="val">386M</div>
+    </div>
+    <div class="chain-bar">
+      <div class="tag" style="color:var(--hero-gold);font-weight:800">h6</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:1.1%; background: linear-gradient(90deg,#1a5020,var(--green))">353M</div>
+      </div>
+      <div class="val" style="color:var(--green); font-weight:700">353M ★</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADOPTED BASELINE TABLE ========== -->
+<div class="section-heading">채택 베이스라인 체인 <span class="badge">순서대로 쌓임</span></div>
+<div class="card" style="margin-bottom:20px">
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Baseline</th>
+          <th>Cycle</th>
+          <th>핵심 변경</th>
+          <th class="num">Total Obj</th>
+          <th class="num">Δ</th>
+          <th>Feasible</th>
+          <th>set1 Wins</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">v0</td>
+          <td>0</td>
+          <td class="muted">preferred-bay assignment (z3≈0) + per-bay EDD serialisation. Always feasible, never −1, z1 large (serialisation floor).</td>
+          <td class="num mono">32.13B</td>
+          <td class="num">—</td>
+          <td>40/40</td>
+          <td>0</td>
+          <td><span class="pill pill-green">KEPT</span></td>
+        </tr>
+        <tr>
+          <td class="mono">h1</td>
+          <td>1 (H1)</td>
+          <td class="muted">per-bay TIME-EXTENDED bbox co-presence packing: co-present blocks bbox-disjoint ⇒ footprint-disjoint ⇒ crane-safe by construction. Breaks serialisation.</td>
+          <td class="num mono">1.38B</td>
+          <td class="num delta-pos">−95.7%</td>
+          <td>40/40</td>
+          <td>0</td>
+          <td><span class="pill pill-green">KEPT</span></td>
+        </tr>
+        <tr>
+          <td class="mono">h2</td>
+          <td>2 (H3)</td>
+          <td class="muted">per-bay best-of-5 orderings (EDD/slack/release/proc/area), keep lowest-tardiness pack (packing is order-sensitive).</td>
+          <td class="num mono">1.257B</td>
+          <td class="num delta-pos">−9% vs h1</td>
+          <td>40/40</td>
+          <td>0→2 (prob_2, prob_8)</td>
+          <td><span class="pill pill-green">KEPT</span></td>
+        </tr>
+        <tr>
+          <td class="mono">h3</td>
+          <td>3</td>
+          <td class="muted">best-of {preferred, balanced} assignment, obj-gated (balanced spreads area-time load → cuts congestion z1 when w1≫w3).</td>
+          <td class="num mono">386M</td>
+          <td class="num delta-pos">−69% vs h2</td>
+          <td>40/40</td>
+          <td>2</td>
+          <td><span class="pill pill-green">KEPT</span></td>
+        </tr>
+        <tr class="row-highlight">
+          <td class="mono" style="color:var(--hero-gold); font-weight:700">h6 ★</td>
+          <td>4–6</td>
+          <td class="muted">dense FOOTPRINT-CELL co-presence refine on 2 lowest-z3 assignments + α-sweep assignment spectrum {preferred, capped(1.0), balanced} + 4-CORE spawn-Pool parallel best-of. Also fixed a cross-instance FP-cache collision bug.</td>
+          <td class="num mono" style="color:var(--hero-gold)">353M</td>
+          <td class="num delta-pos">−8.5% vs h3</td>
+          <td>40/40</td>
+          <td>2</td>
+          <td><span class="pill pill-green">KEPT</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px; font-size:11px; color:var(--text-dim); padding-left:4px">
+    Note (h6): fixed cross-instance FP-cache collision bug (block_id keys collided across instances → cells silently no-op). Lesson: always test multi-instance-in-one-process.
+  </div>
+</div>
+
+<!-- ========== KEY DIAGNOSTIC ========== -->
+<div class="callout blue" style="margin-bottom:20px">
+  <div class="callout-title">진단: Intrinsic z1 Lower Bound</div>
+  <p>
+    z1_LB = Σ max(0, R + P − due). 확인 결과: <strong>set1 loss 인스턴스 전체에서 z1_LB = 0</strong>, 그러나 greedy_z1 = 1–94.<br>
+    ⇒ 잔여 z1은 <strong>완전히 회복 가능(FULLY RECOVERABLE)</strong>; z1=0 달성 가능; 이를 달성하면 set1 대부분 승리.<br>
+    <em>Key finding: CP-SAT 스케줄러 구축이 낭비가 아님을 정당화하는 핵심 근거.</em>
+  </p>
+</div>
+
+<!-- ========== HYPOTHESIS BACKLOG ========== -->
+<div class="section-heading">가설 백로그 <span class="badge">8 hypotheses</span></div>
+<div class="card" style="margin-bottom:20px">
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>가설</th>
+          <th>Source</th>
+          <th>Expected</th>
+          <th>Cost</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono" style="color:var(--green)">H1</td>
+          <td>Greedy CO-PRESENCE decode (bbox-disjoint over time) — collapses z1 vs serialised floor</td>
+          <td class="muted">foundation</td>
+          <td>huge z1↓</td>
+          <td>low</td>
+          <td><span class="pill pill-green">KEPT</span> <span class="muted" style="font-size:10px">cycle 1, −95.7%</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--green)">H3</td>
+          <td>best-of orderings (EDD/slack/release/proc/area) — order-sensitive packing</td>
+          <td class="muted">foundation</td>
+          <td>z1↓</td>
+          <td>low</td>
+          <td><span class="pill pill-green">KEPT</span> <span class="muted" style="font-size:10px">cycle 2, wins 0→2</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--green)">H7b</td>
+          <td>Denser co-presence: footprint(polygon)-cell-disjoint instead of bbox-disjoint</td>
+          <td class="muted">S65, utils</td>
+          <td>z1→0</td>
+          <td>med</td>
+          <td><span class="pill pill-green">KEPT</span> <span class="muted" style="font-size:10px">cycle 4–6, cells</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--amber)">H2</td>
+          <td>Per-bay CP-SAT "packing-by-scheduling": grid positions + entry times, co-presence = 2D-no-overlap-over-time, minimize Σ tardiness → reach z1=0 layouts greedy misses</td>
+          <td class="muted">S11,S13,S31,S33,S34</td>
+          <td>z1→0 (high ceiling)</td>
+          <td>med</td>
+          <td><span class="pill pill-amber">IN PROGRESS</span> <span class="muted" style="font-size:10px">cycle 8, validating</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--grey)">H4</td>
+          <td>ALNS over bay-assignment: destroy(worst-z / Shaw-related) + repair(greedy), accept by TRUE obj</td>
+          <td class="muted">S51,S56,S58</td>
+          <td>obj↓ (main lever)</td>
+          <td>med</td>
+          <td><span class="pill pill-grey">TODO</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--grey)">H5</td>
+          <td>LBBD / branch-and-check: MIP master assigns+schedules, CP subproblem checks crane-feasible 2D pack, no-good cuts</td>
+          <td class="muted">S36,S43,S46</td>
+          <td>obj↓ ceiling</td>
+          <td>high</td>
+          <td><span class="pill pill-grey">TODO</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--grey)">H6</td>
+          <td>Weight-adaptive z1↔z3: low-w1 (e.g. prob_25/36/40, w1=667) accept z1&gt;0 to cut z3; high-w1 force z1→0</td>
+          <td class="muted">weights</td>
+          <td>obj↓ set2</td>
+          <td>low</td>
+          <td><span class="pill pill-grey">TODO</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--grey)">H7</td>
+          <td>Dense per-bay placement (spyrrow/NFP/CP-SAT no-overlap) to admit more co-presence</td>
+          <td class="muted">S65,S31,S69</td>
+          <td>z1↓ enabler</td>
+          <td>med</td>
+          <td><span class="pill pill-grey">TODO</span></td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--grey)">H8</td>
+          <td>Virtual super-blocks: agglomerate time-space-close blocks before scheduling</td>
+          <td class="muted">S04</td>
+          <td>scale</td>
+          <td>med</td>
+          <td><span class="pill pill-grey">TODO</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========== EXPERIMENT LOG ========== -->
+<div class="section-heading">검증 실험 로그 <span class="badge">8 cycles</span></div>
+<div class="card" style="margin-bottom:20px">
+  <ul class="timeline">
+
+    <li class="timeline-item">
+      <div class="tl-dot green"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">Cycle 1 · H1</span>
+          <span class="tl-title">per-bay time-extended bbox co-presence packing</span>
+          <span class="pill pill-green">KEPT</span>
+        </div>
+        <div class="tl-result">
+          Result: feasible <span class="highlight">40/40</span>,
+          <span class="highlight">32.13B → 1.38B (−95.7%)</span>, improved 40/40, regressed 0, ≤2.6s.
+          <br>Verdict: foundational z1 collapse. co-present blocks bbox-disjoint over time ⇒ crane-safe by construction.
+        </div>
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="tl-dot green"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">Cycle 2 · H3</span>
+          <span class="tl-title">per-bay best-of-5 orderings (EDD/slack/release/proc/area)</span>
+          <span class="pill pill-green">KEPT</span>
+        </div>
+        <div class="tl-result">
+          Result: feasible <span class="highlight">40/40</span>,
+          <span class="highlight">1.38B → 1.257B (−9%)</span>, improved 38/40, regress 0,
+          <span class="highlight">wins 0 → 2 (prob_2, prob_8)</span>, ≤15s.
+        </div>
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="tl-dot green"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">Cycle 3</span>
+          <span class="tl-title">best-of {preferred, balanced} assignment, obj-gated</span>
+          <span class="pill pill-green">KEPT</span>
+        </div>
+        <div class="tl-result">
+          Result: <span class="highlight">1.257B → 386M (−69%)</span>, feasible 40/40, regress 0, wins 2.
+          <br>Note: still only z1=0 instances win — to win more, realise the PREFERRED (z3≈0) assignment AT z1=0.
+        </div>
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="tl-dot green"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">Cycle 4–6</span>
+          <span class="tl-title">footprint-cell dense refine + α-sweep spectrum + 4-core parallel</span>
+          <span class="pill pill-green">KEPT → h6</span>
+        </div>
+        <div class="tl-result">
+          Result (h6): <span class="highlight">386M → 353M (−8.5%)</span>, feasible 40/40, improved 32/40, regress 0, wins 2, max wall 44s.
+          <br><span class="warn">Bug fixed: cross-instance FP-cache collision (block_id keys collided across instances → cells silently no-op). Lesson: always test multi-instance-in-one-process.</span>
+        </div>
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="tl-dot blue"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">DIAGNOSTIC</span>
+          <span class="tl-title">Intrinsic z1 LB = 0 everywhere</span>
+          <span class="pill pill-blue">KEY FINDING</span>
+        </div>
+        <div class="tl-result">
+          z1_LB = Σ max(0, R+P−due) = <span class="key">0 on EVERY set1 loss instance</span>, yet greedy_z1 = 1–94.
+          <br>⇒ Residual z1 is FULLY RECOVERABLE; z1=0 is achievable; chasing it wins most of set1.
+          Justifies building the CP-SAT scheduler — not wasted effort on an inherent floor.
+        </div>
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="tl-dot red"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">Cycle 7</span>
+          <span class="tl-title">richer 4-side cell BL candidates (left/below extreme-point anchors)</span>
+          <span class="pill pill-red">REJECTED &amp; REVERTED</span>
+        </div>
+        <div class="tl-result">
+          Result: MIXED — prob_11 slightly ↓ but <span class="warn">prob_16: 807K → 1.2M (z1 87 → 131) WORSE.</span>
+          <br>Lesson: under online BL first-feasible, MORE candidates fragment space for later blocks. Candidate-set tweaks are a dead end for residual z1 → need GLOBAL packing/scheduling.
+        </div>
+      </div>
+    </li>
+
+    <li class="timeline-item">
+      <div class="tl-dot amber"></div>
+      <div class="tl-body">
+        <div class="tl-header">
+          <span class="tl-cycle">Cycle 8 · H2</span>
+          <span class="tl-title">per-bay CP-SAT packing-by-scheduling</span>
+          <span class="pill pill-amber">IN PROGRESS</span>
+        </div>
+        <div class="tl-result">
+          Status: <span class="warn">IMPLEMENTED + VALIDATING.</span>
+          <br>Design: minimize Σ tardiness with sound integer 3D (x, y, time) no-overlap (bbox-disjoint co-presence ⇒ crane-safe by construction, same invariant as greedy); seeded with greedy layout as CP-SAT hint + guaranteed fallback; added as two obj-gated specs (preferred/capped × cpsat);
+          <span class="key">OGC_CPSAT=1 default &amp; reversible</span>;
+          pool hardened with map_async + hard sub-wall timeout so a slow solve can never breach the time limit (→ −1).
+          <br>Zero-regression by construction (obj-gate + check_feasibility).
+          <br><strong>Verdict: PENDING full-set ALL40 result.</strong>
+        </div>
+      </div>
+    </li>
+
+  </ul>
+</div>
+
+<!-- ========== FALSIFIED / DEAD-END ========== -->
+<div class="section-heading">반증된 레버 (Dead-End — 재시도 금지)</div>
+<div class="card" style="margin-bottom:20px">
+  <ul class="muted-list">
+    <li>[구 아카이브 아키텍처] LCA/contact-area placement</li>
+    <li>[구 아카이브 아키텍처] Temporal pre-staggering</li>
+    <li>[구 아카이브 아키텍처] Finer-raster geometry</li>
+    <li>[구 아카이브 아키텍처] Exact-box CP-SAT packer</li>
+    <li>[신규 빌드 cycle 7] Richer candidate sets — under online BL, more candidates fragment space for later blocks. REJECTED.</li>
+  </ul>
+  <div style="font-size:11px; color:var(--text-dim); margin-top:10px">
+    근거: <code style="color:var(--accent2)">notes/structural-ceiling-2026-06-14.html</code> + <code style="color:var(--accent2)">notes/devlog/REFLECTIONS.md</code> (2026-06-14 PM)
+  </div>
+</div>
+
+<!-- ========== INSTANCE SET INFO ========== -->
+<div class="section-heading">인스턴스 세트</div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">set1 &nbsp;(prob_1..20)</div>
+    <p style="font-size:12px; color:var(--text-muted); line-height:1.8">
+      경쟁자 테이블 있음 (비교 가능).<br>
+      Current wins: <span style="color:var(--amber); font-weight:700">2 / 20</span> (prob_2, prob_8).<br>
+      All losses: purely z1 · w1 gap (z1_LB = 0 everywhere ⇒ fully recoverable).<br>
+      Exception: prob_17 already z1=0 but loses on z3=12,164 → needs z3↓ lever.
+    </p>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>wins / 20</span><span>2 / 20 (10%)</span></div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill amber" style="width:10%"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">set2 &nbsp;(prob_21..40) — 신규 2026-06-14</div>
+    <p style="font-size:12px; color:var(--text-muted); line-height:1.8">
+      경쟁자 테이블 없음 (절대값만 추적).<br>
+      Larger instances, 3–4 layers 다수.<br>
+      Weight-adaptive 특히 중요: prob_25/36/40 w1=667 → low-w1 인스턴스.<br>
+      Hypothesis H6 (z1↔z3 trade) is set2 priority lever. Status: TODO.
+    </p>
+    <div class="progress-wrap">
+      <div class="progress-label"><span>feasibility</span><span>20/20</span></div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ADOPTION RULE ========== -->
+<div class="footer">
+  <strong>채택 규칙 (Adoption Rule):</strong>&nbsp;
+  Verification = full instance set (ALL40), judged by TOTAL objective + feasibility (never −1).
+  A change is KEPT only if total obj ↓ AND feasible 40/40 AND 0 regressions.
+  set1 also counts wins vs the competitor table.
+  &nbsp;|&nbsp;
+  <strong>하니스:</strong> <code style="color:var(--accent2)">notes/_capture20_aff.py</code> — <code>--instances ALL20|SET2|ALL40</code> 지원.
+  &nbsp;|&nbsp;
+  Generated: 2026-06-14
+</div>
+
+</body>
+</html>

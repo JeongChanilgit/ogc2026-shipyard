@@ -1,0 +1,571 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGC2026 · 연구 진행 시각화 · 2026-06-13</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#070b16;--pan:#0f1626;--pan2:#131c30;--line:#1e2c44;--txt:#e6edf7;--mut:#8aa0c0;--mut2:#5f7395}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',-apple-system,system-ui,sans-serif;line-height:1.5;
+ background-image:radial-gradient(1200px 600px at 80% -10%,rgba(56,189,248,.07),transparent),radial-gradient(900px 500px at -10% 20%,rgba(192,132,252,.06),transparent)}
+.wrap{max-width:1240px;margin:0 auto;padding:34px 26px 90px}
+code{font-family:'JetBrains Mono','Consolas',monospace}
+.num,.kv,.ax,.mono{font-variant-numeric:tabular-nums;font-family:'JetBrains Mono','Consolas',monospace}
+h1{font-size:27px;font-weight:800;letter-spacing:-.5px}
+.sub{color:var(--mut);font-size:14px;margin-top:6px}
+.tag{display:inline-block;font-size:11px;color:#7dd3fc;border:1px solid #1e3a52;background:#0c1c2c;padding:2px 9px;border-radius:20px;margin-right:6px;font-weight:600}
+nav{position:sticky;top:0;z-index:20;background:rgba(7,11,22,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+ display:flex;gap:4px;flex-wrap:wrap;padding:10px 26px;margin:0 -26px 26px}
+nav a{color:var(--mut);text-decoration:none;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:7px}
+nav a:hover{color:var(--txt);background:var(--pan2)}
+section{margin:40px 0}
+h2{font-size:19px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+h2 .dot{width:9px;height:9px;border-radius:50%}
+.h2sub{color:var(--mut);font-size:13px;margin-bottom:18px}
+.card{background:linear-gradient(180deg,var(--pan),var(--bg));border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.kpi{background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.kv{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.kl{font-size:13px;margin-top:3px;font-weight:600}
+.ks{font-size:11.5px;color:var(--mut2);margin-top:3px}
+.chart{width:100%;height:auto;display:block;margin-top:6px}
+.ax{fill:var(--mut2);font-size:10.5px} .z1c{fill:#38bdf8}
+.xl{fill:var(--mut);font-size:11px} .xl.win{fill:#34d399;font-weight:700}
+.res{fill:#38bdf8;font-size:9.5px;font-weight:700}
+.dl{fill:var(--txt);font-size:11.5px;font-weight:700} .dl2{fill:var(--mut);font-size:10px}
+.onl{fill:#34d399;font-size:10.5px;font-weight:700;font-family:monospace}
+.z1l{fill:#38bdf8;font-size:10px;font-weight:700;font-family:monospace}
+.cmpl{fill:#a78bfa;font-size:11px;font-weight:600} .leg{font-size:11px;font-weight:700}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:8px;align-items:center}
+.sw{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+th{text-align:right;color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:8px 9px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:7px 9px;border-bottom:1px solid rgba(30,44,68,.5)}
+td.num{text-align:right} .pid{font-weight:700;font-family:monospace}
+.bcol{color:var(--mut2)} .comp{color:#a78bfa} .z3c{color:#c084fc;font-weight:600}
+.vs{color:var(--mut2);font-weight:400}
+.gpos{color:#fb7185} .gneg{color:#34d399}
+tr.win{background:rgba(52,211,153,.05)}
+.badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px}
+.badge.win{background:rgba(52,211,153,.16);color:#34d399} .badge.lose{background:rgba(251,113,133,.13);color:#fb7185}
+.flow{display:flex;flex-direction:column;gap:8px}
+.flrow{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.stage{flex:1;min-width:150px;background:var(--pan2);border:1px solid var(--line);border-left:3px solid var(--tc);border-radius:9px;padding:9px 11px;position:relative}
+.stage.off{opacity:.55;border-left-style:dashed}
+.stage.key{box-shadow:0 0 0 1px var(--tc),0 0 18px -4px var(--tc)}
+.st-top{display:flex;gap:7px;align-items:baseline}
+.st-n{font-family:monospace;font-size:11px;color:var(--mut2);font-weight:700}
+.st-title{font-size:13px;font-weight:700}
+.st-meta{display:flex;justify-content:space-between;gap:6px;margin-top:3px;font-size:10.5px}
+.st-tgt{font-weight:600} .st-loc{color:var(--mut2);font-family:monospace}
+.st-flag{margin-top:5px;font-size:10.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.st-flag code{color:#9ec5ff;font-size:10px} .st-d{color:var(--mut)}
+.st-bud{font-size:10px;color:var(--mut2);margin-top:3px}
+.phase-h{font-size:11.5px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 4px;display:flex;align-items:center;gap:8px}
+.phase-h::before{content:"";flex:0 0 18px;height:1px;background:var(--line)}
+.arrow{text-align:center;color:var(--mut2);font-size:15px;line-height:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:880px){.grid2{grid-template-columns:1fr}}
+.lever{background:var(--pan);border:1px solid var(--line);border-radius:12px;padding:16px 18px;border-top:3px solid var(--lc)}
+.lever h3{font-size:15px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.lever .rank{font-family:monospace;background:var(--lc);color:#06121f;font-weight:800;font-size:12px;padding:1px 8px;border-radius:6px}
+.lever p{font-size:13px;color:var(--mut);margin-bottom:7px}
+.lever .ev{font-size:11.5px;color:var(--mut2);border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.lever b{color:var(--txt)}
+.note{font-size:11.5px;color:var(--mut2);background:var(--pan);border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin-top:14px}
+.note b{color:var(--mut)}
+ul.tl{list-style:none;margin-top:8px} ul.tl li{padding:6px 0;border-bottom:1px solid rgba(30,44,68,.5);font-size:12.5px;display:flex;gap:10px}
+ul.tl .d{color:#38bdf8;font-family:monospace;font-weight:700;flex:0 0 52px}
+ul.tl .l{color:var(--mut)}
+.hl{color:#34d399;font-weight:700}
+.hr{color:#fb7185;font-weight:700}
+</style></head><body><div class="wrap">
+
+<header>
+  <div><span class="tag">OGC 2026</span><span class="tag">조선소 블록 패킹</span><span class="tag">2026-06-13</span></div>
+  <h1 style="margin-top:12px">연구 진행 시각화 — Z1·Z2·Z3·Total Objective</h1>
+  <p class="sub">베이스라인(06-01) → 현재(gate200_v2, 06-13)까지 20개 인스턴스의 목적함수 성분이 시간·연구에 따라 어떻게 줄었는가 · 솔버 시퀀스 · 향후 돌파 방향</p>
+</header>
+
+<nav>
+  <a href="#kpi">현황</a><a href="#time">연구 타임라인</a><a href="#metrics">성분별 20문제</a>
+  <a href="#z1tl">Z1 vs 시간</a><a href="#table">전체 표</a><a href="#seq">솔버 시퀀스</a><a href="#break">돌파 방향</a>
+</nav>
+
+<section id="kpi">
+  <h2><span class="dot" style="background:#34d399"></span>현재 상태 한눈에</h2>
+  <p class="h2sub">gate200_v2 = 실제 제출 기본값 (2026-06-13 승격). 괄호는 베이스라인 대비.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="kv" style="color:#38bdf8">19/20</div><div class="kl">Z1 = 0 달성</div><div class="ks">베이스라인 3/20 → 현재 19/20</div></div>
+    <div class="kpi"><div class="kv" style="color:#34d399">20/20</div><div class="kl">Feasible</div><div class="ks">베이스라인 16/20 (4개 −1) → 전부 실현가능</div></div>
+    <div class="kpi"><div class="kv" style="color:#34d399">−42%</div><div class="kl">총 obj 감소</div><div class="ks">legacy 2.68M → 1.55M (제출경로 @200s)</div></div>
+    <div class="kpi"><div class="kv" style="color:#fbbf24">~165×</div><div class="kl">베이스라인 대비</div><div class="ks">256M → 1.55M (실현가능분 기준)</div></div>
+    <div class="kpi"><div class="kv" style="color:#a78bfa">9/20</div><div class="kl">경쟁자 상대 승</div><div class="ks">full-20 @600 재측정 확정 (구 리포트 6/20=stale)</div></div>
+    <div class="kpi"><div class="kv" style="color:#fb7185">prob_20</div><div class="kl">단일 최대 갭</div><div class="ks">+337,757 = 전체 갭의 64% (z1=12 페널티)</div></div>
+  </div>
+</section>
+
+<section id="time">
+  <h2><span class="dot" style="background:#34d399"></span>연구 타임라인 — 총 목적함수 · Z1=0 달성 수</h2>
+  <p class="h2sub">왼쪽축=총 obj(로그, <span style="color:#34d399">●선</span>) · 오른쪽축=z1=0 인스턴스 수(<span style="color:#38bdf8">┄선</span>) · <span style="color:#a78bfa">┄</span>=경쟁자 총 obj. 12일 만에 ~165× 축소.</p>
+  <div class="card"><svg viewBox="0 0 1180 300" class="chart" role="img"><line x1="58" y1="244.4" x2="1122" y2="244.4" stroke="#1e2c44"/><text x="52" y="247.4" text-anchor="end" class="ax">1,000,000</text><line x1="58" y1="201.5" x2="1122" y2="201.5" stroke="#1e2c44"/><text x="52" y="204.5" text-anchor="end" class="ax">3,000,000</text><line x1="58" y1="154.5" x2="1122" y2="154.5" stroke="#1e2c44"/><text x="52" y="157.5" text-anchor="end" class="ax">10,000,000</text><line x1="58" y1="111.7" x2="1122" y2="111.7" stroke="#1e2c44"/><text x="52" y="114.7" text-anchor="end" class="ax">30,000,000</text><line x1="58" y1="64.7" x2="1122" y2="64.7" stroke="#1e2c44"/><text x="52" y="67.7" text-anchor="end" class="ax">100,000,000</text><line x1="58" y1="28.0" x2="1122" y2="28.0" stroke="#1e2c44"/><text x="52" y="31.0" text-anchor="end" class="ax">256,000,000</text><line x1="58" y1="239.3" x2="1122" y2="239.3" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="5,4"/><text x="1122" y="233.3" text-anchor="end" class="cmpl">competitor total 1,139,440</text><polyline points="58.0,28.0 590.0,213.2 856.0,225.5 1122.0,227.3" fill="none" stroke="#34d399" stroke-width="3"/><polyline points="58.0,215.0 324.0,72.0 590.0,83.0 856.0,61.0 1122.0,39.0" fill="none" stroke="#38bdf8" stroke-width="2.4" stroke-dasharray="2,3"/><text x="1130" y="251.0" text-anchor="start" class="ax z1c">0</text><text x="1130" y="196.0" text-anchor="start" class="ax z1c">5</text><text x="1130" y="141.0" text-anchor="start" class="ax z1c">10</text><text x="1130" y="86.0" text-anchor="start" class="ax z1c">15</text><text x="1130" y="31.0" text-anchor="start" class="ax z1c">20</text><circle cx="58.0" cy="28.0" r="5" fill="#34d399" stroke="#070b16" stroke-width="1.5"><title>06-01 Greedy baseline: total obj 256,000,000</title></circle><text x="58.0" y="17.0" text-anchor="middle" class="onl">256,000,000</text><circle cx="58.0" cy="215.0" r="4" fill="#38bdf8"><title>06-01: z1=0 on 3/20</title></circle><text x="58.0" y="231.0" text-anchor="middle" class="z1l">3/20</text><text x="58.0" y="266" text-anchor="middle" class="dl">06-01</text><text x="58.0" y="281" text-anchor="middle" class="dl2">Greedy baseline</text><circle cx="324.0" cy="72.0" r="4" fill="#38bdf8"><title>06-08: z1=0 on 16/20</title></circle><text x="324.0" y="62.0" text-anchor="middle" class="z1l">16/20</text><text x="324.0" y="266" text-anchor="middle" class="dl">06-08</text><text x="324.0" y="281" text-anchor="middle" class="dl2">DUAL + slab pack</text><circle cx="590.0" cy="213.2" r="5" fill="#34d399" stroke="#070b16" stroke-width="1.5"><title>06-10 Front B reassign: total obj 2,225,579</title></circle><text x="590.0" y="202.2" text-anchor="middle" class="onl">2,225,579</text><circle cx="590.0" cy="83.0" r="4" fill="#38bdf8"><title>06-10: z1=0 on 15/20</title></circle><text x="590.0" y="73.0" text-anchor="middle" class="z1l">15/20</text><text x="590.0" y="266" text-anchor="middle" class="dl">06-10</text><text x="590.0" y="281" text-anchor="middle" class="dl2">Front B reassign</text><circle cx="856.0" cy="225.5" r="5" fill="#34d399" stroke="#070b16" stroke-width="1.5"><title>06-12 gate_rc cap+repair: total obj 1,621,719</title></circle><text x="856.0" y="214.5" text-anchor="middle" class="onl">1,621,719</text><circle cx="856.0" cy="61.0" r="4" fill="#38bdf8"><title>06-12: z1=0 on 17/20</title></circle><text x="856.0" y="51.0" text-anchor="middle" class="z1l">17/20</text><text x="856.0" y="266" text-anchor="middle" class="dl">06-12</text><text x="856.0" y="281" text-anchor="middle" class="dl2">gate_rc cap+repair</text><circle cx="1122.0" cy="227.3" r="5" fill="#34d399" stroke="#070b16" stroke-width="1.5"><title>06-13 gate200_v2  (SHIPPED): total obj 1,550,000</title></circle><text x="1122.0" y="216.3" text-anchor="middle" class="onl">1,550,000</text><circle cx="1122.0" cy="39.0" r="4" fill="#38bdf8"><title>06-13: z1=0 on 19/20</title></circle><text x="1122.0" y="29.0" text-anchor="middle" class="z1l">19/20</text><text x="1122.0" y="266" text-anchor="middle" class="dl">06-13</text><text x="1122.0" y="281" text-anchor="middle" class="dl2">gate200_v2  (SHIPPED)</text></svg></div>
+  <ul class="tl">
+    <li><span class="d">06-01</span><span><b>Greedy baseline</b> <span class="l">— EDD + Best-Fit greedy; 4 infeasible (−1 each)</span></span></li><li><span class="d">06-08</span><span><b>DUAL + slab pack</b> <span class="l">— polygon slab packing + wide cum_level</span></span></li><li><span class="d">06-10</span><span><b>Front B reassign</b> <span class="l">— bay reassignment gate-fix unlocked</span></span></li><li><span class="d">06-12</span><span><b>gate_rc cap+repair</b> <span class="l">— assign-cap 0.85 + z1-repair loop</span></span></li><li><span class="d">06-13</span><span><b>gate200_v2  (SHIPPED)</b> <span class="l">— FastFloor primary + BAN-RACE</span></span></li>
+  </ul>
+</section>
+
+<section id="metrics">
+  <h2><span class="dot" style="background:#38bdf8"></span>성분별 · 모든 문제 (baseline → current)</h2>
+  <p class="h2sub"><span class="sw" style="background:#fb7185"></span>베이스라인 @60s &nbsp; <span class="sw" style="background:#34d399"></span>현재 @600 &nbsp; <span style="border-top:2.5px dashed #a78bfa;display:inline-block;width:16px;vertical-align:middle"></span> 경쟁자 &nbsp;·&nbsp; x축 숫자 초록=경쟁자 상대 승. 빗금=실현불가(−1).</p>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="font-size:15px"><span class="dot" style="background:#38bdf8"></span>Z1 — 총 지연 (tardiness) · 로그축</h2>
+    <p class="h2sub">베이스라인은 수백~수천. 현재는 18/20이 0 (@600 잔여: prob_14=1, prob_20=12). 가장 큰 가중치(w1=10K~30K) 성분 → <span class="hl">사실상 해결, 단 prob_20이 핵심 예외</span>.</p>
+    <svg viewBox="0 0 1180 330" class="chart" role="img"><line x1="46" y1="262.4" x2="1166" y2="262.4" stroke="#1e2c44" stroke-width="1"/><text x="40" y="265.4" text-anchor="end" class="ax">1</text><line x1="46" y1="209.4" x2="1166" y2="209.4" stroke="#1e2c44" stroke-width="1"/><text x="40" y="212.4" text-anchor="end" class="ax">10</text><line x1="46" y1="140.4" x2="1166" y2="140.4" stroke="#1e2c44" stroke-width="1"/><text x="40" y="143.4" text-anchor="end" class="ax">100</text><line x1="46" y1="69.1" x2="1166" y2="69.1" stroke="#1e2c44" stroke-width="1"/><text x="40" y="72.1" text-anchor="end" class="ax">1,000</text><rect x="55.0" y="120.6" width="16.8" height="163.4" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_1 baseline Z1: 190</title></rect><rect x="75.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_1 current Z1: 0</title></rect><text x="74.0" y="300" text-anchor="middle" class="xl win">1</text><rect x="111.0" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_2 baseline Z1: 0</title></rect><rect x="131.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_2 current Z1: 0</title></rect><text x="130.0" y="300" text-anchor="middle" class="xl win">2</text><rect x="167.0" y="206.7" width="16.8" height="77.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_3 baseline Z1: 11</title></rect><rect x="187.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_3 current Z1: 0</title></rect><text x="186.0" y="300" text-anchor="middle" class="xl ">3</text><rect x="223.0" y="153.2" width="16.8" height="130.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_4 baseline Z1: 66</title></rect><rect x="243.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_4 current Z1: 0</title></rect><text x="242.0" y="300" text-anchor="middle" class="xl ">4</text><rect x="279.0" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_5 baseline Z1: 0</title></rect><rect x="299.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_5 current Z1: 0</title></rect><text x="298.0" y="300" text-anchor="middle" class="xl win">5</text><rect x="335.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_6 baseline: INFEASIBLE (−1)</title></rect><rect x="355.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_6 current Z1: 0</title></rect><text x="354.0" y="300" text-anchor="middle" class="xl ">6</text><rect x="391.0" y="152.3" width="16.8" height="131.7" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_7 baseline Z1: 68</title></rect><rect x="411.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_7 current Z1: 0</title></rect><text x="410.0" y="300" text-anchor="middle" class="xl win">7</text><rect x="447.0" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_8 baseline Z1: 0</title></rect><rect x="467.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_8 current Z1: 0</title></rect><text x="466.0" y="300" text-anchor="middle" class="xl win">8</text><rect x="503.0" y="39.9" width="16.8" height="244.1" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_9 baseline Z1: 2,553</title></rect><rect x="523.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_9 current Z1: 0</title></rect><text x="522.0" y="300" text-anchor="middle" class="xl win">9</text><rect x="559.0" y="155.1" width="16.8" height="128.9" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_10 baseline Z1: 62</title></rect><rect x="579.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_10 current Z1: 0</title></rect><text x="578.0" y="300" text-anchor="middle" class="xl win">10</text><rect x="615.0" y="60.2" width="16.8" height="223.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_11 baseline Z1: 1,331</title></rect><rect x="635.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_11 current Z1: 0</title></rect><text x="634.0" y="300" text-anchor="middle" class="xl ">11</text><rect x="671.0" y="53.1" width="16.8" height="230.9" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_12 baseline Z1: 1,672</title></rect><rect x="691.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_12 current Z1: 0</title></rect><text x="690.0" y="300" text-anchor="middle" class="xl ">12</text><rect x="727.0" y="51.3" width="16.8" height="232.7" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_13 baseline Z1: 1,770</title></rect><rect x="747.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_13 current Z1: 0</title></rect><text x="746.0" y="300" text-anchor="middle" class="xl ">13</text><rect x="783.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_14 baseline: INFEASIBLE (−1)</title></rect><rect x="803.1" y="262.4" width="16.8" height="21.6" rx="1.5" fill="#34d399"><title>prob_14 current Z1: 1</title></rect><text x="811.5" y="258.4" text-anchor="middle" class="res">1</text><text x="802.0" y="300" text-anchor="middle" class="xl ">14</text><rect x="839.0" y="46.4" width="16.8" height="237.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_15 baseline Z1: 2,069</title></rect><rect x="859.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_15 current Z1: 0</title></rect><text x="858.0" y="300" text-anchor="middle" class="xl ">15</text><rect x="895.0" y="69.5" width="16.8" height="214.5" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_16 baseline Z1: 987</title></rect><rect x="915.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_16 current Z1: 0</title></rect><text x="914.0" y="300" text-anchor="middle" class="xl win">16</text><rect x="951.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_17 baseline: INFEASIBLE (−1)</title></rect><rect x="971.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_17 current Z1: 0</title></rect><text x="970.0" y="300" text-anchor="middle" class="xl ">17</text><rect x="1007.0" y="30.0" width="16.8" height="254.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_18 baseline Z1: 3,511</title></rect><rect x="1027.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_18 current Z1: 0</title></rect><text x="1026.0" y="300" text-anchor="middle" class="xl ">18</text><rect x="1063.0" y="35.0" width="16.8" height="249.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_19 baseline Z1: 2,992</title></rect><rect x="1083.1" y="284.0" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_19 current Z1: 0</title></rect><text x="1082.0" y="300" text-anchor="middle" class="xl win">19</text><rect x="1119.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_20 baseline: INFEASIBLE (−1)</title></rect><rect x="1139.1" y="204.2" width="16.8" height="79.8" rx="1.5" fill="#34d399"><title>prob_20 current Z1: 12</title></rect><text x="1147.5" y="200.2" text-anchor="middle" class="res">12</text><text x="1138.0" y="300" text-anchor="middle" class="xl ">20</text></svg>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h2 style="font-size:15px"><span class="dot" style="background:#c084fc"></span>Z3 — 선호도 편차 (preference) · 선형축 · <span class="hr">남은 병목</span></h2>
+    <p class="h2sub">w3=125~200으로 z1=0일 때 obj를 지배. 경쟁자(┄) 대비 우리(초록)가 대부분 1.5~4× 높음 = 11개 손실 중 9개의 원인. 최대 갭 prob_18(704 vs 172)·prob_12(770 vs 332)·prob_13(805 vs 435).</p>
+    <svg viewBox="0 0 1180 330" class="chart" role="img"><line x1="46" y1="284.0" x2="1166" y2="284.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="287.0" text-anchor="end" class="ax">0</text><line x1="46" y1="220.5" x2="1166" y2="220.5" stroke="#1e2c44" stroke-width="1"/><text x="40" y="223.5" text-anchor="end" class="ax">244</text><line x1="46" y1="157.0" x2="1166" y2="157.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="160.0" text-anchor="end" class="ax">488</text><line x1="46" y1="93.5" x2="1166" y2="93.5" stroke="#1e2c44" stroke-width="1"/><text x="40" y="96.5" text-anchor="end" class="ax">733</text><line x1="46" y1="30.0" x2="1166" y2="30.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="33.0" text-anchor="end" class="ax">977</text><rect x="55.0" y="281.4" width="16.8" height="2.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_1 baseline Z3: 10</title></rect><rect x="75.1" y="283.5" width="16.8" height="0.6" rx="1.5" fill="#34d399"><title>prob_1 current Z3: 2</title></rect><line x1="54.0" y1="281.9" x2="92.9" y2="281.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_1 competitor z3: 8</title></line><text x="74.0" y="300" text-anchor="middle" class="xl win">1</text><rect x="111.0" y="276.7" width="16.8" height="7.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_2 baseline Z3: 28</title></rect><rect x="131.1" y="280.1" width="16.8" height="3.9" rx="1.5" fill="#34d399"><title>prob_2 current Z3: 15</title></rect><line x1="110.0" y1="284.0" x2="148.9" y2="284.0" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_2 competitor z3: 0</title></line><text x="130.0" y="300" text-anchor="middle" class="xl win">2</text><rect x="167.0" y="132.2" width="16.8" height="151.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_3 baseline Z3: 584</title></rect><rect x="187.1" y="178.2" width="16.8" height="105.8" rx="1.5" fill="#34d399"><title>prob_3 current Z3: 407</title></rect><line x1="166.0" y1="259.6" x2="204.9" y2="259.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_3 competitor z3: 94</title></line><text x="186.0" y="300" text-anchor="middle" class="xl ">3</text><rect x="223.0" y="122.8" width="16.8" height="161.2" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_4 baseline Z3: 620</title></rect><rect x="243.1" y="244.0" width="16.8" height="40.0" rx="1.5" fill="#34d399"><title>prob_4 current Z3: 154</title></rect><line x1="222.0" y1="281.9" x2="260.9" y2="281.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_4 competitor z3: 8</title></line><text x="242.0" y="300" text-anchor="middle" class="xl ">4</text><rect x="279.0" y="88.0" width="16.8" height="196.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_5 baseline Z3: 754</title></rect><rect x="299.1" y="190.4" width="16.8" height="93.6" rx="1.5" fill="#34d399"><title>prob_5 current Z3: 360</title></rect><line x1="278.0" y1="236.4" x2="316.9" y2="236.4" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_5 competitor z3: 183</title></line><text x="298.0" y="300" text-anchor="middle" class="xl win">5</text><rect x="335.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_6 baseline: INFEASIBLE (−1)</title></rect><rect x="355.1" y="130.4" width="16.8" height="153.6" rx="1.5" fill="#34d399"><title>prob_6 current Z3: 591</title></rect><line x1="334.0" y1="194.3" x2="372.9" y2="194.3" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_6 competitor z3: 345</title></line><text x="354.0" y="300" text-anchor="middle" class="xl ">6</text><rect x="391.0" y="81.2" width="16.8" height="202.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_7 baseline Z3: 780</title></rect><rect x="411.1" y="181.6" width="16.8" height="102.4" rx="1.5" fill="#34d399"><title>prob_7 current Z3: 394</title></rect><line x1="390.0" y1="179.5" x2="428.9" y2="179.5" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_7 competitor z3: 402</title></line><text x="410.0" y="300" text-anchor="middle" class="xl win">7</text><rect x="447.0" y="281.9" width="16.8" height="2.1" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_8 baseline Z3: 8</title></rect><rect x="467.1" y="281.9" width="16.8" height="2.1" rx="1.5" fill="#34d399"><title>prob_8 current Z3: 8</title></rect><line x1="446.0" y1="284.0" x2="484.9" y2="284.0" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_8 competitor z3: 0</title></line><text x="466.0" y="300" text-anchor="middle" class="xl win">8</text><rect x="503.0" y="112.4" width="16.8" height="171.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_9 baseline Z3: 660</title></rect><rect x="523.1" y="184.7" width="16.8" height="99.3" rx="1.5" fill="#34d399"><title>prob_9 current Z3: 382</title></rect><line x1="502.0" y1="161.0" x2="540.9" y2="161.0" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_9 competitor z3: 473</title></line><text x="522.0" y="300" text-anchor="middle" class="xl win">9</text><rect x="559.0" y="33.6" width="16.8" height="250.4" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_10 baseline Z3: 963</title></rect><rect x="579.1" y="148.3" width="16.8" height="135.7" rx="1.5" fill="#34d399"><title>prob_10 current Z3: 522</title></rect><line x1="558.0" y1="189.6" x2="596.9" y2="189.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_10 competitor z3: 363</title></line><text x="578.0" y="300" text-anchor="middle" class="xl win">10</text><rect x="615.0" y="148.8" width="16.8" height="135.2" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_11 baseline Z3: 520</title></rect><rect x="635.1" y="196.1" width="16.8" height="87.9" rx="1.5" fill="#34d399"><title>prob_11 current Z3: 338</title></rect><line x1="614.0" y1="240.6" x2="652.9" y2="240.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_11 competitor z3: 167</title></line><text x="634.0" y="300" text-anchor="middle" class="xl ">11</text><rect x="671.0" y="86.4" width="16.8" height="197.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_12 baseline Z3: 760</title></rect><rect x="691.1" y="83.8" width="16.8" height="200.2" rx="1.5" fill="#34d399"><title>prob_12 current Z3: 770</title></rect><line x1="670.0" y1="197.7" x2="708.9" y2="197.7" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_12 competitor z3: 332</title></line><text x="690.0" y="300" text-anchor="middle" class="xl ">12</text><rect x="727.0" y="37.3" width="16.8" height="246.7" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_13 baseline Z3: 949</title></rect><rect x="747.1" y="74.7" width="16.8" height="209.3" rx="1.5" fill="#34d399"><title>prob_13 current Z3: 805</title></rect><line x1="726.0" y1="170.9" x2="764.9" y2="170.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_13 competitor z3: 435</title></line><text x="746.0" y="300" text-anchor="middle" class="xl ">13</text><rect x="783.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_14 baseline: INFEASIBLE (−1)</title></rect><rect x="803.1" y="152.7" width="16.8" height="131.3" rx="1.5" fill="#34d399"><title>prob_14 current Z3: 505</title></rect><line x1="782.0" y1="184.2" x2="820.9" y2="184.2" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_14 competitor z3: 384</title></line><text x="802.0" y="300" text-anchor="middle" class="xl ">14</text><rect x="839.0" y="204.2" width="16.8" height="79.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_15 baseline Z3: 307</title></rect><rect x="859.1" y="225.2" width="16.8" height="58.8" rx="1.5" fill="#34d399"><title>prob_15 current Z3: 226</title></rect><line x1="838.0" y1="234.1" x2="876.9" y2="234.1" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_15 competitor z3: 192</title></line><text x="858.0" y="300" text-anchor="middle" class="xl ">15</text><rect x="895.0" y="30.0" width="16.8" height="254.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_16 baseline Z3: 977</title></rect><rect x="915.1" y="230.7" width="16.8" height="53.3" rx="1.5" fill="#34d399"><title>prob_16 current Z3: 205</title></rect><line x1="894.0" y1="223.7" x2="932.9" y2="223.7" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_16 competitor z3: 232</title></line><text x="914.0" y="300" text-anchor="middle" class="xl win">16</text><rect x="951.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_17 baseline: INFEASIBLE (−1)</title></rect><rect x="971.1" y="184.2" width="16.8" height="99.8" rx="1.5" fill="#34d399"><title>prob_17 current Z3: 384</title></rect><line x1="950.0" y1="226.3" x2="988.9" y2="226.3" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_17 competitor z3: 222</title></line><text x="970.0" y="300" text-anchor="middle" class="xl ">17</text><rect x="1007.0" y="157.4" width="16.8" height="126.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_18 baseline Z3: 487</title></rect><rect x="1027.1" y="101.0" width="16.8" height="183.0" rx="1.5" fill="#34d399"><title>prob_18 current Z3: 704</title></rect><line x1="1006.0" y1="239.3" x2="1044.9" y2="239.3" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_18 competitor z3: 172</title></line><text x="1026.0" y="300" text-anchor="middle" class="xl ">18</text><rect x="1063.0" y="107.7" width="16.8" height="176.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_19 baseline Z3: 678</title></rect><rect x="1083.1" y="188.3" width="16.8" height="95.7" rx="1.5" fill="#34d399"><title>prob_19 current Z3: 368</title></rect><line x1="1062.0" y1="179.7" x2="1100.9" y2="179.7" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_19 competitor z3: 401</title></line><text x="1082.0" y="300" text-anchor="middle" class="xl win">19</text><rect x="1119.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_20 baseline: INFEASIBLE (−1)</title></rect><rect x="1139.1" y="80.4" width="16.8" height="203.6" rx="1.5" fill="#34d399"><title>prob_20 current Z3: 783</title></rect><line x1="1118.0" y1="163.6" x2="1156.9" y2="163.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_20 competitor z3: 463</title></line><text x="1138.0" y="300" text-anchor="middle" class="xl ">20</text></svg>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2 style="font-size:15px"><span class="dot" style="background:#34d399"></span>Total Obj · 로그축</h2>
+      <p class="h2sub">현재(초록) vs 경쟁자(┄). 우리 <b>9/20 승</b>(@600 재측정). prob_20이 로그축 최상단=단일 최대 갭.</p>
+      <svg viewBox="0 0 1180 330" class="chart" role="img"><line x1="46" y1="274.0" x2="1166" y2="274.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="277.0" text-anchor="end" class="ax">1</text><line x1="46" y1="249.5" x2="1166" y2="249.5" stroke="#1e2c44" stroke-width="1"/><text x="40" y="252.5" text-anchor="end" class="ax">10</text><line x1="46" y1="217.6" x2="1166" y2="217.6" stroke="#1e2c44" stroke-width="1"/><text x="40" y="220.6" text-anchor="end" class="ax">100</text><line x1="46" y1="184.7" x2="1166" y2="184.7" stroke="#1e2c44" stroke-width="1"/><text x="40" y="187.7" text-anchor="end" class="ax">1,000</text><line x1="46" y1="151.6" x2="1166" y2="151.6" stroke="#1e2c44" stroke-width="1"/><text x="40" y="154.6" text-anchor="end" class="ax">10,000</text><line x1="46" y1="118.4" x2="1166" y2="118.4" stroke="#1e2c44" stroke-width="1"/><text x="40" y="121.4" text-anchor="end" class="ax">100,000</text><line x1="46" y1="85.3" x2="1166" y2="85.3" stroke="#1e2c44" stroke-width="1"/><text x="40" y="88.3" text-anchor="end" class="ax">1,000,000</text><line x1="46" y1="52.2" x2="1166" y2="52.2" stroke="#1e2c44" stroke-width="1"/><text x="40" y="55.2" text-anchor="end" class="ax">10,000,000</text><rect x="55.0" y="60.7" width="16.8" height="223.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_1 baseline obj: 5,530,963</title></rect><rect x="75.1" y="178.8" width="16.8" height="105.2" rx="1.5" fill="#34d399"><title>prob_1 current obj: 1,499</title></rect><line x1="54.0" y1="151.9" x2="92.9" y2="151.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_1 competitor obj: 9,785</title></line><text x="74.0" y="300" text-anchor="middle" class="xl win">1</text><rect x="111.0" y="150.5" width="16.8" height="133.5" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_2 baseline obj: 10,760</title></rect><rect x="131.1" y="165.9" width="16.8" height="118.1" rx="1.5" fill="#34d399"><title>prob_2 current obj: 3,690</title></rect><line x1="110.0" y1="157.5" x2="148.9" y2="157.5" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_2 competitor obj: 6,624</title></line><text x="130.0" y="300" text-anchor="middle" class="xl win">2</text><rect x="167.0" y="99.1" width="16.8" height="184.9" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_3 baseline obj: 385,177</title></rect><rect x="187.1" y="122.3" width="16.8" height="161.7" rx="1.5" fill="#34d399"><title>prob_3 current obj: 76,630</title></rect><line x1="166.0" y1="128.2" x2="204.9" y2="128.2" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_3 competitor obj: 50,642</title></line><text x="186.0" y="300" text-anchor="middle" class="xl ">3</text><rect x="223.0" y="78.8" width="16.8" height="205.2" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_4 baseline obj: 1,578,890</title></rect><rect x="243.1" y="129.6" width="16.8" height="154.4" rx="1.5" fill="#34d399"><title>prob_4 current obj: 46,011</title></rect><line x1="222.0" y1="144.0" x2="260.9" y2="144.0" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_4 competitor obj: 16,917</title></line><text x="242.0" y="300" text-anchor="middle" class="xl ">4</text><rect x="279.0" y="115.2" width="16.8" height="168.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_5 baseline obj: 125,602</title></rect><rect x="299.1" y="124.8" width="16.8" height="159.2" rx="1.5" fill="#34d399"><title>prob_5 current obj: 64,402</title></rect><line x1="278.0" y1="123.5" x2="316.9" y2="123.5" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_5 competitor obj: 70,580</title></line><text x="298.0" y="300" text-anchor="middle" class="xl win">5</text><rect x="335.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_6 baseline: INFEASIBLE (−1)</title></rect><rect x="355.1" y="118.5" width="16.8" height="165.5" rx="1.5" fill="#34d399"><title>prob_6 current obj: 99,920</title></rect><line x1="334.0" y1="123.1" x2="372.9" y2="123.1" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_6 competitor obj: 72,400</title></line><text x="354.0" y="300" text-anchor="middle" class="xl ">6</text><rect x="391.0" y="81.1" width="16.8" height="202.9" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_7 baseline obj: 1,340,149</title></rect><rect x="411.1" y="122.6" width="16.8" height="161.4" rx="1.5" fill="#34d399"><title>prob_7 current obj: 74,997</title></rect><line x1="390.0" y1="120.6" x2="428.9" y2="120.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_7 competitor obj: 86,021</title></line><text x="410.0" y="300" text-anchor="middle" class="xl win">7</text><rect x="447.0" y="149.9" width="16.8" height="134.1" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_8 baseline obj: 11,252</title></rect><rect x="467.1" y="149.9" width="16.8" height="134.1" rx="1.5" fill="#34d399"><title>prob_8 current obj: 11,252</title></rect><line x1="446.0" y1="147.9" x2="484.9" y2="147.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_8 competitor obj: 12,908</title></line><text x="466.0" y="300" text-anchor="middle" class="xl win">8</text><rect x="503.0" y="34.6" width="16.8" height="249.4" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_9 baseline obj: 34,145,479</title></rect><rect x="523.1" y="124.7" width="16.8" height="159.3" rx="1.5" fill="#34d399"><title>prob_9 current obj: 64,675</title></rect><line x1="502.0" y1="121.6" x2="540.9" y2="121.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_9 competitor obj: 80,034</title></line><text x="522.0" y="300" text-anchor="middle" class="xl win">9</text><rect x="559.0" y="84.6" width="16.8" height="199.4" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_10 baseline obj: 1,051,863</title></rect><rect x="579.1" y="122.4" width="16.8" height="161.6" rx="1.5" fill="#34d399"><title>prob_10 current obj: 76,041</title></rect><line x1="558.0" y1="118.6" x2="596.9" y2="118.6" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_10 competitor obj: 98,957</title></line><text x="578.0" y="300" text-anchor="middle" class="xl win">10</text><rect x="615.0" y="36.2" width="16.8" height="247.8" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_11 baseline obj: 30,497,259</title></rect><rect x="635.1" y="129.7" width="16.8" height="154.3" rx="1.5" fill="#34d399"><title>prob_11 current obj: 45,703</title></rect><line x1="614.0" y1="134.9" x2="652.9" y2="134.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_11 competitor obj: 31,899</title></line><text x="634.0" y="300" text-anchor="middle" class="xl ">11</text><rect x="671.0" y="33.5" width="16.8" height="250.5" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_12 baseline obj: 36,775,458</title></rect><rect x="691.1" y="116.5" width="16.8" height="167.5" rx="1.5" fill="#34d399"><title>prob_12 current obj: 114,786</title></rect><line x1="670.0" y1="119.3" x2="708.9" y2="119.3" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_12 competitor obj: 94,110</title></line><text x="690.0" y="300" text-anchor="middle" class="xl ">12</text><rect x="727.0" y="35.0" width="16.8" height="249.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_13 baseline obj: 33,067,712</title></rect><rect x="747.1" y="116.6" width="16.8" height="167.4" rx="1.5" fill="#34d399"><title>prob_13 current obj: 113,500</title></rect><line x1="726.0" y1="122.3" x2="764.9" y2="122.3" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_13 competitor obj: 76,685</title></line><text x="746.0" y="300" text-anchor="middle" class="xl ">13</text><rect x="783.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_14 baseline: INFEASIBLE (−1)</title></rect><rect x="803.1" y="119.8" width="16.8" height="164.2" rx="1.5" fill="#34d399"><title>prob_14 current obj: 90,963</title></rect><line x1="782.0" y1="124.1" x2="820.9" y2="124.1" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_14 competitor obj: 67,302</title></line><text x="802.0" y="300" text-anchor="middle" class="xl ">14</text><rect x="839.0" y="36.1" width="16.8" height="247.9" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_15 baseline obj: 30,712,291</title></rect><rect x="859.1" y="128.2" width="16.8" height="155.8" rx="1.5" fill="#34d399"><title>prob_15 current obj: 50,783</title></rect><line x1="838.0" y1="128.9" x2="876.9" y2="128.9" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_15 competitor obj: 48,206</title></line><text x="858.0" y="300" text-anchor="middle" class="xl ">15</text><rect x="895.0" y="53.9" width="16.8" height="230.1" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_16 baseline obj: 8,911,839</title></rect><rect x="915.1" y="130.6" width="16.8" height="153.4" rx="1.5" fill="#34d399"><title>prob_16 current obj: 42,900</title></rect><line x1="894.0" y1="128.4" x2="932.9" y2="128.4" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_16 competitor obj: 50,047</title></line><text x="914.0" y="300" text-anchor="middle" class="xl win">16</text><rect x="951.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_17 baseline: INFEASIBLE (−1)</title></rect><rect x="971.1" y="122.5" width="16.8" height="161.5" rx="1.5" fill="#34d399"><title>prob_17 current obj: 75,492</title></rect><line x1="950.0" y1="125.3" x2="988.9" y2="125.3" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_17 competitor obj: 62,070</title></line><text x="970.0" y="300" text-anchor="middle" class="xl ">17</text><rect x="1007.0" y="30.0" width="16.8" height="254.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_18 baseline obj: 46,889,250</title></rect><rect x="1027.1" y="118.7" width="16.8" height="165.3" rx="1.5" fill="#34d399"><title>prob_18 current obj: 98,240</title></rect><line x1="1006.0" y1="131.5" x2="1044.9" y2="131.5" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_18 competitor obj: 40,206</title></line><text x="1026.0" y="300" text-anchor="middle" class="xl ">18</text><rect x="1063.0" y="35.5" width="16.8" height="248.5" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_19 baseline obj: 32,018,914</title></rect><rect x="1083.1" y="125.1" width="16.8" height="158.9" rx="1.5" fill="#34d399"><title>prob_19 current obj: 62,980</title></rect><line x1="1062.0" y1="123.0" x2="1100.9" y2="123.0" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_19 competitor obj: 72,951</title></line><text x="1082.0" y="300" text-anchor="middle" class="xl win">19</text><rect x="1119.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_20 baseline: INFEASIBLE (−1)</title></rect><rect x="1139.1" y="97.5" width="16.8" height="186.5" rx="1.5" fill="#34d399"><title>prob_20 current obj: 428,853</title></rect><line x1="1118.0" y1="119.8" x2="1156.9" y2="119.8" stroke="#a78bfa" stroke-width="2.2" stroke-dasharray="3,2"><title>prob_20 competitor obj: 91,096</title></line><text x="1138.0" y="300" text-anchor="middle" class="xl ">20</text></svg>
+    </div>
+    <div class="card">
+      <h2 style="font-size:15px"><span class="dot" style="background:#fbbf24"></span>Z2 — 작업부하 불균형 · 선형축</h2>
+      <p class="h2sub">w2≈5로 가중치 작음 → z1=0·z3 확보 위해 <b>의도적으로 양보</b>하는 성분. 단조 감소 아님(파레토 거래).</p>
+      <svg viewBox="0 0 1180 330" class="chart" role="img"><line x1="46" y1="284.0" x2="1166" y2="284.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="287.0" text-anchor="end" class="ax">0</text><line x1="46" y1="220.5" x2="1166" y2="220.5" stroke="#1e2c44" stroke-width="1"/><text x="40" y="223.5" text-anchor="end" class="ax">1,526</text><line x1="46" y1="157.0" x2="1166" y2="157.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="160.0" text-anchor="end" class="ax">3,052</text><line x1="46" y1="93.5" x2="1166" y2="93.5" stroke="#1e2c44" stroke-width="1"/><text x="40" y="96.5" text-anchor="end" class="ax">4,579</text><line x1="46" y1="30.0" x2="1166" y2="30.0" stroke="#1e2c44" stroke-width="1"/><text x="40" y="33.0" text-anchor="end" class="ax">6,105</text><rect x="55.0" y="274.1" width="16.8" height="9.9" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_1 baseline Z2: 239</title></rect><rect x="75.1" y="277.5" width="16.8" height="6.5" rx="1.5" fill="#34d399"><title>prob_1 current Z2: 157</title></rect><text x="74.0" y="300" text-anchor="middle" class="xl win">1</text><rect x="111.0" y="256.7" width="16.8" height="27.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_2 baseline Z2: 656</title></rect><rect x="131.1" y="278.0" width="16.8" height="6.0" rx="1.5" fill="#34d399"><title>prob_2 current Z2: 144</title></rect><text x="130.0" y="300" text-anchor="middle" class="xl win">2</text><rect x="167.0" y="266.4" width="16.8" height="17.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_3 baseline Z2: 424</title></rect><rect x="187.1" y="219.2" width="16.8" height="64.8" rx="1.5" fill="#34d399"><title>prob_3 current Z2: 1,558</title></rect><text x="186.0" y="300" text-anchor="middle" class="xl ">3</text><rect x="223.0" y="234.7" width="16.8" height="49.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_4 baseline Z2: 1,186</title></rect><rect x="243.1" y="193.6" width="16.8" height="90.4" rx="1.5" fill="#34d399"><title>prob_4 current Z2: 2,173</title></rect><text x="242.0" y="300" text-anchor="middle" class="xl ">4</text><rect x="279.0" y="209.7" width="16.8" height="74.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_5 baseline Z2: 1,786</title></rect><rect x="299.1" y="222.2" width="16.8" height="61.8" rx="1.5" fill="#34d399"><title>prob_5 current Z2: 1,486</title></rect><text x="298.0" y="300" text-anchor="middle" class="xl win">5</text><rect x="335.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_6 baseline: INFEASIBLE (−1)</title></rect><rect x="355.1" y="217.0" width="16.8" height="67.0" rx="1.5" fill="#34d399"><title>prob_6 current Z2: 1,610</title></rect><text x="354.0" y="300" text-anchor="middle" class="xl ">6</text><rect x="391.0" y="199.3" width="16.8" height="84.7" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_7 baseline Z2: 2,035</title></rect><rect x="411.1" y="189.5" width="16.8" height="94.5" rx="1.5" fill="#34d399"><title>prob_7 current Z2: 2,271</title></rect><text x="410.0" y="300" text-anchor="middle" class="xl win">7</text><rect x="447.0" y="183.6" width="16.8" height="100.4" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_8 baseline Z2: 2,413</title></rect><rect x="467.1" y="183.6" width="16.8" height="100.4" rx="1.5" fill="#34d399"><title>prob_8 current Z2: 2,413</title></rect><text x="466.0" y="300" text-anchor="middle" class="xl win">8</text><rect x="503.0" y="223.0" width="16.8" height="61.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_9 baseline Z2: 1,466</title></rect><rect x="523.1" y="222.6" width="16.8" height="61.4" rx="1.5" fill="#34d399"><title>prob_9 current Z2: 1,475</title></rect><text x="522.0" y="300" text-anchor="middle" class="xl win">9</text><rect x="559.0" y="153.3" width="16.8" height="130.7" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_10 baseline Z2: 3,142</title></rect><rect x="579.1" y="244.7" width="16.8" height="39.3" rx="1.5" fill="#34d399"><title>prob_10 current Z2: 945</title></rect><text x="578.0" y="300" text-anchor="middle" class="xl win">10</text><rect x="615.0" y="251.7" width="16.8" height="32.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_11 baseline Z2: 776</title></rect><rect x="635.1" y="279.5" width="16.8" height="4.5" rx="1.5" fill="#34d399"><title>prob_11 current Z2: 107</title></rect><text x="634.0" y="300" text-anchor="middle" class="xl ">11</text><rect x="671.0" y="120.7" width="16.8" height="163.3" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_12 baseline Z2: 3,926</title></rect><rect x="691.1" y="210.4" width="16.8" height="73.6" rx="1.5" fill="#34d399"><title>prob_12 current Z2: 1,768</title></rect><text x="690.0" y="300" text-anchor="middle" class="xl ">12</text><rect x="727.0" y="195.4" width="16.8" height="88.6" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_13 baseline Z2: 2,129</title></rect><rect x="747.1" y="230.5" width="16.8" height="53.5" rx="1.5" fill="#34d399"><title>prob_13 current Z2: 1,287</title></rect><text x="746.0" y="300" text-anchor="middle" class="xl ">13</text><rect x="783.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_14 baseline: INFEASIBLE (−1)</title></rect><rect x="803.1" y="233.9" width="16.8" height="50.1" rx="1.5" fill="#34d399"><title>prob_14 current Z2: 1,204</title></rect><text x="802.0" y="300" text-anchor="middle" class="xl ">14</text><rect x="839.0" y="124.0" width="16.8" height="160.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_15 baseline Z2: 3,845</title></rect><rect x="859.1" y="111.5" width="16.8" height="172.5" rx="1.5" fill="#34d399"><title>prob_15 current Z2: 4,145</title></rect><text x="858.0" y="300" text-anchor="middle" class="xl ">15</text><rect x="895.0" y="213.6" width="16.8" height="70.4" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_16 baseline Z2: 1,691</title></rect><rect x="915.1" y="153.9" width="16.8" height="130.1" rx="1.5" fill="#34d399"><title>prob_16 current Z2: 3,127</title></rect><text x="914.0" y="300" text-anchor="middle" class="xl win">16</text><rect x="951.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_17 baseline: INFEASIBLE (−1)</title></rect><rect x="971.1" y="30.0" width="16.8" height="254.0" rx="1.5" fill="#34d399"><title>prob_17 current Z2: 6,105</title></rect><text x="970.0" y="300" text-anchor="middle" class="xl ">17</text><rect x="1007.0" y="155.9" width="16.8" height="128.1" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_18 baseline Z2: 3,079</title></rect><rect x="1027.1" y="236.1" width="16.8" height="47.9" rx="1.5" fill="#34d399"><title>prob_18 current Z2: 1,152</title></rect><text x="1026.0" y="300" text-anchor="middle" class="xl ">18</text><rect x="1063.0" y="148.0" width="16.8" height="136.0" rx="1.5" fill="#fb7185" opacity="0.85"><title>prob_19 baseline Z2: 3,269</title></rect><rect x="1083.1" y="138.0" width="16.8" height="146.0" rx="1.5" fill="#34d399"><title>prob_19 current Z2: 3,509</title></rect><text x="1082.0" y="300" text-anchor="middle" class="xl win">19</text><rect x="1119.0" y="30" width="16.8" height="254" fill="url(#hatch)" stroke="#64748b" stroke-width="1"><title>prob_20 baseline: INFEASIBLE (−1)</title></rect><rect x="1139.1" y="207.9" width="16.8" height="76.1" rx="1.5" fill="#34d399"><title>prob_20 current Z2: 1,829</title></rect><text x="1138.0" y="300" text-anchor="middle" class="xl ">20</text></svg>
+    </div>
+  </div>
+  <div class="note"><b>가중치 구조가 전략을 결정한다.</b> obj = w1·Z1 + w2·Z2 + w3·Z3 에서 w1(지연)은 수천 단위로 압도적 → Z1=0이 1순위(달성). z1=0이면 남는 건 w3≈133·Z3 vs w2≈5·Z2 인데, Z3 항이 Z2 항의 수~수십 배 → <b>Z3가 obj의 숨은 지배자</b>. 예: prob_13 obj 113,500 중 z3 기여 ≈94%(805×133), prob_4 obj 46,011 중 z3 ≈67%(154×200). z1=0 손실은 전부 Z3 게임. <b>유일 예외=prob_20</b>(z1=12 페널티가 obj의 75%).</div>
+</section>
+
+<section id="z1tl">
+  <h2><span class="dot" style="background:#38bdf8"></span>Z1 vs 솔버 시간제한 — 막혔던 문제들</h2>
+  <p class="h2sub">양축 로그. 시간(+연구)이 늘면 z1이 붕괴. prob_13: 983→1, prob_20: 1020→2 (60s→1800s). 평가서버는 인스턴스당 최대 30분 → z1=0 여력 충분. <span class="note" style="display:inline;padding:2px 6px">tl=1800 값은 메모리 기록(2026-06-08), 그 외는 측정 파일.</span></p>
+  <div class="card"><svg viewBox="0 0 1180 360" class="chart" role="img"><line x1="52" y1="314.0" x2="1060" y2="314.0" stroke="#1e2c44"/><text x="46" y="317.0" text-anchor="end" class="ax">0</text><line x1="52" y1="287.6" x2="1060" y2="287.6" stroke="#1e2c44"/><text x="46" y="290.6" text-anchor="end" class="ax">1</text><line x1="52" y1="222.5" x2="1060" y2="222.5" stroke="#1e2c44"/><text x="46" y="225.5" text-anchor="end" class="ax">10</text><line x1="52" y1="137.9" x2="1060" y2="137.9" stroke="#1e2c44"/><text x="46" y="140.9" text-anchor="end" class="ax">100</text><line x1="52" y1="50.4" x2="1060" y2="50.4" stroke="#1e2c44"/><text x="46" y="53.4" text-anchor="end" class="ax">1000</text><line x1="52" y1="24.0" x2="1060" y2="24.0" stroke="#1e2c44"/><text x="46" y="27.0" text-anchor="end" class="ax">2000</text><line x1="52.0" y1="24" x2="52.0" y2="314" stroke="#1e2c44" stroke-dasharray="2,4"/><text x="52.0" y="332" text-anchor="middle" class="ax">60s</text><line x1="257.4" y1="24" x2="257.4" y2="314" stroke="#1e2c44" stroke-dasharray="2,4"/><text x="257.4" y="332" text-anchor="middle" class="ax">120s</text><line x1="529.0" y1="24" x2="529.0" y2="314" stroke="#1e2c44" stroke-dasharray="2,4"/><text x="529.0" y="332" text-anchor="middle" class="ax">300s</text><line x1="734.4" y1="24" x2="734.4" y2="314" stroke="#1e2c44" stroke-dasharray="2,4"/><text x="734.4" y="332" text-anchor="middle" class="ax">600s</text><line x1="1060.0" y1="24" x2="1060.0" y2="314" stroke="#1e2c44" stroke-dasharray="2,4"/><text x="1060.0" y="332" text-anchor="middle" class="ax">1800s</text><polyline points="257.4,54.9 529.0,148.3 734.4,252.6" fill="none" stroke="#38bdf8" stroke-width="2.4"/><circle cx="257.4" cy="54.9" r="3.5" fill="#38bdf8"><title>prob_6 @120s: z1=889</title></circle><circle cx="529.0" cy="148.3" r="3.5" fill="#38bdf8"><title>prob_6 @300s: z1=76</title></circle><circle cx="734.4" cy="252.6" r="3.5" fill="#38bdf8"><title>prob_6 @600s: z1=4</title></circle><text x="742.4" y="255.6" class="leg" fill="#38bdf8">prob_6</text><polyline points="52.0,100.6 257.4,287.6 734.4,314.0" fill="none" stroke="#34d399" stroke-width="2.4"/><circle cx="52.0" cy="100.6" r="3.5" fill="#34d399"><title>prob_11 @60s: z1=268</title></circle><circle cx="257.4" cy="287.6" r="3.5" fill="#34d399"><title>prob_11 @120s: z1=1</title></circle><circle cx="734.4" cy="314.0" r="3.5" fill="#34d399"><title>prob_11 @600s: z1=0</title></circle><text x="742.4" y="317.0" class="leg" fill="#34d399">prob_11</text><polyline points="52.0,51.1 257.4,222.5 734.4,234.7 1060.0,287.6" fill="none" stroke="#fbbf24" stroke-width="2.4"/><circle cx="52.0" cy="51.1" r="3.5" fill="#fbbf24"><title>prob_13 @60s: z1=983</title></circle><circle cx="257.4" cy="222.5" r="3.5" fill="#fbbf24"><title>prob_13 @120s: z1=10</title></circle><circle cx="734.4" cy="234.7" r="3.5" fill="#fbbf24"><title>prob_13 @600s: z1=7</title></circle><circle cx="1060.0" cy="287.6" r="3.5" fill="#fbbf24"><title>prob_13 @1800s: z1=1</title></circle><text x="1068.0" y="290.6" class="leg" fill="#fbbf24">prob_13</text><polyline points="52.0,27.9 257.4,156.5 529.0,261.1 734.4,314.0" fill="none" stroke="#fb7185" stroke-width="2.4"/><circle cx="52.0" cy="27.9" r="3.5" fill="#fb7185"><title>prob_14 @60s: z1=1804</title></circle><circle cx="257.4" cy="156.5" r="3.5" fill="#fb7185"><title>prob_14 @120s: z1=61</title></circle><circle cx="529.0" cy="261.1" r="3.5" fill="#fb7185"><title>prob_14 @300s: z1=3</title></circle><circle cx="734.4" cy="314.0" r="3.5" fill="#fb7185"><title>prob_14 @600s: z1=0</title></circle><text x="742.4" y="317.0" class="leg" fill="#fb7185">prob_14</text><polyline points="52.0,28.4 257.4,314.0" fill="none" stroke="#c084fc" stroke-width="2.4"/><circle cx="52.0" cy="28.4" r="3.5" fill="#c084fc"><title>prob_18 @60s: z1=1782</title></circle><circle cx="257.4" cy="314.0" r="3.5" fill="#c084fc"><title>prob_18 @120s: z1=0</title></circle><text x="265.4" y="317.0" class="leg" fill="#c084fc">prob_18</text><polyline points="52.0,49.7 257.4,76.3 529.0,222.5 734.4,226.2 1060.0,272.1" fill="none" stroke="#f472b6" stroke-width="2.4"/><circle cx="52.0" cy="49.7" r="3.5" fill="#f472b6"><title>prob_20 @60s: z1=1020</title></circle><circle cx="257.4" cy="76.3" r="3.5" fill="#f472b6"><title>prob_20 @120s: z1=507</title></circle><circle cx="529.0" cy="222.5" r="3.5" fill="#f472b6"><title>prob_20 @300s: z1=10</title></circle><circle cx="734.4" cy="226.2" r="3.5" fill="#f472b6"><title>prob_20 @600s: z1=9</title></circle><circle cx="1060.0" cy="272.1" r="3.5" fill="#f472b6"><title>prob_20 @1800s: z1=2</title></circle><text x="1068.0" y="275.1" class="leg" fill="#f472b6">prob_20</text></svg></div>
+</section>
+
+<section id="table">
+  <h2><span class="dot" style="background:#a78bfa"></span>전체 인스턴스 표 — baseline · current · competitor</h2>
+  <p class="h2sub">헤더 클릭 = 정렬. Δobj 양수(빨강)=경쟁자에 뒤짐. z3 열 = 우리 / 경쟁자.</p>
+  <div class="card" style="overflow-x:auto">
+  <table id="tbl">
+    <thead><tr>
+      <th data-k="0" data-t="s">인스턴스</th><th data-k="1">baseline obj</th><th data-k="2">current obj</th>
+      <th data-k="3">competitor</th><th data-k="4">Δ obj</th><th data-k="5">비율</th>
+      <th data-k="6" data-t="s">Z1 (b→c)</th><th data-k="7">Z2</th><th data-k="8">Z3 우/경</th><th data-k="9" data-t="s">판정</th>
+    </tr></thead>
+    <tbody><tr class="win">
+          <td class="pid">prob_1</td>
+          <td class="num bcol">5,530,963</td>
+          <td class="num">1,499</td>
+          <td class="num comp">9,785</td>
+          <td class="num gneg">-8,286</td>
+          <td class="num">0.15×</td>
+          <td class="num">190→0</td>
+          <td class="num">157</td>
+          <td class="num z3c">2 <span class="vs">/ 8</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_2</td>
+          <td class="num bcol">10,760</td>
+          <td class="num">3,690</td>
+          <td class="num comp">6,624</td>
+          <td class="num gneg">-2,934</td>
+          <td class="num">0.56×</td>
+          <td class="num">0→0</td>
+          <td class="num">144</td>
+          <td class="num z3c">15 <span class="vs">/ 0</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_3</td>
+          <td class="num bcol">385,177</td>
+          <td class="num">76,630</td>
+          <td class="num comp">50,642</td>
+          <td class="num gpos">+25,988</td>
+          <td class="num">1.51×</td>
+          <td class="num">11→0</td>
+          <td class="num">1,558</td>
+          <td class="num z3c">407 <span class="vs">/ 94</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_4</td>
+          <td class="num bcol">1,578,890</td>
+          <td class="num">46,011</td>
+          <td class="num comp">16,917</td>
+          <td class="num gpos">+29,094</td>
+          <td class="num">2.72×</td>
+          <td class="num">66→0</td>
+          <td class="num">2,173</td>
+          <td class="num z3c">154 <span class="vs">/ 8</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_5</td>
+          <td class="num bcol">125,602</td>
+          <td class="num">64,402</td>
+          <td class="num comp">70,580</td>
+          <td class="num gneg">-6,178</td>
+          <td class="num">0.91×</td>
+          <td class="num">0→0</td>
+          <td class="num">1,486</td>
+          <td class="num z3c">360 <span class="vs">/ 183</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_6</td>
+          <td class="num bcol">INFEAS</td>
+          <td class="num">99,920</td>
+          <td class="num comp">72,400</td>
+          <td class="num gpos">+27,520</td>
+          <td class="num">1.38×</td>
+          <td class="num">—→0</td>
+          <td class="num">1,610</td>
+          <td class="num z3c">591 <span class="vs">/ 345</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_7</td>
+          <td class="num bcol">1,340,149</td>
+          <td class="num">74,997</td>
+          <td class="num comp">86,021</td>
+          <td class="num gneg">-11,024</td>
+          <td class="num">0.87×</td>
+          <td class="num">68→0</td>
+          <td class="num">2,271</td>
+          <td class="num z3c">394 <span class="vs">/ 402</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_8</td>
+          <td class="num bcol">11,252</td>
+          <td class="num">11,252</td>
+          <td class="num comp">12,908</td>
+          <td class="num gneg">-1,656</td>
+          <td class="num">0.87×</td>
+          <td class="num">0→0</td>
+          <td class="num">2,413</td>
+          <td class="num z3c">8 <span class="vs">/ 0</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_9</td>
+          <td class="num bcol">34,145,479</td>
+          <td class="num">64,675</td>
+          <td class="num comp">80,034</td>
+          <td class="num gneg">-15,359</td>
+          <td class="num">0.81×</td>
+          <td class="num">2,553→0</td>
+          <td class="num">1,475</td>
+          <td class="num z3c">382 <span class="vs">/ 473</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_10</td>
+          <td class="num bcol">1,051,863</td>
+          <td class="num">76,041</td>
+          <td class="num comp">98,957</td>
+          <td class="num gneg">-22,916</td>
+          <td class="num">0.77×</td>
+          <td class="num">62→0</td>
+          <td class="num">945</td>
+          <td class="num z3c">522 <span class="vs">/ 363</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_11</td>
+          <td class="num bcol">30,497,259</td>
+          <td class="num">45,703</td>
+          <td class="num comp">31,899</td>
+          <td class="num gpos">+13,804</td>
+          <td class="num">1.43×</td>
+          <td class="num">1,331→0</td>
+          <td class="num">107</td>
+          <td class="num z3c">338 <span class="vs">/ 167</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_12</td>
+          <td class="num bcol">36,775,458</td>
+          <td class="num">114,786</td>
+          <td class="num comp">94,110</td>
+          <td class="num gpos">+20,676</td>
+          <td class="num">1.22×</td>
+          <td class="num">1,672→0</td>
+          <td class="num">1,768</td>
+          <td class="num z3c">770 <span class="vs">/ 332</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_13</td>
+          <td class="num bcol">33,067,712</td>
+          <td class="num">113,500</td>
+          <td class="num comp">76,685</td>
+          <td class="num gpos">+36,815</td>
+          <td class="num">1.48×</td>
+          <td class="num">1,770→0</td>
+          <td class="num">1,287</td>
+          <td class="num z3c">805 <span class="vs">/ 435</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_14</td>
+          <td class="num bcol">INFEAS</td>
+          <td class="num">90,963</td>
+          <td class="num comp">67,302</td>
+          <td class="num gpos">+23,661</td>
+          <td class="num">1.35×</td>
+          <td class="num">—→1</td>
+          <td class="num">1,204</td>
+          <td class="num z3c">505 <span class="vs">/ 384</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_15</td>
+          <td class="num bcol">30,712,291</td>
+          <td class="num">50,783</td>
+          <td class="num comp">48,206</td>
+          <td class="num gpos">+2,577</td>
+          <td class="num">1.05×</td>
+          <td class="num">2,069→0</td>
+          <td class="num">4,145</td>
+          <td class="num z3c">226 <span class="vs">/ 192</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_16</td>
+          <td class="num bcol">8,911,839</td>
+          <td class="num">42,900</td>
+          <td class="num comp">50,047</td>
+          <td class="num gneg">-7,147</td>
+          <td class="num">0.86×</td>
+          <td class="num">987→0</td>
+          <td class="num">3,127</td>
+          <td class="num z3c">205 <span class="vs">/ 232</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_17</td>
+          <td class="num bcol">INFEAS</td>
+          <td class="num">75,492</td>
+          <td class="num comp">62,070</td>
+          <td class="num gpos">+13,422</td>
+          <td class="num">1.22×</td>
+          <td class="num">—→0</td>
+          <td class="num">6,105</td>
+          <td class="num z3c">384 <span class="vs">/ 222</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_18</td>
+          <td class="num bcol">46,889,250</td>
+          <td class="num">98,240</td>
+          <td class="num comp">40,206</td>
+          <td class="num gpos">+58,034</td>
+          <td class="num">2.44×</td>
+          <td class="num">3,511→0</td>
+          <td class="num">1,152</td>
+          <td class="num z3c">704 <span class="vs">/ 172</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr>
+<tr class="win">
+          <td class="pid">prob_19</td>
+          <td class="num bcol">32,018,914</td>
+          <td class="num">62,980</td>
+          <td class="num comp">72,951</td>
+          <td class="num gneg">-9,971</td>
+          <td class="num">0.86×</td>
+          <td class="num">2,992→0</td>
+          <td class="num">3,509</td>
+          <td class="num z3c">368 <span class="vs">/ 401</span></td>
+          <td><span class="badge win">WIN</span></td>
+        </tr>
+<tr class="lose">
+          <td class="pid">prob_20</td>
+          <td class="num bcol">INFEAS</td>
+          <td class="num">428,853</td>
+          <td class="num comp">91,096</td>
+          <td class="num gpos">+337,757</td>
+          <td class="num">4.71×</td>
+          <td class="num">—→12</td>
+          <td class="num">1,829</td>
+          <td class="num z3c">783 <span class="vs">/ 463</span></td>
+          <td><span class="badge lose">LOSE</span></td>
+        </tr></tbody>
+  </table>
+  </div>
+  <div class="note"><b>측정 컨텍스트 (2026-06-13 재측정).</b> baseline=공식 greedy @60s · current=실제 제출 파이프라인(submit_v2 default) <b>full-20 @600 단일런</b>의 z1/z2/z3/obj 전부(`results/_rebaseline600/`) — 더 이상 혼합 근사 아님 · competitor=2026-06-11 스크린샷 @600. <b>총합 ours 1,643,317 vs comp 1,139,440, 9승 11패.</b> 직전 리포트의 base600 수치는 submit_v2 이전 약한 config라 prob_16/7 등을 패배로 오기했음(stale). prob_20 z1·obj는 변동 큼(@200 z1≈6, @600 z1≈12) — 돌파 섹션 참조.</div>
+</section>
+
+<section id="seq">
+  <h2><span class="dot" style="background:#34d399"></span>솔버 시퀀스 — Floor-and-Improve 파이프라인</h2>
+  <p class="h2sub">핵심 원리: 항상 <b>검증된 feasible "floor"</b>를 들고, 그것을 <b>엄밀히 이기는</b> 해만 반환 → 크래시·타임아웃도 −1 불가. 색=주 타깃 성분(<span style="color:#38bdf8">●z1</span> <span style="color:#fbbf24">●z2</span> <span style="color:#c084fc">●z3</span> <span style="color:#5f7395">●feas</span>). 점선·흐림=기본 OFF.</p>
+  <div class="card">
+    <div class="flow">
+      <div class="phase-h">구성 — Floor 만들기</div>
+      <div class="flrow"><div class="stage  " style="--tc:#5f7395">
+      <div class="st-top"><span class="st-n">0</span><span class="st-title">SUBMIT_V2 inject 16 knobs</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#5f7395">●&nbsp;structure</span><span class="st-loc">myalgorithm.py:5280</span></div>
+      <div class="st-flag"><code>OGC_SUBMIT_V2</code><span class="st-d">ON</span></div>
+      <div class="st-bud">T≥60 setdefault</div>
+    </div><div class="stage  " style="--tc:#5f7395">
+      <div class="st-top"><span class="st-n">1</span><span class="st-title">Trivial serialized floor</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#5f7395">●&nbsp;feasibility</span><span class="st-loc">myalgorithm.py:5518</span></div>
+      <div class="st-flag"><code>always</code><span class="st-d">ON</span></div>
+      <div class="st-bud">instant · −1 guard</div>
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">2</span><span class="st-title">FastFloor (crane-aware init)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">fastfloor.py</span></div>
+      <div class="st-flag"><code>OGC_FASTFLOOR</code><span class="st-d">ON*</span></div>
+      <div class="st-bud">~30s / 0.20·T</div>
+    </div></div>
+      <div class="arrow">▼</div>
+      <div class="flrow"><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">2b</span><span class="st-title">FF-PRIMARY swap</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:5846</span></div>
+      <div class="st-flag"><code>OGC_FF_PRIMARY</code><span class="st-d">ON*</span></div>
+      <div class="st-bud">replaces greedy floor</div>
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">3</span><span class="st-title">Greedy / raster floor</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:5857</span></div>
+      <div class="st-flag"><code>adaptive</code><span class="st-d">ON</span></div>
+      <div class="st-bud">≤ base budget</div>
+    </div><div class="stage  " style="--tc:#5f7395">
+      <div class="st-top"><span class="st-n">3b</span><span class="st-title">Verify + base-swap</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#5f7395">●&nbsp;feasibility</span><span class="st-loc">myalgorithm.py:5881</span></div>
+      <div class="st-flag"><code>always</code><span class="st-d">ON</span></div>
+      <div class="st-bud">check_feasibility</div>
+    </div></div>
+
+      <div class="phase-h">개선 — 검증된 floor 위 후처리 <code style="font-size:10px;color:var(--mut2)">_postprocess_verified_solution()</code> (z1→z2→z3 순)</div>
+      <div class="flrow"><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">4.1</span><span class="st-title">cum_level redecode</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:4340</span></div>
+      <div class="st-flag"><code>OGC_CUMLEVEL</code><span class="st-d">ON · 30%</span></div>
+      
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">4.2</span><span class="st-title">CP-SAT timing (entry/exit)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:4348</span></div>
+      <div class="st-flag"><code>OGC_CPSAT_TIMING</code><span class="st-d">ON</span></div>
+      
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">4.3</span><span class="st-title">bbox-pack (+slab dual)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:4408</span></div>
+      <div class="st-flag"><code>OGC_BBOX_PACK</code><span class="st-d">ON</span></div>
+      
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">4.4</span><span class="st-title">crossbay relocate</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1+Z2</span><span class="st-loc">myalgorithm.py:4449</span></div>
+      <div class="st-flag"><code>OGC_CROSSBAY_RELOCATE</code><span class="st-d">ON · 30s</span></div>
+      
+    </div></div>
+      <div class="arrow">▼</div>
+      <div class="flrow"><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">4.6</span><span class="st-title">tardy-reloc + moves</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1+Z3</span><span class="st-loc">myalgorithm.py:4562</span></div>
+      <div class="st-flag"><code>OGC_TARDY_RELOC</code><span class="st-d">ON</span></div>
+      
+    </div><div class="stage  key" style="--tc:#c084fc">
+      <div class="st-top"><span class="st-n">4.7</span><span class="st-title">Front B (assign reopt)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#c084fc">●&nbsp;Z3 preference</span><span class="st-loc">myalgorithm.py:5051</span></div>
+      <div class="st-flag"><code>OGC_FRONTB</code><span class="st-d">ON ← live z3 lever</span></div>
+      
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">4.8</span><span class="st-title">z1-repair + assign-cap</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:4622</span></div>
+      <div class="st-flag"><code>OGC_FF_ASSIGN_CAP</code><span class="st-d">cap 0.85</span></div>
+      
+    </div></div>
+
+      <div class="phase-h">레이스 — 대안 floor 경쟁 + 최종 게이트</div>
+      <div class="flrow"><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">5b</span><span class="st-title">T1 raster race</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:6228</span></div>
+      <div class="st-flag"><code>OGC_LONGTL_RACE</code><span class="st-d">ON · T≥300 · ≤105s</span></div>
+      
+    </div><div class="stage  " style="--tc:#38bdf8">
+      <div class="st-top"><span class="st-n">5</span><span class="st-title">BAN-RACE (dual-path)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#38bdf8">●&nbsp;Z1 tardiness</span><span class="st-loc">myalgorithm.py:6375</span></div>
+      <div class="st-flag"><code>OGC_BAN_RACE</code><span class="st-d">ON* · ROUNDS=2 · 90s</span></div>
+      
+    </div><div class="stage off key" style="--tc:#c084fc">
+      <div class="st-top"><span class="st-n">6</span><span class="st-title">z3-RACE (temporal reassign)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#c084fc">●&nbsp;Z3 preference</span><span class="st-loc">z3race.py:97</span></div>
+      <div class="st-flag"><code>OGC_Z3_RACE</code><span class="st-d">OFF ← KEY LEVER</span></div>
+      
+    </div></div>
+      <div class="arrow">▼</div>
+      <div class="flrow"><div class="stage  " style="--tc:#34d399">
+      <div class="st-top"><span class="st-n">7</span><span class="st-title">ALNS search</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#34d399">●&nbsp;all</span><span class="st-loc">myalgorithm.py:6808</span></div>
+      <div class="st-flag"><code>OGC_ALNS_OVER_BASELINE</code><span class="st-d">ON</span></div>
+      
+    </div><div class="stage  " style="--tc:#5f7395">
+      <div class="st-top"><span class="st-n">8</span><span class="st-title">Final gate (rank+verify)</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#5f7395">●&nbsp;feasibility</span><span class="st-loc">myalgorithm.py:7166</span></div>
+      <div class="st-flag"><code>OGC_GATE_POSTPROCESS</code><span class="st-d">ON</span></div>
+      
+    </div><div class="stage  " style="--tc:#5f7395">
+      <div class="st-top"><span class="st-n">9</span><span class="st-title">Floor return / −1 guard</span></div>
+      <div class="st-meta"><span class="st-tgt" style="color:#5f7395">●&nbsp;feasibility</span><span class="st-loc">myalgorithm.py:7262</span></div>
+      <div class="st-flag"><code>always</code><span class="st-d">ON · never −1</span></div>
+      
+    </div></div>
+    </div>
+  </div>
+  <div class="note"><b>제출 경로(gate200_v2, T≥60).</b> <code>OGC_SUBMIT_V2</code>(ON)가 16개 노브를 <code>setdefault</code> 주입: FastFloor를 1차 floor로 승격(greedy 대체) · cum_level 예산 30% · assign-cap 0.85 · BAN-RACE(ROUNDS=2,TAIL,90s). <b>z3-RACE(stage 6)는 구현·배선 완료이나 기본 OFF</b> — 현재 살아있는 z3 레버는 Front B(4.7)뿐. ★표=v2에서 ON되는 플래그.</div>
+</section>
+
+<section id="break">
+  <h2><span class="dot" style="background:#c084fc"></span>돌파 방향 — 실험 기반 재정렬 (2026-06-13/14)</h2>
+  <p class="h2sub">제안했던 #1 레버(z3-race)를 실제로 켜서 검증 → <b>KILL</b>. 진짜 @600 갭(ours 1.64M vs comp 1.14M)을 측정해 우선순위 재배치. <span class="hr">prob_20 하나가 갭의 64%.</span></p>
+  <div class="grid2">
+    <div class="lever off" style="--lc:#64748b">
+      <h3><span class="rank" style="background:#64748b">KILL</span> z3-RACE — 발동하나 채택 0</h3>
+      <p>@600에서 prob_16/17/7 ON vs OFF 검증: z3-race가 <b>3/3 발동</b>(게이트·배선 정상)했으나 <b>채택 0/3</b>, obj 변화 정확히 0. 완화 CP-SAT 모델의 z3 이득이 entry-targeted 디코드(크레인·패킹)에서 <b>증발</b>(realize 시 z1 폭발 또는 z3 상승).</p>
+      <div class="ev"><b>원인:</b> submit_v2의 Front B가 이미 floor z3를 낮게(16=205·17=405·7=394) 깎아놔 들어갈 틈 없음. 06-11 @300 진단과 동일 → <b>현재 파이프라인 상대 z3-race 폐기 확정.</b></div>
+    </div>
+    <div class="lever key" style="--lc:#fb7185">
+      <h3><span class="rank">#1</span> prob_20 z1 닫기 — 갭의 64%</h3>
+      <p>우리 428,853 vs 91,096 (<b>4.7×</b>). 그중 <b>z1=12 × w1=26,667 = 320K가 z1 페널티</b>. z1만 0이면 obj≈108,849로 거의 동률. 다른 10개 손실(z3) 합보다 큼.</p>
+      <div class="ev"><b>검증 중:</b> z1-repair 루프 실가동(<code>OGC_Z1_REPAIR_LOOP=1</code>+RESERVE — 배선됐으나 예산기아로 한번도 안 돎) @600 + 시간 스케일링 @1200/@1800(대형 인스턴스는 eval에서 ~30분 → 과거 z1 9→2 기록). <b>결과 대기 중.</b></div>
+    </div>
+    <div class="lever" style="--lc:#c084fc">
+      <h3><span class="rank">#2</span> Z3 손실 클러스터 — 10개 중 9개</h3>
+      <p>prob_18(+58K)·13(+37K)·4(+29K)·6(+28K)·3(+26K)·12(+21K)·11(+14K)·17(+13K)·15(+3K). 전부 z1=0, z3가 경쟁자의 1.5~4×. 경쟁자가 5~47초에 낮은 z3 달성 = <b>구조적으로 가능함의 증거</b>.</p>
+      <div class="ev"><b>레버(z3-race 아님):</b> ① config 포트폴리오 레이스(raster/posk3가 과거 prob_17/19/4를 이긴 기록 — submit_v2 흡수 여부 검증) ② z3-aware <b>초기 배정</b>(post-hoc relocate가 아닌 — Front B는 로컬옵티멈). realize-barrier가 근본 난제.</div>
+    </div>
+    <div class="lever" style="--lc:#38bdf8">
+      <h3><span class="rank">#3</span> 잔여 — prob_14 z1=1 · prob_15 회귀</h3>
+      <p>prob_14: z1=1만 닫으면 −17,778(#1과 같은 repair 레버). prob_15: raster 시절 37,814 → submit_v2 50,783 <b>회귀(+34%)</b> — 알려진 손실, config 레이스로 raster 경로 복원 시 되돌릴 수 있음.</p>
+      <div class="ev"><b>접근:</b> #1의 repair 루프가 prob_14도 커버. prob_15는 #2의 config 포트폴리오와 동일 레버.</div>
+    </div>
+  </div>
+  <div class="note"><b>전략 요약 (수정).</b> "갭은 전부 z3 → z3-race가 레버"라는 가설은 <b>실험으로 반증됨</b>: (1) z3-race는 현 파이프라인을 못 이긴다, (2) 갭의 64%는 z3가 아니라 <b>prob_20의 z1</b>이다. 새 우선순위 = prob_20 z1 닫기(검증 중) → 그다음 z3 손실에 <b>config 포트폴리오 레이스</b>(z3-race 아님). 검증 규칙: 채택 판정은 full-20 paired(사용자 지시). 경쟁자가 모든 인스턴스 z1=0·낮은 z3를 5~47초에 달성 = 우리가 닿을 수 있는 상한의 존재 증명.</div>
+</section>
+
+<footer style="margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut2);font-size:11.5px">
+  생성 2026-06-13 (갱신 06-14, 실험기반) · 데이터: results/compare_baseline_20260601_2152 · <b>results/_rebaseline600/</b>(full-20 @600 재측정) · results/_z3probe/(z3-race ON/OFF) · competitor-2026-06-11.json · 파이프라인: src/myalgorithm.py + src/z3race.py + src/fastfloor.py
+</footer>
+
+<script>
+(function(){
+ const tbl=document.getElementById('tbl');if(!tbl)return;
+ tbl.querySelectorAll('th').forEach(th=>{th.addEventListener('click',()=>{
+   const k=+th.dataset.k,typ=th.dataset.t||'n',tb=tbl.tBodies[0];
+   const rows=[...tb.rows];const dir=th._d=!th._d?1:-1;
+   const val=r=>{let s=r.cells[k].innerText.replace(/[,×→].*$/,'').replace(/[^0-9.\-]/g,'');return typ==='s'?r.cells[k].innerText:parseFloat(s)||0;};
+   rows.sort((a,b)=>{const x=val(a),y=val(b);return typ==='s'?(''+x).localeCompare(y)*dir:(x-y)*dir;});
+   rows.forEach(r=>tb.appendChild(r));
+ });});
+})();
+</script>
+</div></body></html>

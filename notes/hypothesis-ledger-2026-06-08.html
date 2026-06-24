@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC 2026 — 가설 검증 원장 (2026-06-08)</title>
+<style>
+  :root{--bg:#0f1115;--card:#171a21;--card2:#1d212b;--ink:#e7ebf0;--mut:#9aa4b2;
+    --line:#2a2f3a;--accent:#4da3ff;--good:#37c871;--warn:#ffb13b;--bad:#ff5d5d;--pur:#b07bff;--teal:#2dd4bf;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14.5px/1.6 -apple-system,Segoe UI,Roboto,'Malgun Gothic',sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 20px 90px}
+  h1{font-size:25px;margin:0 0 4px}
+  .sub{color:var(--mut);margin:0 0 22px;font-size:13.5px}
+  h2{font-size:18.5px;margin:34px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  h2 .n{color:var(--accent);font-weight:700;margin-right:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin:11px 0}
+  table{width:100%;border-collapse:collapse;margin:4px 0;font-size:13px}
+  th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--mut);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em}
+  td.c,th.c{text-align:center}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+  .ok{background:rgba(55,200,113,.14);color:var(--good);border-color:rgba(55,200,113,.32)}
+  .no{background:rgba(255,93,93,.14);color:var(--bad);border-color:rgba(255,93,93,.32)}
+  .wn{background:rgba(255,177,59,.14);color:var(--warn);border-color:rgba(255,177,59,.32)}
+  .mu{background:rgba(154,164,178,.13);color:var(--mut);border-color:rgba(154,164,178,.3)}
+  .ac{background:rgba(77,163,255,.14);color:var(--accent);border-color:rgba(77,163,255,.32)}
+  code{background:#11141a;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font:12px/1.4 'JetBrains Mono',Consolas,monospace;color:#cdd6e3}
+  .mut{color:var(--mut)}.small{font-size:12px}
+  .hl{border-left:3px solid var(--accent);padding-left:12px}
+  .hl.bad{border-color:var(--bad)}.hl.good{border-color:var(--good)}.hl.warn{border-color:var(--warn)}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}
+  .kpi .b{flex:1;min-width:130px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .kpi .v{font-size:23px;font-weight:700}.kpi .l{color:var(--mut);font-size:12px;margin-top:2px}
+  .hid{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);white-space:nowrap}
+  .footer{margin-top:38px;color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:13px}
+  .trace{font:12px/1.7 'JetBrains Mono',Consolas,monospace}
+  .trace .w{color:var(--bad)}.trace .x{color:var(--good)}.trace .c{color:var(--accent)}.trace .b{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OGC 2026 — 가설 검증 원장</h1>
+  <p class="sub">이번 세션 + 과거(문헌·toggle) 실험 전체 · 시간단축 &amp; z1감소 두 축 · 2026-06-08</p>
+
+  <!-- STATE -->
+  <h2><span class="n">§0</span>현재 상태 (클린 측정)</h2>
+  <div class="kpi">
+    <div class="b"><div class="v" style="color:var(--good)">14/20</div><div class="l">z1=0 · 제출 기본</div></div>
+    <div class="b"><div class="v" style="color:var(--good)">16/20</div><div class="l">z1=0 · <b>slab ON</b>(이번에 적용)</div></div>
+    <div class="b"><div class="v">0</div><div class="l">infeasible / −1</div></div>
+    <div class="b"><div class="v" style="color:var(--warn)">prob_20</div><div class="l">불안정 (600~57k)</div></div>
+  </div>
+  <div class="card small">
+    <b>z1=0 (16, slab ON):</b> 1,2,3,4,5,6,7,8,9,10,<b>14,15</b>,16,17,18,19 &nbsp;|&nbsp;
+    <b>남은 막힘:</b> prob_11(1), prob_13(10·slab시 31), prob_12(11→3 slab), <b>prob_20(불안정)</b>
+  </div>
+
+  <!-- TIME -->
+  <h2><span class="n">§1</span>시간 단축 가설</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>가설</th><th class="c">상태</th><th>결과 (측정)</th><th>위험/비고</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b class="hid">T1</b> cum_level <b>order-level break</b><br><span class="small mut">베이가 LB 도달 시 추가 재디코드 중단</span></td>
+          <td class="c"><span class="tag ok">적용</span></td>
+          <td>prob_3 <b>64.7→39.3s</b>, 채택해 불변</td>
+          <td><span class="tag ok">objective-safe</span> 제출 반영</td>
+        </tr>
+        <tr>
+          <td><b class="hid">T2</b> early-exit @z1=0<br><span class="small mut">OGC_EXIT_ON_Z1_ZERO (trace의존 버그 → 실제 floor z1로 수정)</span></td>
+          <td class="c"><span class="tag ok">수정·검증</span></td>
+          <td>prob_1 188→<b>129s(32%)</b>, prob_8 178→<b>41s(77%)</b>, <b>obj 무손실</b></td>
+          <td><span class="tag wn">점수 중립</span> dev가속용 (고정시간 채점). default OFF 유지</td>
+        </tr>
+        <tr>
+          <td><b class="hid">T3</b> <code>CUMLEVEL_PARALLEL</code> 안 쓰기<br><span class="small mut">순차 cum_level이 제출 기본</span></td>
+          <td class="c"><span class="tag ok">확정</span></td>
+          <td>PARALLEL은 prob_1 94초 스핀 + <b>prob_20 1539→57483</b> 악화(결정적)</td>
+          <td><span class="tag ok">기본 OFF 정상</span> (중간에 뒤집었다가 재확인)</td>
+        </tr>
+        <tr>
+          <td><b class="hid">T4</b> greedy <code>_find_earliest_slot</code> <b>byte-identical 재구성</b><br><span class="small mut">크레인검사 precompute 1회</span></td>
+          <td class="c"><span class="tag no">기각</span></td>
+          <td>출력 동일(16/16)이나 <b>2~4× 느림</b> (호출당 일↑, 호출수 그대로)</td>
+          <td>되돌림. 게이트 OFF였어서 제출 영향 0</td>
+        </tr>
+        <tr>
+          <td><b class="hid">T5</b> cum_level <b>탐색폭 축소</b> (lean 1×1)<br><span class="small mut">α·order 9→1</span></td>
+          <td class="c"><span class="tag no">무효</span></td>
+          <td>솔로 full 222.2s = lean 223.0s (<b>wall 영향 0</b>)</td>
+          <td>시간은 폭이 아니라 PARALLEL 스핀에 묶였던 것</td>
+        </tr>
+        <tr>
+          <td><b class="hid">T6</b> cum_level <b>stall-abort</b><br><span class="small mut">개선 멈추면 중단</span></td>
+          <td class="c"><span class="tag mu">불필요</span></td>
+          <td>"94초 헛돎"은 순차엔 없음(PARALLEL 아티팩트). 순차 cum_level=69s 정상</td>
+          <td>측정으로 사전 차단</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="hl bad small" style="margin-top:10px">
+      <b>핵심 트레이스 (prob_1 솔로, PARALLEL=1):</b>
+      <span class="trace"><span class="b">cum_level z1: 153→7 @128s</span> · <span class="w">128~222s 헛돎</span> · <span class="x">bbox_pack z1=0 @223s</span></span> — 순차(제출)에선 이 헛돎이 없음(69s).
+    </div>
+  </div>
+
+  <!-- QUALITY -->
+  <h2><span class="n">§2</span>z1 감소(품질) 가설</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>가설</th><th class="c">상태</th><th>결과 (측정)</th><th>위험/비고</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b class="hid">Q1</b> <b>baseline 제거</b><br><span class="small mut">greedy floor 건너뛰기</span></td>
+          <td class="c"><span class="tag no">기각</span></td>
+          <td>z1 <b>0 → 9,834~29,760</b> (2,800배). feasible는 유지(트리비얼 floor)</td>
+          <td>baseline은 load-bearing 토대 (cum_level 입력)</td>
+        </tr>
+        <tr>
+          <td><b class="hid">Q2</b> <b>slab</b> (<code>OGC_SLAB_PACK</code>)<br><span class="small mut">polygon-tight 패킹 = bbox→polygon 갭(메모리 #1 레버)</span></td>
+          <td class="c"><span class="tag ok">적용 ON</span></td>
+          <td><b>z1=0: 14→16/20</b> (prob_14·15→0, 12: 11→3), easy 14개 0 유지(2회 재현)</td>
+          <td><span class="tag wn">prob_13 회귀</span> 10→31(재현). 단 nonzero→nonzero, z1=0 안 잃음 → net 양수</td>
+        </tr>
+        <tr>
+          <td><b class="hid">Q3</b> slab <b>best-of</b> (<code>OGC_SLAB_BESTOF</code>)<br><span class="small mut">bbox·slab 둘 다 → 더 좋은 것</span></td>
+          <td class="c"><span class="tag wn">보류</span></td>
+          <td>prob_13 <b>31→9</b>·12→1 고침, <b>그러나 예산 반분할로 easy 회귀</b> (prob_6 0→15, prob_9 0→2)</td>
+          <td>default OFF. 예산설계 재작업 필요(bbox에 소슬라이스+slab 잔여)</td>
+        </tr>
+        <tr>
+          <td><b class="hid">Q4</b> z1push (insight ①)<br><span class="small mut">다중순서 재타이밍</span></td>
+          <td class="c"><span class="tag no">무효</span></td>
+          <td>막힌 11/12/13/15 변화 없음 (cpsat_timing이 이미 최적 타이밍)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><b class="hid">Q5</b> orders5 (wider cum_level)</td>
+          <td class="c"><span class="tag mu">미미</span></td>
+          <td>prob_14 5→4 (한 끗), 나머지 무변</td>
+          <td>폭은 floor 못 깸</td>
+        </tr>
+        <tr>
+          <td><b class="hid">Q6</b> atcr(⑧)·m4cut(④)·dueforce·xbaymoves</td>
+          <td class="c"><span class="tag no">무효/회귀</span></td>
+          <td>막힌 인스턴스 무변 (과거 폐기 사유 재확인: atcr 소형회귀, m4cut 0-improve)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><b class="hid">Q7</b> PARALLEL로 prob_20 구제</td>
+          <td class="c"><span class="tag no">기각</span></td>
+          <td>PARALLEL이 prob_20 <b>악화</b>(57483). "18"은 재현 안 되는 fluke</td>
+          <td>prob_20은 전용 배정 작업 필요</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- UNTRIED -->
+  <h2><span class="n">§3</span>미구현 가설 (다음 타깃) <span class="mut small">— 문헌 인사이트, 토글로 제작 예정</span></h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>가설</th><th>겨냥</th><th>예상 효과</th><th>위험·근거</th></tr></thead>
+      <tbody>
+        <tr><td><b class="hid">Z-C</b> 작은 베이 <b>CP-SAT exact</b> (⑤)<br><span class="small mut">no_overlap_2d + 크레인 j≥k 정밀</span></td>
+          <td>prob_11(1)·15·근접</td>
+          <td>작은 베이를 <b>정확히 0/LB</b>로 마무리</td>
+          <td><span class="tag wn">중</span> size-gate 필수. 인프라(CP-SAT) 있음</td></tr>
+        <tr><td><b class="hid">Z-A</b> <b>Z1-proxy 배정 / LBBD</b> (P5·④)<br><span class="small mut">master=배정+Z1, sub=패킹 feasibility cut</span></td>
+          <td><b>prob_20</b>·12·13</td>
+          <td>고정배정 floor 돌파 (prob_20=배정한계)</td>
+          <td><span class="tag no">고</span> 배정변경→Z2/Z3, 복잡</td></tr>
+        <tr><td><b class="hid">Z-B</b> <b>anticipatory 배치</b> (③)<br><span class="small mut">긴급(low-slack) 블록을 크레인 닿는 곳</span></td>
+          <td>전반 floor</td>
+          <td>크레인 자기차단 회피 → floor 자체↓</td>
+          <td><span class="tag no">중~고</span> geometry변경 회귀</td></tr>
+        <tr><td><b class="hid">Z-D</b> <b>크레인-클러스터 ALNS</b> (⑥)</td>
+          <td>혼잡 베이</td>
+          <td>패킹 local-min 탈출, 증분Z1로 10×반복</td>
+          <td><span class="tag no">중~고</span> 증분 delta 정확성</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PROB20 -->
+  <h2><span class="n">§4</span>⚠ prob_20 — 별종 (특별 취급)</h2>
+  <div class="card hl warn">
+    <b>증상</b>: 같은 인스턴스가 config·런마다 z1 = <b>18 ↔ 621 ↔ 751 ↔ 824 ↔ 1539 ↔ 57483</b>. 극심한 불안정.<br>
+    <b>원인</b>: 300블록·5베이 → <code>skip_greedy_floor</code>(n≥280·bays≥5)로 <b>greedy floor 건너뜀</b> → 트리비얼 floor + search/CP-SAT 경로에만 의존, 이 경로가 카오스. PARALLEL은 더 악화(57483 결정적).<br>
+    <b>판정</b>: 빠른 토글로 안 됨. <b>전용 배정-레벨 솔버(Z-A)</b> 또는 300×5 전용 디코드 안정화 필요. 과거 "14~68"도 이 세션 재현 불가 → 신뢰 낮은 기록.
+  </div>
+
+  <!-- LEARNINGS -->
+  <h2><span class="n">§5</span>이번 세션 교정·교훈</h2>
+  <div class="card">
+    <ul style="margin:4px 0">
+      <li><b>dev-speed ≠ score-quality 혼동</b>: 평가는 고정시간·품질채점. early-exit/PARALLEL의 "시간"은 점수와 무관 — 이걸 섞어 PARALLEL을 두 번 오판(드롭→구제→다시 드롭). 최종: <b>PARALLEL OFF 정상</b>.</li>
+      <li><b>측정 오염</b>: 실험 내내 <code>CUMLEVEL_PARALLEL=1</code> 강제 → "12/20"·"prob_14=35" 등 과소평가. <b>제출 실제 config(순차)로 재측정 → 14/20</b>이 진짜.</li>
+      <li><b>±20× 비결정성</b>: prob_13·20 등 단일 런 판정 불가. 모든 A/B는 다중런 필요.</li>
+      <li><b>3번의 측정으로 막은 헛발질</b>: byte-id(느림)·breadth(무효)·stall-abort(불필요) — blind 구현 안 하고 측정 우선.</li>
+    </ul>
+  </div>
+
+  <!-- NEXT -->
+  <h2><span class="n">§6</span>권장 다음 순서</h2>
+  <div class="card">
+    <p><b>1.</b> slab 채택 확정 (16/20). <b class="hid">Q3</b> best-of 예산설계 고쳐 prob_13 회귀까지 무료로 제거 시도 (bbox 소슬라이스 + slab 잔여).</p>
+    <p><b>2.</b> <b class="hid">Z-C</b>(작은 베이 CP-SAT exact)로 prob_11(1) 마무리 시도 — 저위험·근접.</p>
+    <p><b>3.</b> <b class="hid">Z-A</b>(배정-레벨)로 <b>prob_20</b> 전용 공략 — 별도 트랙, 고위험·고효과.</p>
+    <p><b>4.</b> 모든 검증은 <b>제출 실제 config(순차) + 다중런</b>으로. early-exit는 dev에서만 켜기.</p>
+  </div>
+
+  <div class="footer">
+    측정 스크립트: <code>_clean_baseline · _lever_sweep · _ab_earlyexit · _prob20_iso · _stage_timing</code> (notes/) ·
+    관련 문서: <code>speed-investigation-2026-06-07.html</code> · <code>z1-hypotheses-synthesis-2026-06-07.html</code> ·
+    코드변경: order-break(myalgorithm·parallel_decode) · early-exit fix · <code>OGC_SLAB_PACK</code> default ON · <code>OGC_SLAB_BESTOF</code>(OFF) · 생성 2026-06-08
+  </div>
+</div>
+</body>
+</html>

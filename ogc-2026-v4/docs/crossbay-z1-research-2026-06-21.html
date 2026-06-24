@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>크로스베이 z1 핸들링 연구 — OGC 2026 (2026-06-21)</title>
+<style>
+  :root{--bg:#0f1117;--card:#1a1d29;--ink:#e7e9f0;--mut:#9aa3b8;--line:#2a2f42;
+        --good:#3cb371;--bad:#e2245a;--warn:#f1c40f;--accent:#5b8cff;--purple:#9b59b6;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,
+       "Segoe UI",Roboto,"Malgun Gothic",sans-serif;padding:0 0 80px}
+  header{padding:38px 7vw 26px;border-bottom:1px solid var(--line);
+         background:linear-gradient(180deg,#161a27,#0f1117)}
+  h1{margin:0 0 8px;font-size:27px;letter-spacing:-.4px}
+  .sub{color:var(--mut);font-size:14px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 7vw}
+  section{margin:34px 0}
+  h2{font-size:20px;margin:0 0 4px;padding-top:8px}
+  h2 .num{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:8px}
+  h3{font-size:16px;color:#cdd3e6;margin:22px 0 8px}
+  .lead{color:var(--mut);margin:2px 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+        padding:18px 20px;margin:14px 0}
+  .verdict{border-left:5px solid var(--bad);background:#241420}
+  .verdict.kill h2{color:var(--bad)}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;
+        letter-spacing:.4px;vertical-align:middle}
+  .pill.kill{background:rgba(226,36,90,.16);color:#ff6b94;border:1px solid #80213b}
+  .pill.ok{background:rgba(60,179,113,.16);color:#67d29a;border:1px solid #2c6b48}
+  .pill.th{background:rgba(91,140,255,.16);color:#9db8ff;border:1px solid #34487f}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0;
+        font-variant-numeric:tabular-nums}
+  th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:var(--mut);font-weight:600;border-bottom:2px solid var(--line)}
+  tbody tr:hover{background:#20243200}
+  .z{color:var(--bad);font-weight:700}
+  .zero{color:var(--good);font-weight:700}
+  code{background:#11141f;border:1px solid var(--line);border-radius:5px;padding:1px 6px;
+       font:13px ui-monospace,Consolas,monospace;color:#bcd0ff}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  ul{margin:8px 0;padding-left:20px}li{margin:5px 0}
+  .mut{color:var(--mut)}
+  .barrier{border-left:4px solid var(--warn);padding:10px 16px;margin:10px 0;background:#1c1d26}
+  .foot{color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);
+        margin-top:40px;padding-top:16px}
+  a{color:#9db8ff}
+  .kv{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+  .kv span{background:#11141f;border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>크로스베이로 z1을 핸들링할 수 있는가?</h1>
+    <div class="sub">OGC 2026 · 자율 연구 · 2026-06-21 · 3-갈래 조사(이론 / 실측 진단 / 실제 A/B)</div>
+    <div class="kv" style="margin-top:14px">
+      <span class="pill th">가설: 피크-타겟 크로스베이 이동</span>
+      <span class="pill kill">판정: FALSIFIED</span>
+      <span class="pill ok">유일한 z1 레버 = intra-bay crane repack (v3, 이미 프로덕션)</span>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+
+<section>
+  <h2><span class="num">0</span>한 줄 요약</h2>
+  <p class="lead">크로스베이 이동으로 z1(tardiness)을 줄이는 것은 <b>이론적으로 타당하지만</b>(interval graph χ=ω 클리크 분해),
+  우리 인스턴스에서는 <b>두 개의 독립적 장벽</b>으로 실현 불가다. 실제 기계장치 A/B에서
+  <b>21건 시도 전부 기각(채택 0)</b>. 구조적 진단(<code>has_slack=NO</code>)과 정확히 일치.</p>
+  <div class="card verdict kill">
+    <h2 style="font-size:17px;margin-top:0">왜 죽었나 — 두 장벽</h2>
+    <div class="barrier"><b>장벽 1 · 전역 release 몰림 (공간/구조)</b><br>
+      블록 release가 모든 베이에 <b>동시에</b> 몰려, 한 베이가 피크일 때 다른 베이도 혼잡하다.
+      피크 시점 "가장 한가한" 도착 베이도 co-presence 6~19. 클리크를 한 베이에서 빼면
+      다른 베이가 동등하게 오른다 → χ=ω 하한이 <b>per-bay가 아니라 전역</b>이라 재배치로 못 내림.</div>
+    <div class="barrier"><b>장벽 2 · z3 페널티 ≫ 미미한 z1 한계이득 (목적함수)</b><br>
+      CP-SAT 타이밍 오라클이 이미 베이 내 최적이라 블록 1개를 빼도 z1은 거의 안 변한다(연속·미분 작음).
+      반면 비선호 베이로의 이동은 z3가 <code>w3·(S_max−S_chosen)</code> 만큼 <b>이산적으로 점프</b> →
+      전체 obj가 항상 증가. z3-중립 swap도 장벽 1 때문에 실패.</div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">1</span>가설 — v4 배정 실험과 무엇이 다른가</h2>
+  <p class="lead">v4에서 falsified된 배정 레버(reassign=z3-min, reassign_balance=총부하 균형)와 <b>다른 각도</b>를 시험했다.</p>
+  <ul>
+    <li><b>v4 reassign</b>: 블록을 <i>선호 베이로</i> 몰기(z3-min) → z1 2~16배 폭발(선호 베이가 더 혼잡해짐).</li>
+    <li><b>v4 reassign_balance</b>: <i>총 부하</i> 균형 → z1 3~11배 폭발(작은 베이가 고밀도화).</li>
+    <li><b>이번 가설(신규)</b>: <i>피크 시점</i> co-presence를 타겟 — 가장 혼잡한 베이의 피크 클리크 블록을
+      <i>시간적으로 보완적인(그 구간에 덜 겹치는)</i> 베이로 이동. 선호 무관, 한계 재분배.
+      이론은 "총부하 균형은 실패, 피크 타겟은 통한다"를 지지(§2).</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">2</span>이론(문헌) — 가설은 수학적으로 옳다 <span class="pill th">VALID IN THEORY</span></h2>
+  <p class="lead">web 리서치 결과: 피크-타겟 크로스베이 재배치는 네 갈래 문헌이 독립적으로 뒷받침한다.</p>
+  <div class="grid2">
+    <div class="card"><b>Interval Graph χ=ω (Perfect Graph)</b><br><span class="mut">
+      블록 [entry,exit] 구간 그래프에서 크로마틱 수 = 최대 클리크 = <b>피크 동시공존 수</b>.
+      피크 클리크를 분해하면 크레인 직렬화 길이 k→k−1. 단 총부하 균등은 클리크 크기를 안 줄임.</span></div>
+    <div class="card"><b>Temporal Bin Packing (peak occupancy)</b><br><span class="mut">
+      objective = 순간 최대 점유. 총 절약 = 잡 간 시간 겹침의 함수 → 겹치는 잡을 다른 빈으로 분리하면 peak↓.</span></div>
+    <div class="card"><b>Resource Leveling (peak-day targeting)</b><br><span class="mut">
+      Burgess-Killebrew류: 피크 일자 식별 → 슬랙 있는 활동을 피크 밖으로. sum-of-squares ≠ peak.</span></div>
+    <div class="card"><b>Blocking Job Shop swap</b><br><span class="mut">
+      크레인 j≥k 직렬화와 동형. cross-machine swap(부하 보존)이 blocking을 국소적으로 줄이는 neighborhood.</span></div>
+  </div>
+  <p class="mut" style="margin-top:10px">→ 이론은 "왜 총부하 균형(v4)이 실패하고 피크 타겟이 통할 수 있는지"를 정확히 설명한다.
+  <b>단, 전제 = 시간적으로 보완적인 도착 베이가 존재해야 함.</b> 이 전제를 §3에서 깬다.</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>실측 진단 — 시간적 보완성이 없다 <span class="pill kill">has_slack = NO</span></h2>
+  <p class="lead"><code>copresence_diag.py</code> · set2 z1-worst 8개 · make_seed(자연 배정) 기준 co-presence 프로파일.</p>
+  <table>
+    <thead><tr><th>prob</th><th>z1</th><th>opp_ts<br>(기회 timestep)</th><th>opp_δ</th>
+      <th>tardy@peak%</th><th>trade+ 블록</th><th>w1/w3</th><th>slack?</th></tr></thead>
+    <tbody>
+      <tr><td>38</td><td class="z">4,526</td><td>1</td><td>5</td><td>7%</td><td>82</td><td>44.4</td><td class="z">NO</td></tr>
+      <tr><td>40</td><td class="z">4,082</td><td>9</td><td>58</td><td>13%</td><td>83</td><td>51.3</td><td class="z">NO</td></tr>
+      <tr><td>27</td><td class="z">2,695</td><td>2</td><td>6</td><td>7%</td><td>42</td><td>33.3</td><td class="z">NO</td></tr>
+      <tr><td>33</td><td>1,595</td><td>4</td><td>11</td><td>21%</td><td>57</td><td>44.4</td><td class="z">NO</td></tr>
+      <tr><td>37</td><td>1,436</td><td>8</td><td>37</td><td>15%</td><td>42</td><td>5.6</td><td class="z">NO</td></tr>
+      <tr><td>39</td><td>1,131</td><td>3</td><td>9</td><td>18%</td><td>56</td><td>88.9</td><td class="z">NO</td></tr>
+      <tr><td>32</td><td>1,087</td><td>3</td><td>9</td><td>22%</td><td>37</td><td>5.6</td><td class="z">NO</td></tr>
+      <tr><td>26</td><td>1,032</td><td>4</td><td>10</td><td>25%</td><td>41</td><td>88.9</td><td class="z">NO</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><b>기회 timestep ≤ 12</b> (임계 50ts 충족 = 20개 중 <b>0개</b>). 시간적 보완성이 구조적으로 없음.</li>
+    <li>예: <b>prob_27</b> bay0 peak=12@t16, bay1 peak=29@t28 — bay0 피크 시각(t16)에 bay1도 27로 이미 포화.</li>
+    <li>예: <b>prob_38</b> bay1=26, bay2=27 둘 다 t=13에 동시 피크. 원인 = release가 t≈12~33에 전 베이 동시 몰림.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">4</span>실제 A/B — 21건 시도, 채택 0 <span class="pill kill">0 / 21 ACCEPTED</span></h2>
+  <p class="lead"><code>crossbay_z1.py</code> · 기존 <code>crane_repack_bay</code> 기계장치로 실제 이동 시도 ·
+  공식 <code>check_feasibility</code> 전체 obj 게이트 · 베이스라인 = real 해 + intra-bay repack(z1 높은 상태 = 깎을 여지 <b>더 많은</b> 출발점).</p>
+  <table>
+    <thead><tr><th>prob</th><th>base_obj</th><th>base z1</th><th>base z3</th>
+      <th>after obj</th><th>Δobj</th><th>Δz1</th><th>시도</th><th>채택<br>(mv/sw)</th><th>기각<br>infeas</th><th>기각<br>no-gain</th></tr></thead>
+    <tbody>
+      <tr><td>27</td><td>36,649,830</td><td>2,622</td><td>4,218</td><td>36,649,830</td><td class="zero">0</td><td class="zero">0</td><td>5</td><td class="z">0/0</td><td>0</td><td>5</td></tr>
+      <tr><td>38</td><td>60,229,711</td><td>4,381</td><td>6,051</td><td>60,229,711</td><td class="zero">0</td><td class="zero">0</td><td>6</td><td class="z">0/0</td><td>1</td><td>5</td></tr>
+      <tr><td>40</td><td>2,778,645</td><td>3,984</td><td>9,137</td><td>2,778,645</td><td class="zero">0</td><td class="zero">0</td><td>4</td><td class="z">0/0</td><td>0</td><td>4</td></tr>
+      <tr><td>26</td><td>14,370,841</td><td>1,018</td><td>5,304</td><td>14,370,841</td><td class="zero">0</td><td class="zero">0</td><td>6</td><td class="z">0/0</td><td>1</td><td>5</td></tr>
+    </tbody>
+  </table>
+  <h3>이동마다 동일한 패턴</h3>
+  <ol>
+    <li><b>도착 베이 삽입</b> (<code>free_ids={b}</code>) → CP-SAT OPTIMAL, local z1 감소 (단독으로는 OK).</li>
+    <li><b>출발 베이 b 제거 후 재패킹</b> → FEASIBLE, 출발 베이 z1도 약간 감소.</li>
+    <li><b>전체 obj (공식 체커)</b> → base 초과 → <b>항상 기각</b>.
+      <span class="mut">예 prob_26 bid=135: 도착 local z1=0(OPTIMAL)인데 global obj 14,383,920 &gt; 14,370,841 (Δ+13,079 악화).</span></li>
+    <li><b>infeasible 기각 2건</b>(prob_38 bid=236, prob_26 bid=138): 이동이 다른 베이 crane 제약을 전역 위반.</li>
+  </ol>
+  <p class="mut">베이스라인 z1이 1,018~4,381로 높은데도(프로덕션보다 깎을 여지 많은 출발점) 0건 채택 →
+  타이트한 프로덕션 해에서는 <b>a fortiori</b> 실패. 음의 결과가 더 강해짐.</p>
+</section>
+
+<section>
+  <h2><span class="num">5</span>결론 & 다음 방향</h2>
+  <div class="card">
+    <p><b>z1 = 구조적 co-presence. 블록을 베이 간에 옮겨선 못 푼다.</b> 세 갈래(이론·진단·A/B)가 수렴하고,
+    기존 falsification(v4 배정, reassign_balance, 밀도≠z1)과 정합. <b>재시도 가치 없음.</b></p>
+    <p>더 깊은 진실: z1의 하한은 <b>전역 피크 co-presence</b>(release/due가 결정하는 불가피한 구간 겹침의 합)이며,
+    어떤 공간 재배치로도 못 내린다. 줄이는 길은 둘뿐 —
+    (a) due 슬랙 있는 블록의 <b>entry를 피크 밖으로 미루기</b>(= CP-SAT 타이밍 오라클이 이미 베이 내에서 수행),
+    (b) processing footprint 축소(불가).</p>
+  </div>
+  <h3>그래서 obj를 더 깎으려면 (크로스베이 아님)</h3>
+  <ul>
+    <li><b>유일하게 살아있는 z1 레버 = intra-bay crane-aware repack + timing</b> (v3, 이미 프로덕션 = best-of 타이밍 오라클).</li>
+    <li><b>z3 (obj의 7.9%)</b>: wrong→preferred 이동(<code>bpass</code>)은 이미 z3-타겟으로 수행 중. 추가 여지 제한적.</li>
+    <li><b>windowed relayout polish</b>(<code>src/relayout.py</code>): 고-TL(≥400s)·additive에서만 살아있는 후보 — 운영 TL 길 때만 의미(별도 추적).</li>
+    <li><b>실전 우선순위는 여전히 never−1</b>: set2 ALL40 feasibility 최종 검증 + 운영 TL 확정이 obj 미세개선보다 점수 레버가 큼.</li>
+  </ul>
+</section>
+
+<div class="foot">
+  산출물: <code>ogc-2026-v4/copresence_diag.py</code> · <code>ogc-2026-v4/crossbay_z1.py</code> · 본 리포트.
+  관련 메모리: ogc2026-v4-assignment-falsified-2026-06-21, ogc2026-v2-volumetric-packing-2026-06-19,
+  ogc2026-v3-crane-aware-cpsat-repack-2026-06-20. · 측정 규칙: full set, 공식 check_feasibility, 총 obj 기준.
+</div>
+</div>
+</body>
+</html>

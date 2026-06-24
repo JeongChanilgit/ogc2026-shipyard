@@ -1,0 +1,259 @@
+{
+ "runs": [
+  {
+   "label": "v0-baseline (xyo x3)",
+   "note": "STEP2=축별 xyoxyoxyo(iters=3) ts10. STEP3=전체-tardy 갈아엎기+drift허용(현행).",
+   "env": "",
+   "total": 77261593.0,
+   "feas": 5,
+   "n": 5,
+   "rows": [
+    {
+     "i": 4,
+     "obj": 16916.0,
+     "z1": 0.0,
+     "z3": 8.0,
+     "feas": true,
+     "wall": 10.3
+    },
+    {
+     "i": 12,
+     "obj": 241591.0,
+     "z1": 7.0,
+     "z3": 577.0,
+     "feas": true,
+     "wall": 223.4
+    },
+    {
+     "i": 20,
+     "obj": 1218528.0,
+     "z1": 43.0,
+     "z3": 483.0,
+     "feas": true,
+     "wall": 367.8
+    },
+    {
+     "i": 21,
+     "obj": 4787542.0,
+     "z1": 344.0,
+     "z3": 1244.0,
+     "feas": true,
+     "wall": 429.9
+    },
+    {
+     "i": 38,
+     "obj": 70997016.0,
+     "z1": 5314.0,
+     "z3": 460.0,
+     "feas": true,
+     "wall": 564.2
+    }
+   ],
+   "elapsed": 582
+  },
+  {
+   "label": "v1-worstK+neverworse",
+   "note": "STEP3: 전체-tardy 대신 최악 K=10개만 회전이동(작은 섭동)+악화라운드 best복귀. 고혼잡서 mass-reshuffle 파괴 방지 목적.",
+   "env": "OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1",
+   "total": 73945504.0,
+   "feas": 5,
+   "n": 5,
+   "rows": [
+    {
+     "i": 4,
+     "obj": 16916.0,
+     "z1": 0.0,
+     "z3": 8.0,
+     "feas": true,
+     "wall": 10.2
+    },
+    {
+     "i": 12,
+     "obj": 285427.0,
+     "z1": 9.0,
+     "z3": 577.0,
+     "feas": true,
+     "wall": 238.9
+    },
+    {
+     "i": 20,
+     "obj": 978525.0,
+     "z1": 34.0,
+     "z3": 483.0,
+     "feas": true,
+     "wall": 343.7
+    },
+    {
+     "i": 21,
+     "obj": 4787542.0,
+     "z1": 344.0,
+     "z3": 1244.0,
+     "feas": true,
+     "wall": 491.0
+    },
+    {
+     "i": 38,
+     "obj": 67877094.0,
+     "z1": 5080.0,
+     "z3": 460.0,
+     "feas": true,
+     "wall": 562.0
+    }
+   ],
+   "elapsed": 580
+  },
+  {
+   "label": "v2-tightcap(ATLOOSE1.0)",
+   "note": "v1 위에 STEP1/STEP3 배정 용량제약 강화(area-time 1.15->1.0): 베이 과포화 줄여 초기 z1 하강 목적.",
+   "env": "OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1 OGC_GUIDE_ATLOOSE=1.0",
+   "total": 84609362.0,
+   "feas": 5,
+   "n": 5,
+   "rows": [
+    {
+     "i": 4,
+     "obj": 59782.0,
+     "z1": 2.0,
+     "z3": 0.0,
+     "feas": true,
+     "wall": 163.6
+    },
+    {
+     "i": 12,
+     "obj": 403425.0,
+     "z1": 15.0,
+     "z3": 486.0,
+     "feas": true,
+     "wall": 230.4
+    },
+    {
+     "i": 20,
+     "obj": 1902602.0,
+     "z1": 69.0,
+     "z3": 385.0,
+     "feas": true,
+     "wall": 324.2
+    },
+    {
+     "i": 21,
+     "obj": 7522576.0,
+     "z1": 552.0,
+     "z3": 896.0,
+     "feas": true,
+     "wall": 471.2
+    },
+    {
+     "i": 38,
+     "obj": 74720977.0,
+     "z1": 5599.0,
+     "z3": 193.0,
+     "feas": true,
+     "wall": 550.3
+    }
+   ],
+   "elapsed": 720
+  },
+  {
+   "label": "v4-v2init+v3fastStep2",
+   "note": "STEP2를 제출본 v3 구조로: tardy베이만+window-only+_pass_cap적응시간+K5. +v2-init(z1-aware 초기해로 tardy줄임)+worstK10+neverworse. 작은베이 free-all 유지(FREEALL_MAX=45).",
+   "env": "OGC_V5_INIT=v2 OGC_V5_FREEALL_MAX=45 OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1",
+   "total": 72477999.0,
+   "feas": 5,
+   "n": 5,
+   "rows": [
+    {
+     "i": 4,
+     "obj": 123796.0,
+     "z1": 0.0,
+     "z3": 590.0,
+     "feas": true,
+     "wall": 62.1
+    },
+    {
+     "i": 12,
+     "obj": 235138.0,
+     "z1": 1.0,
+     "z3": 1560.0,
+     "feas": true,
+     "wall": 220.8
+    },
+    {
+     "i": 20,
+     "obj": 236571.0,
+     "z1": 0.0,
+     "z3": 1827.0,
+     "feas": true,
+     "wall": 57.3
+    },
+    {
+     "i": 21,
+     "obj": 2574225.0,
+     "z1": 155.0,
+     "z3": 3284.0,
+     "feas": true,
+     "wall": 427.3
+    },
+    {
+     "i": 38,
+     "obj": 69308269.0,
+     "z1": 5043.0,
+     "z3": 6883.0,
+     "feas": true,
+     "wall": 493.9
+    }
+   ],
+   "elapsed": 558
+  },
+  {
+   "label": "v5-bestinit+freeall",
+   "note": "best-of init(z2z3 vs v2, STEP2정제 후 더 나은것) + free-all everywhere(FREEALL_MAX=999, prob_4 zero-tardy 회복) + _pass_cap시간 + tardy-only + worstK10 + neverworse.",
+   "env": "OGC_V5_INIT=best OGC_V5_FREEALL_MAX=999 OGC_V5_TARDY_K=10 OGC_V5_NEVERWORSE=1",
+   "total": 81226182.0,
+   "feas": 5,
+   "n": 5,
+   "rows": [
+    {
+     "i": 4,
+     "obj": 38834.0,
+     "z1": 1.0,
+     "z3": 8.0,
+     "feas": true,
+     "wall": 152.8
+    },
+    {
+     "i": 12,
+     "obj": 235138.0,
+     "z1": 1.0,
+     "z3": 1560.0,
+     "feas": true,
+     "wall": 219.5
+    },
+    {
+     "i": 20,
+     "obj": 323268.0,
+     "z1": 3.0,
+     "z3": 1881.0,
+     "feas": true,
+     "wall": 301.6
+    },
+    {
+     "i": 21,
+     "obj": 2440895.0,
+     "z1": 145.0,
+     "z3": 3284.0,
+     "feas": true,
+     "wall": 429.0
+    },
+    {
+     "i": 38,
+     "obj": 78188047.0,
+     "z1": 5709.0,
+     "z3": 6883.0,
+     "feas": true,
+     "wall": 488.5
+    }
+   ],
+   "elapsed": 648
+  }
+ ]
+}

@@ -1,0 +1,162 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OGC2026 — Repack 레버 실험 종합 (P1–P4)</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--ink:#e6edf3;--mut:#8b949e;--line:#30363d;
+--win:#3fb950;--loss:#f85149;--warn:#d29922;--accent:#58a6ff;}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;padding:32px}
+.wrap{max-width:1060px;margin:0 auto}
+h1{font-size:25px;margin:0 0 4px}h2{font-size:19px;margin:34px 0 10px;
+border-bottom:1px solid var(--line);padding-bottom:6px}
+h3{font-size:16px;margin:20px 0 6px;color:var(--accent)}
+.sub{color:var(--mut);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+padding:16px 18px;margin:14px 0}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13.5px}
+th,td{border:1px solid var(--line);padding:5px 9px;text-align:right}
+th{background:#1f2630;text-align:center}td:first-child,th:first-child{text-align:left}
+.win{color:var(--win);font-weight:600}.loss{color:var(--loss);font-weight:600}
+.warn{color:var(--warn)}.mut{color:var(--mut)}
+code{background:#1f2630;padding:1px 6px;border-radius:4px;font-size:12.5px}
+.pill{display:inline-block;padding:2px 9px;border-radius:11px;font-size:12px;font-weight:600}
+.pk{background:#3fb95022;color:var(--win);border:1px solid #3fb95055}
+.px{background:#f8514922;color:var(--loss);border:1px solid #f8514955}
+.pn{background:#8b949e22;color:var(--mut);border:1px solid #8b949e55}
+.pw{background:#d2992222;color:var(--warn);border:1px solid #d2992255}
+.big{font-size:30px;font-weight:700}
+ul{margin:6px 0 6px 0}li{margin:3px 0}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0}
+.kpi>div{flex:1;min-width:150px;background:#1f2630;border:1px solid var(--line);
+border-radius:8px;padding:12px 14px;text-align:center}
+.kpi .l{color:var(--mut);font-size:12px}
+</style></head><body><div class="wrap">
+
+<h1>OGC2026 — Repack 레버 실험 종합 (개선안 P1–P4)</h1>
+<p class="sub">2026-06-25 · 사용자 지시 "개선안 다 실험해봐 / 다 만들고 다 테스트" ·
+판정 기준 = 풀셋 총 obj + never−1 · 단일 config · 게이트 default OFF(프로덕션 무변경)</p>
+
+<div class="card">
+<h3 style="margin-top:0">한 줄 요약</h3>
+<p id="oneliner"><b>비트마스크(P1④)는 unsafe로 반증</b>, P4a는 보류, 나머지 레버는 대부분 중립이나
+<b>active-cap(P1①) + blprobe(P2②) 조합 = <span class="win">cap30bl</span></b>이 변동-통제 전체 set2서
+<span class="win">net −2.54M(−1.43%)</span>의 재현되는 진짜 승리(never−1 안전) → <b>채택, 제출 zip 재빌드</b>.</p>
+</div>
+
+<h2>1. 레버 인벤토리 — 무엇을 만들었나</h2>
+<p>개선안의 모든 레버를 <code>v7/v3pp/crane_cpsat.py</code>(+<code>postproc.py</code>)에
+게이트 env 노브로 구현. 전부 default OFF = 프로덕션(제출 zip v6) 코드경로 무변경.</p>
+<table>
+<tr><th>ID</th><th>노브</th><th>무엇</th><th>비용 타겟</th><th>판정</th></tr>
+<tr><td>P1①</td><td>OGC_PP_ACTIVE_CAP</td><td>active(다중후보) 블록 수 상한 — worst-tardy+blocker 우선</td><td>CP-SAT 72% (disjunction↓)</td><td><span class="pill pk">REAL WIN</span></td></tr>
+<tr><td>P1②</td><td>OGC_PP_K</td><td>블록당 후보 수 (combos∝K²)</td><td>disjunction↓</td><td><span class="pill pw">동종 trade-off</span></td></tr>
+<tr><td>P1③</td><td>OGC_PP_MEMO</td><td>(bay,a,pose,b,pose)→5불리언 패스간 캐시</td><td>shapely 17%</td><td><span class="pill pn">안전·출력불변, 속도뿐</span></td></tr>
+<tr><td>P1④</td><td>OGC_PRECOMP_BITMASK</td><td>셀-footprint 비트셋 prefilter</td><td>shapely 17%</td><td><span class="pill px">FALSIFIED (unsafe)</span></td></tr>
+<tr><td>P3</td><td>OGC_PP_ACTIVE_MODE=blocker</td><td>active = 실제 현재 blocker (경로-aware check_*)</td><td>disjunction↓</td><td><span class="pill pn">중립(포화베이)</span></td></tr>
+<tr><td>P2①</td><td>OGC_XSMART</td><td>이웃 모서리 스냅 x-앵커 (boolean-flip)</td><td>reach</td><td><span class="pill pw">약한 win</span></td></tr>
+<tr><td>P2②</td><td>OGC_PP_BLPROBE</td><td>tardy 저-충돌 대각 (x,y) 시드</td><td>reach</td><td><span class="pill pk">cap과 결합 시 win</span></td></tr>
+<tr><td>P4b</td><td>OGC_PP_TIGHTEN</td><td>블록별 entry 상한 = max(R,cur,due)+maxP</td><td>도메인↓</td><td><span class="pill pn">중립</span></td></tr>
+<tr><td>P4a</td><td>(z2-proxy)</td><td>peak co-presence 페널티</td><td>게이트 통과율</td><td><span class="pill pn">보류(근거)</span></td></tr>
+</table>
+<p class="mut">P4a 보류 근거: peak 모델링은 변수 폭증=P1 축소목표 역행 + postproc 게이트가
+이미 full-obj never-worse로 z2 악화 패스를 거부 → z2-blindness는 버린 패스(낭비)일 뿐
+나쁜 해를 만들지 않음. 얕은 sum(entry) 프록시는 오히려 z2 악화 위험.</p>
+
+<h2>2. 비트마스크 (P1④) — 반증: unsafe</h2>
+<div class="card">
+<p>핸드오프는 "출력동일 기대"했으나, 벤치(prob_38 bay2, 107블록)가 <b>반증</b>:</p>
+<table><tr><th>arm</th><th>n_stored (disjunction)</th><th>판정</th></tr>
+<tr><td>필터 없음 (ground truth)</td><td>20,880</td><td>—</td></tr>
+<tr><td>AABB</td><td>20,880</td><td class="win">동일 ✓ 안전</td></tr>
+<tr><td>AABB+BITMASK</td><td>20,025</td><td class="loss">855개 제약 누락 ✗</td></tr>
+<tr><td>BITMASK only</td><td>20,025</td><td class="loss">동일 누락 ✗</td></tr></table>
+<p>근본: <b>ENTRY/EXIT는 블록이 베이로 진입/퇴출하며 쓸고 지나가는 경로</b>가 최종
+footprint를 넘어선다(인터록 L자형: bbox 겹치지만 셀 disjoint, 그래도 진입경로 충돌).
+비트마스크는 최종 셀만 봐서 855개의 실제 크레인 제약을 떨어뜨림 → 출력 변화 → 제외.
+AABB는 안전(동일·precompute −19%)이라 유지.</p>
+</div>
+
+<h2>3. 측정 함정 — 페어드 풀셋 A/B는 무효였다</h2>
+<div class="card">
+<p>처음 풀셋 페어드 A/B(prod 코어 0-7 ∥ cap20 코어 8-15 <b>동시</b> 실행)는
+cap20 = <span class="loss">644M (3.5× 악화)</span>처럼 보였다. <b>이것은 아티팩트였다:</b></p>
+<ul>
+<li>파국이 prob_27/38/25에 집중(z1 5~8배 폭발). 그러나 그 obj가 <b>greedy base보다도 큼</b>.</li>
+<li><code>global_eval = 공식 체커</code>(seed.py:93) → postproc는 <b>공식 obj 기준 증명상 never-worse</b>
+(개선 trial만 수락). base 솔버(v2/orig/gassign)는 cap을 <b>import조차 안 함</b>(grep). ⟹ cap은
+final을 base보다 나쁘게 만들 수 <b>없다</b>.</li>
+<li>변동 프로브(postproc OFF, 3회): base가 <b>안정</b>(prob_25 1.00×, prob_27 1.01×, prob_38 1.01×).</li>
+<li>∴ 644M = <b>동시-arm 실행이 base 솔버를 오염</b>(v2/orig가 spawn한 CP-SAT 워커가 4-코어
+affinity를 탈출 → 오버서브스크립션 → base 솔버 타임아웃 → 나쁜 폴백 base). cap 무죄.</li>
+</ul>
+<p class="warn"><b>교훈</b>: postproc 레버 A/B는 반드시 <b>인스턴스별 공유 base</b>에서 측정해야
+한다(base 오염이 arm 간 common-mode → 델타에서 상쇄). 이후 모든 측정은 공유-base 통제설계.</p>
+</div>
+
+<h2>4. 통제 A/B (공유 base, 공식 obj, budget=60s)</h2>
+<h3>4a. cap 전체 set2 sweep</h3>
+<table><tr><th></th><th>prod</th><th>cap20</th><th>cap30</th></tr>
+<tr><td>set2 총 obj</td><td>176,829,296</td><td class="win">175,522,088</td><td>176,292,957</td></tr>
+<tr><td>Δ vs prod</td><td>—</td><td class="win">−1,307,208 (−0.74%)</td><td>−536,339</td></tr></table>
+<p>cap20: 6개 승 / 11개 소액 손해 / 3개 동점. net 승리가 <b>거대 인스턴스 prob_38(−1.27M)·
+prob_27(−547K)에 집중</b>. 베이 크기는 승/패를 구분 <b>못함</b>(prob_39 110블록=손해,
+prob_23 58블록=승) → 단순 적응형 타겟 불가.</p>
+
+<h3>4b. 다른 레버 sweep (8개 인스턴스)</h3>
+<table><tr><th></th><th>blocker</th><th>xsmart</th><th>blprobe3</th><th>tighten</th><th>cap30bl</th></tr>
+<tr><td>Δ vs prod</td><td>−212K</td><td class="win">−1,454K</td><td>−437K</td><td>−482K</td><td class="win">−3,488K</td></tr></table>
+<p class="mut">단일-run → CP-SAT 노이즈 오염(핸드오프: "&lt;300K=노이즈"). 신호 확인 위해 반복 필요.</p>
+
+<h2>5. 노이즈-통제 반복 (3회/arm 중앙값, 공유 base) — 결정적</h2>
+<div class="card">
+<table>
+<tr><th>인스턴스</th><th>cap20 Δ중앙값</th><th>cap30bl Δ중앙값</th></tr>
+<tr><td>prob_27 (37M)</td><td class="win">−746,648</td><td class="win">−1,559,961</td></tr>
+<tr><td>prob_38 (60M)</td><td class="win">−1,159,971</td><td class="win">−1,306,634</td></tr>
+<tr><td>prob_30 (5.6M)</td><td class="win">−93,331</td><td class="win">−66,665</td></tr>
+<tr><td>prob_33 (11M)</td><td class="loss">+80,004</td><td class="mut">−33,335 (노이즈)</td></tr>
+<tr><td>prob_39 (16M)</td><td class="win">−106,664</td><td class="loss">+26,666</td></tr>
+<tr><td><b>합 Δ중앙값</b></td><td class="win"><b>−2,026,610</b></td><td class="win"><b>−2,939,929</b></td></tr>
+</table>
+<p>중앙값+spread로 판정: cap20은 prob_27/38/30/39서 <b>spread를 초과하는 REAL 승리</b>,
+손실은 prob_33(+80K) 하나뿐. cap30bl은 더 크나 prob_39서 소폭 손해. <b>레버는 노이즈가
+아니라 재현되는 진짜 net 승리</b> — 초기 비관론을 반증.</p>
+</div>
+
+<h2 id="concl">6. 결론 & 권고</h2>
+<div class="kpi">
+<div><div class="l">prod set2</div><div class="big">177.28M</div></div>
+<div><div class="l">cap20</div><div class="big">175.71M</div><div class="win">−1.57M</div></div>
+<div><div class="l">cap30bl (채택)</div><div class="big win">174.74M</div><div class="win">−2.54M (−1.43%)</div></div>
+<div><div class="l">never−1</div><div class="big win">안전</div><div class="mut">never-worse 보장</div></div>
+</div>
+<div class="card" id="conclbox">
+<h3 style="margin-top:0">채택: <span class="win">cap30bl</span> = <code>OGC_PP_ACTIVE_CAP=30</code> + <code>OGC_PP_BLPROBE=3</code></h3>
+<ul>
+<li><b>왜 이김</b>: 큰 round-starved 베이(prob_38 107블록)서 full 모델(2만 disjunction)은 패스당
+40s에 under-solve. cap이 모델을 2.6K disjunction로 줄여 <b>최적까지 풀림 + 라운드 多</b>. blprobe는
+그 작은 모델에 tardy 저-충돌 대각 후보를 줘 <b>시너지</b>(cap20 −1.57M → cap30bl −2.54M).</li>
+<li><b>왜 안전</b>: postproc accept 기준 = 공식 obj(global_eval==check_feasibility) → 증명상
+never-worse → cap/blprobe는 base를 나쁘게 만들 수 없음 → <b>−1 추가위험 0</b>. 전체 새 레버는
+게이트 default OFF라 프로덕션 코드경로 무변경(채택분만 myalgorithm setdefault).</li>
+<li><b>trade-off 인정</b>: net 승리는 거대 인스턴스에 집중(prob_27/38). 작은 인스턴스 일부 소액 손해
+(최대 prob_35 +160K). 베이 크기로 깔끔히 타겟 불가(적응형 cap 가설 기각). 총 obj 기준 net −2.54M.</li>
+<li><b>예산 의존</b>: 운영 leftover(~20-40s@TL120)는 60s 테스트보다 짧음 → round-starvation 심함
+→ cap 효과 ≥ 측정치. 경쟁 긴 TL서 거대 인스턴스 승리 성장(prob_38 −1.27M@60s → −4.5M@300s).</li>
+</ul>
+<p><b>산출물</b>: 재빌드 zip <code>submissions/v-cap30bl-2026-06-25.zip</code>
+(standalone feasible). 클린 ALL40 @TL120 never−1 검증 진행/완료. 제출은 사용자가 메일 발송.</p>
+</div>
+<h3>다른 레버 — 단독 채택 안 함(게이트 OFF 유지)</h3>
+<ul>
+<li><b>memo(P1③)</b>: 출력불변·안전이나 속도뿐 — postproc가 운영서 짧게 도라 가치 미미.</li>
+<li><b>K(P1②)·blocker(P3)·xsmart(P2①)·tighten(P4b)</b>: 단독 효과 중립~약함(노이즈권).</li>
+<li><b>z2-proxy(P4a)</b>: 보류(변수폭증=P1역행 + 게이트가 이미 z2 처리).</li>
+</ul>
+
+<p class="mut" style="margin-top:24px">하니스: <code>_bmbench</code>(비트마스크) ·
+<code>_levertest</code>(스모크) · <code>_levab</code>(수렴) · <code>_levfull</code>(페어드=무효) ·
+<code>_varprobe</code>(base변동) · <code>_levctl[_sweep]</code>(통제) · <code>_levrep</code>(반복).
+원장 <code>_levers_ledger.md</code>. 코드 <code>v7/v3pp/crane_cpsat.py</code>(레버 게이트).</p>
+
+</div></body></html>

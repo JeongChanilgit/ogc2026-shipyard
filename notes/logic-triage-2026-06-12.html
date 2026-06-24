@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC2026 로직 트리아지 — 무엇을 남기고 무엇을 새로 만드는가 (2026-06-12)</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #22263a;
+    --border: #2e3352;
+    --text: #e2e6f3;
+    --text-dim: #8b92b8;
+    --text-muted: #5a6080;
+    --keep: #22c55e;
+    --keep-bg: #052e0f;
+    --keep-border: #166534;
+    --idea: #3b82f6;
+    --idea-bg: #0c1a3a;
+    --idea-border: #1d4ed8;
+    --rebuild: #f97316;
+    --rebuild-bg: #2c1000;
+    --rebuild-border: #9a3412;
+    --drop: #ef4444;
+    --drop-bg: #2a0808;
+    --drop-border: #991b1b;
+    --accent: #a78bfa;
+    --bar-track: #1e2236;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 32px 16px;
+  }
+  .page { max-width: 1060px; margin: 0 auto; }
+
+  /* Header */
+  .header { margin-bottom: 36px; }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    border-left: 3px solid var(--accent);
+    padding-left: 10px;
+    margin-top: 8px;
+  }
+  .header .date {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* Section */
+  .section { margin-bottom: 40px; }
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .card p { margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  /* Highlight box */
+  .highlight {
+    background: #1a1540;
+    border: 1px solid #3730a3;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    color: #c7d2fe;
+    font-size: 13px;
+  }
+  .highlight strong { color: #e0e7ff; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 8px;
+    letter-spacing: 0.5px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .badge-keep    { background: var(--keep-bg);    color: var(--keep);    border: 1px solid var(--keep-border); }
+  .badge-idea    { background: var(--idea-bg);    color: var(--idea);    border: 1px solid var(--idea-border); }
+  .badge-rebuild { background: var(--rebuild-bg); color: var(--rebuild); border: 1px solid var(--rebuild-border); }
+  .badge-drop    { background: var(--drop-bg);    color: var(--drop);    border: 1px solid var(--drop-border); }
+
+  /* Category blocks */
+  .cat-block {
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .cat-keep    { background: var(--keep-bg);    border: 1px solid var(--keep-border); }
+  .cat-idea    { background: var(--idea-bg);    border: 1px solid var(--idea-border); }
+  .cat-rebuild { background: var(--rebuild-bg); border: 1px solid var(--rebuild-border); }
+  .cat-drop    { background: var(--drop-bg);    border: 1px solid var(--drop-border); }
+
+  .cat-block .cat-header {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .cat-keep .cat-header    { color: var(--keep); }
+  .cat-idea .cat-header    { color: var(--idea); }
+  .cat-rebuild .cat-header { color: var(--rebuild); }
+  .cat-drop .cat-header    { color: var(--drop); }
+
+  /* Item list */
+  .item-list { list-style: none; padding: 0; }
+  .item-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+  }
+  .item-list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .item-list li .item-label { font-weight: 600; margin-bottom: 3px; }
+  .item-list li .item-evidence { color: var(--text-dim); font-size: 12px; }
+  .item-list li .item-action  { color: var(--text-muted); font-size: 12px; font-style: italic; }
+  code {
+    background: #2a2e4a;
+    color: #93c5fd;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  th {
+    background: var(--bg3);
+    color: var(--text-dim);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--bg3); }
+  tr:nth-child(odd) td  { background: var(--bg2); }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .td-pct { text-align: right; color: var(--accent); font-weight: 600; }
+  .td-win  { color: var(--keep); font-weight: 600; }
+  .td-lose { color: var(--drop); }
+  .td-never{ color: var(--rebuild); font-weight: 600; }
+
+  /* Bar chart */
+  .bar-wrap { margin-top: 16px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 9px;
+    gap: 10px;
+  }
+  .bar-label {
+    width: 160px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+  }
+  .bar-track {
+    flex: 1;
+    background: var(--bar-track);
+    border-radius: 3px;
+    height: 18px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0s;
+  }
+  .bar-val {
+    width: 100px;
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Architecture phases */
+  .phase-list { display: flex; flex-direction: column; gap: 10px; }
+  .phase-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .phase-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .phase-1 { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .phase-2 { background: #1e1b4b; color: #a5b4fc; border: 1px solid #3730a3; }
+  .phase-3 { background: #1c1917; color: #d6d3d1; border: 1px solid #44403c; }
+
+  .phase-content .phase-title { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+  .phase-content .phase-desc  { font-size: 12px; color: var(--text-dim); }
+
+  /* Note */
+  .note-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 10px;
+  }
+  .note-box strong { color: var(--text-dim); }
+
+  /* Stat callouts */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-card .stat-val {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .stat-card .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .sv-red    { color: var(--drop); }
+  .sv-green  { color: var(--keep); }
+  .sv-orange { color: var(--rebuild); }
+  .sv-purple { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>OGC2026 로직 트리아지 — 무엇을 남기고 무엇을 새로 만드는가</h1>
+    <div class="subtitle">경쟁자는 평균 15.5초에 z1=0(20/20), 우리는 15초 내 z1=0이 0/20 — 실측 증거 기반 단계별 가치 분류</div>
+    <div class="date">2026-06-12</div>
+  </div>
+
+  <!-- §1 진단 요약 -->
+  <div class="section">
+    <div class="section-title">§1 진단 요약 — 왜 큰 재설계인가</div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-val sv-green">20/20</div>
+        <div class="stat-label">경쟁자 z1=0 달성 (평균 15.5s)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val sv-orange">16/20</div>
+        <div class="stat-label">우리 z1=0 달성 (범위 25~260s)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val sv-red">0/20</div>
+        <div class="stat-label">우리 "15초 내 z1=0" 달성</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val sv-purple">51%</div>
+        <div class="stat-label">시간 도둑 cum_level 점유 (평균 115.9s)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p><strong>baseline greedy floor 단독(평균 28.4s)이 이미 경쟁자 전체 실행시간(15.5s)보다 느림.</strong> 시간 예산 구조 자체가 잘못 설계된 상태.</p>
+      <p>시간 도둑 = cum_level: 전체 벽시계의 <strong>51%(평균 115.9s, 최대 196s)</strong>. 그런데 동시에 <strong>z1 감소의 99%를 혼자 담당</strong>(prob_13: 98.9%, prob_14: 99.6%). → 구조 진단: <em>"약한 floor를 비싸게 수리"하는 아키텍처</em>. floor가 15/20 인스턴스에서 z1&gt;0으로 나오니, 수리 체인(postprocess)이 tl의 85~95%를 budget-fill로 소비.</p>
+      <p>그런데 <strong>점수 갭의 본질은 z1이 아니라 z3</strong>: 패배 14개 중 13개(93%)에서 z3 비율 ≥1.5×(중앙값 2.7×, 최대 64.5× prob_4). z1은 "빨리 끝내야 하는 통행료", z3가 본 게임인데 z1 수리가 시간을 다 먹어 z3 최적화(Front B)는 평균 21.3s(9.4%)밖에 못 받음.</p>
+    </div>
+
+    <div class="highlight">
+      <strong>결론:</strong> "z1=0을 ~30초 내 직접 생성하는 floor + 남는 ~90% 시간을 z3에" 구조로 재설계. 그 안에서 검증된 알파만 이식.
+    </div>
+  </div>
+
+  <!-- §2 4등급 분류 -->
+  <div class="section">
+    <div class="section-title">§2 4등급 분류</div>
+
+    <!-- Legend -->
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; align-items:center;">
+      <span class="badge badge-keep">KEEP</span><span style="font-size:12px;color:var(--text-dim)">검증된 알파 — 그대로 이식</span>
+      <span style="color:var(--text-muted)">|</span>
+      <span class="badge badge-idea">KEEP-IDEA</span><span style="font-size:12px;color:var(--text-dim)">아이디어는 알파, 구현은 재작성</span>
+      <span style="color:var(--text-muted)">|</span>
+      <span class="badge badge-rebuild">REBUILD</span><span style="font-size:12px;color:var(--text-dim)">설계 전면 재구축</span>
+      <span style="color:var(--text-muted)">|</span>
+      <span class="badge badge-drop">DROP</span><span style="font-size:12px;color:var(--text-dim)">폐기 — 재논의 금지</span>
+    </div>
+
+    <!-- A. KEEP -->
+    <div class="cat-block cat-keep">
+      <div class="cat-header"><span class="badge badge-keep">KEEP</span> A. 확실한 알파 — 그대로 유지</div>
+      <ul class="item-list">
+        <li>
+          <div class="item-label">검증 하니스 (trivial floor / consider / verified incumbent / hard_stop)</div>
+          <div class="item-evidence">근거: 점수모델 -1 = 평균 R/2 손실. -1 회피가 1순위. <code>myalgorithm.py:4952</code>, <code>:4183</code>, <code>:4864</code></div>
+          <div class="item-action">새 아키텍처도 이 셸 위에 얹는다.</div>
+        </li>
+        <li>
+          <div class="item-label">CP-SAT disjunctive timing (레이아웃 고정 후 ENTRY/EXIT 재타이밍)</div>
+          <div class="item-evidence">실측 평균 0.4s — 사실상 공짜. Gurobi 포팅 비교에서 우위 검증(prob_14: 161 vs 267). <code>:2523</code>, <code>:4250</code></div>
+          <div class="item-action">가장 싼 검증 알파. 그대로 유지.</div>
+        </li>
+        <li>
+          <div class="item-label">Front B z3 relocate/swap</div>
+          <div class="item-evidence">z3 갭(패배 원인 93%)을 깎는 유일한 검증 레버. z1=0 16개에서 z3 ~348K 감소. <code>:4488</code></div>
+          <div class="item-action">현재 시간 배정 9.4% → 새 구조에서 <strong>주인공으로 승격 + 시간 대폭 재배정</strong>.</div>
+        </li>
+        <li>
+          <div class="item-label">z3 temporal 재배정 (z3race.py, kill-test 진행 중)</div>
+          <div class="item-evidence">prob_16 −21.6% 검증. kill-test PASS 시 Front B와 함께 z3 본 게임의 축.</div>
+          <div class="item-action">kill-test PASS 시 Front B와 함께 배선. kill-test 없이 재기각 금지.</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- B. KEEP-IDEA -->
+    <div class="cat-block cat-idea">
+      <div class="cat-header"><span class="badge badge-idea">KEEP-IDEA</span> B. 아이디어는 알파, 구현은 재작성</div>
+      <ul class="item-list">
+        <li>
+          <div class="item-label">cum_level 메커니즘 (CP-SAT cumulative 완화 → 베이별 entry 목표 → 재디코드)</div>
+          <div class="item-evidence">z1 99% 기여의 원천이지만 51% 시간 도둑. <code>:2866~3018</code></div>
+          <div class="item-action">사후 수리 단계 → <strong>floor 생성 자체에 entry-target을 입력으로 통합</strong>하는 constructive로 이식.</div>
+        </li>
+        <li>
+          <div class="item-label">raster 충돌검사 + pos_k 제한 fast-floor</div>
+          <div class="item-evidence">tl=100에서 z1≤4 실증. "빠른 floor는 가능하다"의 사내 증거. <code>:5127</code></div>
+          <div class="item-action">새 floor 빌더의 1차 프리미티브로 흡수.</div>
+        </li>
+        <li>
+          <div class="item-label">crossbay_relocate / tardy_reloc 무브</div>
+          <div class="item-evidence">prob_20에서 obj 11.8% 기여. <code>:3093</code>, <code>:4450</code></div>
+          <div class="item-action">별도 단계 → <strong>통합 local search의 무브셋으로 흡수</strong>.</div>
+        </li>
+        <li>
+          <div class="item-label">race/portfolio 하니스 패턴 (T1 race의 carve+refund+hope가드 구조)</div>
+          <div class="item-evidence">T1 race에서 검증된 패턴. <code>:5270~5526</code></div>
+          <div class="item-action">새 구조에서 "floor 후보 2~3개 race"로 재활용.</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- C. REBUILD -->
+    <div class="cat-block cat-rebuild">
+      <div class="cat-header"><span class="badge badge-rebuild">REBUILD</span> C. 재설계 대상</div>
+      <ul class="item-list">
+        <li>
+          <div class="item-label">baseline greedy floor (EDD+Best-Fit)</div>
+          <div class="item-evidence">단독 28.4s &gt; 경쟁자 전체 15.5s. 출력 floor가 15/20에서 z1&gt;0. <code>greedyalgorithm import :40</code></div>
+          <div class="item-action"><strong>crane-aware constructive</strong> (크레인 j≥k 제약을 배치 시점에 고려, anticipatory placement + timing — Z1 문헌리뷰 8 인사이트)로 교체. 목표: ~15~30s 내 z1=0 floor 직행.</div>
+        </li>
+        <li>
+          <div class="item-label">시간 예산 구조 (lever reserve 22% / decode_deadline≈0.66T / pp budget-fill≈hard_stop)</div>
+          <div class="item-evidence">"floor 느림 → 수리에 다 쏟기" 전제 위에 설계된 것. <code>:4886</code></div>
+          <div class="item-action">floor가 빨라지면 전제 소멸. <strong>"floor ≤30s + z3 ≥90%"</strong> 예산으로 재설계.</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- D. DROP -->
+    <div class="cat-block cat-drop">
+      <div class="cat-header"><span class="badge badge-drop">DROP</span> D. 폐기</div>
+      <ul class="item-list">
+        <li>
+          <div class="item-label">cheaper_steps</div>
+          <div class="item-evidence">무익 판정 이력. prob_12에서 94.5s 폭발하고도 z1=11 해결 못함. <code>:4394</code></div>
+        </li>
+        <li>
+          <div class="item-label">seeds decode 대부분 + ALNS 통과형</div>
+          <div class="item-evidence">pp가 decode_deadline(0.66T)을 넘겨 소비하면 사실상 스킵 — 기여 증거 없음. <code>:5777~6115</code></div>
+        </li>
+        <li>
+          <div class="item-label">T1 race 자체 (z1-stuck 보정용)</div>
+          <div class="item-evidence">fast floor 도입 시 존재 이유 소멸. 하니스 패턴(carve/refund)은 B-4로 이관.</div>
+        </li>
+        <li>
+          <div class="item-label">기각 확정 목록 (재논의 금지)</div>
+          <div class="item-evidence">PP_MULTISTART, CP-SAT 전역 bay 재배정(무용량 모델), Gurobi timing, P2/P3 크레인 통합, CUMLEVEL_PARALLEL.</div>
+          <div class="item-action">예외: temporal z3 재배정은 kill-test 없이 재기각 금지.</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- §3 새 아키텍처 스케치 -->
+  <div class="section">
+    <div class="section-title">§3 새 아키텍처 스케치 (타깃 구조)</div>
+    <div class="phase-list">
+      <div class="phase-item">
+        <div class="phase-tag phase-1">Phase 1<br>0~30s</div>
+        <div class="phase-content">
+          <div class="phase-title">crane-aware constructive floor</div>
+          <div class="phase-desc">raster 프리미티브 + entry-target 통합. 후보 2~3개 race → 첫 z1=0 verified floor. 크레인 j≥k 제약을 배치 시점에 직접 고려(anticipatory placement + timing).</div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-tag phase-2">Phase 2<br>30s~0.9T</div>
+        <div class="phase-content">
+          <div class="phase-title">z3 본 게임 — 시간 점유 목표 ≥85%</div>
+          <div class="phase-desc">Front B relocate/swap 확장 + temporal 재배정(kill-test PASS 시) + CP-SAT timing 인터리브. 현재 9.4% → <strong>≥85%</strong>로 대폭 재배정. z3 갭이 패배 원인 93%.</div>
+        </div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-tag phase-3">Phase 3<br>~hard_stop</div>
+        <div class="phase-content">
+          <div class="phase-title">기존 검증 게이트/하니스 (그대로)</div>
+          <div class="phase-desc">consider(), verified incumbent, -1 방지 로직. 새 아키텍처도 이 셸 위에 얹는다. 변경 불필요.</div>
+        </div>
+      </div>
+    </div>
+    <div class="note-box">
+      <strong>채택 규칙 리마인드:</strong> 가설 검증·채택 판정은 반드시 full-20. 미니게이트는 fail-fast 선별용일 뿐.
+    </div>
+  </div>
+
+  <!-- §4 증거 부록 -->
+  <div class="section">
+    <div class="section-title">§4 증거 부록</div>
+
+    <!-- 표1 -->
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:14px; color:var(--text);">표1 — 단계별 시간 점유 (tl=300, N=20, results/_stage_collect2.log)</div>
+
+      <div class="bar-wrap">
+        <div class="bar-row">
+          <div class="bar-label">cum_level</div>
+          <div class="bar-track"><div class="bar-fill" style="width:51%; background:#7c3aed;"></div></div>
+          <div class="bar-val"><strong style="color:#a78bfa;">51.0%</strong> · 115.9s (max 196.3)</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">seeds_decode (T1)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:16.3%; background:#2563eb;"></div></div>
+          <div class="bar-val">16.3% · 37.1s (max 177.7)</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">baseline greedy</div>
+          <div class="bar-track"><div class="bar-fill" style="width:12.5%; background:#f97316;"></div></div>
+          <div class="bar-val" style="color:var(--rebuild);">12.5% · 28.4s (max 57.8)</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">search (Front B/z3)</div>
+          <div class="bar-track"><div class="bar-fill" style="width:9.4%; background:#22c55e;"></div></div>
+          <div class="bar-val" style="color:var(--keep);">9.4% · 21.3s (max 119.5)</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">cheaper_steps</div>
+          <div class="bar-track"><div class="bar-fill" style="width:4.5%; background:#ef4444;"></div></div>
+          <div class="bar-val" style="color:var(--drop);">4.5% · 10.2s (max 94.5)</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">bbox_pack</div>
+          <div class="bar-track"><div class="bar-fill" style="width:4.4%; background:#64748b;"></div></div>
+          <div class="bar-val">4.4% · 10.0s (max 80.9)</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">crossbay</div>
+          <div class="bar-track"><div class="bar-fill" style="width:1%; background:#64748b;"></div></div>
+          <div class="bar-val">1.0% · 2.3s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">cpsat_timing</div>
+          <div class="bar-track"><div class="bar-fill" style="width:0.2%; background:#22c55e;"></div></div>
+          <div class="bar-val" style="color:var(--keep);">0.2% · 0.4s ✓</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px; font-size:12px; color:var(--text-muted);">평균 총 227.1s (tl 76% 소진)</div>
+    </div>
+
+    <!-- 표2 -->
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:14px; color:var(--text);">표2 — z1=0 도달 비교 (tl=300): 우리 16/20 vs 경쟁자 20/20</div>
+      <table>
+        <thead>
+          <tr>
+            <th>인스턴스</th>
+            <th>우리 z1=0 시각</th>
+            <th>경쟁자 z1=0 시각</th>
+            <th>결과</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>prob_2</td>
+            <td class="td-num">26.2s</td>
+            <td class="td-num">4.7s</td>
+            <td class="td-lose">LOSE (z3)</td>
+          </tr>
+          <tr>
+            <td>prob_5</td>
+            <td class="td-num">38.6s</td>
+            <td class="td-num">5.5s</td>
+            <td class="td-lose">LOSE (z3)</td>
+          </tr>
+          <tr>
+            <td>prob_8</td>
+            <td class="td-num">34.2s</td>
+            <td class="td-num">4.5s</td>
+            <td class="td-win">WIN</td>
+          </tr>
+          <tr>
+            <td>prob_13</td>
+            <td class="td-never">NEVER (z1&gt;0)</td>
+            <td class="td-num">17.4s</td>
+            <td class="td-lose">LOSE (z3)</td>
+          </tr>
+          <tr>
+            <td>prob_20</td>
+            <td class="td-never">NEVER (z1&gt;0)</td>
+            <td class="td-num">46.7s</td>
+            <td class="td-lose">LOSE (z3)</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">우리 z1=0: 16/20 (범위 25.2~259.6s) &nbsp;|&nbsp; 경쟁자 z1=0: 20/20 (평균 15.5s)</div>
+    </div>
+
+    <!-- 표3 -->
+    <div class="card">
+      <div style="font-weight:600; margin-bottom:14px; color:var(--text);">표3 — 단계별 obj 기여 (results/z1_trajectory.json, STAGE_OBJ 보유 3개 인스턴스만)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>인스턴스</th>
+            <th>baseline</th>
+            <th>cum_level 기여</th>
+            <th>기타</th>
+            <th>final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>prob_13</td>
+            <td class="td-num">53.3M</td>
+            <td class="td-pct">−52.7M (98.9%)</td>
+            <td>bbox −0.28M (0.5%)</td>
+            <td class="td-num">330K</td>
+          </tr>
+          <tr>
+            <td>prob_14</td>
+            <td class="td-num">92.9M</td>
+            <td class="td-pct">99.6%</td>
+            <td>—</td>
+            <td class="td-num">184K</td>
+          </tr>
+          <tr>
+            <td>prob_20</td>
+            <td class="td-num">12.6M</td>
+            <td class="td-pct">37.7%</td>
+            <td>bbox 33.8% + crossbay 11.8%</td>
+            <td class="td-num">1.60M</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- §5 유의 -->
+  <div class="section">
+    <div class="section-title">§5 측정 유의사항</div>
+    <div class="note-box">
+      <strong>측정 조건:</strong> tl=300, conc=4 병렬 런 — 절대 수치는 단독/평가서버와 다를 수 있음(비율은 안정적).<br>
+      <strong>STAGE_OBJ 단계별 obj 기여:</strong> 3개 인스턴스만 계측 — 나머지 17개는 미측정.<br>
+      <strong>경쟁자 wall_s:</strong> 우리 trajectory 측정 방식과 완전 동일하지 않음.<br><br>
+      <strong>데이터 출처:</strong> <code>results/_stage_collect2.log</code>, <code>results/traj/*.json</code>, <code>results/z1_trajectory.json</code>, <code>notes/competitor-2026-06-11.json</code>, <code>results/_z3_batch4_summary.txt</code>.<br>
+      <strong>코드 근거:</strong> <code>src/myalgorithm.py</code> (코드 분석 2026-06-12).
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+[DBG] USE_GUIDE=1 guide dist=[78, 72]
+[DBG] after placement state dist=[78, 72] ovf=4
+[DBG] timing per_bay_s=26 (elapsed=39)
+  [precompute] blocks=73 active=1 frozen=72 tardy=0 cands_total=77 (x+4 y+0 o+0) combos=360 stored=360 poses=77 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.03s
+  [precompute] blocks=78 active=1 frozen=77 tardy=0 cands_total=82 (x+4 y+0 o+0) combos=385 stored=70 poses=82 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=72 active=1 frozen=71 tardy=0 cands_total=76 (x+4 y+0 o+0) combos=355 stored=355 poses=76 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=73 active=1 frozen=72 tardy=0 cands_total=77 (x+4 y+0 o+0) combos=360 stored=68 poses=77 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.02s
+  [precompute] blocks=78 active=1 frozen=77 tardy=0 cands_total=82 (x+4 y+0 o+0) combos=385 stored=71 poses=82 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=72 active=1 frozen=71 tardy=0 cands_total=76 (x+4 y+0 o+0) combos=355 stored=66 poses=76 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.02s
+  [precompute] blocks=79 active=1 frozen=78 tardy=0 cands_total=83 (x+4 y+0 o+0) combos=390 stored=71 poses=83 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=72 active=1 frozen=71 tardy=0 cands_total=76 (x+4 y+0 o+0) combos=355 stored=72 poses=76 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=6.0 wall=0.02s
+  [precompute] blocks=72 active=1 frozen=71 tardy=0 cands_total=76 (x+4 y+0 o+0) combos=355 stored=355 poses=76 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.03s
+  [precompute] blocks=72 active=1 frozen=71 tardy=0 cands_total=76 (x+4 y+0 o+0) combos=355 stored=66 poses=76 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=25.0 wall=0.03s
+  [precompute] blocks=72 active=1 frozen=71 tardy=0 cands_total=76 (x+4 y+0 o+0) combos=355 stored=72 poses=76 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=6.0 wall=0.02s
+[DBG] USE_GUIDE=1 guide dist=[78, 72]
+[DBG] after placement state dist=[77, 73] ovf=3
+[DBG] timing per_bay_s=26 (elapsed=39)
+  [precompute] blocks=74 active=1 frozen=73 tardy=0 cands_total=78 (x+4 y+0 o+0) combos=365 stored=65 poses=78 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=77 active=1 frozen=76 tardy=0 cands_total=81 (x+4 y+0 o+0) combos=380 stored=71 poses=81 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=74 active=1 frozen=73 tardy=0 cands_total=78 (x+4 y+0 o+0) combos=365 stored=72 poses=78 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=74 active=1 frozen=73 tardy=0 cands_total=78 (x+4 y+0 o+0) combos=365 stored=72 poses=78 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+[DBG] USE_GUIDE=1 guide dist=[78, 72]
+[DBG] after placement state dist=[77, 73] ovf=3
+[DBG] timing per_bay_s=26 (elapsed=39)
+  [precompute] blocks=74 active=1 frozen=73 tardy=0 cands_total=78 (x+4 y+0 o+0) combos=365 stored=65 poses=78 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.02s
+  [precompute] blocks=77 active=1 frozen=76 tardy=0 cands_total=81 (x+4 y+0 o+0) combos=380 stored=71 poses=81 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=74 active=1 frozen=73 tardy=0 cands_total=78 (x+4 y+0 o+0) combos=365 stored=72 poses=78 wall=0.02s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+  [precompute] blocks=74 active=1 frozen=73 tardy=0 cands_total=78 (x+4 y+0 o+0) combos=365 stored=72 poses=78 wall=0.03s
+  [CP-SAT] status=OPTIMAL obj=0.0 wall=0.00s
+RESULT prob_8: obj=11420.0 base=v2@0.5 pp_improved=False wall=126.8s

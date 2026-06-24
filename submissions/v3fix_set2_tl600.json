@@ -1,0 +1,32 @@
+{
+ "tl": 600.0,
+ "total": 856848.0,
+ "feasible": 1,
+ "minus1": 0,
+ "base_v1": 1,
+ "base_v2": 0,
+ "pp_improved": 0,
+ "rows": [
+  {
+   "i": 22,
+   "obj": 856848.0,
+   "z1": 0.0,
+   "z2": 2416,
+   "z3": 2124.0,
+   "feas": true,
+   "stage": 5,
+   "wall": 78.4,
+   "base": "v1",
+   "base_obj": 856848.0,
+   "v2_obj": 923719.0,
+   "orig_obj": 856848.0,
+   "pp_obj": null,
+   "pp_improved": false,
+   "v2_wall": 4.7,
+   "orig_wall": 73.6,
+   "pp_budget": 473.6,
+   "pp_wall": 0.1,
+   "final_src": "v1"
+  }
+ ]
+}

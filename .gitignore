@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.python-version
+
+# Conda
+.conda/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OGC2026 specific
+results/*.json
+results/*.log
+results/run_*/
+submissions/*.zip
+!submissions/README.md
+!submissions/.gitkeep
+
+# but keep meta
+!submissions/*-meta.json
+
+# experimental scratch
+experiments/scratch/
+experiments/*.tmp.py
+
+# baseline downloaded raw — keep zip out (we have the unpacked copy)
+baseline/*.zip
+
+# ── 2026-06-25: heavy generated outputs (lean repo for cloud /ultraplan) ──
+# (gitignore does NOT support inline comments — keep patterns bare)
+*.log
+results/
+ogc-2026-v2/out/
+**/_score_res*/
+**/_verify_res/
+**/_verify_zip/
+**/_rebuild_check/
+**/_levfull_res*/
+**/_levctl_res*/
+**/_run_inst.json
+**/_v2_inst.json
+# underscore-prefixed experiment result DATA dumps in the work dir (keep harness .py + ledger .md)
+ogc-2026-v2/submission_build/_*.json
+ogc-2026-v2/submission_build/_*.txt
+ogc-2026-v2/submission_build/_score_res/
+# redundant solver snapshots / extractions (v7 is the live tree)
+ogc-2026-v2/submission_build/_m1base/
+ogc-2026-v2/submission_build/v6/
+# generated per-instance trace dumps at root
+/seq*.txt
+# binaries not git-friendly
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# stray / reserved-name files that break `git add`
+NUL
+err_prob_*.txt
+/seqw4_prob_*.txt
+/seqt_prob_*.txt
+/seqr_prob_*.txt
+/seqp_prob_*.txt
+

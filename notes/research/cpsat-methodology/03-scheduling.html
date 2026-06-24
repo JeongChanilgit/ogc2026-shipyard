@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 스케줄링 — CP-SAT Methodology</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">개요</a>
+  <a href="01-fundamentals.html">01 작동원리</a>
+  <a href="02-modeling-basics.html">02 모델링기본</a>
+  <a href="03-scheduling.html" class="active">03 스케줄링</a>
+  <a href="04-packing.html">04 패킹·배치</a>
+  <a href="05-objective.html">05 목적·선형화</a>
+  <a href="06-search-params.html">06 탐색·파라미터</a>
+  <a href="07-incremental.html">07 힌트·증분</a>
+  <a href="08-symmetry.html">08 대칭·유효부등식</a>
+  <a href="09-lns.html">09 LNS·분해</a>
+  <a href="10-lbbd.html">10 LBBD</a>
+  <a href="11-performance.html">11 성능·스케일</a>
+  <a href="12-resources.html">12 리포지토리·사례</a>
+</nav>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="kicker">CP-SAT Methodology · Chapter 03</div>
+    <h1>CP-SAT 스케줄링 모델링<br>Interval · NoOverlap · Cumulative · Tardiness</h1>
+    <p class="lead">
+      <code>NewIntervalVar</code> / <code>NewOptionalIntervalVar</code>부터 <code>AddNoOverlap</code>,
+      <code>AddCumulative</code>, <code>AddReservoirConstraint</code>까지 — 단일머신 disjunctive 스케줄링과
+      가중 지연(tardiness) 최소화를 CP-SAT로 최적까지 푸는 완전 가이드.
+    </p>
+  </div>
+
+  <!-- OGC 관련성 callout -->
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 관련성</div>
+    <p style="margin:0">
+      OGC 2026 솔버의 <strong>per-bay timing oracle</strong>은 바로 이 챕터의 패턴이다.
+      베이 내부를 <em>단일 자원(single machine)</em>으로 보고, 각 블록의 ENTRY/EXIT를
+      <code>new_interval_var</code>으로 모델링한다. 크레인 직렬화 제약(<em>j ≥ k</em> 규칙)은
+      <code>add_no_overlap</code> + 선후관계(precedence)로 인코딩된다.
+      Due-date 위반(<code>EXIT &gt; due_date</code>)은 <code>AddMaxEquality(t, [end - d, 0])</code>로
+      tardiness 변수를 생성한 뒤 <code>minimize(Σ w·t)</code>로 최소화한다
+      — 고정 레이아웃 위 1-D disjunctive tardiness를 CP-SAT가 정확하게 푸는 것이 현재
+      production 솔버(<code>_cpsat_bay_timing_verified</code>)의 핵심이다.
+      패킹 위치(x,y)는 이미 확정됐으므로 CP-SAT가 풀어야 할 문제는 순수 1-D이며,
+      이 구조 덕분에 수십 개 블록도 수 초 내 최적해를 낸다.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="interval-vars">1. Interval 변수 기초</h2>
+
+  <p>
+    CP-SAT에서 스케줄링의 핵심 빌딩 블록은 <strong>interval 변수</strong>다.
+    interval 변수는 <code>start</code>, <code>size(duration)</code>, <code>end</code> 세 값을 묶고
+    <code>start + size == end</code>를 항상 강제한다.
+    단순히 세 개의 별도 <code>IntVar</code>를 쓰면 이 등식을 직접 <code>add()</code>로 추가해야 하지만,
+    interval 변수를 쓰면 <code>AddNoOverlap</code>·<code>AddCumulative</code> 등 특화 제약이
+    <em>propagation 수준</em>에서 훨씬 효율적으로 동작한다.
+  </p>
+
+  <h3>1.1 고정 크기 interval</h3>
+  <pre><code>from ortools.sat.python import cp_model
+
+model = cp_model.CpModel()
+horizon = 100  # 시간축 상한 (tight하게 잡을수록 탐색 공간 축소)
+
+# 방법 A: start/end 를 별도 IntVar 로 선언하고 묶기
+start_a = model.new_int_var(0, horizon, "start_a")
+end_a   = model.new_int_var(0, horizon, "end_a")
+duration_a = 10  # 정수 상수
+iv_a = model.new_interval_var(start_a, duration_a, end_a, "iv_a")
+# → end_a = start_a + 10 이 자동 강제됨
+
+# 방법 B: new_fixed_size_interval_var — end 변수 자동 생성
+iv_b = model.new_fixed_size_interval_var(
+    model.new_int_var(0, horizon, "start_b"),
+    10,           # size 상수
+    "iv_b"
+)
+
+# 방법 C: 완전 고정 (start/size 모두 상수) — 주로 "금지 구간" 표현에 사용
+weekend = model.new_fixed_size_interval_var(5, 2, "weekend")  # [5,7) 불가 구간</code></pre>
+
+  <div class="tip">
+    <div class="ttl">Best Practice</div>
+    <code>horizon</code>은 실제 가능한 최대 완료 시각보다 넉넉하되, <em>최소한으로</em> 잡아야 한다.
+    <code>horizon = sum(all_durations)</code>이 안전한 상한이지만,
+    작업별 <code>release_time + duration</code> 최대값이나 CP-SAT
+    선행 바운드로 더 타이트하게 만들면 전파 효율이 크게 오른다.
+  </div>
+
+  <h3>1.2 가변 크기 interval</h3>
+  <pre><code># size 자체를 IntVar 로 선언 — 가변 처리 시간 모델링
+size_var = model.new_int_var(5, 15, "size_var")   # 5~15 사이 가변 길이
+start_c  = model.new_int_var(0, horizon, "start_c")
+end_c    = model.new_int_var(0, horizon, "end_c")
+iv_c = model.new_interval_var(start_c, size_var, end_c, "iv_c")
+# start_c + size_var == end_c 강제</code></pre>
+
+  <h3>1.3 Optional Interval 변수</h3>
+  <p>
+    <strong>Optional interval</strong>은 <code>is_present</code> BoolVar 하나가 붙어서,
+    해당 불리언이 <code>False</code>이면 그 interval은 스케줄에서 <em>완전히 사라진다</em>.
+    <code>AddNoOverlap</code>·<code>AddCumulative</code>는 presence=False인 interval을 자동 무시한다.
+    대체 자원 선택(alternative machines), 선택적 작업(optional tasks),
+    또는 베이 배정 결정(어느 베이에 넣을지)을 모델링할 때 핵심 패턴이다.
+  </p>
+  <pre><code># Optional interval: presence bool 이 False 면 제약에서 제외
+pres_d = model.new_bool_var("present_d")
+start_d = model.new_int_var(0, horizon, "start_d")
+end_d   = model.new_int_var(0, horizon, "end_d")
+iv_d = model.new_optional_interval_var(start_d, 8, end_d, pres_d, "iv_d")
+
+# 고정 크기 optional 간편형
+iv_e = model.new_optional_fixed_size_interval_var(
+    model.new_int_var(0, horizon, "start_e"),
+    8, pres_d, "iv_e"
+)
+
+# presence 가 True 일 때만 다른 제약도 강제 (only_enforce_if 패턴)
+model.add(start_d >= 20).only_enforce_if(pres_d)
+model.add(start_d < 20).only_enforce_if(~pres_d)  # 없을 때는 의미 없지만 도메인 전파 도움</code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">함정 — presence Bool과 다른 제약의 연결</div>
+    Optional interval의 <code>start</code>/<code>end</code> 변수는 <code>is_present=False</code>일 때도
+    존재한다. <strong>다른 제약에서 이 변수를 참조하면 presence에 관계없이 강제된다.</strong>
+    따라서 "present일 때만 이 start를 쓴다"는 로직은 반드시
+    <code>.only_enforce_if(pres)</code>로 감싸야 한다.
+    감싸지 않으면 absent interval이 엉뚱한 값으로 바인딩돼 infeasible이 나거나 부정확한 결과를 낸다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="temporal">2. 선후관계 (Precedence) 제약</h2>
+  <p>
+    interval 변수 간 선후관계는 일반 <code>add()</code>에 산술식으로 표현한다.
+    Optional interval이면 <code>.only_enforce_if()</code>를 반드시 달아야 한다.
+  </p>
+  <pre><code># A가 끝난 후 B가 시작
+model.add(iv_b.start_expr() >= iv_a.end_expr())
+
+# A → B 사이 최소 지연(lag) = 5
+model.add(iv_b.start_expr() >= iv_a.end_expr() + 5)
+
+# Optional A, Optional B: 둘 다 present 일 때만 선후관계 강제
+pres_a = model.new_bool_var("pres_a")
+pres_b = model.new_bool_var("pres_b")
+model.add(iv_b.start_expr() >= iv_a.end_expr()).only_enforce_if(pres_a, pres_b)</code></pre>
+
+  <div class="tip">
+    <div class="ttl">API 노트</div>
+    <code>interval_var.start_expr()</code>과 <code>interval_var.end_expr()</code>은
+    선형 표현식을 반환한다. 직접 <code>solver.value(iv.start_expr())</code>로도 읽을 수 있다.
+    OR-Tools 최신 API에선 <code>iv.start_expr()</code> 대신 <code>iv.start</code>(property)도 사용 가능하다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="no-overlap">3. AddNoOverlap — 단일 자원 Disjunctive</h2>
+  <p>
+    <code>add_no_overlap(intervals)</code>는 리스트 안의 모든 interval이 <em>시간축에서 서로 겹치지 않음</em>을
+    강제한다. 이것이 단일 머신(single machine) 스케줄링의 표준 제약이다.
+    CP-SAT 내부에서는 에지-파인딩(Edge-Finding), 에너지 추론 등의 고급 propagation을 사용해
+    naive disjunctive보다 훨씬 강하게 전파된다.
+  </p>
+
+  <h3>3.1 기본 단일 머신 예제</h3>
+  <pre><code>from ortools.sat.python import cp_model
+
+def single_machine_basic():
+    model = cp_model.CpModel()
+    durations = [3, 5, 2, 4]
+    horizon = sum(durations)
+
+    starts, ends, intervals = [], [], []
+    for i, d in enumerate(durations):
+        s = model.new_int_var(0, horizon, f"s{i}")
+        e = model.new_int_var(0, horizon, f"e{i}")
+        iv = model.new_interval_var(s, d, e, f"iv{i}")
+        starts.append(s); ends.append(e); intervals.append(iv)
+
+    # 단일 머신 제약: 동시에 두 작업 불가
+    model.add_no_overlap(intervals)
+
+    # Makespan 최소화
+    makespan = model.new_int_var(0, horizon, "makespan")
+    model.add_max_equality(makespan, ends)
+    model.minimize(makespan)
+
+    solver = cp_model.CpSolver()
+    status = solver.solve(model)
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        for i in range(len(durations)):
+            print(f"  job {i}: [{solver.value(starts[i])}, {solver.value(ends[i])})")
+        print(f"  makespan = {solver.objective_value}")</code></pre>
+
+  <h3>3.2 고정 "금지 구간" — 주말·휴일 블로킹</h3>
+  <pre><code># 주말·점검시간 등 고정 블로킹: 완전 상수 interval 추가
+def add_blocked_windows(model, task_intervals, blocks):
+    """blocks: list of (start, duration) tuples"""
+    all_ivs = list(task_intervals)
+    for i, (bs, bd) in enumerate(blocks):
+        biv = model.new_fixed_size_interval_var(bs, bd, f"block_{i}")
+        all_ivs.append(biv)
+    model.add_no_overlap(all_ivs)
+
+# 사용 예: 근무 5일 후 2일 휴일 반복
+blocks = [(5,2), (12,2), (19,2)]
+add_blocked_windows(model, intervals, blocks)</code></pre>
+
+  <h3>3.3 AddNoOverlap2D — 2차원 비겹침</h3>
+  <p>
+    <code>add_no_overlap_2d(x_intervals, y_intervals)</code>는 두 쌍의 interval이
+    <strong>x축과 y축 모두에서 동시에 겹치는 경우를 금지</strong>한다.
+    즉 (x_i, y_i) 쌍이 직사각형이 되고, 어떤 두 직사각형도 면적이 겹치지 않음을 강제한다.
+    베이 안 2D 배치나 팔레트 패킹에 사용.
+  </p>
+  <pre><code>def no_overlap_2d_example():
+    model = cp_model.CpModel()
+    horizon = 20
+
+    # 4개 직사각형: (width, height)
+    sizes = [(3,2), (2,3), (4,1), (1,4)]
+    x_starts, y_starts, x_ivs, y_ivs = [], [], [], []
+
+    for i, (w, h) in enumerate(sizes):
+        xs = model.new_int_var(0, horizon - w, f"xs{i}")
+        ys = model.new_int_var(0, horizon - h, f"ys{i}")
+        xe = model.new_int_var(w, horizon, f"xe{i}")
+        ye = model.new_int_var(h, horizon, f"ye{i}")
+        x_ivs.append(model.new_interval_var(xs, w, xe, f"xiv{i}"))
+        y_ivs.append(model.new_interval_var(ys, h, ye, f"yiv{i}"))
+        x_starts.append(xs); y_starts.append(ys)
+
+    model.add_no_overlap_2d(x_ivs, y_ivs)
+
+    solver = cp_model.CpSolver()
+    solver.solve(model)
+    for i in range(len(sizes)):
+        print(f"  rect {i}: x={solver.value(x_starts[i])}, y={solver.value(y_starts[i])}")</code></pre>
+
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 — AddNoOverlap 활용</div>
+    <p style="margin:0">
+      베이 내 블록들은 <em>같은 층(layer)에서 동시에 존재할 수 없다</em>.
+      이것은 각 베이·층 조합을 단일 자원으로 보고 <code>add_no_overlap</code>을 걸거나,
+      시간축 기준 크레인 제약(<em>j≥k</em>: 위 블록이 아래 블록보다 먼저 들어가야)을
+      precedence 부등식으로 추가한다. 현 production의
+      <code>_cpsat_bay_timing_verified</code>는 고정된 (x,y) 위치 위에서
+      ENTRY/EXIT를 interval로 선언하고 <code>add_no_overlap</code>으로 크레인 직렬화를 표현한다.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="cumulative">4. AddCumulative — 용량 제약 자원</h2>
+  <p>
+    <code>add_cumulative(intervals, demands, capacity)</code>는 "어떤 시각 t에서든
+    활성 interval들의 demand 합이 capacity를 넘지 않음"을 강제한다.
+    여러 작업자가 공유하는 인력, 대역폭, 크레인 대수 등 용량이 있는 자원 모델링에 사용한다.
+  </p>
+
+  <h3>4.1 기본 cumulative (균일 demand)</h3>
+  <pre><code># 크레인 2대: 동시에 최대 2개 블록만 작업 가능
+def cumulative_cranes():
+    model = cp_model.CpModel()
+    horizon, num_cranes = 50, 2
+
+    tasks = [(3, 1), (5, 1), (2, 1), (4, 1), (6, 1)]  # (duration, demand)
+    intervals, demands = [], []
+
+    for i, (dur, dem) in enumerate(tasks):
+        s = model.new_int_var(0, horizon, f"s{i}")
+        e = model.new_int_var(0, horizon, f"e{i}")
+        iv = model.new_interval_var(s, dur, e, f"iv{i}")
+        intervals.append(iv); demands.append(dem)
+
+    model.add_cumulative(intervals, demands, num_cranes)  # ≤ 2 크레인
+
+    makespan = model.new_int_var(0, horizon, "makespan")
+    model.add_max_equality(makespan, [e for _, e in zip(intervals,
+        [model.new_int_var(0,horizon,f"e2_{i}") for i in range(len(tasks))])])
+    # 간단히 end 변수 리스트를 따로 모아서 전달하는 것이 깔끔함</code></pre>
+
+  <h3>4.2 이질적 demand (대역폭/처리량)</h3>
+  <pre><code># 블록별 크레인 사용량이 다를 때
+def cumulative_variable_demand():
+    model = cp_model.CpModel()
+    horizon = 100
+    # (duration, crane_units_needed)
+    tasks = [(10, 2), (8, 1), (15, 3), (5, 1), (12, 2)]
+    max_cranes = 4
+
+    ends, intervals, demands = [], [], []
+    for i, (dur, dem) in enumerate(tasks):
+        s = model.new_int_var(0, horizon, f"s{i}")
+        e = model.new_int_var(0, horizon, f"e{i}")
+        intervals.append(model.new_interval_var(s, dur, e, f"iv{i}"))
+        ends.append(e); demands.append(dem)
+
+    model.add_cumulative(intervals, demands, max_cranes)
+
+    makespan = model.new_int_var(0, horizon, "makespan")
+    model.add_max_equality(makespan, ends)
+    model.minimize(makespan)</code></pre>
+
+  <h3>4.3 AddReservoirConstraint — 저수지 모델</h3>
+  <p>
+    <code>add_reservoir_constraint(times, level_changes, min_level, max_level)</code>는
+    시점 <code>times[i]</code>에 레벨이 <code>level_changes[i]</code>만큼 변하고,
+    항상 <code>[min_level, max_level]</code> 내에 머물러야 함을 강제한다.
+    물탱크, 재고 관리, 생산 버퍼 등에 사용.
+  </p>
+  <pre><code>def reservoir_example():
+    model = cp_model.CpModel()
+    horizon = 50
+
+    # 이벤트 시각 (IntVar)
+    t1 = model.new_int_var(0, horizon, "t1")  # 입고
+    t2 = model.new_int_var(0, horizon, "t2")  # 출고
+    t3 = model.new_int_var(0, horizon, "t3")  # 입고
+
+    times = [t1, t2, t3]
+    level_changes = [+10, -5, +8]   # 양수=채우기, 음수=비우기
+    # 레벨은 항상 [0, 20] 사이 유지
+    model.add_reservoir_constraint(times, level_changes, 0, 20)
+
+    # Optional 이벤트 (conditional)
+    t4 = model.new_int_var(0, horizon, "t4")
+    active4 = model.new_bool_var("active4")
+    model.add_reservoir_constraint_with_active(
+        [t4], [+6], [active4], 0, 20
+    )</code></pre>
+
+  <!-- ============================================================ -->
+  <h2 id="alternative">5. 대체 자원 (Alternative Resources)</h2>
+  <p>
+    한 작업이 여러 기계 중 <em>하나에서만</em> 실행될 수 있을 때 — 예: flexible job shop —
+    각 (작업, 기계) 쌍에 optional interval을 만들고 <code>add_exactly_one</code>으로 하나를 강제한다.
+  </p>
+
+  <h3>5.1 Flexible Job Shop 핵심 패턴</h3>
+  <pre><code>def flexible_job_shop_skeleton(jobs, num_machines, horizon):
+    """
+    jobs: list of tasks, each task = list of (machine_id, duration) alternatives
+    """
+    model = cp_model.CpModel()
+
+    # 기계별 interval 리스트
+    machine_ivs = [[] for _ in range(num_machines)]
+
+    # 작업별 전역 start/end (어느 기계에 배정돼도 같은 시각)
+    task_starts, task_ends = {}, {}
+
+    for job_id, job in enumerate(jobs):
+        for task_id, alternatives in enumerate(job):
+            key = (job_id, task_id)
+            g_start = model.new_int_var(0, horizon, f"gs_{job_id}_{task_id}")
+            g_end   = model.new_int_var(0, horizon, f"ge_{job_id}_{task_id}")
+            task_starts[key] = g_start
+            task_ends[key]   = g_end
+
+            presences = []
+            for alt_id, (machine, duration) in enumerate(alternatives):
+                pres = model.new_bool_var(f"pres_{job_id}_{task_id}_{alt_id}")
+                l_start = model.new_int_var(0, horizon, f"ls_{job_id}_{task_id}_{alt_id}")
+                l_end   = model.new_int_var(0, horizon, f"le_{job_id}_{task_id}_{alt_id}")
+                l_iv = model.new_optional_interval_var(
+                    l_start, duration, l_end, pres,
+                    f"iv_{job_id}_{task_id}_{alt_id}"
+                )
+                # 전역 변수 ↔ 로컬 변수 연결 (presence 조건부)
+                model.add(g_start == l_start).only_enforce_if(pres)
+                model.add(g_end   == l_end  ).only_enforce_if(pres)
+
+                machine_ivs[machine].append(l_iv)
+                presences.append(pres)
+
+            # 정확히 하나의 대안 선택
+            model.add_exactly_one(presences)
+
+    # 각 기계에 NoOverlap
+    for m in range(num_machines):
+        model.add_no_overlap(machine_ivs[m])
+
+    # 작업 내 precedence
+    for job_id, job in enumerate(jobs):
+        for task_id in range(len(job) - 1):
+            model.add(
+                task_starts[(job_id, task_id + 1)] >=
+                task_ends[(job_id, task_id)]
+            )
+
+    # Makespan
+    makespan = model.new_int_var(0, horizon, "makespan")
+    model.add_max_equality(
+        makespan,
+        [task_ends[(job_id, len(job)-1)] for job_id, job in enumerate(jobs)]
+    )
+    model.minimize(makespan)
+    return model, makespan, task_starts, task_ends</code></pre>
+
+  <div class="tip">
+    <div class="ttl">add_exactly_one vs add(sum == 1)</div>
+    <code>add_exactly_one(presences)</code>를 쓰는 것이
+    <code>add(sum(presences) == 1)</code>보다 훨씬 강한 propagation을 유발한다.
+    CP-SAT 내부에서 전자는 at-most-one + at-least-one을 클로징 전파로 처리한다.
+    항상 <code>add_exactly_one</code>을 우선하라.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="transitions">6. 전이 시간 (Transition / Setup Times)</h2>
+  <p>
+    기계 위 연속 작업 사이에 셋업 시간이 있을 때 — 예: 다른 제품군 교체 시 청소 시간 —
+    <strong>circuit constraint</strong>로 작업 순서를 모델링하고 순서쌍별 전이 시간을 적용한다.
+  </p>
+
+  <h3>6.1 Circuit-based 전이 시간</h3>
+  <pre><code>def single_machine_with_transitions(durations, transition_matrix, horizon):
+    """
+    transition_matrix[i][j] = i 다음 j 실행 시 추가 대기 시간
+    (자기 자신 [i][i]는 의미 없음)
+    """
+    model = cp_model.CpModel()
+    n = len(durations)
+
+    starts = [model.new_int_var(0, horizon, f"s{i}") for i in range(n)]
+    ends   = [model.new_int_var(0, horizon, f"e{i}") for i in range(n)]
+    ranks  = [model.new_int_var(0, n-1, f"rank{i}") for i in range(n)]
+    for i, d in enumerate(durations):
+        model.new_fixed_size_interval_var(starts[i], d, f"iv{i}")
+        model.add(ends[i] == starts[i] + d)
+
+    arcs = []
+    arc_lits = {}
+
+    # dummy 노드 0, 작업 노드 i+1
+    for i in range(n):
+        # 첫 번째 작업 (0 → i+1)
+        start_lit = model.new_bool_var(f"first_{i}")
+        arcs.append((0, i + 1, start_lit))
+        model.add(ranks[i] == 0).only_enforce_if(start_lit)
+
+        # 마지막 작업 (i+1 → 0)
+        end_lit = model.new_bool_var(f"last_{i}")
+        arcs.append((i + 1, 0, end_lit))
+
+        for j in range(n):
+            if i != j:
+                lit = model.new_bool_var(f"arc_{i}_{j}")
+                arcs.append((i + 1, j + 1, lit))
+                arc_lits[(i, j)] = lit
+                # j 는 i 바로 다음
+                model.add(ranks[j] == ranks[i] + 1).only_enforce_if(lit)
+                # 전이 시간 포함 선후관계
+                trans = transition_matrix[i][j]
+                model.add(starts[j] >= ends[i] + trans).only_enforce_if(lit)
+
+    # circuit: 반드시 모든 노드를 정확히 1회 방문하는 해밀턴 사이클
+    model.add_circuit(arcs)
+
+    makespan = model.new_int_var(0, horizon, "makespan")
+    model.add_max_equality(makespan, ends)
+    model.minimize(makespan)
+    return model, starts, ends</code></pre>
+
+  <div class="tip">
+    <div class="ttl">Circuit vs NoOverlap+직접 순서변수</div>
+    전이 시간이 없다면 <code>add_no_overlap</code>이 더 빠르고 구현이 간단하다.
+    전이 시간이 <em>순서에 의존</em>한다면 circuit이 유일한 효율적 선택이다.
+    circuit은 TSP(외판원 문제)와 동형이므로 CP-SAT의 TSP 전용 propagator가 활성화된다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="tardiness">7. Tardiness 모델링</h2>
+
+  <p>
+    스케줄링 이론 표기: 작업 <em>j</em>의 due-date를 <em>d<sub>j</sub></em>,
+    완료 시각을 <em>C<sub>j</sub></em>라 할 때:
+  </p>
+  <ul>
+    <li><strong>Lateness</strong>: <em>L<sub>j</sub> = C<sub>j</sub> − d<sub>j</sub></em> (음수 가능)</li>
+    <li><strong>Tardiness</strong>: <em>T<sub>j</sub> = max(0, L<sub>j</sub>)</em> (음수는 0으로 클램프)</li>
+    <li><strong>Weighted Tardiness</strong>: <em>w<sub>j</sub> · T<sub>j</sub></em></li>
+    <li><strong>1||ΣwT</strong>: 단일 머신 가중합 지연 최소화 — NP-hard, CP-SAT로 정확 풀이 가능</li>
+  </ul>
+
+  <h3>7.1 단일 머신 가중 tardiness 완전 예제</h3>
+  <pre><code>from ortools.sat.python import cp_model
+
+def solve_1_weighted_tardiness(jobs, timelimit=30.0):
+    """
+    jobs: list of dict with keys: duration, due_date, weight
+    반환: (status, schedule) — schedule = list of {job, start, end, tardiness}
+    """
+    model = cp_model.CpModel()
+    n = len(jobs)
+    horizon = sum(j["duration"] for j in jobs)  # 타이트한 상한: EDD 정렬 후 최악 완료시각
+
+    starts    = [model.new_int_var(0, horizon, f"s{i}") for i in range(n)]
+    ends      = [model.new_int_var(0, horizon, f"e{i}") for i in range(n)]
+    intervals = [
+        model.new_interval_var(starts[i], jobs[i]["duration"], ends[i], f"iv{i}")
+        for i in range(n)
+    ]
+
+    # 단일 머신 제약
+    model.add_no_overlap(intervals)
+
+    # Tardiness 변수: T_i = max(0, end_i - due_date_i)
+    tard_vars = []
+    for i, job in enumerate(jobs):
+        t = model.new_int_var(0, horizon, f"tard{i}")
+        # AddMaxEquality(t, [ends[i] - due, 0])
+        # ends[i] - due_date 는 LinearExpr이므로 상수로 풀어야 함
+        lateness = model.new_int_var(-horizon, horizon, f"late{i}")
+        model.add(lateness == ends[i] - job["due_date"])
+        zero = model.new_constant(0)
+        model.add_max_equality(t, [lateness, zero])
+        tard_vars.append(t)
+
+    # 가중 tardiness 최소화
+    model.minimize(
+        sum(jobs[i]["weight"] * tard_vars[i] for i in range(n))
+    )
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = timelimit
+    solver.parameters.num_search_workers = 4
+    status = solver.solve(model)
+
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        schedule = []
+        for i, job in enumerate(jobs):
+            schedule.append({
+                "job": i,
+                "start": solver.value(starts[i]),
+                "end":   solver.value(ends[i]),
+                "tardiness": solver.value(tard_vars[i]),
+                "weighted_tard": job["weight"] * solver.value(tard_vars[i]),
+            })
+        schedule.sort(key=lambda x: x["start"])
+        return status, schedule, solver.objective_value
+    return status, [], None
+
+# 사용 예
+jobs = [
+    {"duration": 5, "due_date":  7, "weight": 3},
+    {"duration": 8, "due_date": 12, "weight": 1},
+    {"duration": 3, "due_date":  5, "weight": 2},
+    {"duration": 6, "due_date": 18, "weight": 1},
+    {"duration": 4, "due_date": 10, "weight": 2},
+]
+status, sched, obj = solve_1_weighted_tardiness(jobs, timelimit=10.0)
+print(f"Weighted tardiness = {obj}")
+for row in sched:
+    print(f"  job {row['job']}: [{row['start']},{row['end']}) "
+          f"tard={row['tardiness']} wt={row['weighted_tard']}")</code></pre>
+
+  <div class="pitfall">
+    <div class="ttl">함정 — AddMaxEquality에 LinearExpr 직접 전달</div>
+    <code>model.add_max_equality(t, [ends[i] - due_date, 0])</code>에서
+    <code>ends[i] - due_date</code>는 LinearExpr이고 <code>0</code>은 Python int다.
+    CP-SAT는 이 두 타입을 같은 리스트에 섞는 것을 허용하지만,
+    <strong>LinearExpr에는 도메인 상한이 없어 느리게 전파될 수 있다.</strong>
+    위 예처럼 <code>lateness = new_int_var(-horizon, horizon, ...)</code>으로 중간 변수를 만들고
+    <code>add(lateness == ends[i] - due_date)</code> + <code>add_max_equality(t, [lateness, zero])</code>로
+    분리하면 더 빠른 전파를 유도할 수 있다.
+  </div>
+
+  <h3>7.2 간결 패턴 (OR-Tools 최신 API)</h3>
+  <pre><code># OR-Tools 9.x 이상에서 LinearExpr 직접 허용
+# (이전 버전은 위의 분리 패턴 필요)
+def tardiness_concise(model, ends, due_dates, weights, horizon):
+    """ends: IntVar list, due_dates/weights: int list"""
+    tard_terms = []
+    for i, (e, d, w) in enumerate(zip(ends, due_dates, weights)):
+        t = model.new_int_var(0, horizon, f"t{i}")
+        model.add_max_equality(t, [e - d, 0])
+        tard_terms.append(w * t)
+    model.minimize(sum(tard_terms))</code></pre>
+
+  <h3>7.3 릴리즈 타임 (Release Time) 추가</h3>
+  <pre><code># release_time r_i: 작업은 r_i 이전에 시작 불가
+for i, job in enumerate(jobs):
+    model.add(starts[i] >= job["release_time"])</code></pre>
+
+  <div class="callout ogc">
+    <div class="ttl">OGC 2026 — Z1 Tardiness Oracle 구현 패턴</div>
+    <p style="margin:0 0 10px">
+      <code>_cpsat_bay_timing_verified</code>가 하는 일을 이 챕터의 패턴으로 정확히 기술하면:
+    </p>
+    <ol style="margin:0;padding-left:20px">
+      <li><strong>입력</strong>: 고정된 (x,y) 위치 + 블록별 (release_time=R, processing_time=P, due_date=D, weight=w1)</li>
+      <li><strong>interval 생성</strong>: 각 블록의 ENTRY/EXIT를 <code>new_interval_var(entry, P, exit, ...)</code>으로 선언</li>
+      <li><strong>크레인 직렬화</strong>: 같은 층 내 블록들 간 <code>add_no_overlap</code> + <em>j≥k</em> 크레인 규칙을 precedence로 추가</li>
+      <li><strong>릴리즈 타임</strong>: <code>add(entry[i] >= R[i])</code></li>
+      <li><strong>처리 시간 하한</strong>: <code>add(exit[i] >= entry[i] + P[i])</code> (interval 크기로 자동)</li>
+      <li><strong>목적함수</strong>: <code>minimize(sum(w1[i] * max(0, exit[i] - D[i])))</code></li>
+      <li><strong>결과</strong>: 최적 ENTRY/EXIT 시각 → Z1 최소화 솔루션</li>
+    </ol>
+    <p style="margin:10px 0 0">
+      이 1-D 구조 덕분에 베이당 수십~백 개 블록도 수 초 내 CP-SAT OPTIMAL이 나온다.
+      Decoupling 패턴(패킹 위치 고정 → 시간만 최적화)이 성능의 핵심.
+    </p>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="ranking">8. Interval 순서 결정 (Ranking)</h2>
+  <p>
+    <code>add_no_overlap</code>은 겹침만 방지하지, 어떤 순서인지는 알려주지 않는다.
+    결과에서 <em>j는 i 다음에 실행된다</em>는 사실을 얻으려면 precedence BoolVar를 도입하거나
+    circuit constraint를 사용한다.
+  </p>
+
+  <h3>8.1 Precedence BoolVar 방식</h3>
+  <pre><code">def rank_intervals_with_precedence(model, starts, ends, intervals):
+    n = len(starts)
+    # prec[i][j] = True ↔ 작업 i 가 j 보다 먼저 완료
+    prec = [[None]*n for _ in range(n)]
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                p = model.new_bool_var(f"prec_{i}_{j}")
+                prec[i][j] = p
+                # p=True → ends[i] <= starts[j]
+                model.add(ends[i] <= starts[j]).only_enforce_if(p)
+                # p=False → ends[j] <= starts[i]
+                model.add(ends[j] <= starts[i]).only_enforce_if(~p)
+
+    # Rank = (자기보다 앞에 있는 작업 수)
+    ranks = [
+        model.new_int_var(0, n-1, f"rank{i}")
+        for i in range(n)
+    ]
+    for i in range(n):
+        model.add(ranks[i] == sum(prec[j][i] for j in range(n) if j != i))
+    return prec, ranks</code></pre>
+
+  <div class="tip">
+    <div class="ttl">Circuit이 더 효율적</div>
+    n이 크면 precedence BoolVar 방식은 O(n²) 변수를 만든다.
+    <code>add_circuit</code>은 해밀턴 경로 전용 propagator를 쓰므로 훨씬 빠르다.
+    단, circuit은 반드시 모든 노드를 방문해야 하므로 optional 작업은 self-loop arc를 추가해야 한다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="large-scale">9. 대규모 단일 머신 스케줄링 전략</h2>
+  <p>
+    소규모(n ≤ 수십)는 CP-SAT가 <em>증명된 최적</em>을 낸다.
+    대규모는 분해(decomposition)나 휴리스틱 초기해 제공이 필요하다.
+  </p>
+
+  <h3>9.1 워밍 힌트로 수렴 가속</h3>
+  <pre><code">def warm_start_edd(model, starts, ends, jobs):
+    """EDD(Earliest Due Date) 순으로 초기해 제공"""
+    order = sorted(range(len(jobs)), key=lambda i: jobs[i]["due_date"])
+    t = 0
+    for i in order:
+        model.add_hint(starts[i], t)
+        model.add_hint(ends[i], t + jobs[i]["duration"])
+        t += jobs[i]["duration"]</code></pre>
+
+  <h3>9.2 시간 제한 내 best feasible 반환</h3>
+  <pre><code">solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = timelimit
+solver.parameters.num_search_workers = 4  # 평가서버 4 코어 활용
+# 대규모 인스턴스: solution callback 으로 중간 해 추적
+class BestSolCallback(cp_model.CpSolverSolutionCallback):
+    def __init__(self, obj_var):
+        super().__init__()
+        self._best = float('inf')
+        self._obj = obj_var
+    def on_solution_callback(self):
+        v = self.value(self._obj)
+        if v < self._best:
+            self._best = v
+            print(f"  New best: {v} (t={self.wall_time():.1f}s)")</code></pre>
+
+  <h3>9.3 LBBD 분해 (대규모용)</h3>
+  <p>
+    베이가 여러 개일 때 <strong>배정(assignment)</strong>과 <strong>스케줄링(timing)</strong>을
+    분리하는 Benders-style 분해:
+  </p>
+  <ol>
+    <li><strong>Master</strong>: 어느 블록을 어느 베이에 넣을지 결정 (배정 + relaxed tardiness)</li>
+    <li><strong>Sub-problem</strong>: 각 베이별 1-D disjunctive tardiness CP-SAT</li>
+    <li><strong>No-good cut</strong>: Sub가 infeasible / 목적함수 위반 시 Master에 Benders cut 추가</li>
+  </ol>
+  <p>이것이 <code>10-lbbd.html</code>에서 상세히 다루는 OGC2026 핵심 아키텍처다.</p>
+
+  <!-- ============================================================ -->
+  <h2 id="pitfalls">흔한 함정 요약</h2>
+
+  <div class="pitfall">
+    <div class="ttl">함정 1 — horizon을 너무 크게 잡기</div>
+    <code>horizon = 10**9</code>처럼 크게 잡으면 변수 도메인이 커져서 전파가 느려진다.
+    실제 가능한 최대 완료 시각(<code>sum(durations)</code>)을 상한으로 쓰고,
+    EDD 기반 LP relaxation으로 더 타이트하게 만들 수 있다.
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 2 — Optional interval의 start/end를 presence 없이 참조</div>
+    <code>is_present=False</code>인 interval의 start/end는 아무 값이나 바인딩될 수 있다.
+    다른 제약에서 이 변수를 쓰면 presence에 무관하게 강제된다.
+    반드시 <code>.only_enforce_if(pres)</code>로 감싸라.
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 3 — AddMaxEquality의 결과 변수 도메인 상한</div>
+    <code>model.add_max_equality(t, exprs)</code>에서 <code>t</code>의 상한이 너무 작으면
+    CP-SAT가 오히려 늦은 완료 시각을 억지로 당겨 infeasible을 만든다.
+    <code>t = model.new_int_var(0, <b>horizon</b>, ...)</code>으로 충분한 상한을 줘야 한다.
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 4 — add_no_overlap과 add_cumulative(cap=1) 혼용</div>
+    <code>add_no_overlap</code>은 <code>add_cumulative(..., demands=[1]*n, capacity=1)</code>과
+    결과는 같지만 전파 강도가 다르다. 단일 머신에는 항상 <code>add_no_overlap</code>을 써야
+    에지-파인딩 등 강한 propagation이 활성화된다.
+    <code>cumulative(cap=1)</code>은 그보다 약한 전파를 한다.
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 5 — 크기가 0인 interval</div>
+    <code>size=0</code>인 interval은 CP-SAT 내부적으로 처리되지만,
+    <code>add_no_overlap</code>에서 0-크기 interval은 어떤 시간대에도 겹치지 않으므로
+    "이벤트"가 아닌 "시점"을 표현할 때만 써야 한다. 잘못 사용하면
+    expected 동시성 제약이 무시된다.
+  </div>
+
+  <div class="pitfall">
+    <div class="ttl">함정 6 — add_circuit에서 self-loop 누락</div>
+    Optional 작업(수행 안 할 수 있는)을 circuit에 포함할 때
+    <code>arcs.append((i+1, i+1, ~presence[i]))</code> self-loop를 반드시 추가해야 한다.
+    누락 시 모든 노드를 강제 방문해야 하므로 optional이 실질적으로 mandatory가 된다.
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 id="papers">핵심 논문</h2>
+  <ul class="refs">
+    <li>
+      <strong>Vilím, P. (2007). "Filtering Algorithms for the Unary Resource Constraint."</strong>
+      Edge-finding + not-first-not-last 알고리즘 — CP-SAT <code>add_no_overlap</code>의 내부 propagation 기반.
+      <span class="meta">Constraints 12(3), Springer. [단일 자원 필터링 표준 레퍼런스]</span>
+    </li>
+    <li>
+      <strong>Baptiste, P., Le Pape, C., Nuijten, W. (2001). "Constraint-Based Scheduling."</strong>
+      단일머신·parallel machine·cumulative resource 스케줄링의 CP 접근법을 체계화한 교과서.
+      <span class="meta">Kluwer Academic Publishers. ISBN 0-7923-7408-8</span>
+    </li>
+    <li>
+      <strong>Laborie, P. et al. (2018). "IBM ILOG CP Optimizer for Scheduling."</strong>
+      interval 변수를 스케줄링 전용 일급 시민으로 도입한 근대 CP 스케줄러의 설계 원리.
+      CP-SAT의 interval/NoOverlap 설계에 직접 영향을 줌.
+      <span class="meta">INFORMS JTEC 18(1). https://doi.org/10.1287/ijoc.2016.0710</span>
+    </li>
+    <li>
+      <strong>Pinedo, M. L. (2016). "Scheduling: Theory, Algorithms, and Systems." (5th ed.)</strong>
+      1||ΣwT NP-hardness 증명, ATC 규칙, Lawler 알고리즘 포함.
+      <span class="meta">Springer. ISBN 978-3-319-26580-3. [스케줄링 이론 표준 교재]</span>
+    </li>
+    <li>
+      <strong>Bofill, M., Palahí, M., Suy, J., Villaret, M. (2012).
+      "Solving the flexible job shop with CP and hybrid MIP-CP."</strong>
+      Optional interval + add_exactly_one 패턴의 학술 검증.
+      <span class="meta">Expert Systems with Applications 39(9). https://doi.org/10.1016/j.eswa.2011.11.064</span>
+    </li>
+  </ul>
+
+  <!-- ============================================================ -->
+  <h2 id="repos">GitHub · 자료</h2>
+  <ul class="refs">
+    <li class="repo">
+      <strong>google/or-tools — ortools/sat/docs/scheduling.md</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/stable/ortools/sat/docs/scheduling.md</span>
+      <span class="desc">공식 스케줄링 문서: interval var 타입, NoOverlap, cumulative, 전이시간, circuit, 오버랩 검출까지 완전 레시피. 코드 스니펫 다수.</span>
+    </li>
+    <li class="repo">
+      <strong>google/or-tools — examples/python/flexible_job_shop_sat.py</strong>
+      <span class="meta">https://github.com/google/or-tools/blob/stable/examples/python/flexible_job_shop_sat.py</span>
+      <span class="desc">대체 자원 선택(optional interval + add_exactly_one)의 레퍼런스 구현. 글로벌 start/end ↔ 로컬 alternative 연결 패턴.</span>
+    </li>
+    <li class="repo">
+      <strong>d-krupke/cpsat-primer — Chapter 4B Advanced Modelling</strong>
+      <span class="meta">https://d-krupke.github.io/cpsat-primer/04B_advanced_modelling.html</span>
+      <span class="desc">Interval 변수 전 타입, NoOverlap, Cumulative, Reservoir, 순서결정 circuit. 실용적 패턴과 함정 설명이 최신 OR-Tools API 기준으로 정리됨.</span>
+    </li>
+    <li class="repo">
+      <strong>google/or-tools — developers.google.com/optimization/scheduling</strong>
+      <span class="meta">https://developers.google.com/optimization/scheduling/job_shop</span>
+      <span class="desc">Job Shop Scheduling 공식 튜토리얼: interval var → NoOverlap per machine → precedence → makespan minimize 전체 흐름.</span>
+    </li>
+    <li class="repo">
+      <strong>PyJobShop/PyJobShop</strong>
+      <span class="meta">https://github.com/PyJobShop/PyJobShop</span>
+      <span class="desc">CP-SAT 기반 생산 스케줄링 라이브러리. makespan, total tardiness, weighted tardiness 등 표준 목적함수를 OR-Tools interval로 구현한 실용 레퍼런스.</span>
+    </li>
+    <li class="repo">
+      <strong>nexmindai.org — CP-SAT Scheduling Tutorial</strong>
+      <span class="meta">https://nexmindai.org/cp-sat-tutorial/</span>
+      <span class="desc">단일 머신 → weighted tardiness → parallel machines → optional intervals 순서로 진행하는 실습 중심 튜토리얼. 완전 실행 가능한 Python 코드 포함.</span>
+    </li>
+  </ul>
+
+  <div class="footer">
+    <a href="index.html">← 개요로</a> &nbsp;·&nbsp;
+    <a href="04-packing.html">04 패킹·배치 →</a>
+    <br><br>
+    Sources: google/or-tools stable scheduling.md ·
+    OR-Tools Python API (or-tools.github.io) ·
+    CP-SAT Primer d-krupke.github.io ·
+    developers.google.com/optimization/scheduling ·
+    nexmindai.org/cp-sat-tutorial ·
+    Pinedo 2016 ·
+    Baptiste et al. 2001 ·
+    Vilím 2007 ·
+    Laborie et al. 2018 ·
+    Bofill et al. 2012
+  </div>
+
+</div><!-- /container -->
+</body>
+</html>

@@ -1,0 +1,8 @@
+=== myalgorithm_FIX set2 @TL=300s  4-core-affinity x4 ===
+fixes: v2_cap=90s  orig_frac=0.55  postproc=full-obj,no-z1-gate
+elapsed=40s  done=2/20  feasible=2  -1=0  base: v1=0 v2=2  pp_improved=0
+set2_TOTAL=2,022,750
+--------------------------------------------------------------------------------------------------------
+    inst     final_obj      z1      z3  base      base_obj  pp?     ppgain   wall  ppbud
+ prob_21     1,388,281      77   2,361    v2     1,388,281    .          0    30s    269
+ prob_24       634,469      28     851    v2       634,469    .          0    38s    261

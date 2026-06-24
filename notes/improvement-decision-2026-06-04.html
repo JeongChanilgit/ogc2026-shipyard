@@ -1,0 +1,1158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OGC 2026 개선 의사결정 — 2026-06-04</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --ink: #161d2c;
+      --muted: #5a6478;
+      --line: #d2d8e6;
+      --panel: #ffffff;
+      --panel2: #edf1f8;
+      --blue: #1d4ed8;
+      --blue-light: #eff6ff;
+      --green: #065f46;
+      --green-light: #ecfdf5;
+      --red: #991b1b;
+      --red-light: #fff1f1;
+      --amber: #92400e;
+      --amber-light: #fffbeb;
+      --violet: #5b21b6;
+      --violet-light: #f5f3ff;
+      --orange: #9a3412;
+      --orange-light: #fff7ed;
+      --slate: #1e293b;
+      --mono: Consolas, "SFMono-Regular", "Liberation Mono", monospace;
+      --sans: "Malgun Gothic", "Apple SD Gothic Neo", "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.68;
+      font-size: 15px;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── layout ── */
+    .wrap { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── header ── */
+    header {
+      background: linear-gradient(135deg, #0f1929 0%, #1a2d4f 100%);
+      color: #fff;
+      padding: 60px 0 40px;
+      border-bottom: 5px solid #2d4a7a;
+    }
+    header h1 {
+      font-size: clamp(24px, 3.5vw, 42px);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+    header .subtitle {
+      color: #a8bbd4;
+      font-size: 16px;
+      max-width: 820px;
+      margin-bottom: 20px;
+    }
+    .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .pill {
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: #c8d8ee;
+      white-space: nowrap;
+    }
+
+    /* ── sticky nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.97);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    nav .wrap {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      padding: 8px 28px;
+    }
+    nav a {
+      color: #374151;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12.5px;
+      background: #fff;
+      white-space: nowrap;
+    }
+    nav a:hover { background: var(--panel2); text-decoration: none; }
+
+    /* ── sections ── */
+    section { padding: 52px 0 0; }
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--slate);
+      margin-bottom: 6px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--line);
+    }
+    h3 { font-size: 16px; font-weight: 700; margin: 22px 0 6px; color: var(--slate); }
+    .lead { color: var(--muted); font-size: 14px; margin: 6px 0 18px; }
+    .divider { height: 1px; background: var(--line); margin: 48px 0 0; }
+
+    /* ── panels / callouts ── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin: 16px 0;
+      box-shadow: 0 1px 3px rgba(15,24,48,.06);
+    }
+    .panel-headline {
+      border-left: 5px solid var(--blue);
+      background: var(--blue-light);
+    }
+    .panel-reversal {
+      border-left: 5px solid #dc2626;
+      background: var(--red-light);
+    }
+    .panel-guardrail {
+      border-left: 5px solid var(--green);
+      background: var(--green-light);
+    }
+    .panel-kill {
+      border-left: 5px solid #6b7280;
+      background: #f9fafb;
+    }
+    .evidence-box {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 12px 0;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    .evidence-box code {
+      font-family: var(--mono);
+      color: #7dd3fc;
+      font-size: 12.5px;
+    }
+    .evidence-box .file-ref {
+      display: inline-block;
+      background: rgba(125,211,252,.12);
+      border: 1px solid rgba(125,211,252,.3);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #93c5fd;
+    }
+
+    /* ── badges ── */
+    .badge {
+      display: inline-block;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .025em;
+      white-space: nowrap;
+    }
+    .b-easy   { background: #d1fae5; color: #065f46; }
+    .b-mod    { background: #fef3c7; color: #92400e; }
+    .b-hard   { background: #fee2e2; color: #991b1b; }
+    .b-low    { background: #e0f2fe; color: #0369a1; }
+    .b-med    { background: #fef9c3; color: #713f12; }
+    .b-high   { background: #fce7f3; color: #9d174d; }
+    .b-safe   { background: #d1fae5; color: #065f46; }
+    .b-do     { background: #1d4ed8; color: #fff; }
+    .b-defer  { background: #64748b; color: #fff; }
+    .b-kill   { background: #374151; color: #fff; }
+    .b-lever  { background: var(--violet-light); color: var(--violet); }
+    .b-tier1  { background: #1d4ed8; color: #fff; }
+    .b-tier2  { background: #0369a1; color: #fff; }
+    .b-tier3  { background: #374151; color: #fff; }
+
+    /* ── decision table ── */
+    .decision-table-wrap { overflow-x: auto; margin: 18px 0; }
+    .decision-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 900px;
+    }
+    .decision-table th {
+      background: #1e293b;
+      color: #f1f5f9;
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .decision-table td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+    .decision-table tr:nth-child(even) td { background: #f8fafc; }
+    .tier-header td {
+      background: #1e293b !important;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 6px 12px;
+    }
+    .decision-table .p-id { font-family: var(--mono); font-weight: 700; font-size: 14px; }
+
+    /* ── card grid ── */
+    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+    @media (max-width: 820px) { .card-grid { grid-template-columns: 1fr; } }
+    .detail-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 3px rgba(15,24,48,.05);
+    }
+    .detail-card .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .card-pid {
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--blue);
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .card-title-text { font-size: 15px; font-weight: 700; line-height: 1.35; }
+    .card-section { margin: 10px 0; }
+    .card-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+    .card-section p { font-size: 13.5px; color: #2d3748; line-height: 1.6; }
+    .ref-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--blue-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 5px;
+      padding: 3px 9px;
+      font-size: 12px;
+      color: var(--blue);
+      margin: 3px 3px 3px 0;
+    }
+    .ref-link:hover { background: #dbeafe; text-decoration: none; }
+
+    /* ── kill section ── */
+    .kill-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-left: 4px solid #9ca3af;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 10px 0;
+    }
+    .kill-item h4 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 4px; }
+    .kill-item p { font-size: 13.5px; color: var(--muted); }
+
+    /* ── sprint diagram ── */
+    .sprint-steps {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .sprint-step {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px 18px;
+      min-width: 200px;
+      flex: 1;
+      position: relative;
+    }
+    .sprint-step::after {
+      content: "→";
+      position: absolute;
+      right: -16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: var(--muted);
+      z-index: 1;
+    }
+    .sprint-step:last-child::after { display: none; }
+    .sprint-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .sprint-step h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .sprint-step p { font-size: 12.5px; color: var(--muted); }
+
+    /* ── footer ── */
+    footer {
+      margin-top: 64px;
+      padding: 28px 0 40px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer p { margin-bottom: 6px; }
+    footer strong { color: var(--ink); }
+
+    /* ── misc ── */
+    .num-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #dc2626;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 4px;
+      flex-shrink: 0;
+    }
+    .evidence-point {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .ep-body { font-size: 13.5px; line-height: 1.65; }
+    .code-inline {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+    .lever-surviving {
+      background: var(--violet-light);
+      border: 1px solid #c4b5fd;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 12px;
+      color: var(--violet);
+      font-weight: 600;
+    }
+    ul.check-list { list-style: none; padding-left: 0; }
+    ul.check-list li { padding: 3px 0 3px 22px; position: relative; font-size: 13.5px; }
+    ul.check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+    ul.guard-list { list-style: none; padding-left: 0; }
+    ul.guard-list li { padding: 6px 0 6px 26px; position: relative; font-size: 13.5px; border-bottom: 1px solid var(--line); }
+    ul.guard-list li:last-child { border-bottom: none; }
+    ul.guard-list li::before { content: "①"; position: absolute; left: 0; font-weight: 700; color: var(--blue); }
+    ul.guard-list li:nth-child(2)::before { content: "②"; }
+    ul.guard-list li:nth-child(3)::before { content: "③"; }
+    ul.guard-list li:nth-child(4)::before { content: "④"; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header>
+  <div class="wrap">
+    <h1>OGC 2026 알고리즘 개선 의사결정</h1>
+    <p class="subtitle">리서치(34편)→코드 정찰→결정: 무엇을 하고, 무엇을 하지 않으며, 그 이유는 무엇인가</p>
+    <div class="meta-pills">
+      <span class="pill">결정일: 2026-06-04</span>
+      <span class="pill">근거 문헌: 34편 (7개 테마, L1~L5)</span>
+      <span class="pill">코드 정찰: code-analyzer (myalgorithm.py)</span>
+      <span class="pill">코드 상태: 미변경 — 이 문서는 결정 기록</span>
+      <span class="pill">OGC 2026 · Grand Shipyard Puzzle</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════ NAV ═══════════════════════ -->
+<nav>
+  <div class="wrap">
+    <a href="#s-headline">한 줄 결론</a>
+    <a href="#s-reversal">KEY REVERSAL</a>
+    <a href="#s-table">의사결정 표</a>
+    <a href="#s-detail">P별 상세</a>
+    <a href="#s-kill">KILL 목록</a>
+    <a href="#s-guardrail">가드레일</a>
+    <a href="#s-sprint">구현 순서</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════ S0: HEADLINE ═══════════════════════ -->
+<section id="s-headline">
+  <div class="wrap">
+    <h2>한 줄 결론</h2>
+    <p class="lead">34편 리서치가 가장 강력히 권고한 L1(full combinatorial Benders)을 우리는 1순위로 두지 않는다. 그 핵심 이득은 이미 존재하는 M4 cut 기계장치로 값싸게 취하고, 즉효성 있는 dispatch/tie-break 개선을 먼저 실행한다.</p>
+
+    <div class="panel panel-headline">
+      <p style="font-size:15.5px; line-height:1.75;">
+        리서치가 가장 강력히 수렴한 권고(<strong>L1 = full combinatorial Benders로 CP-SAT를 감싸기</strong>)는
+        <strong>우리 코드베이스에는 1순위가 아니다.</strong>
+        우리는 L1의 <em>정신</em>(infeasible 그룹핑을 다시 못 고르게 하는 no-good cut)만
+        <strong>이미 존재하는 M4 cut 기계장치</strong>로 값싸게 취하고,
+        즉효성 있는 dispatch/tie-break 개선을 먼저 한다.
+        <strong>모든 변경은 floor+gate 안에서 −1 불가능.</strong>
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ S1: KEY REVERSAL ═══════════════════════ -->
+<section id="s-reversal">
+  <div class="wrap">
+    <h2>KEY REVERSAL — 왜 리서치 1순위(L1 full)를 1순위로 안 하나</h2>
+    <p class="lead">
+      이 섹션이 이 문서에서 가장 중요하다. 코드 정찰(code-analyzer)이 드러낸 3가지 사실로
+      L1 full 형태를 명시적으로 보류한다.
+    </p>
+
+    <div class="panel panel-reversal">
+      <h3 style="color:#991b1b; margin-top:0;">코드 증거 3가지</h3>
+
+      <div class="evidence-point">
+        <span class="num-tag">1</span>
+        <div class="ep-body">
+          <strong><code class="code-inline">_cpsat_assignment</code>는 build-once-solve-once 구조다.</strong>
+          <span class="file-ref" style="font-family:monospace; background:#1e293b; border:none; color:#7dd3fc; border-radius:4px; padding:2px 8px; font-size:12px;">myalgorithm.py:686-763</span>
+          <br>
+          <span style="display:block; margin-top:6px;">
+            <span class="code-inline">CpModel</span> / <span class="code-inline">CpSolver</span> / <span class="code-inline">x</span> 리터럴이 전부 함수 로컬 변수로 선언되어 있으며, 함수 반환 후 즉시 파괴된다.
+            <span class="code-inline">AddBoolOr</span> no-good cut을 붙일 표면도, 증분 재해결(incremental re-solve)도 없다.
+            Benders master로 사용하려면 solver 인스턴스를 stateful 객체로 전면 재작성해야 한다.
+          </span>
+        </div>
+      </div>
+
+      <div class="evidence-point">
+        <span class="num-tag">2</span>
+        <div class="ep-body">
+          <strong>현재 master는 assignment 전용이고 timing/Z1 항이 없다.</strong>
+          <span class="file-ref" style="font-family:monospace; background:#1e293b; border:none; color:#7dd3fc; border-radius:4px; padding:2px 8px; font-size:12px;">myalgorithm.py:723 (목적식 c2·z2 + c3·pref)</span>
+          <br>
+          <span style="display:block; margin-top:6px;">
+            목적식에 ENTRY/EXIT 정수변수가 없고 Z1(tardiness) 항도 없다.
+            Benders timing-master로 기능하려면 entry/exit 정수변수와 timing relaxation을 새로 도입해야 한다.
+            이는 CP-SAT 모델의 <strong>major rewrite</strong>에 해당한다.
+          </span>
+        </div>
+      </div>
+
+      <div class="evidence-point">
+        <span class="num-tag">3</span>
+        <div class="ep-body">
+          <strong>ROI가 낮다 — assignment는 이미 gap=0이다.</strong>
+          <br>
+          <span style="display:block; margin-top:6px;">
+            milestone-status.md 진단: CP-SAT가 21개 인스턴스 중 19개에서 배정 수준 최적을 <em>증명</em>(gap=0.0).
+            이는 곧 <em>현재의 timing-free master가 이미 gap 0</em>이라는 뜻이다.
+            Benders master를 재작성해도 나머지 2개 + congested 케이스에서만 도움이 된다.
+            high-effort, low-headroom.
+          </span>
+        </div>
+      </div>
+
+      <div style="margin-top:18px; padding-top:16px; border-top:1px solid #fca5a5;">
+        <strong style="color:#991b1b;">결론:</strong>
+        full Benders는 <span class="badge b-kill">KILL</span> (이 코드, 이 헤드룸에서).
+        대신 그 <em>정신</em>을 P1으로 값싸게 실현한다: <span class="code-inline">_find_slot_crane_safe</span>의
+        rejection booleans에 이미 계산되어 있는 충돌 블록 데이터를 <span class="code-inline">cut_store</span> / <span class="code-inline">op_cut_destroy</span>에 minimal no-good cut으로 공급.
+        CP-SAT 재작성 없이 "infeasible 그룹핑 재채택 금지"를 달성한다.
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ S2: DECISION TABLE ═══════════════════════ -->
+<section id="s-table">
+  <div class="wrap">
+    <h2>의사결정 표</h2>
+    <p class="lead">전체 10행(P1~P5, KILL 5개). 컬럼: 우선순위 · 무엇 · 대응 레버(L1~L5) · 공략 surviving lever · 코드 접합점 · 난이도 · 리스크 · −1 안전 · 판정</p>
+
+    <div class="decision-table-wrap">
+      <table class="decision-table">
+        <thead>
+          <tr>
+            <th>우선순위</th>
+            <th>무엇</th>
+            <th>대응 리서치 레버</th>
+            <th>공략 surviving lever</th>
+            <th>코드 접합점 (file:line)</th>
+            <th>난이도</th>
+            <th>리스크</th>
+            <th>−1 안전</th>
+            <th>판정</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- TIER 1 header -->
+          <tr class="tier-header">
+            <td colspan="9"><span class="badge b-tier1">TIER 1</span> — 지금 한다 (EASY/MODERATE, floor+gate로 −1 불가)</td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">P1</span></td>
+            <td>크레인 conflict-set → no-good cut을 기존 M4 기계장치에 공급</td>
+            <td><span class="badge b-lever">L1</span> <span class="badge b-lever">L5</span></td>
+            <td><span class="lever-surviving">① layout-preserving</span></td>
+            <td>
+              <span class="code-inline">myalgorithm.py:258-269</span> (rejection booleans)<br>
+              <span class="code-inline">:298</span> (_find_slot_crane_safe 반환)<br>
+              <span class="code-inline">:392-396</span> (forced_ids)<br>
+              <span class="code-inline">:855-1067</span> (cut_store / op_cut_destroy, M4)
+            </td>
+            <td><span class="badge b-mod">MODERATE</span></td>
+            <td><span class="badge b-med">중간</span></td>
+            <td><span class="badge b-safe">SAFE</span></td>
+            <td><span class="badge b-do">DO</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">P2</span></td>
+            <td>gate/banking 버그 근원 수정: 크레인-violation tie-breaker</td>
+            <td><span class="badge b-lever">L5</span></td>
+            <td><span class="lever-surviving">① layout-preserving</span></td>
+            <td>
+              <span class="code-inline">myalgorithm.py:1143-1149</span> (obj tie-break)<br>
+              <span class="code-inline">:2140-2155</span> (버그 주석)<br>
+              <span class="code-inline">:2166</span> (OGC_PROTECT_SEED banking)
+            </td>
+            <td><span class="badge b-easy">EASY</span></td>
+            <td><span class="badge b-low">낮음</span></td>
+            <td><span class="badge b-safe">SAFE</span></td>
+            <td><span class="badge b-do">DO</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">P3</span></td>
+            <td>ATCR(Apparent Tardiness Cost with Release dates) 시드 순서를 3번째 후보 정렬로 추가</td>
+            <td><span class="badge b-lever">L5</span></td>
+            <td><span class="lever-surviving">③ dense-w1</span></td>
+            <td>
+              <span class="code-inline">myalgorithm.py:414-420</span> (_orderings 목록)
+            </td>
+            <td><span class="badge b-easy">EASY</span></td>
+            <td><span class="badge b-low">낮음</span></td>
+            <td><span class="badge b-safe">SAFE</span></td>
+            <td><span class="badge b-do">DO</span></td>
+          </tr>
+
+          <!-- TIER 2 header -->
+          <tr class="tier-header">
+            <td colspan="9"><span class="badge b-tier2">TIER 2</span> — Tier 1 착지 + 시간 남으면 (조건부)</td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">P4</span></td>
+            <td>소형 베이 한정 per-bay joint (x,y,ENTRY,EXIT) 정밀화</td>
+            <td><span class="badge b-lever">L3</span></td>
+            <td><span class="lever-surviving">② joint pos+time</span></td>
+            <td>
+              CP-SAT 배정 후 잔여예산·신규 모듈<br>
+              <span class="code-inline">myalgorithm.py:686-763</span> (CP-SAT 영역 참조)
+            </td>
+            <td><span class="badge b-hard">HIGH</span></td>
+            <td><span class="badge b-med">중간</span></td>
+            <td><span class="badge b-safe">SAFE</span></td>
+            <td><span class="badge b-defer">DEFER</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">P5</span></td>
+            <td>4코어 diversified multi-start 재활성화 (진짜 다양화 이유 있을 때만)</td>
+            <td><span class="badge b-lever">L4</span></td>
+            <td><span class="lever-surviving">③ dense-w1</span></td>
+            <td>
+              <span class="code-inline">parallel_decode.py:143</span> (run_parallel_multistart)<br>
+              flag: <span class="code-inline">OGC_PARALLEL_MS</span> (현재 OFF)
+            </td>
+            <td><span class="badge b-mod">MODERATE</span></td>
+            <td><span class="badge b-med">중간</span></td>
+            <td><span class="badge b-safe">SAFE</span></td>
+            <td><span class="badge b-defer">DEFER (조건부)</span></td>
+          </tr>
+
+          <!-- TIER 3 header -->
+          <tr class="tier-header">
+            <td colspan="9"><span class="badge b-tier3">TIER 3</span> — KILL / 명시적 보류 (이유와 함께)</td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">KILL-A</span></td>
+            <td>Full combinatorial Benders master (L1 문헌 원형)</td>
+            <td><span class="badge b-lever">L1</span></td>
+            <td>—</td>
+            <td>KEY REVERSAL 섹션 참조</td>
+            <td><span class="badge b-hard">HIGH</span></td>
+            <td><span class="badge b-high">높음</span></td>
+            <td>—</td>
+            <td><span class="badge b-kill">KILL</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">KILL-B</span></td>
+            <td>Tchebycheff MOEA / MO-ALNS/D (L4 원형)</td>
+            <td><span class="badge b-lever">L4</span></td>
+            <td>—</td>
+            <td>인스턴스별 (w1,w2,w3) 주어짐 — Pareto front 불필요</td>
+            <td><span class="badge b-mod">MODERATE</span></td>
+            <td><span class="badge b-med">중간</span></td>
+            <td>—</td>
+            <td><span class="badge b-kill">KILL</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">KILL-C</span></td>
+            <td>Skyline/jostle 재패킹 + packing-height-as-Z1 (L2 원형)</td>
+            <td><span class="badge b-lever">L2</span></td>
+            <td>—</td>
+            <td>서치 이미 true objective 사용; packing height ↔ Z1 약상관</td>
+            <td><span class="badge b-mod">MODERATE</span></td>
+            <td><span class="badge b-med">중간</span></td>
+            <td>—</td>
+            <td><span class="badge b-kill">KILL</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">KILL-D</span></td>
+            <td>Full NFP 연속 MILP per bay (L3 원형)</td>
+            <td><span class="badge b-lever">L3</span></td>
+            <td>—</td>
+            <td>우리 밀도(베이당 40~60 블록)에서 intractable</td>
+            <td><span class="badge b-hard">HIGH</span></td>
+            <td><span class="badge b-high">높음</span></td>
+            <td>—</td>
+            <td><span class="badge b-kill">DEFER/KILL</span></td>
+          </tr>
+
+          <tr>
+            <td><span class="p-id">KILL-E</span></td>
+            <td>0-개선 ALNS 4코어 fan-out (이전 OGC_PARALLEL_MS 기본 ON 형태)</td>
+            <td><span class="badge b-lever">L4</span></td>
+            <td>—</td>
+            <td>op_improves 전 트레이스 [0,0,0] 확인 — 4코어 낭비</td>
+            <td><span class="badge b-easy">EASY</span></td>
+            <td><span class="badge b-low">낮음</span></td>
+            <td>—</td>
+            <td><span class="badge b-kill">KILL (기 결정)</span></td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ S3: DETAIL CARDS ═══════════════════════ -->
+<section id="s-detail">
+  <div class="wrap">
+    <h2>P별 상세 카드</h2>
+    <p class="lead">Tier 1 (P1~P3) + Tier 2 (P4~P5) 각각에 대해 무엇/왜/어떻게/근거 논문을 기술한다.</p>
+
+    <div class="card-grid">
+
+      <!-- P1 -->
+      <div class="detail-card">
+        <div class="card-top">
+          <div class="card-pid">P1</div>
+          <div class="card-title-text">크레인 conflict-set → no-good cut<br>기존 M4 기계장치에 공급</div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <span class="badge b-mod">MODERATE</span>
+          <span class="badge b-lever">L1 · L5의 buildable 형태</span>
+          <span class="badge b-safe">−1 SAFE</span>
+          <span class="badge b-tier1">TIER 1</span>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">무엇</div>
+          <p>
+            <span class="code-inline">_find_slot_crane_safe</span>(:298)가 실패 시 반환하는
+            <span class="code-inline">(None, None)</span>을 넘어서, 실패를 유발한 충돌 블록 집합을 tight하게 추출하여
+            기존 <span class="code-inline">cut_store</span> / <span class="code-inline">op_cut_destroy</span>(:855-1067, M4)에
+            minimal no-good cut으로 공급한다.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">왜</div>
+          <p>
+            <span class="code-inline">_decode_bay</span>는 현재 coarse <span class="code-inline">forced_ids</span>만 기록(:392-396)한다.
+            그런데 <em>어느 블록이 거부를 유발했는지</em>의 데이터는 rejection booleans
+            (<span class="code-inline">obs_new_entry / retro_entry / collide</span>, :258-269)에 이미 계산되어 있고
+            단지 버려지고 있다.
+            이 데이터를 tight한 conflicting block id 집합으로 뽑아 기존 M4에 공급하면,
+            CP-SAT 재작성 없이 "infeasible 그룹핑 재채택 금지"를 달성할 수 있다.
+            이것이 L1 Benders의 정신을 값싸게 구현하는 방법이다.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">어떻게</div>
+          <p>
+            1. <span class="code-inline">_find_slot_crane_safe</span>가 실패할 때 충돌에 직접 관여한 블록 id 집합
+            <span class="code-inline">S</span>를 반환값에 추가 (또는 side-effect로 전달).<br>
+            2. <span class="code-inline">_decode_bay</span>가 이 집합을 받아
+            <span class="code-inline">cut_store</span>에 minimal no-good cut으로 등록.<br>
+            3. M4 <span class="code-inline">op_cut_destroy</span>가 기존 메커니즘대로 이를 적용해 해당 그룹핑 재채택을 차단.<br>
+            4. feature-flag <span class="code-inline">OGC_CONFLICT_CUT</span>(신규)로 격리.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">근거 논문</div>
+          <a class="ref-link" href="https://doi.org/10.1016/j.ejor.2024.05.001" target="_blank">Mao et al. 2024 — Combinatorial Benders for Single Machine Scheduling + 2D Packing (EJOR)</a>
+          <a class="ref-link" href="https://doi.org/10.1016/j.cor.2014.09.007" target="_blank">Verstichel et al. 2015 — Combinatorial Benders for Lock Scheduling (COR)</a>
+          <a class="ref-link" href="https://doi.org/10.1287/opre.1060.0371" target="_blank">Hooker 2007 — Planning and Scheduling by Logic-Based Benders (OR)</a>
+          <a class="ref-link" href="https://arxiv.org/abs/2310.05893" target="_blank">Avgerinos et al. 2025 — One Benders Cut to Rule All Schedules in the Neighbourhood (EJOR)</a>
+          <p style="font-size:12px; color:var(--muted); margin-top:6px;">
+            ※ 위 논문들은 full master 재작성의 근거가 아니라 <strong>cut 설계의 영감</strong>으로 인용.
+            우리는 이 논문들의 no-good cut 구조만 차용하고, Benders master 재작성은 KEY REVERSAL에서 명시적으로 보류.
+          </p>
+        </div>
+      </div>
+
+      <!-- P2 -->
+      <div class="detail-card">
+        <div class="card-top">
+          <div class="card-pid">P2</div>
+          <div class="card-title-text">gate/banking 버그 근원 수정:<br>크레인-violation tie-breaker</div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <span class="badge b-easy">EASY</span>
+          <span class="badge b-lever">L5</span>
+          <span class="badge b-safe">−1 SAFE</span>
+          <span class="badge b-tier1">TIER 1</span>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">무엇</div>
+          <p>
+            동점 목적값(<span class="code-inline">quick_obj</span>) 이동에서 크레인-violation이 적은 레이아웃을 선호하는
+            tie-breaker를 삽입한다(:1143-1149 근방).
+            서치가 feasibility 쪽으로 표류하도록 유도하여 <span class="code-inline">OGC_PROTECT_SEED</span> banking(:2166)
+            의존을 구조적으로 줄인다.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">왜</div>
+          <p>
+            알려진 버그(:2140-2155): 서치가 <em>같은 quick_obj지만 크레인 infeasible</em>한 레이아웃으로 변형
+            → gate 기각 → floor 추락. 현재는 <span class="code-inline">OGC_PROTECT_SEED</span>로 방어적 banking만 하고 있다.
+            그러나 banking은 근본 원인이 아닌 증상 억제다. 서치 자체가 feasibility-preserving 방향으로
+            이동하도록 tie-breaking 우선순위를 부여해야 banking 의존을 낮출 수 있다.
+          </p>
+          <p style="margin-top:8px; font-size:13px; color:var(--muted);">
+            ※ 서치는 이미 TRUE decoded objective를 최적화한다(<span class="code-inline">_obj_of_results</span> :816/:1143).
+            "서치가 proxy를 쓴다"는 통념은 틀렸고, 문제는 gate/banking 층에 있다.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">어떻게</div>
+          <p>
+            1. 이동 수락 기준에서 <span class="code-inline">delta == 0</span> (동점)인 경우, 해당 후보의
+            크레인-violation 카운트를 secondary key로 비교.<br>
+            2. violation이 적은 쪽을 선택하도록 수락 함수에 1줄 조건 추가.<br>
+            3. violation 카운트는 <span class="code-inline">_decode_bay</span>가 이미 rejection booleans에서 계산 가능.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">근거 논문</div>
+          <a class="ref-link" href="https://arxiv.org/abs/2206.12303" target="_blank">Schäfer et al. 2022 — Bounded Beam Search for BRP: violation lower bound as tie-breaker</a>
+          <a class="ref-link" href="https://arxiv.org/abs/1809.08201" target="_blank">Feillet et al. 2019 — Local-Search for Unrestricted BRP: feasibility-preserving state space</a>
+        </div>
+      </div>
+
+      <!-- P3 -->
+      <div class="detail-card">
+        <div class="card-top">
+          <div class="card-pid">P3</div>
+          <div class="card-title-text">ATCR 시드 순서를<br><span class="code-inline">_orderings</span>의 3번째 후보로 추가</div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <span class="badge b-easy">EASY</span>
+          <span class="badge b-lever">L5</span>
+          <span class="badge b-safe">−1 SAFE</span>
+          <span class="badge b-tier1">TIER 1</span>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">무엇</div>
+          <p>
+            <span class="code-inline">_orderings</span>(:414-420)에 ATCR(Apparent Tardiness Cost with Release dates)
+            우선순위 지수 정렬을 3번째 후보 시드 순서로 추가한다.
+            weighted tardiness + release date 인스턴스에서 EDD보다 우월한 dispatch 규칙으로,
+            w1-congested 케이스에서 floor 품질을 높인다.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">왜</div>
+          <p>
+            현재 _orderings는 EDD와 balanced를 포함하지만, w1-지배 + congested 인스턴스에서
+            단순 EDD가 타이밍/릴리즈 날짜 상호작용을 놓친다.
+            ATCR 지수(<span class="code-inline">w_j · exp(-max(0, d_j-p_j-r_j-t_now) / (k·avg_p))</span>)는
+            릴리즈 날짜와 지연 비용을 동시에 반영해 더 나은 시드를 만들어 준다.
+            deterministic, gate-protected, −1 위험 0.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">어떻게</div>
+          <p>
+            1. <span class="code-inline">_orderings</span> 목록에 ATCR 정렬 람다 1줄 추가.<br>
+            2. k(lookahead factor)는 인스턴스 밀도 기반 기본값 설정 (초기 k≈1.5 탐색).<br>
+            3. feature-flag 불필요(기존 orderings 패턴과 동일 구조).
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">근거 논문</div>
+          <a class="ref-link" href="https://doi.org/10.1016/j.cor.2025.107097" target="_blank">Modified ATCR rule (2025, COR:107097) — fixed/variable cost tardiness, release dates</a>
+          <a class="ref-link" href="https://www.semanticscholar.org/paper/Dominance-rules-for-the-parallel-machine-total-with-Jouglet-Savourey/f4cdb4010a9a050986197aab4c5187ddc79dd71c" target="_blank">Jouglet & Savourey 2011 — Dominance rules for parallel machine weighted tardiness with release dates</a>
+        </div>
+      </div>
+
+      <!-- P4 -->
+      <div class="detail-card">
+        <div class="card-top">
+          <div class="card-pid">P4</div>
+          <div class="card-title-text">소형 베이 한정 per-bay joint<br>(x,y,ENTRY,EXIT) 정밀화</div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <span class="badge b-hard">HIGH effort</span>
+          <span class="badge b-lever">L3</span>
+          <span class="badge b-safe">−1 SAFE</span>
+          <span class="badge b-tier2">TIER 2</span>
+          <span class="badge b-defer">DEFER</span>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">무엇</div>
+          <p>
+            CP-SAT 배정 후 잔여 시간 예산에서, 블록 수 ≤30인 소형 베이에 한해
+            연속시간 MILP (Pazhooh 2025 참고)를 베이별로 실행해 (x,y,ENTRY,EXIT) 공동 최적화.
+            L3의 값싼 슬라이스.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">왜 DEFER인가</div>
+          <p>
+            우리 dense 인스턴스는 베이당 40~60 블록이므로 "≤30 소형"이 드물다.
+            적용 범위가 제한적이어서 score-flow 개선은 있지만 −1 회피에는 기여하지 않는다.
+            full NFP 연속 MILP는 우리 밀도에서 intractable이라 제외(KILL-D).
+            Tier 1이 착지하고 시간 예산이 남을 경우에만 시도.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">근거 논문</div>
+          <a class="ref-link" href="https://arxiv.org/abs/2508.02640" target="_blank">Pazhooh & Shemirani 2025 — Efficient Continuous-Time MILP for Aircraft Hangar Scheduling+Layout (arXiv)</a>
+          <a class="ref-link" href="https://ideas.repec.org/a/eee/ejors/v313y2024i1p69-91.html" target="_blank">Lastra-Díaz & Ortuño 2024 — NFP-CM-VS MIP for Irregular Strip Packing (EJOR)</a>
+          <a class="ref-link" href="https://doi.org/10.1016/j.cie.2020.106985" target="_blank">Ge & Wang 2021 — Spatial Scheduling for Irregularly Shaped Blocks in Shipbuilding (CIE)</a>
+        </div>
+      </div>
+
+      <!-- P5 -->
+      <div class="detail-card">
+        <div class="card-top">
+          <div class="card-pid">P5</div>
+          <div class="card-title-text">4코어 diversified multi-start 재활성화<br>(진짜 다양화 이유 있을 때만)</div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+          <span class="badge b-mod">MODERATE</span>
+          <span class="badge b-lever">L4</span>
+          <span class="badge b-safe">−1 SAFE</span>
+          <span class="badge b-tier2">TIER 2</span>
+          <span class="badge b-defer">DEFER (조건부)</span>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">무엇</div>
+          <p>
+            <span class="code-inline">parallel_decode.run_parallel_multistart</span>(:parallel_decode.py:143)을
+            워커별 <em>다른</em> 시드/레짐(예: ATCR vs EDD vs pref-balanced)으로 돌려
+            최선 feasible 후보를 채택. 현재 <span class="code-inline">OGC_PARALLEL_MS=OFF</span>.
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">조건 및 제한</div>
+          <p>
+            진짜 다양화 이유(워커별 다른 시드/레짐)가 있을 때만 켠다.
+            0-개선 ALNS를 16-way로 돌리는 낭비(이전 사례)나 iterative Benders(부모↔워커 라운드트립 불가)에는 사용 불가.
+            L4의 <em>parallel diversification</em> 부분만 차용 — Tchebycheff MOEA는 KILL(KILL-B).
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="card-section-label">근거 논문</div>
+          <a class="ref-link" href="https://www.sciencedirect.com/science/article/abs/pii/S2210650219301130" target="_blank">Cota et al. 2019 — MO-ALNS/D: Adaptive Multi-Objective ALNS+Decomposition (Swarm Evol Comput)</a>
+          <a class="ref-link" href="https://link.springer.com/article/10.1007/s10696-021-09434-7" target="_blank">Tasgetiren et al. 2021 — Self-Adaptive Memetic for Multi-Obj Scheduling with Release Times (FSM)</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ S4: KILL LIST ═══════════════════════ -->
+<section id="s-kill">
+  <div class="wrap">
+    <h2>KILL 목록 — 명시적 보류 및 사유</h2>
+    <p class="lead">
+      결정 문서의 중요한 역할은 "하지 않는 것"을 명문화하는 것이다.
+      아래 각 항목은 리서치에서 강력히 권고되었으나 우리 코드/헤드룸/목표에 맞지 않아 명시적으로 제외한다.
+    </p>
+
+    <div class="kill-item">
+      <h4>KILL-A: Full combinatorial Benders master (L1 문헌 원형)</h4>
+      <p>
+        high-effort 재작성 + assignment 이미 19/21 gap=0 → 나머지 2개 + congested 케이스에서만 도움.
+        CP-SAT가 build-once-solve-once(myalgorithm.py:686-763)라 AddBoolOr no-good cut 표면 없음.
+        목적식에 Z1 항 없어 timing-master가 되려면 major rewrite 필요.
+        <strong>정신만 P1으로 값싸게 취한다.</strong>
+      </p>
+    </div>
+
+    <div class="kill-item">
+      <h4>KILL-B: Tchebycheff MOEA / MO-ALNS/D (L4 원형)</h4>
+      <p>
+        인스턴스별 (w1,w2,w3)가 <em>이미 주어져 있다</em> — Pareto front를 찾을 필요가 없다.
+        주어진 가중치로 단일 스칼라화 목적을 최적화하면 된다.
+        Tchebycheff는 가중치를 모를 때(또는 의사결정자가 사후에 선택할 때) 유용하다.
+        우리 설정에는 해당하지 않는다.
+      </p>
+    </div>
+
+    <div class="kill-item">
+      <h4>KILL-C: Skyline/jostle 재패킹 + packing-height-as-Z1 (L2 원형)</h4>
+      <p>
+        서치는 이미 TRUE decoded objective를 사용한다(<span class="code-inline">_obj_of_results</span> :816/:1143).
+        packing height와 우리 tardiness Z1 사이의 상관이 약하다(직렬화가 더 나을 때가 있음 — decode-acceleration 실험에서 확인).
+        유용한 부분(true objective 사용)은 이미 구현되어 있다.
+      </p>
+    </div>
+
+    <div class="kill-item">
+      <h4>KILL-D: Full NFP 연속 MILP per bay (L3 원형)</h4>
+      <p>
+        우리 dense 인스턴스는 베이당 블록 수가 40~60개에 달한다.
+        NFP-CM-VS(Lastra-Díaz 2024)는 최대 27조각까지 1시간 내 최적을 증명하므로, 40~60 블록에서는 시간 예산 내 수렴이 사실상 불가능하다.
+        ≤30 소형 베이 한정의 DEFER 버전(P4)은 조건부 검토.
+      </p>
+    </div>
+
+    <div class="kill-item">
+      <h4>KILL-E: 0-개선 ALNS 4코어 fan-out (OGC_PARALLEL_MS 기본 ON 형태)</h4>
+      <p>
+        모든 트레이스에서 <span class="code-inline">op_improves = [0,0,0]</span>.
+        ALNS가 개선을 못 찾는 것은 assignment 수준에서 이미 최적이기 때문이다 — 같은 0-개선 ALNS를 4개 돌리면 4배의 CPU 낭비만 발생한다.
+        P5(진짜 다양화)와 구분해 이 형태는 기 결정 KILL 유지.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ S5: GUARDRAIL ═══════════════════════ -->
+<section id="s-guardrail">
+  <div class="wrap">
+    <h2>가드레일 — 모든 변경 공통</h2>
+    <p class="lead">아래 4가지 원칙은 P1~P5 모든 변경에 적용되며, 어느 하나라도 위반하면 변경을 차단한다.</p>
+
+    <div class="panel panel-guardrail">
+      <ul class="guard-list">
+        <li>
+          <strong>feature-flag + kill-switch.</strong>
+          모든 새 기능은 기존 <span class="code-inline">OGC_*</span> 환경변수 패턴으로 격리한다.
+          P1 → <span class="code-inline">OGC_CONFLICT_CUT</span>(신규),
+          P2 → tie-break 인라인 조건(flag 불필요),
+          P3 → orderings 목록 추가(flag 불필요),
+          P4/P5 → 각 신규 flag.
+          kill-switch 비활성화 시 현재 동작과 bit-identical.
+        </li>
+        <li>
+          <strong>floor+gate 보존 → 새 서치는 <span class="code-inline">candidates.append(...)</span>로만 추가.</strong>
+          어떤 변경도 기존 floor 승격 경로(<span class="code-inline">:2256-2317</span>)와 gate 검증 구조를 건드리지 않는다.
+          새 서치 결과는 항상 후보 풀에 추가만 하고, gate가 최종 선택 — 이 구조가 −1을 구조적으로 불가능하게 만든다.
+        </li>
+        <li>
+          <strong>회귀 검증: example 1022.70 bit-identical + gen 17개 + dense stress + 0 timeout.</strong>
+          P1~P5 각 단계마다 독립 회귀를 돌린다.
+          example은 증명된 전역 최적(1022.70)이므로 소수점까지 bit-identical을 요구한다.
+          gen 17개 전부 feasible, timeout 0, 기존 개선 수치 유지.
+        </li>
+        <li>
+          <strong>코딩 직전 <span class="code-inline">/confidence-gate</span> → 구현 후 <span class="code-inline">/validate</span> + verifier → 머지 전 <span class="code-inline">/parallel-review</span>.</strong>
+          5점 준비도 체크(중복 구현 없음·아키텍처 적합·문서 근거·작동 레퍼런스·명확성) &lt;70%면 멈추고 재검토.
+          구현 후 lint→unit→integration 실제 명령으로 실행(mock 금지).
+          verifier가 증거(테스트 통과·요구사항 충족·미검증 가정·증거)로 done 확정.
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════ S6: SPRINT ═══════════════════════ -->
+<section id="s-sprint">
+  <div class="wrap">
+    <h2>권장 구현 순서 (스프린트)</h2>
+    <p class="lead">
+      각 단계는 독립 feature-flag, 독립 회귀를 갖는다.
+      이전 단계 실패 시 뒤 단계를 시작하지 않는다.
+    </p>
+
+    <div class="sprint-steps">
+
+      <div class="sprint-step">
+        <div class="sprint-num">1</div>
+        <h4>P3 — ATCR 시드</h4>
+        <p>
+          가장 값싸고 즉시 실행 가능.<br>
+          <span class="code-inline">_orderings</span>에 1줄 추가.<br>
+          회귀: gen 17개 + example.<br>
+          예상 소요: ~반나절.
+        </p>
+        <div style="margin-top:8px;">
+          <span class="badge b-easy">EASY</span>
+          <span class="badge b-safe">−1 SAFE</span>
+        </div>
+      </div>
+
+      <div class="sprint-step">
+        <div class="sprint-num">2</div>
+        <h4>P2 — Tie-break</h4>
+        <p>
+          동점 이동의 crane-violation secondary key.<br>
+          banking 의존 구조적 감소.<br>
+          회귀: gen 17개 + example + banking 인스턴스(s204).<br>
+          예상 소요: ~반나절.
+        </p>
+        <div style="margin-top:8px;">
+          <span class="badge b-easy">EASY</span>
+          <span class="badge b-safe">−1 SAFE</span>
+        </div>
+      </div>
+
+      <div class="sprint-step">
+        <div class="sprint-num">3</div>
+        <h4>P1 — Conflict-cut</h4>
+        <p>
+          진짜 구조적 언락.<br>
+          rejection booleans → M4 no-good cut.<br>
+          <span class="code-inline">OGC_CONFLICT_CUT</span> flag 신규 추가.<br>
+          회귀: 전체 스위트 + M4 발화 확인.<br>
+          예상 소요: ~1~2일.
+        </p>
+        <div style="margin-top:8px;">
+          <span class="badge b-mod">MODERATE</span>
+          <span class="badge b-safe">−1 SAFE</span>
+        </div>
+      </div>
+
+      <div class="sprint-step">
+        <div class="sprint-num">4</div>
+        <h4>P4 / P5 (조건부)</h4>
+        <p>
+          P1~P3 착지 + 헤드룸 확인 후.<br>
+          P4: 소형 베이 joint MILP (≤30 블록).<br>
+          P5: 진짜 다양화 multi-start.<br>
+          각 독립 flag·독립 회귀.
+        </p>
+        <div style="margin-top:8px;">
+          <span class="badge b-hard">HIGH</span>
+          <span class="badge b-defer">DEFER</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="panel" style="margin-top:24px; font-size:14px; line-height:1.7;">
+      <strong>핵심 원칙:</strong>
+      P3(즉효) → P2(tie-break) → P1(conflict-cut, 진짜 언락) 순서로 진행.
+      각 단계에서 회귀를 통과해야 다음 단계로 진행한다.
+      실패 시 해당 flag를 kill-switch로 내리고 이전 상태로 롤백.
+      P4/P5는 Tier 1이 실측으로 헤드룸을 확인한 뒤에만 시도.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer>
+  <div class="wrap">
+    <p>
+      <strong>출처</strong>:
+      <a href="research-2026-06-04-plateau-breakers.html">research-2026-06-04-plateau-breakers.html</a> (34편, 7개 테마, L1~L5) ·
+      code-analyzer 정찰 (myalgorithm.py:258-269, :298, :392-396, :686-763, :723, :816, :855-1067, :1143-1149, :2140-2155, :2166, :2256-2317 · parallel_decode.py:143) ·
+      <a href="milestone-status.md">milestone-status.md</a> (현재 상태 / plateau 진단)
+    </p>
+    <p>
+      <strong>코드 상태</strong>: 이 문서 생성 시점(2026-06-04) 기준 <span style="color:#991b1b; font-weight:700;">코드는 아직 미변경</span>이다.
+      이 문서는 순수한 의사결정 기록이며, 변경은 권장 구현 순서(스프린트)에 따라 별도 세션에서 진행된다.
+    </p>
+    <p style="color:#9ca3af; font-size:12px; margin-top:8px;">
+      OGC 2026 내부 문서 · 팀 전용 · 생성: 2026-06-04
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

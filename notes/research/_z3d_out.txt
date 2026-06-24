@@ -1,0 +1,4 @@
+prob_13: legacy obj=113500.0 z3=805.0 | comp obj=71822.94 z2=2873.39 z3=432.0
+  legacy seed: obj=113939 z1=0 z2=1162 z3=813 wall=99.8
+  seed (cells): z1=321 z3=813 obj~6086144  (descending...)
+  AFTER descent: obj=504644 z1=21 z2=1162 z3=813 moves=0  

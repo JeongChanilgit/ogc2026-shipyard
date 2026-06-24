@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OGC 2026 — 경쟁자 대비 문제별 비교 (c8 vs competitor)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --border2:   #21262d;
+    --text:      #e6edf3;
+    --muted:     #7d8590;
+    --accent:    #58a6ff;
+    --green:     #2ea043;
+    --green-bg:  #0d2a1a;
+    --green-text:#3fb950;
+    --red:       #da3633;
+    --red-bg:    #2a0d0d;
+    --red-text:  #f85149;
+    --amber:     #d29922;
+    --amber-bg:  #272012;
+    --amber-text:#e3b341;
+    --blue-bg:   #0d1f2e;
+    --blue-text: #79c0ff;
+    --pill-z1:   #1f3044;
+    --pill-z3:   #2a1a30;
+    --pill-win:  #0d2a1a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 0 0 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+  }
+  .header-meta {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* ── CONTENT WRAPPER ── */
+  .content { padding: 32px 40px; max-width: 1280px; }
+
+  /* ── HERO STATS ── */
+  .hero {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .hero-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 22px;
+  }
+  .hero-card .label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 8px;
+  }
+  .hero-card .value {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .hero-card .note {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .hero-card.wins   { border-color: var(--green); }
+  .hero-card.wins .value { color: var(--green-text); }
+  .hero-card.z1     { border-color: #3b6fb0; }
+  .hero-card.z1 .value { color: var(--blue-text); }
+  .hero-card.z1bound { border-color: var(--amber); }
+  .hero-card.z1bound .value { color: var(--amber-text); }
+  .hero-card.z3bound { border-color: var(--red); }
+  .hero-card.z3bound .value { color: var(--red-text); }
+
+  /* ── STAR NOTICE ── */
+  .notice {
+    background: var(--amber-bg);
+    border: 1px solid var(--amber);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--amber-text);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .notice strong { color: #f0c55a; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    margin-top: 36px;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 32px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  thead tr {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  thead th {
+    padding: 10px 14px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    white-space: nowrap;
+  }
+  thead th:first-child,
+  thead th:last-child,
+  thead th.th-prob { text-align: left; }
+  tbody tr {
+    border-bottom: 1px solid var(--border2);
+    transition: background .1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,.03); }
+  tbody td {
+    padding: 9px 14px;
+    text-align: right;
+    color: var(--text);
+  }
+  tbody td:first-child { text-align: left; font-weight: 600; color: var(--accent); }
+
+  .prob-link { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+
+  /* numeric spans */
+  .num { font-family: "SFMono-Regular", Consolas, monospace; }
+  .z1-val { color: var(--blue-text); }
+  .z3-val { color: #c084fc; }
+  .ratio-hi  { color: var(--red-text); font-weight: 700; }
+  .ratio-ok  { color: var(--green-text); }
+  .ratio-mid { color: var(--amber-text); }
+
+  /* verdict cell */
+  .verdict {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .verdict.win  { background: var(--green-bg);  color: var(--green-text);  border: 1px solid var(--green); }
+  .verdict.loss { background: var(--red-bg);    color: var(--red-text);    border: 1px solid var(--red); }
+
+  /* failure mode tag */
+  .tag {
+    display: inline-block;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .tag.z1b  { background: var(--pill-z1); color: var(--blue-text); }
+  .tag.z3b  { background: var(--pill-z3); color: #c084fc; }
+  .tag.none { color: var(--muted); }
+
+  /* ── TWO CARDS ── */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 22px;
+  }
+  .card.z1-card { border-color: #3b6fb0; }
+  .card.z3-card { border-color: #7c3aed; }
+  .card .card-head {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .card.z1-card .card-head { color: var(--blue-text); }
+  .card.z3-card .card-head { color: #c084fc; }
+  .card .card-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    line-height: 1.6;
+  }
+  .card .prob-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .card .prob-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+  }
+  .card.z1-card .prob-item { border-color: #3b6fb0; }
+  .card.z3-card .prob-item { border-color: #7c3aed; }
+  .card .prob-item .pname { color: var(--accent); font-weight: 600; }
+  .card .prob-item .pdetail { color: var(--muted); margin-top: 2px; }
+
+  .flip-badge {
+    display: inline-block;
+    background: #0d2a1a;
+    color: var(--green-text);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 8px;
+  }
+
+  /* ── INSIGHT BOX ── */
+  .insight {
+    background: linear-gradient(135deg, var(--amber-bg) 0%, var(--blue-bg) 100%);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 26px;
+    margin-bottom: 28px;
+    border-left: 3px solid var(--amber);
+  }
+  .insight h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--amber-text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .insight h3 .icon { font-size: 16px; }
+  .insight p {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .insight p:last-child { margin-bottom: 0; }
+  .insight strong { color: var(--amber-text); }
+  .insight .highlight { color: var(--blue-text); font-weight: 600; }
+
+  /* ── set2 NOTE ── */
+  .set2-note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    opacity: .8;
+  }
+  .set2-note .set2-head {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 8px;
+  }
+  .set2-note p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .set2-note .imp { color: var(--text); }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 36px;
+    border-top: 1px solid var(--border2);
+    padding-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .footer strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-meta">OGC 2026 &mdash; Optimization Grand Challenge &mdash; 2026-06-14</div>
+  <h1>경쟁자 대비 문제별 비교 &mdash; c8 vs competitor</h1>
+  <div class="subtitle">set1 (prob_1..20) &mdash; baseline c8 (cycle 8, per-bay CP-SAT packing-by-scheduling) &mdash; 낮은 obj 값이 우위</div>
+</div>
+
+<div class="content">
+
+  <!-- HERO STATS -->
+  <div class="hero">
+    <div class="hero-card wins">
+      <div class="label">set1 Wins (c8)</div>
+      <div class="value">3 / 20</div>
+      <div class="note">prob_1, prob_2, prob_8</div>
+    </div>
+    <div class="hero-card z1">
+      <div class="label">경쟁자 z1 = 0</div>
+      <div class="value">20 / 20</div>
+      <div class="note">ALL set1 인스턴스에서 완전 달성. 우리는 대부분 잔여 z1 존재.</div>
+    </div>
+    <div class="hero-card z1bound">
+      <div class="label">z1-bound 손실 (직접 뒤집기 가능)</div>
+      <div class="value">6</div>
+      <div class="note">z1 → 0 이면 WIN 전환. cycle-9 목표.</div>
+    </div>
+    <div class="hero-card z3bound">
+      <div class="label">z3-bound 손실</div>
+      <div class="value">11</div>
+      <div class="note">우리 z3 = 경쟁자의 20–50×. z1 해소만으론 부족.</div>
+    </div>
+  </div>
+
+  <!-- NOTICE -->
+  <div class="notice">
+    <strong>★ 핵심 관찰</strong> &mdash; 경쟁자는 <strong>z1 = 0</strong>을 set1 전 20문제에서 달성.
+    우리의 z1-bound 손실 6건은 z3 편차가 이미 0 근처 &mdash; 즉 <strong>z1 → 0 만으로 WIN 전환 가능</strong> (3/20 → 9/20).
+    z3-bound 손실 11건은 우선 배정을 지키면서도 crane-safe co-presence 를 실현해야 z3 폭발을 막을 수 있다.
+  </div>
+
+  <!-- MAIN TABLE -->
+  <div class="section-label">set1 문제별 상세 비교 (prob_1..20)</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="th-prob">Prob</th>
+          <th>Our Obj</th>
+          <th>Our z1</th>
+          <th>Our z3</th>
+          <th>Comp Obj</th>
+          <th>Comp z1</th>
+          <th>Comp z3</th>
+          <th>Ratio (our/comp)</th>
+          <th>Verdict</th>
+          <th style="text-align:left">Failure Mode</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="prob-link">prob_1</span></td>
+          <td><span class="num">2,065</span></td>
+          <td><span class="num z1-val">0</span></td>
+          <td><span class="num z3-val">0</span></td>
+          <td><span class="num">9,785</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">8</span></td>
+          <td><span class="num ratio-ok">0.21×</span></td>
+          <td style="text-align:center"><span class="verdict win">WIN</span></td>
+          <td><span class="tag none">—</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_2</span></td>
+          <td><span class="num">6,620</span></td>
+          <td><span class="num z1-val">0</span></td>
+          <td><span class="num z3-val">0</span></td>
+          <td><span class="num">6,624</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num ratio-ok">1.00×</span></td>
+          <td style="text-align:center"><span class="verdict win">WIN</span></td>
+          <td><span class="tag none">—</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_3</span></td>
+          <td><span class="num">123,671</span></td>
+          <td><span class="num z1-val">3</span></td>
+          <td><span class="num z3-val">0</span></td>
+          <td><span class="num">50,642</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">94</span></td>
+          <td><span class="num ratio-mid">2.44×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z1b">z1-bound (winnable)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_4</span></td>
+          <td><span class="num">81,700</span></td>
+          <td><span class="num z1-val">3</span></td>
+          <td><span class="num z3-val">0</span></td>
+          <td><span class="num">16,917</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">8</span></td>
+          <td><span class="num ratio-mid">4.83×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z1b">z1-bound (winnable)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_5</span></td>
+          <td><span class="num">839,630</span></td>
+          <td><span class="num z1-val">3</span></td>
+          <td><span class="num z3-val">5,194</span></td>
+          <td><span class="num">70,580</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">183</span></td>
+          <td><span class="num ratio-hi">11.9×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_6</span></td>
+          <td><span class="num">1,067,960</span></td>
+          <td><span class="num z1-val">3</span></td>
+          <td><span class="num z3-val">6,501</span></td>
+          <td><span class="num">72,400</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">345</span></td>
+          <td><span class="num ratio-hi">14.8×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_7</span></td>
+          <td><span class="num">863,552</span></td>
+          <td><span class="num z1-val">5</span></td>
+          <td><span class="num z3-val">5,075</span></td>
+          <td><span class="num">86,021</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">402</span></td>
+          <td><span class="num ratio-hi">10.0×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_8</span></td>
+          <td><span class="num">12,412</span></td>
+          <td><span class="num z1-val">0</span></td>
+          <td><span class="num z3-val">0</span></td>
+          <td><span class="num">12,908</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num ratio-ok">0.96×</span></td>
+          <td style="text-align:center"><span class="verdict win">WIN</span></td>
+          <td><span class="tag none">—</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_9</span></td>
+          <td><span class="num">518,280</span></td>
+          <td><span class="num z1-val">35</span></td>
+          <td><span class="num z3-val">244</span></td>
+          <td><span class="num">80,034</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">473</span></td>
+          <td><span class="num ratio-hi">6.48×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z1b">z1-bound (winnable)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_10</span></td>
+          <td><span class="num">1,138,122</span></td>
+          <td><span class="num z1-val">8</span></td>
+          <td><span class="num z3-val">7,582</span></td>
+          <td><span class="num">98,957</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">363</span></td>
+          <td><span class="num ratio-hi">11.5×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_11</span></td>
+          <td><span class="num">1,410,174</span></td>
+          <td><span class="num z1-val">61</span></td>
+          <td><span class="num z3-val">0</span></td>
+          <td><span class="num">31,899</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">167</span></td>
+          <td><span class="num ratio-hi">44.2×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z1b">z1-bound (winnable)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_12</span></td>
+          <td><span class="num">1,338,505</span></td>
+          <td><span class="num z1-val">14</span></td>
+          <td><span class="num z3-val">7,659</span></td>
+          <td><span class="num">94,110</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">332</span></td>
+          <td><span class="num ratio-hi">14.2×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_13</span></td>
+          <td><span class="num">1,685,125</span></td>
+          <td><span class="num z1-val">25</span></td>
+          <td><span class="num z3-val">9,105</span></td>
+          <td><span class="num">76,685</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">435</span></td>
+          <td><span class="num ratio-hi">22.0×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_14</span></td>
+          <td><span class="num">2,121,947</span></td>
+          <td><span class="num z1-val">53</span></td>
+          <td><span class="num z3-val">8,826</span></td>
+          <td><span class="num">67,302</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">384</span></td>
+          <td><span class="num ratio-hi">31.5×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_15</span></td>
+          <td><span class="num">1,133,673</span></td>
+          <td><span class="num z1-val">74</span></td>
+          <td><span class="num z3-val">51</span></td>
+          <td><span class="num">48,206</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">192</span></td>
+          <td><span class="num ratio-hi">23.5×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z1b">z1-bound (winnable)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_16</span></td>
+          <td><span class="num">469,735</span></td>
+          <td><span class="num z1-val">49</span></td>
+          <td><span class="num z3-val">38</span></td>
+          <td><span class="num">50,047</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">232</span></td>
+          <td><span class="num ratio-hi">9.38×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z1b">z1-bound (winnable)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_17</span></td>
+          <td><span class="num">1,626,192</span></td>
+          <td><span class="num z1-val">0</span></td>
+          <td><span class="num z3-val">12,164</span></td>
+          <td><span class="num">62,070</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">222</span></td>
+          <td><span class="num ratio-hi">26.2×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound (z1 already 0)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_18</span></td>
+          <td><span class="num">1,558,021</span></td>
+          <td><span class="num z1-val">0</span></td>
+          <td><span class="num z3-val">11,665</span></td>
+          <td><span class="num">40,206</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">172</span></td>
+          <td><span class="num ratio-hi">38.8×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound (z1 already 0)</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_19</span></td>
+          <td><span class="num">1,447,171</span></td>
+          <td><span class="num z1-val">1</span></td>
+          <td><span class="num z3-val">10,784</span></td>
+          <td><span class="num">72,951</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">401</span></td>
+          <td><span class="num ratio-hi">19.8×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+        <tr>
+          <td><span class="prob-link">prob_20</span></td>
+          <td><span class="num">1,985,443</span></td>
+          <td><span class="num z1-val">23</span></td>
+          <td><span class="num z3-val">10,802</span></td>
+          <td><span class="num">91,096</span></td>
+          <td><span class="num">0</span></td>
+          <td><span class="num">463</span></td>
+          <td><span class="num ratio-hi">21.8×</span></td>
+          <td style="text-align:center"><span class="verdict loss">loss</span></td>
+          <td><span class="tag z3b">z3-bound</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TWO FAILURE MODE CARDS -->
+  <div class="section-label">손실 유형 분석</div>
+  <div class="cards">
+    <div class="card z1-card">
+      <div class="card-head">
+        A &mdash; z1-bound 손실 (6건, 직접 뒤집기 가능)
+        <span class="flip-badge">→ WIN 가능</span>
+      </div>
+      <div class="card-sub">
+        z3 편차가 이미 ~0. <strong>순수하게 잔여 z1 하나</strong> 때문에 패배.
+        z1 → 0 달성 시 전부 WIN 전환 &rarr; set1 <strong>3/20 → 9/20</strong>.<br>
+        이것이 <strong>cycle-9 (crane-overlap)</strong> 의 직접 목표.
+      </div>
+      <div class="prob-grid">
+        <div class="prob-item">
+          <div class="pname">prob_3</div>
+          <div class="pdetail">z1=3, w1=26,667</div>
+        </div>
+        <div class="prob-item">
+          <div class="pname">prob_4</div>
+          <div class="pdetail">z1=3, w1=21,918</div>
+        </div>
+        <div class="prob-item">
+          <div class="pname">prob_9</div>
+          <div class="pdetail">z1=35, w1=13,333</div>
+        </div>
+        <div class="prob-item">
+          <div class="pname">prob_11</div>
+          <div class="pdetail">z1=61, w1=22,857</div>
+        </div>
+        <div class="prob-item">
+          <div class="pname">prob_15</div>
+          <div class="pdetail">z1=74, w1=14,815</div>
+        </div>
+        <div class="prob-item">
+          <div class="pname">prob_16</div>
+          <div class="pdetail">z1=49, w1=8,889</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card z3-card">
+      <div class="card-head">B &mdash; z3-bound 손실 (11건)</div>
+      <div class="card-sub">
+        우리 z3 = <strong>5,000–12,000</strong> vs 경쟁자 <strong>~170–470</strong> (20–50× 차이).
+        부하균형을 위해 블록을 비선호 베이에 분산 배정 → z3 폭발.<br>
+        <strong>prob_17, prob_18은 z1=0임에도 z3 때문에 패배</strong>.
+        z1 해소만으로는 부족 &mdash; 선호 배정을 지키면서 z1=0을 동시 달성해야 한다.
+      </div>
+      <div class="prob-grid">
+        <div class="prob-item"><div class="pname">prob_5</div><div class="pdetail">z3=5,194</div></div>
+        <div class="prob-item"><div class="pname">prob_6</div><div class="pdetail">z3=6,501</div></div>
+        <div class="prob-item"><div class="pname">prob_7</div><div class="pdetail">z3=5,075</div></div>
+        <div class="prob-item"><div class="pname">prob_10</div><div class="pdetail">z3=7,582</div></div>
+        <div class="prob-item"><div class="pname">prob_12</div><div class="pdetail">z3=7,659</div></div>
+        <div class="prob-item"><div class="pname">prob_13</div><div class="pdetail">z3=9,105</div></div>
+        <div class="prob-item"><div class="pname">prob_14</div><div class="pdetail">z3=8,826</div></div>
+        <div class="prob-item"><div class="pname">prob_17</div><div class="pdetail">z3=12,164 (z1=0!)</div></div>
+        <div class="prob-item"><div class="pname">prob_18</div><div class="pdetail">z3=11,665 (z1=0!)</div></div>
+        <div class="prob-item"><div class="pname">prob_19</div><div class="pdetail">z3=10,784</div></div>
+        <div class="prob-item"><div class="pname">prob_20</div><div class="pdetail">z3=10,802</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY INSIGHT BOX -->
+  <div class="insight">
+    <h3><span class="icon">&#9650;</span> "Realize Gap" — 핵심 인사이트</h3>
+    <p>
+      경쟁자는 <strong>z1=0 AND 낮은 z3 (~170–470)</strong>를 <em>동시에</em> 달성한다.
+      이것은 선호 베이 배정을 실현하면서도 crane-safe co-presence로 시간 겹침을 허용하기 때문에 가능하다.
+    </p>
+    <p>
+      우리의 bbox-disjoint 패킹은 선호 배정에서 z1=0을 실현할 공간을 만들지 못한다.
+      결과적으로 <strong>선호 배정 유지 → z1 폭발</strong> 또는 <strong>부하 분산 배정 → z3 폭발</strong>의
+      이분법에 갇힌다.
+    </p>
+    <p>
+      <span class="highlight">Cycle 9 = 진짜 crane-safe co-presence</span> — layer-aware j &ge; k descent column이
+      비어 있는 경우 footprint OVERLAP을 허용 (공식 utils <code>check_entry</code>/<code>check_exit</code> 사용).
+      이것이 <strong>두 유형의 손실을 동시에 공격하는 단일 레버</strong>:
+      z1-bound 케이스에서는 선호 배정이 z1=0에 도달하게 하고,
+      z3-bound 케이스에서는 z3 폭발을 억제한다.
+    </p>
+  </div>
+
+  <!-- set2 NOTE -->
+  <div class="set2-note">
+    <div class="set2-head">set2 (prob_21..40) — 경쟁자 참조 없음</div>
+    <p>
+      set2에는 경쟁자 레퍼런스 테이블이 존재하지 않아 문제별 승패를 계산할 수 없다.
+      해당 인스턴스에서는 총 목적함수 최소화만 추적한다.<br>
+      <span class="imp">c8은 h6 대비 set2 40개 중 12개 개선</span>
+      (예: prob_21 −1.79M, prob_24 −2.07M, prob_28 −1.00M), 회귀 0건.
+    </p>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <strong>Baseline c8</strong>: cycle 8 (per-bay CP-SAT packing-by-scheduling) &mdash;
+    total ALL40 obj <strong>343.3M</strong> &mdash; feasible <strong>40/40</strong> &mdash; set1 wins <strong>3</strong>.<br>
+    Adopted 2026-06-14 over h6 (−2.88%, 24 improved, 0 regressed).<br>
+    Scoring: score(team, inst) = &minus;1 if infeasible/timeout/crash, else R &minus; nb (lower obj is better).
+    All data from c8 run logs and official competitor reference table (set1 only).
+  </div>
+
+</div>
+</body>
+</html>

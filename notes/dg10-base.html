@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OGC2026 gassign vs production hybrid</title>
+<style>
+ :root{--good:#1a7f37;--bad:#b91c1c;--neu:#6b7280;}
+ *{box-sizing:border-box;}
+ body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;
+      background:#f1f5f9;color:#0f172a;font-size:13px;line-height:1.4;}
+ header{background:#0f172a;color:#e2e8f0;padding:18px 24px;}
+ header h1{margin:0 0 4px;font-size:20px;}
+ header .cfg{color:#94a3b8;font-size:12px;}
+ header .prodnote{color:#fbbf24;font-size:12px;margin-top:6px;font-weight:600;}
+ .wrap{padding:20px 24px;max-width:1500px;margin:0 auto;}
+ .cards{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 22px;}
+ .card{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;
+       min-width:200px;box-shadow:0 1px 2px rgba(0,0,0,.04);}
+ .card h3{margin:0 0 8px;font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:.04em;}
+ .card .big{font-size:22px;font-weight:700;}
+ .card p{margin:3px 0;}
+ .card.alarm{border-color:var(--bad);}
+ .card.alarm .big{color:var(--bad);}
+ .card.win{border-color:var(--good);}
+ .card.win .big{color:var(--good);}
+ table{border-collapse:collapse;width:100%;background:#fff;font-size:12px;
+       box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:6px;overflow:hidden;}
+ th,td{padding:5px 8px;border-bottom:1px solid #eef2f7;text-align:left;}
+ th{background:#1e293b;color:#e2e8f0;font-weight:600;cursor:pointer;
+    position:sticky;top:0;white-space:nowrap;}
+ td.num{text-align:right;font-variant-numeric:tabular-nums;}
+ td.small{font-size:11px;color:#475569;}
+ td.inst{font-weight:600;}
+ tr.good td{background:#f0fdf4;}
+ tr.bad td{background:#fef2f2;}
+ tr.neu td{background:#fff;}
+ .good{color:var(--good);} .bad{color:var(--bad);font-weight:700;} .muted,.neu{color:var(--neu);}
+ h2{margin:26px 0 10px;font-size:16px;border-bottom:2px solid #cbd5e1;padding-bottom:5px;}
+ .findings{background:#fff;border-left:4px solid #2563eb;padding:12px 18px;border-radius:0 6px 6px 0;}
+ .findings li{margin:4px 0;}
+ .note{color:#64748b;font-size:11px;margin:8px 0 0;}
+</style></head><body>
+<header><h1>OGC2026 gassign (standalone) vs production hybrid</h1>
+<div class="cfg">instances=prob_23,prob_24,prob_26,prob_28,prob_29,prob_30,prob_32,prob_33,prob_37,prob_39 (n=10) &middot; TL=90.0s &middot; tag=depgroup OFF base 10set &middot; generated=2026-06-17 14:33:17</div>
+<div class="prodnote">production = hybrid(legacy + box [+ perbay]) @TL (notes/perbay-e0-all40.json) &mdash; this is the REAL bar, NOT pure legacy.</div></header><div class='wrap'><div class='cards'><div class='card'><h3>&Sigma; gassign obj (feasible, both)</h3><p class='big'>&mdash;</p><p class='muted'>over instances feasible in BOTH gassign &amp; prod</p></div><div class='card'><h3>&Sigma; production obj (same set)</h3><p class='big'>&mdash;</p><p class='muted'>hybrid @TL bar</p></div><div class='card '><h3>&Delta; (gassign &minus; prod)</h3><p class='big'>&mdash;</p><p class='muted'>negative = gassign better</p></div><div class='card '><h3>Feasibility</h3><p class='big'>10/10</p><p class='muted'>ALL feasible</p></div><div class='card '><h3>Max wall</h3><p class='big'>81.9s</p><p class='muted'>TL=90.0s (OK &le; TL)</p></div><div class='card win'><h3>Win / Lose</h3><p class='big'>0 / 10</p><p class='muted'>win = feasible &amp; gassign &lt; prod</p></div></div><h2>Findings (auto-generated)</h2><div class='findings'><ul><li>gassign beats production on NO instance (no feasible gassign result was strictly below the hybrid bar).</li><li>No instance was feasible in both gassign and production (or the E0 production json is absent) -- total &amp;Delta; not computable.</li><li>gassign was feasible on every selected instance (never -1).</li><li>Max wall over all gassign runs: 81.9s (TL=90.0s).</li><li>Production hybrid json (notes/perbay-e0-all40.json) had NO usable records for these instances (E0 may still be running) -- all prod_obj shown as &#x27;--&#x27; and verdicts are &#x27;lose&#x27; by default.</li></ul></div><h2>Per-instance</h2><table id='tbl'><thead><tr><th onclick='sortT(0)'>instance</th><th onclick='sortT(1)'>n_blk</th><th onclick='sortT(2)'>n_bay</th><th onclick='sortT(3)'>w1</th><th onclick='sortT(4)'>gassign obj</th><th>z1/z2/z3</th><th onclick='sortT(6)'>production obj</th><th onclick='sortT(7)'>&Delta;</th><th onclick='sortT(8)'>competitor</th><th onclick='sortT(9)'>wall</th><th>verdict</th></tr></thead><tbody><tr class='neu'><td class='inst'>prob_23</td><td class='num'>100</td><td class='num'>2</td><td class='num'>13,559</td><td class='num'>7,655,529</td><td class='num small'>519/3,544/2,968</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>6,851,876</td><td class='num'>47.5</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_24</td><td class='num'>100</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>2,754,990</td><td class='num small'>145/841/2,725</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>2,739,005</td><td class='num'>44.2</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_26</td><td class='num'>150</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>23,881,181</td><td class='num small'>1,723/346/6,040</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>30,417,445</td><td class='num'>63.6</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_28</td><td class='num'>150</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>11,418,988</td><td class='num small'>739/267/5,217</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>9,388,394</td><td class='num'>47.1</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_29</td><td class='num'>150</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>1,943,772</td><td class='num small'>15/2,059/5,792</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>1,328,458</td><td class='num'>41.3</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_30</td><td class='num'>150</td><td class='num'>2</td><td class='num'>13,333</td><td class='num'>11,656,075</td><td class='num small'>803/219/4,744</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>8,403,812</td><td class='num'>63.5</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_32</td><td class='num'>200</td><td class='num'>3</td><td class='num'>3,333</td><td class='num'>7,029,228</td><td class='num small'>1,886/4,038/1,205</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>5,680,477</td><td class='num'>75.2</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_33</td><td class='num'>200</td><td class='num'>3</td><td class='num'>6,667</td><td class='num'>19,431,468</td><td class='num small'>2,754/2,580/6,965</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>16,163,273</td><td class='num'>75.4</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_37</td><td class='num'>250</td><td class='num'>3</td><td class='num'>3,333</td><td class='num'>9,873,091</td><td class='num small'>1,963/703/5,546</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>6,934,080</td><td class='num'>81.2</td><td class='num'><span class='neu'>lose</span></td></tr><tr class='neu'><td class='inst'>prob_39</td><td class='num'>250</td><td class='num'>3</td><td class='num'>13,333</td><td class='num'>30,178,523</td><td class='num small'>2,151/2,660/9,924</td><td class='num'>&mdash;</td><td class='num neu'>&mdash;</td><td class='num'>29,735,939</td><td class='num'>81.9</td><td class='num'><span class='neu'>lose</span></td></tr></tbody></table><p class='note'>&Delta; = gassign_obj &minus; prod_obj (negative = gassign wins). production = hybrid(legacy+box[+perbay])@TL from notes/perbay-e0-all40.json (the REAL bar). Loose baseline (tl120_all40_fixed.json) is box-OFF legacy@120 (set2=4.24B) and is a loose reference only, not shown per-row.</p>
+<script>
+function sortT(c){
+ var t=document.getElementById('tbl'),b=t.tBodies[0],r=[].slice.call(b.rows);
+ var asc=t.getAttribute('data-c')==c&&t.getAttribute('data-a')!='1';
+ t.setAttribute('data-c',c);t.setAttribute('data-a',asc?'1':'0');
+ r.sort(function(x,y){
+  var a=x.cells[c].innerText.replace(/[,%+\s]/g,''),d=y.cells[c].innerText.replace(/[,%+\s]/g,'');
+  var na=parseFloat(a),nb=parseFloat(d);
+  if(!isNaN(na)&&!isNaN(nb))return asc?na-nb:nb-na;
+  return asc?a.localeCompare(d):d.localeCompare(a);
+ });
+ r.forEach(function(x){b.appendChild(x);});
+}
+</script></div></body></html>
